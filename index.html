@@ -85,6 +85,11 @@
     letter-spacing:.05em; color:var(--text-faint); border:1px solid var(--line);
     border-radius:12px; padding:3px 9px;
   }
+  .sync-tag{
+    font-family:"IBM Plex Mono",monospace; font-size:10px;
+    letter-spacing:.02em; color:var(--text-faint); border:1px solid var(--line);
+    border-radius:12px; padding:3px 9px; white-space:nowrap;
+  }
   .logout-btn{
     background:none; border:1px solid var(--line); color:var(--text-faint);
     border-radius:12px; padding:3px 10px; font-size:11px; cursor:pointer;
@@ -371,6 +376,7 @@
     .headmeta{ text-align:left; }
   }
 </style>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -404,6 +410,7 @@
       <div id="totalCondos">265 condomínios monitorados</div>
       <div class="session-info">
         <span id="roleTag"></span>
+        <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
         <button type="button" id="logoutBtn" class="logout-btn">Sair</button>
       </div>
     </div>
@@ -497,6 +504,9 @@ function showApp(role){
   document.getElementById('appRoot').style.display = '';
   document.getElementById('roleTag').textContent = role === 'admin' ? 'Modo administrador' : 'Somente visualização';
   render();
+  updateSyncTag();
+  pullOverridesFromSupabase();
+  subscribeRealtime();
 }
 
 function initAuth(){
@@ -1937,6 +1947,88 @@ function classifyHumorFinal(item){
 }
 const STORAGE_KEY = 'pesquisaSatisfacaoMA_jun2026_edits';
 
+// ---------- SUPABASE (sincronização entre dispositivos) ----------
+const SUPABASE_URL = 'https://nnfwmkkcctnwcrjmspij.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ua2Ua9PYKoeHjN87dDP2_g_TM5ctjRw';
+let sb = null;
+let syncStatus = 'connecting'; // connecting | online | offline
+try{
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}catch(e){ syncStatus = 'offline'; }
+
+function updateSyncTag(){
+  const el = document.getElementById('syncTag');
+  if (!el) return;
+  const map = {
+    connecting: { text: '🟡 Sincronizando...', cls: '' },
+    online:     { text: '🟢 Sincronizado', cls: '' },
+    offline:    { text: '🔴 Offline (só neste dispositivo)', cls: '' },
+  };
+  const s = map[syncStatus] || map.offline;
+  el.textContent = s.text;
+}
+
+function rowToUpdates(row){
+  return {
+    nota: row.nota, statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor,
+    motivo: row.motivo, resolvido: row.resolvido, pend: row.pend, resolucao: row.resolucao,
+  };
+}
+function updatesToRow(itemN, updates){
+  return {
+    item_n: itemN, nota: updates.nota, status_pesquisa: updates.statusPesquisa, crit: updates.crit,
+    setor: updates.setor, motivo: updates.motivo, resolvido: updates.resolvido, pend: updates.pend,
+    resolucao: updates.resolucao, updated_by: currentRole || 'desconhecido', updated_at: new Date().toISOString(),
+  };
+}
+
+async function pushOverrideToSupabase(itemN, updates){
+  if (!sb) return;
+  try{
+    const { error } = await sb.from('condo_overrides').upsert(updatesToRow(itemN, updates));
+    if (error){ console.error('Supabase upsert error:', error); syncStatus = 'offline'; updateSyncTag(); }
+    else { syncStatus = 'online'; updateSyncTag(); }
+  }catch(e){ console.error(e); syncStatus = 'offline'; updateSyncTag(); }
+}
+
+async function pullOverridesFromSupabase(){
+  if (!sb) { syncStatus = 'offline'; updateSyncTag(); return; }
+  try{
+    const { data, error } = await sb.from('condo_overrides').select('*');
+    if (error) throw error;
+    (data || []).forEach(row=>{
+      OVERRIDES[row.item_n] = rowToUpdates(row);
+    });
+    persistOverrides(OVERRIDES);
+    applyOverrides();
+    syncStatus = 'online';
+    updateSyncTag();
+    if (typeof render === 'function') render();
+    if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
+  }catch(e){
+    console.error('Falha ao buscar do Supabase:', e);
+    syncStatus = 'offline';
+    updateSyncTag();
+  }
+}
+
+function subscribeRealtime(){
+  if (!sb) return;
+  sb.channel('condo_overrides_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'condo_overrides' }, (payload)=>{
+      const row = payload.new;
+      if (!row) return;
+      OVERRIDES[row.item_n] = rowToUpdates(row);
+      persistOverrides(OVERRIDES);
+      applyOverrides();
+      if (typeof render === 'function') render();
+      if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
+    })
+    .subscribe((status)=>{
+      if (status === 'SUBSCRIBED'){ syncStatus = 'online'; updateSyncTag(); }
+    });
+}
+
 function loadOverrides(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
   catch(e){ return {}; }
@@ -2416,6 +2508,7 @@ function render(){
       Object.assign(item, updates);
       OVERRIDES[item.n] = updates;
       persistOverrides(OVERRIDES);
+      pushOverrideToSupabase(item.n, updates);
       item._editing = false;
       populateFilterOptions();
       render();
