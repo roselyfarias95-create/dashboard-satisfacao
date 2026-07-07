@@ -125,7 +125,7 @@
 
   /* ---------- KPI ROW ---------- */
   .kpis{
-    display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
     margin-top:24px; margin-bottom:26px;
   }
   .kpi{
@@ -577,36 +577,36 @@ const DATA = [
  setor:"Técnica / T.I.", resolvido:false,
  resolucao:"Supervisor João configurou controles, trocou baterias e no-breaks, verificou laço indutor e sensores. Única pendência é a instalação dos links de redundância; como paliativo foi colocado um modem de suporte."},
 
-{n:9, filial:"Maranhão", motivo:"Câmeras / Central", nome:"Condomínio Edifício Ana Karine", nota:"7,5", statusPesquisa:"Concluída", crit:"moderado",
+{n:9, filial:"Maranhão", motivo:"Câmeras / Central", nome:"Condomínio Edifício Ana Karine", nota:"7,5", statusPesquisa:"Concluída", crit:"ok",
  pend:"Câmeras sem gravar (resolvido, mas prazo de armazenamento pendente); visita técnica para verificar melhoria; liberação indevida de motociclista pela central sem retorno após apuração (síndico Reinaldo).",
  setor:"Técnica / Backoffice / Central", resolvido:false,
  resolucao:"Câmera sem gravar normalizada, prazo de 25 dias repassado ao síndico. Liberação indevida: operadora advertida e retorno repassado. Síndico relatou pendências ainda aguardando retorno. Pendente visita técnica para orientar alteração na porta da recepção, aguardando agendamento."},
 
-{n:10, filial:"Maranhão", motivo:"Controle de Acesso / TI", nome:"Condomínio Villagio Jardins 1", nota:"7", statusPesquisa:"Aguardando retorno", crit:"moderado",
+{n:10, filial:"Maranhão", motivo:"Controle de Acesso / TI", nome:"Condomínio Villagio Jardins 1", nota:"7", statusPesquisa:"Aguardando retorno", crit:"ok",
  pend:"Leitura de tags veiculares intermitente; queda no app e internet; cerca elétrica das casas 15 e 16 pendente de religação — avisou técnico presencialmente, sem retorno (síndica Izabel).",
  setor:"Técnica / T.I.", resolvido:false, resolucao:""},
 
-{n:11, filial:"Maranhão", motivo:"Sistema / Câmeras", nome:"Condomínio Villagio Jardins 3", nota:"8", statusPesquisa:"Concluída", crit:"moderado",
+{n:11, filial:"Maranhão", motivo:"Sistema / Câmeras", nome:"Condomínio Villagio Jardins 3", nota:"8", statusPesquisa:"Concluída", crit:"ok",
  pend:"Quedas recorrentes do sistema; lentidão; falhas em câmeras; demora no interfone — moradores perdendo mercadorias e pagando taxas extras de entrega. Aguardando 2 orçamentos para renovação (síndica Widlani).",
  setor:"Técnica / T.I.", resolvido:false, resolucao:""},
 
-{n:12, filial:"Maranhão", motivo:"Atendimento / Elétrica", nome:"Condomínio Residencial Traçoa", nota:"8", statusPesquisa:"Concluída", crit:"moderado",
+{n:12, filial:"Maranhão", motivo:"Atendimento / Elétrica", nome:"Condomínio Residencial Traçoa", nota:"8", statusPesquisa:"Concluída", crit:"ok",
  pend:"Porteiro aguardou retorno até 1h da manhã (sugestão: acionar múltiplos cadastrados da unidade); visita técnica com eletricista pendente de agendamento (síndico José Antonio).",
  setor:"Técnica / Central", resolvido:true, resolucao:""},
 
-{n:13, filial:"Maranhão", motivo:"Portões", nome:"Condomínio Renata", nota:"8", statusPesquisa:"Concluída", crit:"moderado",
+{n:13, filial:"Maranhão", motivo:"Portões", nome:"Condomínio Renata", nota:"8", statusPesquisa:"Concluída", crit:"ok",
  pend:"Portão veicular pontualmente aberto; portão de pedestres com falhas ocasionais. Ressalvas com equipe técnica.",
  setor:"Técnica", resolvido:false, resolucao:""},
 
-{n:14, filial:"Maranhão", motivo:"Portões / Câmeras", nome:"Condomínio do Edifício Village da Ilha", nota:"—", statusPesquisa:"Concluída", crit:"moderado",
+{n:14, filial:"Maranhão", motivo:"Portões / Câmeras", nome:"Condomínio do Edifício Village da Ilha", nota:"—", statusPesquisa:"Concluída", crit:"ok",
  pend:"Portão veicular com falhas pontuais; queima eventual de câmeras; falhas nos plantões noturnos (área do lixo); demora em atendimentos técnicos.",
  setor:"Técnica", resolvido:false, resolucao:""},
 
-{n:15, filial:"Maranhão", motivo:"Portões (Motor)", nome:"Condomínio St James", nota:"9", statusPesquisa:"Concluída", crit:"moderado",
+{n:15, filial:"Maranhão", motivo:"Portões (Motor)", nome:"Condomínio St James", nota:"9", statusPesquisa:"Concluída", crit:"ok",
  pend:"Barulho recorrente do motor do portão veicular. Síndica (Nazeildes) considera o motor superdimensionado para o porte do portão.",
  setor:"Técnica", resolvido:false, resolucao:""},
 
-{n:16, filial:"Maranhão", motivo:"Aplicativo / Câmeras", nome:"Cond. Villagio Jardins 4", nota:"9", statusPesquisa:"Aguardando retorno", crit:"moderado",
+{n:16, filial:"Maranhão", motivo:"Aplicativo / Câmeras", nome:"Cond. Villagio Jardins 4", nota:"9", statusPesquisa:"Aguardando retorno", crit:"ok",
  pend:"Inconsistências no app (acessos/liberações); câmeras da área de lazer e eclusa com imagens trocadas aguardando correção (síndico Kleyton).",
  setor:"Técnica", resolvido:null, resolucao:""},
 
@@ -2056,14 +2056,13 @@ function escapeHtml(s){
 const CRIT_LABELS = {
   critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)"},
   atencao:  {label:"Atenção",  sub:"nota 5–6 ou pendências graves",    color:"var(--atencao)", bg:"var(--atencao-bg)"},
-  moderado: {label:"Moderado", sub:"nota 7–8 ou pendências pontuais",  color:"var(--moderado)", bg:"var(--moderado-bg)"},
   pendente: {label:"Pendente", sub:"síndico não respondeu",            color:"var(--pendente)", bg:"var(--pendente-bg)"},
   ok:       {label:"OK",       sub:"sem pendências relevantes",        color:"var(--ok)", bg:"var(--ok-bg)"},
 };
 // Counts are computed live from the filtered set so KPIs, chart and list always agree
 function computeCounts(data){
   data = data || DATA;
-  const counts = { critico:0, atencao:0, moderado:0, pendente:0, ok:0 };
+  const counts = { critico:0, atencao:0, pendente:0, ok:0 };
   data.forEach(d=>{ if (counts[d.crit] !== undefined) counts[d.crit]++; });
   return counts;
 }
