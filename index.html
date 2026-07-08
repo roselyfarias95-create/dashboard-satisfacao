@@ -46,6 +46,41 @@
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     padding:20px;
   }
+  .users-modal{
+    position:fixed; inset:0; background:rgba(4,8,16,0.75); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .users-box{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; width:100%; max-width:460px; max-height:80vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .users-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .users-head h3{ margin:0; font-size:16px; color:var(--text); }
+  .users-sub{ font-size:11.5px; color:var(--text-faint); margin:0 0 16px; }
+  .users-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .user-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 12px; font-size:12.5px;
+  }
+  .user-row .u-name{ font-weight:600; color:var(--text); }
+  .user-row .u-role{
+    font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint);
+    border:1px solid var(--line); border-radius:20px; padding:2px 8px; margin-left:8px;
+  }
+  .user-row .u-del{
+    background:none; border:1px solid var(--line); color:var(--critico);
+    border-radius:6px; padding:3px 9px; font-size:11px; cursor:pointer;
+  }
+  .user-row .u-del:hover{ border-color:var(--critico); }
+  .users-form{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .users-form input, .users-form select{
+    background:#eef1fb; border:1px solid transparent; border-radius:8px;
+    padding:9px 11px; font-size:13px; color:#1a2333; font-family:inherit;
+  }
+  .users-add-btn{ grid-column:1 / -1; margin-top:2px; }
+  .users-error{ color:var(--critico); font-size:12px; margin:10px 0 0; text-align:center; }
   .login-box{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:18px;
     padding:40px 32px; width:100%; max-width:380px; text-align:center;
@@ -270,7 +305,7 @@
   }
   .list-header{
     display:grid;
-    grid-template-columns:34px 1fr 150px 70px 110px 74px 90px 120px 22px;
+    grid-template-columns:34px 1fr 150px 70px 80px 110px 74px 60px 90px 120px 22px;
     align-items:center;
     gap:14px;
     padding:0 16px 8px;
@@ -280,7 +315,7 @@
     color:var(--text-faint);
     font-family:"IBM Plex Mono",monospace;
   }
-  .list-header .lh-nota, .list-header .lh-crit, .list-header .lh-humor, .list-header .lh-res{ text-align:center; }
+  .list-header .lh-nota, .list-header .lh-crit, .list-header .lh-humor, .list-header .lh-res, .list-header .lh-data, .list-header .lh-nota2{ text-align:center; }
   .list-header .lh-status{ text-align:right; padding-right:4px; }
   @media (max-width:820px){
     .list-header{ display:none; }
@@ -288,7 +323,7 @@
 
   .card-head{
     display:grid;
-    grid-template-columns:34px 1fr 150px 70px 110px 74px 90px 120px 22px;
+    grid-template-columns:34px 1fr 150px 70px 80px 110px 74px 60px 90px 120px 22px;
     align-items:center;
     gap:14px;
     padding:13px 16px;
@@ -309,10 +344,19 @@
   .status{
     font-size:11px; color:var(--text-dim); text-align:right; padding-right:4px;
   }
+  .status-date{
+    display:block; font-size:9.5px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; margin-top:2px;
+  }
   .rescol{ text-align:center; }
   .humorcol{ text-align:center; }
+  .datacol{ text-align:center; font-size:11px; color:var(--text-dim); font-family:"IBM Plex Mono",monospace; }
+  .nota2col{ text-align:center; font-size:13px; font-weight:600; color:var(--text); font-family:"IBM Plex Mono",monospace; }
   .humor-pair{ display:inline-flex; align-items:center; gap:2px; font-size:13px; }
   .humor-arrow{ font-size:10px; color:var(--text-faint); }
+  .nota-pos{
+    display:block; font-size:9.5px; color:var(--ok); font-family:"IBM Plex Mono",monospace;
+    margin-top:2px; white-space:nowrap;
+  }
   .hbadge{
     display:inline-flex; align-items:center; justify-content:center;
     font-size:15px; width:30px; height:30px; border-radius:50%;
@@ -369,6 +413,8 @@
     .status{ display:none; }
     .rescol{ display:none; }
     .humorcol{ display:none; }
+    .datacol{ display:none; }
+    .nota2col{ display:none; }
     .motivo{ display:none; }
     .tag{ font-size:9.5px; padding:4px 6px; }
     .body-inner{ grid-template-columns:1fr; padding-left:20px; }
@@ -377,6 +423,7 @@
   }
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -398,6 +445,40 @@
   </form>
 </div>
 
+<div id="usersModal" class="users-modal" style="display:none;">
+  <div class="users-box">
+    <div class="users-head">
+      <h3>Gerenciar usuários</h3>
+      <button type="button" id="closeUsersBtn" class="logout-btn">Fechar</button>
+    </div>
+    <p class="users-sub">Usuários e senhas ficam salvos no Supabase — mudanças aqui valem para todos os dispositivos.</p>
+    <div id="usersList" class="users-list"></div>
+    <form id="newUserForm" class="users-form">
+      <input type="text" id="newUserName" placeholder="usuário" autocomplete="off" required>
+      <input type="password" id="newUserPass" placeholder="senha" autocomplete="new-password" required>
+      <select id="newUserRole">
+        <option value="viewer">Visualização</option>
+        <option value="editor">Editor</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
+    </form>
+    <p class="users-error" id="usersError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="newItemModal" class="users-modal" style="display:none;">
+  <div class="users-box" style="max-width:640px;">
+    <div class="users-head">
+      <h3>Adicionar pesquisa manualmente</h3>
+      <button type="button" id="closeNewItemBtn" class="logout-btn">Fechar</button>
+    </div>
+    <p class="users-sub">O novo condomínio entra na lista e sincroniza pelo Supabase para todo mundo.</p>
+    <div id="newItemFormWrap"></div>
+    <p class="users-error" id="newItemError" style="display:none;"></p>
+  </div>
+</div>
+
 <div class="wrap" id="appRoot" style="display:none;">
 
   <header>
@@ -411,6 +492,7 @@
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
+        <button type="button" id="manageUsersBtn" class="logout-btn" style="display:none;">👤 Usuários</button>
         <button type="button" id="logoutBtn" class="logout-btn">Sair</button>
       </div>
     </div>
@@ -423,6 +505,10 @@
     <div class="msf" id="filialFilterWrap">
       <button type="button" class="msf-btn" id="filialFilterBtn">Filial: todas</button>
       <div class="msf-panel" id="filialFilterPanel"></div>
+    </div>
+    <div class="msf" id="notaFilterWrap">
+      <button type="button" class="msf-btn" id="notaFilterBtn">Nota: todas</button>
+      <div class="msf-panel" id="notaFilterPanel"></div>
     </div>
     <div class="msf" id="statusFilterWrap">
       <button type="button" class="msf-btn" id="statusFilterBtn">Status da pesquisa: todos</button>
@@ -438,6 +524,8 @@
     </div>
     <button class="clearbtn" id="clearBtn">Limpar filtros</button>
     <button class="clearbtn" id="reportBtn">🖨 Relatório</button>
+    <button class="clearbtn" id="newItemBtn" style="display:none;">+ Nova pesquisa</button>
+    <button class="clearbtn" id="excelBtn">📊 Excel</button>
   </div>
 
   <div class="kpis" id="kpis"></div>
@@ -468,8 +556,10 @@
     <div>Condomínio</div>
     <div>Motivo</div>
     <div class="lh-nota">Nota</div>
+    <div class="lh-data">Data</div>
     <div class="lh-crit">Criticidade</div>
     <div class="lh-humor">Humor</div>
+    <div class="lh-nota2">Nota 2</div>
     <div class="lh-res">Resolução</div>
     <div class="lh-status">Status da pesquisa</div>
     <div></div>
@@ -486,56 +576,161 @@
 
 <script>
 // ---------- AUTENTICAÇÃO (aviso: proteção client-side, não é segurança real) ----------
-const AUTH_KEY = 'sc_pesquisa_auth_role';
-const PASSWORD_HASHES = {
-  admin: 'c33d8cfcbe560ececa40a1abe899ddc53533b558851d2a72507bb7853b4ff077',
-  view:  '7c7ed82c34045ffb429a0ac760231f1be234bfae9ccb6af3fd7513d7527626a5',
-};
+// Usuários e senhas ficam no Supabase (tabela app_users), então funcionam em qualquer
+// dispositivo. Papéis: admin (edita + gerencia usuários), editor (edita), viewer (só vê).
+const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
+let currentUsername = null;
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function showApp(role){
+const ROLE_LABELS = { admin: 'Administrador', editor: 'Editor', viewer: 'Somente visualização' };
+
+async function seedDefaultUsersIfEmpty(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('app_users').select('username').limit(1);
+    if (error) throw error;
+    if (data && data.length) return; // já tem gente cadastrada
+    const seeds = [
+      { username:'adm',  password_hash: await sha256('SucessoAdm2026'),  role:'admin'  },
+      { username:'view', password_hash: await sha256('SucessoView2026'), role:'viewer' },
+    ];
+    await sb.from('app_users').insert(seeds);
+  }catch(e){ console.error('Falha ao semear usuários padrão:', e); }
+}
+
+function showApp(role, username){
   currentRole = role;
+  currentUsername = username;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
-  document.getElementById('roleTag').textContent = role === 'admin' ? 'Modo administrador' : 'Somente visualização';
+  document.getElementById('roleTag').textContent = `${username} · ${ROLE_LABELS[role] || role}`;
+  document.getElementById('manageUsersBtn').style.display = role === 'admin' ? '' : 'none';
+  document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   render();
   updateSyncTag();
   pullOverridesFromSupabase();
+  pullExtraItemsFromSupabase();
   subscribeRealtime();
+  subscribeExtraRealtime();
 }
 
 function initAuth(){
-  const saved = localStorage.getItem(AUTH_KEY);
-  if (saved === 'admin' || saved === 'view') showApp(saved);
+  const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+  if (saved && saved.role && saved.username) showApp(saved.role, saved.username);
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const user = document.getElementById('loginUser').value.trim().toLowerCase();
   const pass = document.getElementById('loginPassword').value;
-  const hash = await sha256(pass);
   const errEl = document.getElementById('loginError');
-  if (user === 'adm' && hash === PASSWORD_HASHES.admin){
-    localStorage.setItem(AUTH_KEY, 'admin');
-    showApp('admin');
-  } else if (user === 'view' && hash === PASSWORD_HASHES.view){
-    localStorage.setItem(AUTH_KEY, 'view');
-    showApp('view');
-  } else {
+  errEl.style.display = 'none';
+  if (!sb){
+    errEl.textContent = 'Sem conexão com o servidor de login. Verifique sua internet e recarregue a página.';
     errEl.style.display = 'block';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginPassword').focus();
+    return;
+  }
+  try{
+    await seedDefaultUsersIfEmpty();
+    const hash = await sha256(pass);
+    const { data, error } = await sb.from('app_users').select('*').eq('username', user).limit(1);
+    if (error) throw error;
+    const row = data && data[0];
+    if (!row || row.password_hash !== hash){
+      errEl.textContent = 'Usuário ou senha incorretos.';
+      errEl.style.display = 'block';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginPassword').focus();
+      return;
+    }
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ role: row.role, username: row.username }));
+    showApp(row.role, row.username);
+  }catch(err){
+    console.error(err);
+    errEl.textContent = 'Erro ao conectar com o servidor de login. Tente novamente.';
+    errEl.style.display = 'block';
   }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
   localStorage.removeItem(AUTH_KEY);
   location.reload();
+});
+
+// ---- Gerenciamento de usuários (só admin) ----
+async function renderUsersList(){
+  const el = document.getElementById('usersList');
+  if (!sb){ el.innerHTML = '<p class="users-error">Sem conexão com o servidor.</p>'; return; }
+  el.innerHTML = '<p style="color:var(--text-faint);font-size:12px;">Carregando...</p>';
+  try{
+    const { data, error } = await sb.from('app_users').select('*').order('created_at', { ascending:true });
+    if (error) throw error;
+    el.innerHTML = (data||[]).map(u => `
+      <div class="user-row" data-username="${escapeHtml(u.username)}">
+        <div><span class="u-name">${escapeHtml(u.username)}</span><span class="u-role">${ROLE_LABELS[u.role] || u.role}</span></div>
+        <button type="button" class="u-del">Remover</button>
+      </div>`).join('') || '<p style="color:var(--text-faint);font-size:12px;">Nenhum usuário cadastrado.</p>';
+    el.querySelectorAll('.u-del').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const username = btn.closest('.user-row').dataset.username;
+        if (username === currentUsername){
+          alert('Você não pode remover o próprio usuário logado.');
+          return;
+        }
+        if (!confirm(`Remover o usuário "${username}"?`)) return;
+        try{
+          const { error } = await sb.from('app_users').delete().eq('username', username);
+          if (error) throw error;
+          renderUsersList();
+        }catch(e){ alert('Erro ao remover: ' + e.message); }
+      };
+    });
+  }catch(e){
+    el.innerHTML = `<p class="users-error">Erro ao carregar usuários: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+document.getElementById('manageUsersBtn').addEventListener('click', ()=>{
+  document.getElementById('usersModal').style.display = 'flex';
+  document.getElementById('usersError').style.display = 'none';
+  renderUsersList();
+});
+document.getElementById('closeUsersBtn').addEventListener('click', ()=>{
+  document.getElementById('usersModal').style.display = 'none';
+});
+
+document.getElementById('newUserForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('usersError');
+  errEl.style.display = 'none';
+  const username = document.getElementById('newUserName').value.trim().toLowerCase();
+  const password = document.getElementById('newUserPass').value;
+  const role = document.getElementById('newUserRole').value;
+  if (!username || !password){ return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const password_hash = await sha256(password);
+    const { error } = await sb.from('app_users').insert({ username, password_hash, role, created_by: currentUsername });
+    if (error){
+      if (String(error.message||'').toLowerCase().includes('duplicate')){
+        errEl.textContent = `O usuário "${username}" já existe.`;
+      } else {
+        errEl.textContent = 'Erro ao criar usuário: ' + error.message;
+      }
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('newUserForm').reset();
+    renderUsersList();
+  }catch(e){
+    errEl.textContent = 'Erro ao criar usuário: ' + e.message;
+    errEl.style.display = 'block';
+  }
 });
 
 </script>
@@ -1903,6 +2098,7 @@ function classifyMotivos(item){
 const HUMOR_LABELS = {
   muito_insatisfeito: { label: 'Muito insatisfeito', emoji: '😠', color: 'var(--critico)' },
   insatisfeito:        { label: 'Insatisfeito',        emoji: '🙁', color: 'var(--atencao)' },
+  insatisfeito_pos:    { label: 'Insatisfeito (nota pós-resolução abaixo de 8)', emoji: '😠', color: 'var(--critico)' },
   satisfeito:           { label: 'Satisfeito',          emoji: '🙂', color: 'var(--ok)' },
   nao_avaliado:         { label: 'Não avaliado',        emoji: '⚪', color: 'var(--pendente)' },
   aguardando:           { label: 'Aguardando resolução', emoji: '⏳', color: 'var(--pendente)' },
@@ -1937,6 +2133,12 @@ function classifyHumorInicial(item){
   return 'satisfeito';
 }
 function classifyHumorFinal(item){
+  // Se o síndico deu uma nota nova após a resolução, ela manda mais que qualquer
+  // suposição por texto: abaixo de 8, o problema não foi bem resolvido de verdade.
+  if (item.notaPosResolucao){
+    const n2 = parseFloat(String(item.notaPosResolucao).replace(',', '.'));
+    if (!isNaN(n2)) return n2 < 8 ? 'insatisfeito_pos' : 'satisfeito';
+  }
   if (item.resolvido === true){
     const t = (item.resolucao || '').toLowerCase();
     if (/insatisfeit|n[ãa]o resolvid|sem solu[çc][ãa]o|pretende cancelar/.test(t)) return 'insatisfeito';
@@ -1968,17 +2170,70 @@ function updateSyncTag(){
   el.textContent = s.text;
 }
 
+// ---- Condomínios adicionados manualmente (tabela condo_extra) ----
+function extraRowToItem(row){
+  return {
+    n: row.item_n, filial: row.filial, nome: row.nome, nota: row.nota, dataPesquisa: row.data_pesquisa || '',
+    statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor, motivo: row.motivo,
+    resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao || '', pend: row.pend, resolucao: row.resolucao,
+  };
+}
+function itemToExtraRow(item){
+  return {
+    item_n: item.n, filial: item.filial, nome: item.nome, nota: item.nota, data_pesquisa: item.dataPesquisa || null,
+    status_pesquisa: item.statusPesquisa, crit: item.crit, setor: item.setor, motivo: item.motivo,
+    resolvido: item.resolvido, nota_pos_resolucao: item.notaPosResolucao || null, pend: item.pend, resolucao: item.resolucao,
+    created_by: currentUsername || 'desconhecido',
+  };
+}
+async function pullExtraItemsFromSupabase(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('condo_extra').select('*');
+    if (error) throw error;
+    let added = false;
+    (data || []).forEach(row=>{
+      if (!DATA.some(d => d.n === row.item_n)){
+        DATA.push(extraRowToItem(row));
+        added = true;
+      }
+    });
+    if (added){
+      applyOverrides();
+      populateFilterOptions();
+    }
+    if (typeof render === 'function') render();
+  }catch(e){
+    console.error('Falha ao buscar condomínios adicionados manualmente:', e);
+  }
+}
+function subscribeExtraRealtime(){
+  if (!sb) return;
+  sb.channel('condo_extra_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'condo_extra' }, (payload)=>{
+      const row = payload.new;
+      if (!row) return;
+      if (!DATA.some(d => d.n === row.item_n)){
+        DATA.push(extraRowToItem(row));
+        applyOverrides();
+        populateFilterOptions();
+        if (typeof render === 'function') render();
+      }
+    })
+    .subscribe();
+}
+
 function rowToUpdates(row){
   return {
-    nota: row.nota, statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor,
-    motivo: row.motivo, resolvido: row.resolvido, pend: row.pend, resolucao: row.resolucao,
+    nota: row.nota, dataPesquisa: row.data_pesquisa, statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor,
+    motivo: row.motivo, resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao, pend: row.pend, resolucao: row.resolucao,
   };
 }
 function updatesToRow(itemN, updates){
   return {
-    item_n: itemN, nota: updates.nota, status_pesquisa: updates.statusPesquisa, crit: updates.crit,
-    setor: updates.setor, motivo: updates.motivo, resolvido: updates.resolvido, pend: updates.pend,
-    resolucao: updates.resolucao, updated_by: currentRole || 'desconhecido', updated_at: new Date().toISOString(),
+    item_n: itemN, nota: updates.nota, data_pesquisa: updates.dataPesquisa || null, status_pesquisa: updates.statusPesquisa, crit: updates.crit,
+    setor: updates.setor, motivo: updates.motivo, resolvido: updates.resolvido, nota_pos_resolucao: updates.notaPosResolucao || null, pend: updates.pend,
+    resolucao: updates.resolucao, updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
   };
 }
 
@@ -2053,6 +2308,13 @@ function escapeHtml(s){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function formatDateBR(iso){
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return escapeHtml(iso);
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 const CRIT_LABELS = {
   critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)"},
   atencao:  {label:"Atenção",  sub:"nota 5–6 ou pendências graves",    color:"var(--atencao)", bg:"var(--atencao-bg)"},
@@ -2098,6 +2360,7 @@ let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
 let selectedSetores = [];
 let selectedResolvidos = []; // valores: 'true' | 'false' | 'null'
+let selectedNotaFaixas = []; // índices de NOTA_FAIXAS selecionados (como string)
 let activeSetorBar = null;  // clique no gráfico de setor
 let activeMotivoBar = null; // clique no gráfico de motivo
 let SETORES_CANONICOS = []; // preenchido em populateFilterOptions, usado no form de edição
@@ -2125,16 +2388,17 @@ const NOTA_FAIXAS = [
   { label:'0 – 2',     min:0,  max:2.999, color:'var(--critico)' },
   { label:'Sem nota',  min:null, max:null, color:'var(--pendente)' },
 ];
+function notaFaixaIndex(item){
+  const n = parseFloat(String(item.nota).replace(',', '.'));
+  const idx = isNaN(n)
+    ? NOTA_FAIXAS.length - 1
+    : NOTA_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
+  return idx === -1 ? NOTA_FAIXAS.length - 1 : idx;
+}
 function renderNotaChart(data){
   data = data || DATA;
   const counts = NOTA_FAIXAS.map(()=>0);
-  data.forEach(d=>{
-    const n = parseFloat(String(d.nota).replace(',', '.'));
-    const idx = isNaN(n)
-      ? NOTA_FAIXAS.length - 1
-      : NOTA_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
-    counts[idx === -1 ? NOTA_FAIXAS.length - 1 : idx]++;
-  });
+  data.forEach(d=>{ counts[notaFaixaIndex(d)]++; });
   const total = data.length;
   const max = Math.max(...counts);
   const el = document.getElementById('notaChart');
@@ -2145,13 +2409,25 @@ function renderNotaChart(data){
   el.innerHTML = NOTA_FAIXAS.map((f, i)=>{
     const n = counts[i];
     const pct = max ? (n / max * 100) : 0;
+    const isActive = selectedNotaFaixas.includes(String(i));
     return `
-      <div class="chart-row" style="--bc:${f.color}" title="${n} condomínio(s)">
+      <div class="chart-row ${isActive ? 'active':''}" data-idx="${i}" style="--bc:${f.color}" title="Clique para filtrar · ${n} condomínio(s)">
         <div class="chart-lbl">${f.label}</div>
-        <div class="chart-track"><div class="chart-fill" style="width:${pct}%"></div></div>
+        <div class="chart-track"><div class="chart-fill" style="width:${pct}%; opacity:${(!selectedNotaFaixas.length || isActive) ? 1 : 0.35}"></div></div>
         <div class="chart-n">${n}</div>
       </div>`;
   }).join('') + `<div class="chart-total">${total} condomínios no total</div>`;
+  el.querySelectorAll('.chart-row').forEach(row=>{
+    row.style.cursor = 'pointer';
+    row.onclick = ()=>{
+      const idx = row.dataset.idx;
+      if (selectedNotaFaixas.includes(idx)) selectedNotaFaixas = selectedNotaFaixas.filter(v=>v!==idx);
+      else selectedNotaFaixas = [...selectedNotaFaixas, idx];
+      updateMultiFilterLabel('notaFilterBtn', selectedNotaFaixas, NOTA_FAIXAS.map((f,i)=>({value:String(i),label:f.label})), 'Nota');
+      syncMultiFilterCheckboxes('notaFilterPanel', selectedNotaFaixas);
+      render();
+    };
+  });
 }
 
 function computeDistribution(data, getCats){
@@ -2249,6 +2525,13 @@ function setupMultiFilter({ btnId, panelId, wrapId, getSelected, setSelected, op
     });
   }
 }
+function syncMultiFilterCheckboxes(panelId, selectedValues){
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+    cb.checked = selectedValues.includes(cb.value);
+  });
+}
 function updateMultiFilterLabel(btnId, selected, options, prefixLabel){
   const btn = document.getElementById(btnId);
   if (!selected.length) btn.textContent = `${prefixLabel}: todos`;
@@ -2268,6 +2551,12 @@ function populateFilterOptions(){
     btnId:'filialFilterBtn', panelId:'filialFilterPanel', wrapId:'filialFilterWrap',
     getSelected:()=>selectedFiliais, setSelected:(v)=>{selectedFiliais=v;},
     options: filiais.map(f=>({value:f,label:f})), prefixLabel:'Filial',
+  });
+
+  setupMultiFilter({
+    btnId:'notaFilterBtn', panelId:'notaFilterPanel', wrapId:'notaFilterWrap',
+    getSelected:()=>selectedNotaFaixas, setSelected:(v)=>{selectedNotaFaixas=v;},
+    options: NOTA_FAIXAS.map((f,i)=>({value:String(i), label:f.label})), prefixLabel:'Nota',
   });
 
   const statuses = [...new Set(DATA.map(d=>d.statusPesquisa))].sort();
@@ -2300,6 +2589,7 @@ function populateFilterOptions(){
 function baseMatches(item, q){
   if (selectedStatuses.length && !selectedStatuses.includes(item.statusPesquisa)) return false;
   if (selectedFiliais.length && !selectedFiliais.includes(item.filial)) return false;
+  if (selectedNotaFaixas.length && !selectedNotaFaixas.includes(String(notaFaixaIndex(item)))) return false;
   if (selectedSetores.length){
     const tokens = item.setor ? item.setor.split('/').map(s=>s.trim()) : [];
     if (!tokens.some(t => selectedSetores.includes(t))) return false;
@@ -2361,6 +2651,7 @@ function editFormHTML(item){
   return `
     <div class="edit-form">
       <label>Nota<input type="text" class="ef-nota" value="${escapeHtml(item.nota)}"></label>
+      <label>Data da pesquisa<input type="date" class="ef-data" value="${escapeHtml(item.dataPesquisa || '')}"></label>
       <label>Status da pesquisa<input type="text" class="ef-status" value="${escapeHtml(item.statusPesquisa)}"></label>
       <label>Criticidade<select class="ef-crit">${critOptions}</select></label>
       <label>Setor responsável
@@ -2391,6 +2682,9 @@ function editFormHTML(item){
           <option value="null" ${resolvidoVal==='null'?'selected':''}>Não se aplica</option>
         </select>
       </label>
+      <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
+        <input type="text" class="ef-nota-pos" placeholder="ex: 9" value="${escapeHtml(item.notaPosResolucao || '')}">
+      </label>
       <label class="full">Pendências / Reclamações<textarea class="ef-pend">${escapeHtml(item.pend)}</textarea></label>
       <label class="full">Encaminhamento / Retorno<textarea class="ef-resolucao">${escapeHtml(item.resolucao)}</textarea></label>
       <div class="edit-actions">
@@ -2400,6 +2694,121 @@ function editFormHTML(item){
     </div>
   `;
 }
+
+function newItemFormHTML(){
+  const critOptions = Object.keys(CRIT_LABELS).map(k => `<option value="${k}">${CRIT_LABELS[k].label}</option>`).join('');
+  const filiaisExistentes = [...new Set(DATA.map(d=>d.filial))].sort();
+  return `
+    <div class="edit-form">
+      <label class="full">Condomínio
+        <input type="text" class="ni-nome" placeholder="Nome do condomínio" required>
+      </label>
+      <label>Filial
+        <input type="text" class="ni-filial" list="ni-filial-list" placeholder="ex: Maranhão" required>
+        <datalist id="ni-filial-list">${filiaisExistentes.map(f=>`<option value="${escapeHtml(f)}">`).join('')}</datalist>
+      </label>
+      <label>Nota<input type="text" class="ni-nota" placeholder="ex: 8"></label>
+      <label>Data da pesquisa<input type="date" class="ni-data"></label>
+      <label>Status da pesquisa<input type="text" class="ni-status" placeholder="ex: Concluída" value="Concluída"></label>
+      <label>Criticidade<select class="ni-crit">${critOptions}</select></label>
+      <label>Setor responsável
+        <select class="ni-setor" multiple size="6">
+          ${SETORES_CANONICOS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
+        </select>
+      </label>
+      <label>Motivo da reclamação
+        <select class="ni-motivo" multiple size="6">
+          ${MOTIVOS_CANONICOS.map(m => `<option value="${m}">${m}</option>`).join('')}
+        </select>
+      </label>
+      <label class="ni-motivo-outro-wrap" style="display:none;">
+        Especifique o motivo
+        <input type="text" class="ni-motivo-outro" placeholder="Descreva o motivo...">
+      </label>
+      <label>Resolvido
+        <select class="ni-resolvido">
+          <option value="null" selected>Não se aplica</option>
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+      </label>
+      <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
+        <input type="text" class="ni-nota-pos" placeholder="ex: 9">
+      </label>
+      <label class="full">Pendências / Reclamações<textarea class="ni-pend"></textarea></label>
+      <label class="full">Encaminhamento / Retorno<textarea class="ni-resolucao"></textarea></label>
+      <div class="edit-actions">
+        <button type="button" class="btn-cancel" id="niCancelBtn">Cancelar</button>
+        <button type="button" class="btn-save" id="niSaveBtn">Adicionar</button>
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('newItemBtn').addEventListener('click', ()=>{
+  document.getElementById('newItemFormWrap').innerHTML = newItemFormHTML();
+  document.getElementById('newItemError').style.display = 'none';
+  document.getElementById('newItemModal').style.display = 'flex';
+
+  const wrap = document.getElementById('newItemModal');
+  wrap.querySelector('.ni-motivo').addEventListener('change', ()=>{
+    const outrosSelected = [...wrap.querySelector('.ni-motivo').selectedOptions].some(o=>o.value==='Outros');
+    wrap.querySelector('.ni-motivo-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
+  });
+  wrap.querySelector('#niCancelBtn').addEventListener('click', ()=>{
+    document.getElementById('newItemModal').style.display = 'none';
+  });
+  wrap.querySelector('#niSaveBtn').addEventListener('click', async ()=>{
+    const errEl = document.getElementById('newItemError');
+    errEl.style.display = 'none';
+    const nome = wrap.querySelector('.ni-nome').value.trim();
+    const filial = wrap.querySelector('.ni-filial').value.trim();
+    if (!nome || !filial){
+      errEl.textContent = 'Preencha ao menos o nome do condomínio e a filial.';
+      errEl.style.display = 'block';
+      return;
+    }
+    const resolvidoRaw = wrap.querySelector('.ni-resolvido').value;
+    const motivoVals = [...wrap.querySelector('.ni-motivo').selectedOptions].map(o=>o.value);
+    const outroTexto = wrap.querySelector('.ni-motivo-outro').value.trim();
+    const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+    const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+    const item = {
+      n: newN,
+      filial,
+      nome,
+      nota: wrap.querySelector('.ni-nota').value.trim(),
+      dataPesquisa: wrap.querySelector('.ni-data').value.trim(),
+      statusPesquisa: wrap.querySelector('.ni-status').value.trim() || 'Concluída',
+      crit: wrap.querySelector('.ni-crit').value,
+      setor: [...wrap.querySelector('.ni-setor').selectedOptions].map(o=>o.value).join(' / ') || '—',
+      motivo: motivoFinal.join(' / ') || '—',
+      resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
+      notaPosResolucao: wrap.querySelector('.ni-nota-pos').value.trim(),
+      pend: wrap.querySelector('.ni-pend').value.trim(),
+      resolucao: wrap.querySelector('.ni-resolucao').value.trim(),
+    };
+    item.humor = classifyHumor(item);
+
+    DATA.push(item);
+    populateFilterOptions();
+    render();
+    document.getElementById('newItemModal').style.display = 'none';
+
+    if (sb){
+      try{
+        const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
+        if (error) throw error;
+      }catch(e){
+        console.error('Falha ao salvar novo condomínio no Supabase:', e);
+        alert('O condomínio foi adicionado nesta tela, mas não foi possível sincronizar com o servidor agora. Ele pode não aparecer em outros dispositivos até a conexão voltar.');
+      }
+    }
+  });
+});
+document.getElementById('closeNewItemBtn').addEventListener('click', ()=>{
+  document.getElementById('newItemModal').style.display = 'none';
+});
 
 function render(){
   const q = document.getElementById('search').value.trim();
@@ -2441,7 +2850,7 @@ function render(){
             <p class="blk-text">${item.resolucao ? escapeHtml(item.resolucao) : 'Sem detalhamento de resolução registrado.'}</p>
           </div>
         </div>
-        ${currentRole === 'admin' ? `<div class="body-actions"><button type="button" class="edit-btn">✎ Editar</button></div>` : ''}
+        ${['admin','editor'].includes(currentRole) ? `<div class="body-actions"><button type="button" class="edit-btn">✎ Editar</button></div>` : ''}
       `;
 
     card.innerHTML = `
@@ -2450,8 +2859,10 @@ function render(){
         <div class="name">${escapeHtml(item.nome)}<small>${escapeHtml(item.filial)}${item.setor !== '—' ? ' · ' + escapeHtml(item.setor) : ''}</small></div>
         <div class="motivo">${escapeHtml(item.motivo || '—')}</div>
         <div class="nota">${escapeHtml(item.nota)}<span class="nlabel">nota</span></div>
+        <div class="datacol">${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</div>
         <div class="tag">${c.label}</div>
         <div class="humorcol">${humorCell(item)}</div>
+        <div class="nota2col">${item.notaPosResolucao ? escapeHtml(item.notaPosResolucao) : '—'}</div>
         <div class="rescol">${resolvedBadge(item.resolvido)}</div>
         <div class="status">${escapeHtml(item.statusPesquisa)}</div>
         <div class="chev">▶</div>
@@ -2496,11 +2907,13 @@ function render(){
       const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
       const updates = {
         nota: form.querySelector('.ef-nota').value.trim(),
+        dataPesquisa: form.querySelector('.ef-data').value.trim(),
         statusPesquisa: form.querySelector('.ef-status').value.trim(),
         crit: form.querySelector('.ef-crit').value,
         setor: [...form.querySelector('.ef-setor').selectedOptions].map(o=>o.value).join(' / ') || '—',
         motivo: motivoFinal.join(' / ') || '—',
         resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
+        notaPosResolucao: form.querySelector('.ef-nota-pos').value.trim(),
         pend: form.querySelector('.ef-pend').value.trim(),
         resolucao: form.querySelector('.ef-resolucao').value.trim(),
       };
@@ -2531,7 +2944,6 @@ function generateReport(){
         <td>${escapeHtml(item.filial)}</td>
         <td>${escapeHtml(item.nome)}</td>
         <td>${escapeHtml(item.nota)}</td>
-        <td>${escapeHtml(item.statusPesquisa)}</td>
         <td>${c ? c.label : ''}</td>
         <td>${escapeHtml(item.motivo || '—')}</td>
         <td>${escapeHtml(item.setor)}</td>
@@ -2544,6 +2956,7 @@ function generateReport(){
   const filtrosAplicados = [
     q ? `Busca: "${escapeHtml(q)}"` : null,
     selectedFiliais.length ? `Filial: ${selectedFiliais.map(escapeHtml).join(', ')}` : null,
+    selectedNotaFaixas.length ? `Nota: ${selectedNotaFaixas.map(i=>NOTA_FAIXAS[+i].label).join(', ')}` : null,
     selectedStatuses.length ? `Status da pesquisa: ${selectedStatuses.map(escapeHtml).join(', ')}` : null,
     selectedSetores.length ? `Setor: ${selectedSetores.map(escapeHtml).join(', ')}` : null,
     selectedResolvidos.length ? `Resolução: ${selectedResolvidos.map(v=>v==='true'?'Resolvido':(v==='false'?'Em andamento':'Não se aplica')).join(', ')}` : null,
@@ -2577,7 +2990,7 @@ function generateReport(){
   </div>
   <table>
     <thead><tr>
-      <th>Nº</th><th>Filial</th><th>Condomínio</th><th>Nota</th><th>Status</th><th>Criticidade</th>
+      <th>Nº</th><th>Filial</th><th>Condomínio</th><th>Nota</th><th>Criticidade</th>
       <th>Motivo</th><th>Setor</th><th>Resolvido</th><th>Pendências/Reclamações</th><th>Retorno</th>
     </tr></thead>
     <tbody>${rows}</tbody>
@@ -2595,6 +3008,7 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('clearBtn').addEventListener('click', ()=>{
   document.getElementById('search').value='';
   selectedFiliais = [];
+  selectedNotaFaixas = [];
   selectedStatuses = [];
   selectedSetores = [];
   selectedResolvidos = [];
@@ -2606,6 +3020,44 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('reportBtn').addEventListener('click', generateReport);
+
+function exportExcel(){
+  const q = document.getElementById('search').value.trim();
+  const filtered = DATA.filter(d=>matches(d,q));
+
+  if (typeof XLSX === 'undefined'){
+    alert('Não foi possível carregar a biblioteca de exportação Excel. Verifique sua conexão com a internet e tente novamente.');
+    return;
+  }
+
+  const rows = filtered.map(item=>{
+    const c = CRIT_LABELS[item.crit];
+    return {
+      'Nº': item.n,
+      'Filial': item.filial,
+      'Condomínio': item.nome,
+      'Nota': item.nota,
+      'Criticidade': c ? c.label : '',
+      'Motivo': item.motivo || '—',
+      'Setor': item.setor,
+      'Resolvido': item.resolvido===true ? 'Resolvido' : (item.resolvido===false ? 'Em andamento' : '—'),
+      'Pendências/Reclamações': item.pend,
+      'Retorno': item.resolucao || '—',
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:5}, {wch:12}, {wch:34}, {wch:8}, {wch:12}, {wch:24}, {wch:20}, {wch:12}, {wch:50}, {wch:50}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Pesquisa de Satisfação');
+
+  const dataStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `pesquisa_satisfacao_${dataStr}.xlsx`);
+}
+
+document.getElementById('excelBtn').addEventListener('click', exportExcel);
 
 populateFilterOptions();
 document.getElementById('totalCondos').textContent = `${DATA.length} condomínios monitorados`;
