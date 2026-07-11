@@ -6,13 +6,13 @@
 <title>Pesquisa de Satisfação — Todas as Filiais — Junho 2026</title>
 <style>
   :root{
-    --bg: #0d1117;
-    --bg-panel: #131a24;
-    --bg-panel-2: #171f2b;
-    --line: #232c3a;
-    --text: #e8edf4;
-    --text-dim: #8b96a8;
-    --text-faint: #5b6779;
+    --bg: #0b1220;
+    --bg-panel: #141b2d;
+    --bg-panel-2: #1b2438;
+    --line: #2a3348;
+    --text: #e7ecf5;
+    --text-dim: #97a3ba;
+    --text-faint: #5b6478;
 
     --critico: #ef4444;
     --critico-bg: rgba(239,68,68,0.10);
@@ -31,7 +31,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background: radial-gradient(1200px 800px at 10% -10%, #10202f 0%, var(--bg) 45%) fixed;
+    background: var(--bg);
     color:var(--text);
     font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
@@ -39,7 +39,7 @@
 
   @font-face{ font-family:'IBM Plex Mono'; src:local('IBM Plex Mono'); }
 
-  .wrap{ max-width:1180px; margin:0 auto; padding:28px 20px 80px; }
+  .wrap{ max-width:1360px; margin:0 auto; padding:28px 20px 80px; }
 
   /* ---------- LOGIN ---------- */
   .login-overlay{
@@ -90,7 +90,7 @@
     width:64px; height:64px; margin:0 auto 18px;
     display:flex; align-items:center; justify-content:center;
     border-radius:16px; font-size:30px;
-    background:linear-gradient(135deg, #4f7cff, #8b5cf6);
+    background:linear-gradient(135deg, #38bdf8, #6366f1);
   }
   .login-eyebrow{
     font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em;
@@ -109,7 +109,7 @@
   }
   .login-input:focus{ outline:none; border-color:var(--accent); }
   .login-btn{
-    width:100%; background:linear-gradient(135deg, #4f7cff, #8b5cf6); color:#fff; border:none; border-radius:9px;
+    width:100%; background:linear-gradient(135deg, #38bdf8, #6366f1); color:#fff; border:none; border-radius:9px;
     padding:13px; font-weight:700; font-size:14.5px; cursor:pointer; margin-top:6px;
   }
   .login-btn:hover{ opacity:0.92; }
@@ -132,6 +132,32 @@
   .logout-btn:hover{ border-color:var(--accent); color:var(--accent); }
 
   /* ---------- HEADER ---------- */
+  .main-layout{ display:flex; gap:28px; align-items:flex-start; }
+  .sidebar{
+    width:208px; flex-shrink:0;
+    display:flex; flex-direction:column; gap:4px;
+    position:sticky; top:20px;
+  }
+  .tab-btn{
+    background:none; border:none; color:var(--text-faint); font-family:inherit; font-size:13.5px;
+    font-weight:600; cursor:pointer; text-align:left;
+    display:flex; align-items:center; gap:10px;
+    padding:11px 14px; border-radius:9px;
+    border-left:3px solid transparent;
+  }
+  .tab-btn:hover{ background:var(--bg-panel-2); color:var(--text); }
+  .tab-btn.active{ color:var(--text); background:var(--bg-panel); border-left-color:var(--accent); }
+  .tab-btn span{ flex:1; }
+  .content-area{ flex:1; min-width:0; }
+  .tab-panel{ display:block; }
+  #cadastroFrame{ width:100%; min-height:82vh; border:0; border-radius:12px; background:#F4F6F8; }
+  @media (max-width:820px){
+    .main-layout{ flex-direction:column; }
+    .sidebar{ width:100%; flex-direction:row; position:static; overflow-x:auto; gap:8px; }
+    .tab-btn{ border-left:none; border-bottom:3px solid transparent; white-space:nowrap; }
+    .tab-btn.active{ border-bottom-color:var(--accent); }
+  }
+
   header{
     display:flex; justify-content:space-between; align-items:flex-end;
     gap:20px; flex-wrap:wrap;
@@ -166,18 +192,23 @@
   .kpi{
     background:var(--bg-panel);
     border:1px solid var(--line);
-    border-left:3px solid var(--kc);
-    border-radius:8px;
-    padding:14px 16px;
+    border-radius:16px;
+    padding:16px 18px;
     cursor:pointer;
-    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
     position:relative;
     user-select:none;
+    overflow:hidden;
   }
-  .kpi:hover{ transform:translateY(-2px); background:var(--bg-panel-2); }
-  .kpi.active{ background:var(--bg-panel-2); border-color:var(--kc); }
+  .kpi:hover{ transform:translateY(-2px); box-shadow:0 8px 24px -8px rgba(0,0,0,.35); }
+  .kpi.active{ background:var(--bg-panel-2); border-color:var(--kc); box-shadow:0 0 0 1px var(--kc); }
+  .kpi-icon{
+    position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    background:color-mix(in srgb, var(--kc) 18%, transparent);
+  }
   .kpi .num{ font-family:"IBM Plex Mono",monospace; font-size:26px; font-weight:600; color:var(--kc); line-height:1; }
-  .kpi .lbl{ margin-top:6px; font-size:11.5px; color:var(--text-dim); letter-spacing:.02em; }
+  .kpi .lbl{ margin-top:6px; font-size:11.5px; color:var(--text-dim); letter-spacing:.02em; font-weight:600; }
   .kpi .sub{ margin-top:2px; font-size:10.5px; color:var(--text-faint); }
 
   /* ---------- FILTER BAR ---------- */
@@ -291,6 +322,14 @@
   .charts-grid-3{ grid-template-columns:1fr 1fr 1fr; }
   @media (max-width:1100px){ .charts-grid-3{ grid-template-columns:1fr 1fr; } }
   @media (max-width:820px){ .charts-grid-3{ grid-template-columns:1fr; } }
+  .charts-grid-2{ grid-template-columns:1.4fr 1fr; margin-bottom:14px; }
+  @media (max-width:900px){ .charts-grid-2{ grid-template-columns:1fr; } }
+  .donut-wrap{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .donut-legend{ display:flex; flex-direction:column; gap:8px; font-size:12px; }
+  .donut-legend-row{ display:flex; align-items:center; gap:8px; }
+  .donut-legend-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .donut-legend-label{ color:var(--text-dim); }
+  .donut-legend-n{ font-family:"IBM Plex Mono",monospace; color:var(--text-faint); margin-left:auto; padding-left:10px; }
 
   /* ---------- LIST ---------- */
   .list{ display:flex; flex-direction:column; gap:8px; }
@@ -375,7 +414,7 @@
     white-space:nowrap;
   }
   .rbadge.yes{ color:var(--ok); border-color:rgba(34,197,94,0.3); }
-  .rbadge.no{ color:var(--accent); border-color:rgba(56,189,248,0.3); }
+  .rbadge.no{ color:var(--accent); border-color:rgba(244,114,182,0.35); }
   .chev{ color:var(--text-faint); font-size:12px; transition:transform .18s ease; text-align:center; }
   .card.open .chev{ transform:rotate(90deg); }
 
@@ -397,7 +436,7 @@
     border:1px solid var(--line); color:var(--text-dim); font-family:"IBM Plex Mono",monospace;
   }
   .pill.resolved-yes{ color:var(--ok); border-color:rgba(34,197,94,0.3); }
-  .pill.resolved-no{ color:var(--accent); border-color:rgba(56,189,248,0.3); }
+  .pill.resolved-no{ color:var(--accent); border-color:rgba(244,114,182,0.35); }
   .alert-update{
     margin-top:10px; padding:8px 10px; background:var(--critico-bg); border:1px solid rgba(239,68,68,0.3);
     border-radius:6px; font-size:11.5px; color:#fca5a5; font-family:"IBM Plex Mono",monospace;
@@ -479,6 +518,23 @@
   </div>
 </div>
 
+<div id="rodadaModal" class="users-modal" style="display:none;">
+  <div class="users-box" style="max-width:460px;">
+    <div class="users-head">
+      <h3>Nova rodada mensal</h3>
+      <button type="button" id="closeRodadaBtn" class="logout-btn">Fechar</button>
+    </div>
+    <p class="users-sub">Cria uma pesquisa "não realizada" para <b>todos</b> os condomínios do Cadastro nesse mês. Não afeta os meses já existentes.</p>
+    <label style="display:flex; flex-direction:column; gap:5px; font-size:10.5px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px;">
+      Mês da nova rodada
+      <input type="month" id="rodadaMesInput" style="background:#eef1fb; border:1px solid transparent; border-radius:8px; padding:9px 11px; font-size:13px; color:#1a2333; font-family:inherit;">
+    </label>
+    <button type="button" id="rodadaConfirmBtn" class="login-btn users-add-btn">Criar rodada</button>
+    <p class="users-error" id="rodadaError" style="display:none;"></p>
+    <p id="rodadaProgress" style="font-size:12px; color:var(--text-faint); text-align:center; margin-top:10px; display:none;"></p>
+  </div>
+</div>
+
 <div class="wrap" id="appRoot" style="display:none;">
 
   <header>
@@ -487,7 +543,7 @@
       <h1>Pesquisa de Satisfação <span>— Todas as Filiais</span></h1>
     </div>
     <div class="headmeta">
-      <div><b>Referência</b> Junho / 2026</div>
+      <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div class="session-info">
         <span id="roleTag"></span>
@@ -498,9 +554,20 @@
     </div>
   </header>
 
+  <div class="main-layout">
+    <nav class="sidebar">
+      <button type="button" class="tab-btn active" data-tab="pesquisa">📋 <span>Pesquisa de Satisfação</span></button>
+      <button type="button" class="tab-btn" data-tab="cadastro">🏢 <span>Cadastro de Condomínios</span></button>
+    </nav>
+
+    <div class="content-area">
+
+  <div id="tabPesquisa" class="tab-panel">
+
   <div class="stats-strip" id="statsStrip"></div>
 
   <div class="toolbar">
+    <select id="mesSelector" class="msf-btn" style="cursor:pointer;"></select>
     <input class="search" id="search" type="text" placeholder="Buscar condomínio, síndico, palavra-chave...">
     <div class="msf" id="filialFilterWrap">
       <button type="button" class="msf-btn" id="filialFilterBtn">Filial: todas</button>
@@ -525,14 +592,24 @@
     <button class="clearbtn" id="clearBtn">Limpar filtros</button>
     <button class="clearbtn" id="reportBtn">🖨 Relatório</button>
     <button class="clearbtn" id="newItemBtn" style="display:none;">+ Nova pesquisa</button>
+    <button class="clearbtn" id="newRodadaBtn" style="display:none;">📅 Nova rodada mensal</button>
     <button class="clearbtn" id="excelBtn">📊 Excel</button>
   </div>
 
   <div class="kpis" id="kpis"></div>
 
-  <div class="chart-panel">
-    <p class="chart-title">Distribuição de notas</p>
-    <div id="notaChart"></div>
+  <div class="charts-grid charts-grid-2">
+    <div class="chart-panel">
+      <p class="chart-title">Distribuição de notas</p>
+      <div id="notaChart"></div>
+    </div>
+    <div class="chart-panel">
+      <p class="chart-title">Status da pesquisa</p>
+      <div class="donut-wrap">
+        <div id="statusDonut"></div>
+        <div id="statusDonutLegend" class="donut-legend"></div>
+      </div>
+    </div>
   </div>
 
   <div class="charts-grid charts-grid-3">
@@ -571,6 +648,15 @@
     <span>Fonte: Análise de Pesquisa de Satisfação — Maranhão — Junho 2026</span>
     <span>Painel gerado para apresentação · dados estáticos desta rodada</span>
   </footer>
+
+  </div>
+
+  <div id="tabCadastro" class="tab-panel" style="display:none;">
+    <iframe id="cadastroFrame" title="Cadastro de Condomínios"></iframe>
+  </div>
+
+    </div>
+  </div>
 
 </div>
 
@@ -611,6 +697,7 @@ function showApp(role, username){
   document.getElementById('roleTag').textContent = `${username} · ${ROLE_LABELS[role] || role}`;
   document.getElementById('manageUsersBtn').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
+  document.getElementById('newRodadaBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   render();
   updateSyncTag();
   pullOverridesFromSupabase();
@@ -759,7 +846,7 @@ const DATA = [
  pend:"Câmeras fora de funcionamento com frequência; botoeira de saída com sinalização inadequada; aguarda há meses instalação de torre e 3 câmeras (síndico Servulo).",
  setor:"Técnica", resolvido:false, resolucao:""},
 
-{n:6, filial:"Maranhão", motivo:"Portões / Estrutural", nome:"Condomínio Marília I", nota:"5", statusPesquisa:"Aguardando retorno", crit:"atencao",
+{n:6, filial:"Maranhão", motivo:"Portões / Estrutural", nome:"Condomínio Marília I", nota:"5", statusPesquisa:"Pendente", crit:"atencao",
  pend:"Batidas nos portões e fiação exposta pendentes de resolução. Síndico (Lavier) aguarda retorno da equipe técnica.",
  setor:"Técnica", resolvido:false, resolucao:"Pendente fiação exposta e laudo do problema estrutural."},
 
@@ -777,7 +864,7 @@ const DATA = [
  setor:"Técnica / Backoffice / Central", resolvido:false,
  resolucao:"Câmera sem gravar normalizada, prazo de 25 dias repassado ao síndico. Liberação indevida: operadora advertida e retorno repassado. Síndico relatou pendências ainda aguardando retorno. Pendente visita técnica para orientar alteração na porta da recepção, aguardando agendamento."},
 
-{n:10, filial:"Maranhão", motivo:"Controle de Acesso / TI", nome:"Condomínio Villagio Jardins 1", nota:"7", statusPesquisa:"Aguardando retorno", crit:"ok",
+{n:10, filial:"Maranhão", motivo:"Controle de Acesso / TI", nome:"Condomínio Villagio Jardins 1", nota:"7", statusPesquisa:"Pendente", crit:"ok",
  pend:"Leitura de tags veiculares intermitente; queda no app e internet; cerca elétrica das casas 15 e 16 pendente de religação — avisou técnico presencialmente, sem retorno (síndica Izabel).",
  setor:"Técnica / T.I.", resolvido:false, resolucao:""},
 
@@ -801,11 +888,11 @@ const DATA = [
  pend:"Barulho recorrente do motor do portão veicular. Síndica (Nazeildes) considera o motor superdimensionado para o porte do portão.",
  setor:"Técnica", resolvido:false, resolucao:""},
 
-{n:16, filial:"Maranhão", motivo:"Aplicativo / Câmeras", nome:"Cond. Villagio Jardins 4", nota:"9", statusPesquisa:"Aguardando retorno", crit:"ok",
+{n:16, filial:"Maranhão", motivo:"Aplicativo / Câmeras", nome:"Cond. Villagio Jardins 4", nota:"9", statusPesquisa:"Pendente", crit:"ok",
  pend:"Inconsistências no app (acessos/liberações); câmeras da área de lazer e eclusa com imagens trocadas aguardando correção (síndico Kleyton).",
  setor:"Técnica", resolvido:null, resolucao:""},
 
-{n:17, filial:"Maranhão", motivo:"Controle de Acesso", nome:"Cond. St Stevan", nota:"10", statusPesquisa:"Aguardando retorno", crit:"critico",
+{n:17, filial:"Maranhão", motivo:"Controle de Acesso", nome:"Cond. St Stevan", nota:"10", statusPesquisa:"Pendente", crit:"critico",
  pend:"Dificuldade com placas informativas — não possui nos portões. Sensor do portão de saída com falhas necessitando reparo; recorrência de problemas com insatisfação quanto à qualidade dos equipamentos e serviços; falhas no acesso por TAG impedindo entrada de moradores; instabilidade nos dispositivos de acesso (TAG, controle, facial, app); moradores questionam continuidade do contrato.",
  setor:"Técnica", resolvido:false,
  resolucao:"Placas foram colocadas; demais demandas serão corrigidas no dia 06/07 (segunda-feira).",
@@ -843,7 +930,7 @@ const DATA = [
 {n:29, filial:"Maranhão", motivo:"—", nome:"Condomínio Monte Rainier", nota:"9", statusPesquisa:"Concluída", crit:"ok",
  pend:"Sem pendências. Atendimentos dentro das expectativas. Síndico (Nynrod) atribuiu nota 10 verbalmente.", setor:"—", resolvido:true, resolucao:""},
 
-{n:30, filial:"Maranhão", motivo:"Estrutural / Câmeras", nome:"Condomínio do Edifício Angélica", nota:"8", statusPesquisa:"Aguardando retorno", crit:"ok",
+{n:30, filial:"Maranhão", motivo:"Estrutural / Câmeras", nome:"Condomínio do Edifício Angélica", nota:"8", statusPesquisa:"Pendente", crit:"ok",
  pend:"Nota 8 registrada. Pendente o conserto da cerca e instalação de 1 câmera.", setor:"Técnica", resolvido:false, resolucao:"Pendente cronograma técnico."},
 
 {n:501, filial:"Ceará", nome:"Condomínio do Edifício San Sebastian", nota:"9", statusPesquisa:"Concluída", crit:"ok",
@@ -2030,6 +2117,81 @@ const DATA = [
  pend:"Sem pendências relevantes relatadas na pesquisa.",
  setor:"Não se aplica", resolvido:null,
  resolucao:"Não se aplica – nenhuma pendência identificada na pesquisa."},
+
+{n:739, filial:"SECOPI", nome:"COND. AVALON", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:740, filial:"Ceará", nome:"COND. ASTORIA", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:741, filial:"SECOPI", nome:"COND. BUGANVILIA", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:742, filial:"Ceará", nome:"COND. EBENÉZER", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:743, filial:"SECOPI", nome:"COND. MONTESE", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:744, filial:"SECOPI", nome:"COND. SAO CONRADO", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:745, filial:"Ceará", nome:"COND. LEODEGARIO PINHO", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:746, filial:"Ceará", nome:"COND. NADJA AGUIAR", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:747, filial:"Maranhão", nome:"COND. SINGOLARE", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:748, filial:"Ceará", nome:"EDIFICIO ANTONIO FRADIQUE ACCIOLY", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:749, filial:"Ceará", nome:"EMPRESA FASTINOX", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:750, filial:"Ceará", nome:"EMPRESA FONNET NETWORKS", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:751, filial:"Ceará", nome:"EMPRESA MARESIA", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:752, filial:"Ceará", nome:"ESCOLA ESTACAO DA LUZ", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
+
+{n:753, filial:"Ceará", nome:"SINDICATO DOS POLICIAIS PRF", nota:"—", statusPesquisa:"Pendente", crit:"pendente",
+ pend:"Pesquisa registrada como não realizada.",
+ setor:"Não se aplica", resolvido:null,
+ resolucao:"", mesReferencia:"2026-07"},
 ];
 
 // Padronização de motivos (17 categorias fixas, pedido da Rosely em 05/07).
@@ -2079,6 +2241,7 @@ function classifyMotivos(item){
   if (NO_COMPLAINT_ITEMS.includes(item.n)) return [];
   const raw = (item.pend || '').trim().toLowerCase();
   if (raw === 'sem pendências relevantes relatadas na pesquisa.') return [];
+  if (raw === 'pesquisa registrada como não realizada.') return [];
   const t = (item.pend || '').toLowerCase();
   const cats = [];
   if (/port[ãa]/.test(t)) cats.push('Portões');
@@ -2176,6 +2339,7 @@ function extraRowToItem(row){
     n: row.item_n, filial: row.filial, nome: row.nome, nota: row.nota, dataPesquisa: row.data_pesquisa || '',
     statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor, motivo: row.motivo,
     resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao || '', pend: row.pend, resolucao: row.resolucao,
+    mesReferencia: row.mes_referencia || '2026-06',
   };
 }
 function itemToExtraRow(item){
@@ -2183,9 +2347,18 @@ function itemToExtraRow(item){
     item_n: item.n, filial: item.filial, nome: item.nome, nota: item.nota, data_pesquisa: item.dataPesquisa || null,
     status_pesquisa: item.statusPesquisa, crit: item.crit, setor: item.setor, motivo: item.motivo,
     resolvido: item.resolvido, nota_pos_resolucao: item.notaPosResolucao || null, pend: item.pend, resolucao: item.resolucao,
+    mes_referencia: item.mesReferencia || '2026-06',
     created_by: currentUsername || 'desconhecido',
   };
 }
+function getMes(item){ return item.mesReferencia || '2026-07'; }
+function mesLabelBR(mes){
+  const meses = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  const m = /^(\d{4})-(\d{2})/.exec(mes || '');
+  if (!m) return mes || '';
+  return `${meses[m[2]] || m[2]}/${m[1]}`;
+}
+
 async function pullExtraItemsFromSupabase(){
   if (!sb) return;
   try{
@@ -2246,6 +2419,59 @@ async function pushOverrideToSupabase(itemN, updates){
   }catch(e){ console.error(e); syncStatus = 'offline'; updateSyncTag(); }
 }
 
+// ---- Pesquisa de Satisfação → Cadastro de Condomínios ----
+// Quando uma pesquisa é salva, tenta achar o condomínio correspondente no cadastro
+// (casando pelo nome, já que são duas bases sem ID em comum) e atualiza lá a nota,
+// o mês e o status da pesquisa. Se não achar correspondência clara, não força nada —
+// os nomes entre os dois sistemas nem sempre batem exatamente.
+function normalizeNomeCondo(s){
+  return String(s || '')
+    .toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/^(CONDOMINIO|CONDOMINIUM|COND\.?|EDIFICIO|ED\.?|RESIDENCIAL|RESIDENCE)\s+/, '')
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim();
+}
+async function syncPesquisaParaCadastro(item){
+  if (!sb || !item || !item.nome) return;
+  try{
+    const { data, error } = await sb.from('cadastro_condominios').select('*');
+    if (error) throw error;
+    if (!data || !data.length) return;
+
+    const alvo = normalizeNomeCondo(item.nome);
+    let match = data.find(row => normalizeNomeCondo(row.nome) === alvo);
+    if (!match){
+      match = data.find(row => {
+        const rn = normalizeNomeCondo(row.nome);
+        return rn.length > 4 && alvo.length > 4 && (rn.includes(alvo) || alvo.includes(rn));
+      });
+    }
+    if (!match) return; // sem correspondência confiável — não atualiza nada
+
+    let pesquisaStatus = '';
+    if (item.statusPesquisa === 'Concluída') pesquisaStatus = 'Concluída';
+    else if (item.statusPesquisa === 'Síndico não atende' || item.statusPesquisa === 'Pendente') pesquisaStatus = 'Pendente de Retorno';
+
+    let pesquisaMes = '2026-06';
+    if (item.dataPesquisa){
+      const m = /^(\d{4})-(\d{2})/.exec(item.dataPesquisa);
+      if (m) pesquisaMes = `${m[1]}-${m[2]}`;
+    }
+
+    const updated = Object.assign({}, match, {
+      pesquisa_nota: item.nota,
+      pesquisa_mes: pesquisaMes,
+      pesquisa_status: pesquisaStatus,
+      updated_at: new Date().toISOString(),
+    });
+    const { error: upErr } = await sb.from('cadastro_condominios').upsert(updated);
+    if (upErr) throw upErr;
+  }catch(e){
+    console.error('Falha ao sincronizar pesquisa → cadastro:', e);
+  }
+}
+
 async function pullOverridesFromSupabase(){
   if (!sb) { syncStatus = 'offline'; updateSyncTag(); return; }
   try{
@@ -2259,7 +2485,7 @@ async function pullOverridesFromSupabase(){
     syncStatus = 'online';
     updateSyncTag();
     if (typeof render === 'function') render();
-    if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
+    if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderStatusDonut(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
   }catch(e){
     console.error('Falha ao buscar do Supabase:', e);
     syncStatus = 'offline';
@@ -2277,7 +2503,7 @@ function subscribeRealtime(){
       persistOverrides(OVERRIDES);
       applyOverrides();
       if (typeof render === 'function') render();
-      if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
+      if (typeof renderNotaChart === 'function'){ renderNotaChart(); renderStatusDonut(); renderSetorChart(); renderMotivoChart(); renderFilialChart(); }
     })
     .subscribe((status)=>{
       if (status === 'SUBSCRIBED'){ syncStatus = 'online'; updateSyncTag(); }
@@ -2293,6 +2519,37 @@ function persistOverrides(overrides){
   catch(e){ /* localStorage indisponível — edição segue só em memória */ }
 }
 let OVERRIDES = loadOverrides();
+
+// Padroniza o status da pesquisa em apenas 3 valores (Concluída / Síndico não atende / Pendente).
+// Existem registros antigos com variações digitadas à mão (ex: "concluída", "Atendido",
+// "CONCLUIDO", "Realizada") — essa função corrige tudo isso para o padrão oficial.
+function normalizeStatusPesquisa(raw){
+  const t = String(raw || '').toLowerCase();
+  if (/sindico|síndico/.test(t) && /(nao|não)\s*atende/.test(t)) return 'Síndico não atende';
+  if (/pendente/.test(t)) return 'Pendente';
+  if (/conclu|atend|realizad/.test(t)) return 'Concluída';
+  return raw; // não reconhecido — deixa como está, não força um valor errado
+}
+function limparStatusPesquisaAntigos(){
+  const corrigidos = [];
+  DATA.forEach(d=>{
+    const novo = normalizeStatusPesquisa(d.statusPesquisa);
+    if (novo !== d.statusPesquisa){
+      d.statusPesquisa = novo;
+      corrigidos.push(d);
+    }
+  });
+  if (corrigidos.length){
+    console.log(`Padronizando status de ${corrigidos.length} condomínio(s) com valores antigos.`);
+    corrigidos.forEach(item=>{
+      const updates = { statusPesquisa: item.statusPesquisa };
+      OVERRIDES[item.n] = Object.assign({}, OVERRIDES[item.n], updates);
+      pushOverrideToSupabase(item.n, Object.assign({}, item, updates));
+    });
+    persistOverrides(OVERRIDES);
+  }
+}
+
 function applyOverrides(){
   DATA.forEach(d=>{
     d.motivo = classifyMotivos(d).join(' / ') || '—'; // padronização automática
@@ -2300,6 +2557,7 @@ function applyOverrides(){
     const o = OVERRIDES[d.n];
     if (o) Object.assign(d, o);
   });
+  limparStatusPesquisaAntigos();
 }
 applyOverrides();
 
@@ -2316,10 +2574,10 @@ function formatDateBR(iso){
 }
 
 const CRIT_LABELS = {
-  critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)"},
-  atencao:  {label:"Atenção",  sub:"nota 5–6 ou pendências graves",    color:"var(--atencao)", bg:"var(--atencao-bg)"},
-  pendente: {label:"Pendente", sub:"síndico não respondeu",            color:"var(--pendente)", bg:"var(--pendente-bg)"},
-  ok:       {label:"OK",       sub:"sem pendências relevantes",        color:"var(--ok)", bg:"var(--ok-bg)"},
+  critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)", icon:"🔴"},
+  atencao:  {label:"Atenção",  sub:"nota 5–6 ou pendências graves",    color:"var(--atencao)", bg:"var(--atencao-bg)", icon:"⚠️"},
+  pendente: {label:"Pendente", sub:"síndico não respondeu",            color:"var(--pendente)", bg:"var(--pendente-bg)", icon:"⏳"},
+  ok:       {label:"OK",       sub:"sem pendências relevantes",        color:"var(--ok)", bg:"var(--ok-bg)", icon:"✅"},
 };
 // Counts are computed live from the filtered set so KPIs, chart and list always agree
 function computeCounts(data){
@@ -2356,6 +2614,7 @@ function buildStats(data){
 }
 
 let activeCrit = null;
+let selectedMes = null; // mês da rodada exibida — null até populateMesSelector() rodar
 let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
 let selectedSetores = [];
@@ -2374,7 +2633,7 @@ function buildKpis(data){
     const div = document.createElement('div');
     div.className = 'kpi' + (activeCrit===key ? ' active':'');
     div.style.setProperty('--kc', c.color);
-    div.innerHTML = `<div class="num">${counts[key]}</div><div class="lbl">${c.label}</div><div class="sub">${c.sub}</div>`;
+    div.innerHTML = `<div class="kpi-icon">${c.icon}</div><div class="num">${counts[key]}</div><div class="lbl">${c.label}</div><div class="sub">${c.sub}</div>`;
     div.onclick = ()=>{ activeCrit = (activeCrit===key)? null : key; render(); };
     el.appendChild(div);
   });
@@ -2395,6 +2654,48 @@ function notaFaixaIndex(item){
     : NOTA_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
   return idx === -1 ? NOTA_FAIXAS.length - 1 : idx;
 }
+const STATUS_DONUT_COLORS = {
+  'Concluída': 'var(--ok)',
+  'Pendente': 'var(--pendente)',
+  'Síndico não atende': 'var(--critico)',
+  'Aguardando retorno': 'var(--atencao)',
+};
+function renderStatusDonut(data){
+  data = data || DATA;
+  const counts = {};
+  data.forEach(d=>{ counts[d.statusPesquisa] = (counts[d.statusPesquisa]||0)+1; });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const total = data.length;
+  const r = 46, cx = 60, cy = 60, stroke = 16, circumference = 2*Math.PI*r;
+  let offset = 0;
+  const segs = total ? entries.map(([label,n])=>{
+    const color = STATUS_DONUT_COLORS[label] || 'var(--text-faint)';
+    const dash = (n/total)*circumference;
+    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+      stroke-dasharray="${dash} ${circumference-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += dash;
+    return seg;
+  }).join('') : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>`;
+  const svg = `<svg width="120" height="120" viewBox="0 0 120 120">
+    ${segs}
+    <text x="60" y="56" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)" font-family="IBM Plex Mono, monospace">${total}</text>
+    <text x="60" y="72" text-anchor="middle" font-size="9" fill="var(--text-faint)">Total</text>
+  </svg>`;
+  const elDonut = document.getElementById('statusDonut');
+  const elLegend = document.getElementById('statusDonutLegend');
+  if (!elDonut || !elLegend) return;
+  elDonut.innerHTML = svg;
+  elLegend.innerHTML = entries.map(([label, n])=>{
+    const color = STATUS_DONUT_COLORS[label] || 'var(--text-faint)';
+    const pct = total ? Math.round(n/total*100) : 0;
+    return `<div class="donut-legend-row">
+      <span class="donut-legend-dot" style="background:${color}"></span>
+      <span class="donut-legend-label">${escapeHtml(label)}</span>
+      <span class="donut-legend-n">${n} (${pct}%)</span>
+    </div>`;
+  }).join('');
+}
+
 function renderNotaChart(data){
   data = data || DATA;
   const counts = NOTA_FAIXAS.map(()=>0);
@@ -2468,8 +2769,9 @@ function renderPctChart(elId, dist, itemsComData, footerLabel, onBarClick, activ
 function renderSetorChart(data){
   data = data || DATA;
   const temComplaint = item => classifyMotivos(item).length > 0;
+  const normalizeSetorLabel = s => (s.toUpperCase() === 'TI' ? 'T.I.' : s);
   const dist = computeDistribution(data, item => (item.setor && item.setor !== '—' && item.setor !== 'Não se aplica' && temComplaint(item))
-    ? item.setor.split('/').map(s=>s.trim())
+    ? item.setor.split('/').map(s=>normalizeSetorLabel(s.trim()))
     : []);
   const itemsComData = data.filter(d => d.setor && d.setor !== '—' && d.setor !== 'Não se aplica' && temComplaint(d)).length;
   renderPctChart('setorChart', dist, itemsComData, null, (label)=>{
@@ -2545,8 +2847,19 @@ document.addEventListener('click', (e)=>{
   });
 });
 
+function populateMesSelector(){
+  const meses = [...new Set(DATA.map(d=>getMes(d)))].sort();
+  const sel = document.getElementById('mesSelector');
+  const current = selectedMes && meses.includes(selectedMes) ? selectedMes : meses[meses.length - 1];
+  sel.innerHTML = meses.map(m => `<option value="${m}" ${m===current?'selected':''}>📅 ${mesLabelBR(m)}</option>`).join('');
+  selectedMes = current;
+  const ref = document.getElementById('refMes');
+  if (ref) ref.textContent = mesLabelBR(current);
+}
+
 function populateFilterOptions(){
-  const filiais = [...new Set(DATA.map(d=>d.filial))].sort();
+  populateMesSelector();
+  const filiais = [...new Set(DATA.filter(d=>getMes(d)===selectedMes).map(d=>d.filial))].sort();
   setupMultiFilter({
     btnId:'filialFilterBtn', panelId:'filialFilterPanel', wrapId:'filialFilterWrap',
     getSelected:()=>selectedFiliais, setSelected:(v)=>{selectedFiliais=v;},
@@ -2559,7 +2872,7 @@ function populateFilterOptions(){
     options: NOTA_FAIXAS.map((f,i)=>({value:String(i), label:f.label})), prefixLabel:'Nota',
   });
 
-  const statuses = [...new Set(DATA.map(d=>d.statusPesquisa))].sort();
+  const statuses = [...new Set(DATA.filter(d=>getMes(d)===selectedMes).map(d=>d.statusPesquisa))].sort();
   setupMultiFilter({
     btnId:'statusFilterBtn', panelId:'statusFilterPanel', wrapId:'statusFilterWrap',
     getSelected:()=>selectedStatuses, setSelected:(v)=>{selectedStatuses=v;},
@@ -2587,6 +2900,7 @@ function populateFilterOptions(){
 }
 
 function baseMatches(item, q){
+  if (selectedMes && getMes(item) !== selectedMes) return false;
   if (selectedStatuses.length && !selectedStatuses.includes(item.statusPesquisa)) return false;
   if (selectedFiliais.length && !selectedFiliais.includes(item.filial)) return false;
   if (selectedNotaFaixas.length && !selectedNotaFaixas.includes(String(notaFaixaIndex(item)))) return false;
@@ -2598,7 +2912,7 @@ function baseMatches(item, q){
     const want = selectedResolvidos.map(v => v === 'true' ? true : (v === 'false' ? false : null));
     if (!want.includes(item.resolvido)) return false;
   }
-  if (activeSetorBar && !(item.setor && item.setor.split('/').map(s=>s.trim()).includes(activeSetorBar))) return false;
+  if (activeSetorBar && !(item.setor && item.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(activeSetorBar))) return false;
   if (activeMotivoBar && !classifyMotivos(item).includes(activeMotivoBar)) return false;
   if (q){
     const hay = (item.nome+' '+item.pend+' '+item.resolucao+' '+item.setor+' '+item.filial+' '+(item.motivo||'')).toLowerCase();
@@ -2652,7 +2966,13 @@ function editFormHTML(item){
     <div class="edit-form">
       <label>Nota<input type="text" class="ef-nota" value="${escapeHtml(item.nota)}"></label>
       <label>Data da pesquisa<input type="date" class="ef-data" value="${escapeHtml(item.dataPesquisa || '')}"></label>
-      <label>Status da pesquisa<input type="text" class="ef-status" value="${escapeHtml(item.statusPesquisa)}"></label>
+      <label>Status da pesquisa
+        <select class="ef-status">
+          <option value="Concluída" ${item.statusPesquisa==='Concluída'?'selected':''}>Concluída</option>
+          <option value="Síndico não atende" ${item.statusPesquisa==='Síndico não atende'?'selected':''}>Síndico não atende</option>
+          <option value="Pendente" ${item.statusPesquisa==='Pendente'?'selected':''}>Pendente</option>
+        </select>
+      </label>
       <label>Criticidade<select class="ef-crit">${critOptions}</select></label>
       <label>Setor responsável
         <select class="ef-setor" multiple size="6">
@@ -2709,7 +3029,13 @@ function newItemFormHTML(){
       </label>
       <label>Nota<input type="text" class="ni-nota" placeholder="ex: 8"></label>
       <label>Data da pesquisa<input type="date" class="ni-data"></label>
-      <label>Status da pesquisa<input type="text" class="ni-status" placeholder="ex: Concluída" value="Concluída"></label>
+      <label>Status da pesquisa
+        <select class="ni-status">
+          <option value="Concluída">Concluída</option>
+          <option value="Síndico não atende">Síndico não atende</option>
+          <option value="Pendente" selected>Pendente</option>
+        </select>
+      </label>
       <label>Criticidade<select class="ni-crit">${critOptions}</select></label>
       <label>Setor responsável
         <select class="ni-setor" multiple size="6">
@@ -2744,6 +3070,94 @@ function newItemFormHTML(){
     </div>
   `;
 }
+
+document.getElementById('newRodadaBtn').addEventListener('click', ()=>{
+  document.getElementById('rodadaError').style.display = 'none';
+  document.getElementById('rodadaProgress').style.display = 'none';
+  const meses = [...new Set(DATA.map(d=>getMes(d)))].sort();
+  const ultimo = meses[meses.length-1];
+  const [y,m] = ultimo.split('-').map(Number);
+  const proxDate = new Date(y, m, 1); // já é o mês seguinte (m é 1-indexado, Date usa 0-indexado)
+  const sugestao = `${proxDate.getFullYear()}-${String(proxDate.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('rodadaMesInput').value = sugestao;
+  document.getElementById('rodadaModal').style.display = 'flex';
+});
+document.getElementById('closeRodadaBtn').addEventListener('click', ()=>{
+  document.getElementById('rodadaModal').style.display = 'none';
+});
+document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('rodadaError');
+  const progEl = document.getElementById('rodadaProgress');
+  errEl.style.display = 'none';
+  const novoMes = document.getElementById('rodadaMesInput').value;
+  if (!novoMes){ errEl.textContent = 'Escolha um mês.'; errEl.style.display = 'block'; return; }
+  if (DATA.some(d => getMes(d) === novoMes)){
+    errEl.textContent = `Já existe uma rodada para ${mesLabelBR(novoMes)}.`;
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!sb){
+    errEl.textContent = 'Sem conexão com o Supabase — não é possível puxar a lista do Cadastro agora.';
+    errEl.style.display = 'block';
+    return;
+  }
+  progEl.style.display = 'block';
+  progEl.textContent = 'Buscando condomínios do Cadastro...';
+  document.getElementById('rodadaConfirmBtn').disabled = true;
+  try{
+    const { data: condos, error } = await sb.from('cadastro_condominios').select('*');
+    if (error) throw error;
+    if (!condos || !condos.length){
+      errEl.textContent = 'Nenhum condomínio encontrado no Cadastro ainda.';
+      errEl.style.display = 'block';
+      progEl.style.display = 'none';
+      document.getElementById('rodadaConfirmBtn').disabled = false;
+      return;
+    }
+    let nextN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+    const novosItens = condos
+      .filter(c => (c.status || 'Ativo') !== 'Inativo')
+      .map(c => ({
+        n: nextN++,
+        filial: c.filial || 'Não definida',
+        nome: c.nome,
+        nota: '—',
+        dataPesquisa: '',
+        statusPesquisa: 'Pendente',
+        crit: 'pendente',
+        setor: 'Não se aplica',
+        motivo: '—',
+        resolvido: null,
+        notaPosResolucao: '',
+        pend: 'Pesquisa registrada como não realizada.',
+        resolucao: '',
+        mesReferencia: novoMes,
+      }));
+    progEl.textContent = `Criando ${novosItens.length} pesquisas para ${mesLabelBR(novoMes)}...`;
+    novosItens.forEach(item => { item.humor = classifyHumor(item); DATA.push(item); });
+    const rows = novosItens.map(itemToExtraRow);
+    const chunkSize = 50;
+    for (let i = 0; i < rows.length; i += chunkSize){
+      const chunk = rows.slice(i, i + chunkSize);
+      const { error: insErr } = await sb.from('condo_extra').insert(chunk);
+      if (insErr) throw insErr;
+      progEl.textContent = `Salvando... ${Math.min(i+chunkSize, rows.length)} de ${rows.length}`;
+    }
+    selectedMes = novoMes;
+    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = [];
+    activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
+    populateFilterOptions();
+    render();
+    document.getElementById('rodadaModal').style.display = 'none';
+  }catch(e){
+    console.error('Falha ao criar rodada mensal:', e);
+    errEl.textContent = 'Erro ao criar a rodada: ' + e.message;
+    errEl.style.display = 'block';
+  }finally{
+    progEl.style.display = 'none';
+    document.getElementById('rodadaConfirmBtn').disabled = false;
+  }
+});
 
 document.getElementById('newItemBtn').addEventListener('click', ()=>{
   document.getElementById('newItemFormWrap').innerHTML = newItemFormHTML();
@@ -2787,6 +3201,7 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
       notaPosResolucao: wrap.querySelector('.ni-nota-pos').value.trim(),
       pend: wrap.querySelector('.ni-pend').value.trim(),
       resolucao: wrap.querySelector('.ni-resolucao').value.trim(),
+      mesReferencia: selectedMes || '2026-06',
     };
     item.humor = classifyHumor(item);
 
@@ -2799,6 +3214,7 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
       try{
         const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
         if (error) throw error;
+        syncPesquisaParaCadastro(item);
       }catch(e){
         console.error('Falha ao salvar novo condomínio no Supabase:', e);
         alert('O condomínio foi adicionado nesta tela, mas não foi possível sincronizar com o servidor agora. Ele pode não aparecer em outros dispositivos até a conexão voltar.');
@@ -2818,6 +3234,7 @@ function render(){
 
   buildKpis(baseFiltered);
   renderNotaChart(filtered);
+  renderStatusDonut(filtered);
   renderSetorChart(filtered);
   renderMotivoChart(filtered);
   renderFilialChart(filtered);
@@ -2921,6 +3338,7 @@ function render(){
       OVERRIDES[item.n] = updates;
       persistOverrides(OVERRIDES);
       pushOverrideToSupabase(item.n, updates);
+      syncPesquisaParaCadastro(item);
       item._editing = false;
       populateFilterOptions();
       render();
@@ -3005,6 +3423,14 @@ function generateReport(){
 }
 
 document.getElementById('search').addEventListener('input', render);
+document.getElementById('mesSelector').addEventListener('change', (e)=>{
+  selectedMes = e.target.value;
+  document.getElementById('refMes').textContent = mesLabelBR(selectedMes);
+  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = [];
+  activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
+  populateFilterOptions();
+  render();
+});
 document.getElementById('clearBtn').addEventListener('click', ()=>{
   document.getElementById('search').value='';
   selectedFiliais = [];
@@ -3062,6 +3488,1071 @@ document.getElementById('excelBtn').addEventListener('click', exportExcel);
 populateFilterOptions();
 document.getElementById('totalCondos').textContent = `${DATA.length} condomínios monitorados`;
 render();
+const CADASTRO_HTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro de Condomínios · Sucesso do Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1220;
+  --panel:#141b2d;
+  --ink:#e7ecf5;
+  --ink-soft:#97a3ba;
+  --line:#2a3348;
+  --navy:#0b1220;
+  --navy-2:#141b2d;
+  --teal:#38bdf8;
+  --teal-dark:#0ea5e9;
+  --teal-soft:rgba(56,189,248,.15);
+  --amber:#f59e0b;
+  --amber-soft:rgba(245,158,11,.15);
+  --red:#ef4444;
+  --red-soft:rgba(239,68,68,.15);
+  --slate-soft:#1b2438;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  --radius: 10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.app{max-width:1360px;margin:0 auto;padding:0 28px 60px;}
+
+/* ---- HEADER ---- */
+.topbar{
+  background:linear-gradient(155deg, var(--navy) 0%, var(--navy-2) 100%);
+  color:#fff;
+  margin:0 -28px 26px;
+  padding:22px 28px 26px;
+  position:relative;
+  overflow:hidden;
+}
+.topbar::after{
+  content:"";
+  position:absolute; inset:0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 46px);
+  pointer-events:none;
+}
+.topbar-inner{position:relative; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; max-width:1360px; margin:0 auto;}
+.brand{display:flex; align-items:center; gap:14px;}
+.brand-mark{
+  width:42px;height:42px;border-radius:10px;
+  background:var(--teal);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  box-shadow: 0 6px 18px -6px rgba(15,157,147,.7);
+}
+.brand-mark svg{width:24px;height:24px;}
+.brand-text h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:20px; font-weight:700; margin:0; letter-spacing:.2px;
+}
+.brand-text p{margin:2px 0 0; font-size:12.5px; color:#9FB0C8; letter-spacing:.3px;}
+.topbar-meta{display:flex; gap:10px; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#8CA0BC;}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:#3DDC97; box-shadow:0 0 0 0 rgba(61,220,151,.6); animation:pulse 2s infinite;}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(61,220,151,.55);}
+  70%{box-shadow:0 0 0 7px rgba(61,220,151,0);}
+  100%{box-shadow:0 0 0 0 rgba(61,220,151,0);}
+}
+
+/* ---- SUMMARY CARDS ---- */
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:14px;
+  margin-bottom:22px;
+}
+.stat-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+  position:relative;
+}
+.stat-card .num{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; line-height:1;}
+.stat-card .lbl{font-size:12px; color:var(--ink-soft); margin-top:6px; font-weight:500; letter-spacing:.2px;}
+.stat-card.accent-teal .num{color:var(--teal-dark);}
+.stat-card.accent-red .num{color:var(--red);}
+.stat-card.accent-amber .num{color:var(--amber);}
+.stat-card .bar-icon{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;}
+.stat-card.accent-teal .bar-icon{background:var(--teal-soft); color:var(--teal-dark);}
+.stat-card.accent-red .bar-icon{background:var(--red-soft); color:var(--red);}
+.stat-card.accent-amber .bar-icon{background:var(--amber-soft); color:var(--amber);}
+.stat-card.accent-navy .bar-icon{background:var(--slate-soft); color:var(--navy-2);}
+.bar-icon svg{width:16px;height:16px;}
+
+/* ---- BREAKDOWN PANELS ---- */
+.breakdown-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:14px;
+  margin-bottom:24px;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+}
+.panel h3{
+  margin:0 0 12px; font-size:12px; text-transform:uppercase; letter-spacing:.6px;
+  color:var(--ink-soft); font-weight:600;
+}
+.breakdown-row{display:flex; align-items:center; gap:10px; margin-bottom:9px; font-size:12.5px;}
+.donut-flex{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.donut-flex #breakdownPesquisa{flex:1; min-width:120px;}
+.breakdown-row:last-child{margin-bottom:0;}
+.breakdown-row .name{width:118px; flex-shrink:0; color:var(--ink); font-weight:500;}
+.breakdown-row .track{flex:1; height:7px; background:var(--slate-soft); border-radius:99px; overflow:hidden;}
+.breakdown-row .fill{height:100%; border-radius:99px;}
+.breakdown-row .count{width:30px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); flex-shrink:0;}
+
+/* ---- TOOLBAR ---- */
+.toolbar{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 14px; margin-bottom:16px; box-shadow:var(--shadow);
+}
+.search-wrap{position:relative; flex:1; min-width:200px;}
+.search-wrap svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px;height:15px; color:#9AA7B8;}
+.search-wrap input{
+  width:100%; padding:9px 12px 9px 32px; border-radius:8px; border:1px solid var(--line);
+  font-family:'Inter',sans-serif; font-size:13.5px; background:var(--slate-soft);
+}
+.search-wrap input:focus{outline:2px solid var(--teal); outline-offset:-1px; background:#fff;}
+select.filter-select{
+  padding:9px 30px 9px 11px; border-radius:8px; border:1px solid var(--line); background:var(--slate-soft);
+  font-family:'Inter',sans-serif; font-size:13px; color:var(--ink); cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234A5A70'><path d='M5.5 7.5l4.5 4.5 4.5-4.5' stroke='%234A5A70' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat; background-position:right 9px center;
+}
+select.filter-select:focus{outline:2px solid var(--teal); outline-offset:-1px;}
+.btn{
+  border:none; border-radius:8px; padding:9px 16px; font-family:'Inter',sans-serif; font-weight:600;
+  font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+  transition:transform .06s ease, box-shadow .15s ease;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--teal); color:#fff; box-shadow:0 4px 12px -4px rgba(15,157,147,.55);}
+.btn-primary:hover{background:var(--teal-dark);}
+.btn-ghost{background:var(--slate-soft); color:var(--ink); border:1px solid var(--line);}
+.btn-ghost:hover{background:var(--slate-soft);}
+.btn svg{width:15px;height:15px;}
+
+/* ---- TABLE ---- */
+.table-wrap{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow-x:auto;
+}
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+thead th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft);
+  padding:12px 14px; background:var(--slate-soft); border-bottom:1px solid var(--line); font-weight:600;
+  white-space:nowrap;
+}
+tbody td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--slate-soft);}
+.cell-nome{font-weight:600; color:var(--ink);}
+.cell-nome .resp{display:block; font-weight:400; font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+.cell-nome .contrato-fim-tag{color:var(--amber);}
+.badge{
+  display:inline-flex; align-items:center; gap:5px; padding:3.5px 9px; border-radius:99px;
+  font-size:11.5px; font-weight:600; white-space:nowrap;
+}
+.badge::before{content:""; width:6px; height:6px; border-radius:50%;}
+.badge-ativo{background:#E5F6EE; color:#1D8A57;}
+.badge-ativo::before{background:#1D8A57;}
+.badge-inativo{background:var(--red-soft); color:var(--red);}
+.badge-inativo::before{background:var(--red);}
+.badge-pendente{background:var(--amber-soft); color:var(--amber); font-style:italic;}
+.badge-pendente::before{background:var(--amber);}
+.tag{
+  display:inline-block; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:500;
+  background:var(--slate-soft); color:var(--ink-soft);
+}
+.tag.tag-prof{background:#E9EEFB; color:#3450A8;}
+.tag.tag-mor{background:#F3ECFB; color:#7040A8;}
+.tag.mod-autonomo{background:#EAF3FB; color:#1E6FA8;}
+.tag.mod-controle{background:#FFF1E3; color:#B5691C;}
+.tag.mod-assistida{background:#EAF8EF; color:#2C8A4E;}
+.badge-pesq-concluida{background:#E5F6EE; color:#1D8A57;}
+.badge-pesq-concluida::before{background:#1D8A57;}
+.badge-pesq-pendente{background:var(--amber-soft); color:var(--amber);}
+.badge-pesq-pendente::before{background:var(--amber);}
+.badge-pesq-none{background:var(--slate-soft); color:var(--ink-soft); font-style:italic;}
+.badge-pesq-none::before{background:#B7C1CC;}
+.pesq-cell{display:flex; flex-direction:column; gap:3px; align-items:flex-start;}
+.pesq-meta{font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;}
+.row-actions{display:flex; gap:6px;}
+.icon-btn{
+  width:28px; height:28px; border-radius:7px; border:1px solid var(--line); background:#fff;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft);
+}
+.icon-btn:hover{background:var(--slate-soft); color:var(--ink);}
+.icon-btn.danger:hover{background:var(--red-soft); color:var(--red); border-color:var(--red);}
+.icon-btn svg{width:14px;height:14px;}
+.empty-state{padding:50px 20px; text-align:center; color:var(--ink-soft);}
+.empty-state svg{width:40px;height:40px; margin-bottom:10px; opacity:.4;}
+.results-note{font-size:11.5px; color:var(--ink-soft); padding:10px 14px 0;}
+
+/* ---- MODAL ---- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(14,20,32,.5); display:none; align-items:center; justify-content:center;
+  z-index:100; padding:20px; backdrop-filter:blur(2px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--panel); border-radius:14px; width:100%; max-width:480px; box-shadow:0 30px 60px -20px rgba(0,0,0,.35);
+  max-height:90vh; overflow-y:auto;
+}
+.modal-head{padding:20px 22px 4px; display:flex; justify-content:space-between; align-items:flex-start;}
+.modal-head h2{margin:0; font-family:'Space Grotesk',sans-serif; font-size:18px;}
+.modal-head p{margin:4px 0 0; font-size:12.5px; color:var(--ink-soft);}
+.modal-close{background:none; border:none; cursor:pointer; color:var(--ink-soft); padding:4px;}
+.modal-body{padding:16px 22px 4px; display:flex; flex-direction:column; gap:14px;}
+.field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;}
+.field input[type=text], .field select, .field textarea{
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-family:'Inter',sans-serif;
+  font-size:14px; background:var(--slate-soft); color:var(--ink);
+}
+.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--teal); outline-offset:-1px; background:#fff;}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.seg{display:flex; gap:6px; flex-wrap:wrap;}
+.seg-opt{
+  flex:1; text-align:center; padding:9px 6px; border-radius:8px; border:1px solid var(--line); background:var(--slate-soft);
+  font-size:12.5px; font-weight:600; cursor:pointer; color:var(--ink-soft); min-width:90px;
+}
+.seg-opt.active-ativo{background:#E5F6EE; border-color:#1D8A57; color:#1D8A57;}
+.seg-opt.active-inativo{background:var(--red-soft); border-color:var(--red); color:var(--red);}
+.seg-opt.active-prof{background:#E9EEFB; border-color:#3450A8; color:#3450A8;}
+.seg-opt.active-mor{background:#F3ECFB; border-color:#7040A8; color:#7040A8;}
+.seg-opt.active-mod{background:var(--teal-soft); border-color:var(--teal-dark); color:var(--teal-dark);}
+.seg-opt.active-pesq-concluida{background:#E5F6EE; border-color:#1D8A57; color:#1D8A57;}
+.seg-opt.active-pesq-pendente{background:var(--amber-soft); border-color:var(--amber); color:var(--amber);}
+.seg-opt.active-pesq-none{background:var(--slate-soft); border-color:#B7C1CC; color:var(--ink-soft);}
+.modal-foot{padding:18px 22px 22px; display:flex; justify-content:space-between; gap:10px; align-items:center;}
+.field textarea{resize:vertical; min-height:56px; font-family:'Inter',sans-serif;}
+
+/* ---- TOAST ---- */
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(10px); opacity:0;
+  background:var(--navy); color:#fff; padding:11px 20px; border-radius:9px; font-size:13px; font-weight:500;
+  box-shadow:0 12px 30px -10px rgba(0,0,0,.4); display:flex; align-items:center; gap:9px; z-index:200;
+  transition:all .25s ease; pointer-events:none;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast .dot{width:7px;height:7px;border-radius:50%; background:var(--teal); flex-shrink:0;}
+.toast.toast-danger .dot{background:var(--red);}
+
+footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;}
+
+.print-header{display:none;}
+
+@media print{
+  body{background:#fff;}
+  .app{padding:0; max-width:100%;}
+  .topbar{background:#fff !important; color:#101B2D !important; margin:0 0 12px; padding:0 0 12px; border-bottom:2px solid #101B2D;}
+  .topbar::after{display:none;}
+  .brand-text p{color:#4A5A70 !important;}
+  .pulse-dot{display:none;}
+  .toolbar, .no-print, .modal-overlay, .toast, footer.note, .results-note{display:none !important;}
+  thead th:last-child, tbody td:last-child{display:none;}
+  .print-header{display:block !important; margin-bottom:16px; font-family:'Inter',sans-serif;}
+  .print-header h2{margin:0 0 4px; font-family:'Space Grotesk',sans-serif; font-size:16px;}
+  .print-header p{margin:0; font-size:11.5px; color:#4A5A70;}
+  .summary-grid{grid-template-columns:repeat(4,1fr); -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .breakdown-grid{grid-template-columns:repeat(3,1fr); page-break-inside:avoid;}
+  .stat-card,.panel,.table-wrap{box-shadow:none !important; border:1px solid #ccc !important;}
+  table{font-size:10.5px;}
+  thead th{background:#eee !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  tbody tr{break-inside:avoid;}
+  .badge, .tag{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+}
+
+@media (max-width: 980px){
+  .summary-grid{grid-template-columns:repeat(2,1fr);}
+  .breakdown-grid{grid-template-columns:1fr;}
+  .app{padding:0 14px 40px;}
+  .topbar{margin:0 -14px 20px; padding:18px 14px 22px;}
+  .field-row{grid-template-columns:1fr;}
+  table{font-size:12.5px;}
+  thead th, tbody td{padding:9px 8px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path d="M9 12h.01M15 12h.01M9 8h.01M15 8h.01"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>Cadastro de Condomínios</h1>
+          <p>Sucesso do Cliente · Servis Eletrônica</p>
+        </div>
+      </div>
+      <div class="topbar-meta no-print">
+        <span class="pulse-dot"></span>
+        <span id="lastSync">dados carregados localmente</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-header" id="printHeader">
+    <h2>Relatório de Condomínios · Sucesso do Cliente — Servis Eletrônica</h2>
+    <p id="printHeaderMeta"></p>
+  </div>
+
+  <div class="summary-grid" id="summaryGrid"></div>
+
+  <div class="breakdown-grid">
+    <div class="panel">
+      <h3>Modalidade</h3>
+      <div id="breakdownModalidade"></div>
+    </div>
+    <div class="panel">
+      <h3>Tipo de Síndico</h3>
+      <div id="breakdownSindico"></div>
+    </div>
+    <div class="panel">
+      <h3>Condomínios por Filial</h3>
+      <div id="breakdownFilial"></div>
+    </div>
+    <div class="panel">
+      <h3>Pesquisa de Satisfação</h3>
+      <div class="donut-flex">
+        <div id="pesquisaDonut"></div>
+        <div id="breakdownPesquisa"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar por nome do condomínio ou responsável...">
+    </div>
+    <select class="filter-select" id="filterFilial"><option value="">Todas as filiais</option></select>
+    <select class="filter-select" id="filterStatus">
+      <option value="">Todos os status</option>
+      <option value="Ativo">Ativo</option>
+      <option value="Inativo">Inativo</option>
+    </select>
+    <select class="filter-select" id="filterSindico">
+      <option value="">Todos os síndicos</option>
+      <option value="Profissional">Profissional</option>
+      <option value="Morador">Morador</option>
+      <option value="">Não definido</option>
+    </select>
+    <select class="filter-select" id="filterModalidade">
+      <option value="">Todas as modalidades</option>
+      <option value="Autônomo">Autônomo</option>
+      <option value="Controle de Acesso">Controle de Acesso</option>
+      <option value="Assistida">Assistida</option>
+    </select>
+    <select class="filter-select" id="filterPesquisa">
+      <option value="">Toda pesquisa de satisfação</option>
+      <option value="Concluída">Concluída</option>
+      <option value="Pendente de Retorno">Pendente de Retorno</option>
+      <option value="Não realizada">Não realizada</option>
+    </select>
+    <button class="btn btn-ghost" id="btnExport">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+      Exportar CSV
+    </button>
+    <button class="btn btn-ghost" id="btnExportPdf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg>
+      Exportar PDF
+    </button>
+    <button class="btn btn-ghost" id="btnSaveBackup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      Salvar
+    </button>
+    <button class="btn btn-primary" id="btnNew">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      Novo Condomínio
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="results-note" id="resultsNote"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Condomínio</th>
+          <th>Filial</th>
+          <th>Status</th>
+          <th>Síndico</th>
+          <th>Modalidade</th>
+          <th style="text-align:right;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <div>Nenhum condomínio encontrado com esses filtros.</div>
+    </div>
+  </div>
+
+  <footer class="note">Dados salvos automaticamente neste navegador (localStorage) · 286 condomínios importados da planilha de controle</footer>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">Novo Condomínio</h2>
+        <p id="modalSubtitle">Preencha os dados de cadastro</p>
+      </div>
+      <button class="modal-close" id="modalClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nome do Condomínio</label>
+        <input type="text" id="fNome" placeholder="Ex: COND. RESIDENCIAL EXEMPLO">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Filial</label>
+          <select id="fFilial"></select>
+        </div>
+        <div class="field">
+          <label>Responsável</label>
+          <input type="text" id="fResponsavel" placeholder="Ex: Rose">
+        </div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <div class="seg" id="segStatus">
+          <div class="seg-opt" data-val="Ativo">Ativo</div>
+          <div class="seg-opt" data-val="Inativo">Inativo</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipo de Síndico</label>
+        <div class="seg" id="segSindico">
+          <div class="seg-opt" data-val="Profissional">Profissional</div>
+          <div class="seg-opt" data-val="Morador">Morador</div>
+          <div class="seg-opt" data-val="">Não definido</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Modalidade</label>
+        <div class="seg" id="segModalidade">
+          <div class="seg-opt" data-val="Autônomo">Autônomo</div>
+          <div class="seg-opt" data-val="Controle de Acesso">Controle de Acesso</div>
+          <div class="seg-opt" data-val="Assistida">Assistida</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="fObs" placeholder="Notas internas sobre o condomínio (opcional)"></textarea>
+      </div>
+      <div class="field" style="border-top:1px solid var(--line); padding-top:14px;">
+        <label>Contrato</label>
+        <div class="field-row">
+          <div class="field">
+            <label>Início do Contrato</label>
+            <input type="date" id="fContratoInicio">
+          </div>
+          <div class="field">
+            <label>Fim do Contrato</label>
+            <input type="date" id="fContratoFim">
+          </div>
+        </div>
+        <label style="margin-top:8px;">Possui Aditivo?</label>
+        <div class="seg" id="segAditivo" style="margin-top:6px;">
+          <div class="seg-opt" data-val="">Não definido</div>
+          <div class="seg-opt" data-val="Sim">Sim</div>
+          <div class="seg-opt" data-val="Não">Não</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnDeleteInModal" style="display:none; color:var(--red);">Excluir condomínio</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-ghost" id="btnCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>
+<script id="seedData" type="application/json">[{"id": 1, "nome": "COND ALIPIO BASTOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 2, "nome": "COND CAJUINA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 3, "nome": "COND. ANA KARINE", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 4, "nome": "ASSOCIACAO DO RESIDENCIAL DO TARUMA", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 5, "nome": "COND. ACORES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 6, "nome": "COND JARDIM AMERICA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 7, "nome": "COND. ANGELICA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 8, "nome": "COND ASTURIAS", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 9, "nome": "COND. ALDEIA DOS VENTOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 10, "nome": "COND MORENA BRODER PARK", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 11, "nome": "COND. CIDADE DE LONDRES", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 12, "nome": "COND KARINE BARRA DE OLIVEIRA", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 13, "nome": "COND. ALGARVE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 14, "nome": "COND. AGENDA 1 RESIDENCE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 15, "nome": "COND. COMODORO", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 16, "nome": "COND. CARLOS DRUMMOND DE ANDRADE", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 17, "nome": "COND. ANDROS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 18, "nome": "COND. AGENDA RESIDENCE 2", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 19, "nome": "COND. COSTA DO SAUIPE", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 20, "nome": "COND. ECOLIFE MINDU", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 21, "nome": "COND. AREZZO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 22, "nome": "COND. ANA ROSA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 23, "nome": "COND. ERS EVELINE RAQUEL SARA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 24, "nome": "COND. GIARDINO DI MILANO", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 25, "nome": "COND. ARMANDO SABOYA FILHO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 26, "nome": "COND. AVALON", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 27, "nome": "COND. ILHA DO SOL", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 28, "nome": "COND. GREEN VILLE", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 29, "nome": "COND. ASTORIA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "Controle de Acesso", "obs": ""}, {"id": 30, "nome": "COND. BERLIM LISBOA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 31, "nome": "COND. JAQUEIRAS 2", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 32, "nome": "COND. JARDIM DOS EUCALIPTOS", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 33, "nome": "COND. ATHENAS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 34, "nome": "COND. BUGANVILIA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 35, "nome": "COND. MAGISTRAL", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 36, "nome": "COND. JARDIM VIA VENETO", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 37, "nome": "COND. BAYSIDE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 38, "nome": "COND. CANAA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 39, "nome": "COND. MARILIA 2", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 40, "nome": "COND. JARDIM VILA RICA", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 41, "nome": "COND. BELLE VILLE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 42, "nome": "COND. CANELEIRO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 43, "nome": "COND. MARSOL", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 44, "nome": "COND. JARDINS ORQUIDEA E UIRAPURU", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 45, "nome": "COND. BENE VI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 46, "nome": "COND. CASA BLANCA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 47, "nome": "COND. MONTE RAINIER", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 48, "nome": "COND. JOAO PAULO II", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 49, "nome": "COND. BENE VII", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 50, "nome": "COND. DAVID CARVALHO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 51, "nome": "COND. MONTREAL RESIDENCE", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 52, "nome": "COND. LE BOULEVARD", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 53, "nome": "COND. BIENE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 54, "nome": "COND. EMANOEL VELOSO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 55, "nome": "COND. QUINTA DA BOA VISTA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 56, "nome": "COND. LIVERPOOL", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 57, "nome": "COND. BRISAS DO EUSEBIO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 58, "nome": "COND. FLOR DE LIZ", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 59, "nome": "COND. QUINTAS DO CALHAU", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 60, "nome": "COND. LONDON", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 61, "nome": "COND. CANAA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 62, "nome": "COND. H DOBAL", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 63, "nome": "COND. RENATA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 64, "nome": "COND. MANAUARA III", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 65, "nome": "COND. CANTO BELLO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 66, "nome": "COND. HELIOPOLIS PARK", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 67, "nome": "COND. ST STEVAM", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 68, "nome": "COND. MEDITERRANEE", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 69, "nome": "COND. CASCAIS DUNAS VILLAGE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 70, "nome": "COND. ILHA DOS ACORES", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 71, "nome": "COND. MORADAS DO PARQUE", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 72, "nome": "COND. CELSINA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 73, "nome": "COND. JACARANDAR", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 74, "nome": "COND. TRACOA 2", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 75, "nome": "COND. MURICI", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 76, "nome": "COND. CONCORD I", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 77, "nome": "COND. JARDIM DO HORTO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 78, "nome": "COND. VALE DO PARAIBA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 79, "nome": "COND. OCEAN PARK", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 80, "nome": "COND. COPENHAGUE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 81, "nome": "COND. JARDIM DOS NOIVOS", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 82, "nome": "COND. VILLAGE DA ILHA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 83, "nome": "COND. PARQUE DOS RIOS I", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 84, "nome": "COND. COSTA AZUL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 85, "nome": "COND. KENNEDY", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 86, "nome": "COND. VILLAGIO JARDINS 1", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 87, "nome": "COND. RECANTO DAS LARANJEIRAS", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 88, "nome": "COND. CRUZEIRO DO SUL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 89, "nome": "COND. LA MADELEINE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 90, "nome": "COND. VILLAGIO JARDINS 2", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 91, "nome": "COND. RESIDENCIAL JULIANA III", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 92, "nome": "COND. DO ED MARANATA II", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 93, "nome": "COND. LE VERT JARDIM", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 94, "nome": "COND. VILLAGIO JARDINS 3", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 95, "nome": "COND. RESIDENCIAL POR DO SOL", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 96, "nome": "COND. DOS ANJOS CORREIA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 97, "nome": "COND. MILLENNIUM TOWER", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 98, "nome": "COND. VILLAGIO JARDINS 4", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 99, "nome": "COND. RIVIERA FRANCESA", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 100, "nome": "COND. DUNNAS XXI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 101, "nome": "COND. MONTE LIBANO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 102, "nome": "COND. YASMIM", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 103, "nome": "COND. SAND LANE", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 104, "nome": "COND. EBENÉZER", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 105, "nome": "COND. MONTESE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 106, "nome": "CONDOMINIO VILLAGE ALCANTARA", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 107, "nome": "COND. SMART LARANJEIRAS", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 108, "nome": "COND. EDIFICIO ARUA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 109, "nome": "COND. RECANTO DAS PALMEIRAS", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 110, "nome": "EDIFICIO ST JAMES", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 111, "nome": "COND. SOL NASCENTE II", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 112, "nome": "COND. EDIFICIO COIMBRA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 113, "nome": "COND. RESERVA DO NORTE 2", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 114, "nome": "LEONARDO DA VINCI", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 115, "nome": "COND. TOPAZIO", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 116, "nome": "COND. EDIFICIO DAS AMERICAS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 117, "nome": "COND. RESERVA DO NORTE 3", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 118, "nome": "Marilia 1", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 119, "nome": "COND. VIDA", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 120, "nome": "COND. EDIFICIO GUILHERME ROCHA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 121, "nome": "COND. RESERVA DO SUL", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 122, "nome": "CONDOMINIO RESIDENCIAL PALACIO DAS ARTES", "filial": "MANAUS", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 123, "nome": "COND. EDIFICIO TURMALINA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 124, "nome": "COND. RESERVA DOS SABIAS 1", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 125, "nome": "COND. EDIFICIO VILLA BORGHESE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 126, "nome": "COND. RESIDENCIAL ACONCHEGO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 127, "nome": "COND. ELIANE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 128, "nome": "COND. RESIDENCIAL BRASILIA I", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 129, "nome": "COND. EMANUELA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 130, "nome": "COND. RESIDENCIAL BRASILIA II", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 131, "nome": "COND. EUSEBIO PARK", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 132, "nome": "COND. RESIDENCIAL POLO SUL", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 133, "nome": "COND. FLORENCA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 134, "nome": "COND. RIO DA PRATA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 135, "nome": "COND. FREI VICENTE SALVADOR", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 136, "nome": "COND. RIO DOURADO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 137, "nome": "COND. FUNCHAL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 138, "nome": "COND. RIO LIMA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 139, "nome": "COND. GENESIS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 140, "nome": "COND. ROYAL VILLE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 141, "nome": "COND. GENTIL CARDOSO LINHARES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 142, "nome": "COND. SAO CONRADO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 143, "nome": "COND. GOMES I", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 144, "nome": "COND. SOLAR DE FATIMA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 145, "nome": "COND. GOMES II", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 146, "nome": "COND. SOLAR DO PARNAIBA I", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 147, "nome": "COND. GRAHAM HILL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 148, "nome": "COND. THE OFFICE TOWER", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 149, "nome": "COND. GRAND CLASSIC", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 150, "nome": "COND. THERTULIANO MILTOM BRANDAO", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 151, "nome": "COND. GRAND QUARTIER", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 152, "nome": "COND. VILA CAMPESTRE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 153, "nome": "COND. GRANLARA RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 154, "nome": "COND. VILA RICA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 155, "nome": "COND. GREEN VISION", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 156, "nome": "COND. VILLA DE VALEGA", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 157, "nome": "COND. HARMONY RESIDENCES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 158, "nome": "COND. VILLA DO CONDE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 159, "nome": "COND. ISLA VERDE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 160, "nome": "CONDOMINIO LYON", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 161, "nome": "COND. ITAPERI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 162, "nome": "CONDOMINIO MOINHO DOS VENTOS", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 163, "nome": "COND. JARDIM BOTANICO II", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 164, "nome": "CONDOMINIO NOE FORTES", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 165, "nome": "COND. JARDINS ORQUIDEA E UIRAPURU", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 166, "nome": "EMPRESA BIO NATURE", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 167, "nome": "COND. JOAO MESQUITA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 168, "nome": "EMPRESA EXTAND", "filial": "SECOPI", "responsavel": "Josiane", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 169, "nome": "COND. JOSE MARIA CARDOSO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 170, "nome": "COND. JOSE VILAR", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 171, "nome": "COND. LAJE DE PEDRA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 172, "nome": "EMPRESA EPIFANIO JOSE ALMEIDA E SILVA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 173, "nome": "COND. LE BETULLE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 174, "nome": "COND. LEBLON", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 175, "nome": "COND. LEODEGARIO PINHO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 176, "nome": "COND. LILIAN", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 177, "nome": "COND. LILIAN LEYNE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 178, "nome": "COND. LINHARES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 179, "nome": "COND. LIRIDA MATOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 180, "nome": "COND. LISBOA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 181, "nome": "COND. LUANA RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 182, "nome": "COND. LUCIANO CARNEIRO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 183, "nome": "COND. LUMMA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 184, "nome": "COND. LUXOR RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 185, "nome": "COND. MADRI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 186, "nome": "COND. MAGNA VILLARIS I", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 187, "nome": "COND. MAGNA VILLARIS II", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 188, "nome": "COND. MAISON NOVA METROPOLE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 189, "nome": "COND. MANDACARUS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 190, "nome": "COND. MANUEL ISAAC PONTES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 191, "nome": "COND. MARAPONGA RESIDENCE CLUB", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 192, "nome": "COND. MARECHAL RONDON", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 193, "nome": "COND. MARIA ESTHER", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 194, "nome": "COND. MARINO BEACH", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 195, "nome": "COND. MAROQUINHA REBELO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 196, "nome": "COND. MARQUES SANTIAGO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 197, "nome": "COND. MELBOURNE PLACE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 198, "nome": "COND. MIGUEL MACHADO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 199, "nome": "COND. MONTE LIBANO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 200, "nome": "COND. MONTREAL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 201, "nome": "COND. MONTSERRAT", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 202, "nome": "COND. MONTVERNON", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 203, "nome": "COND. MORADA BRISA DO MAR", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 204, "nome": "COND. MORADA DAS GAIVOTAS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 205, "nome": "COND. N. SRA. DE GUADALUPE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 206, "nome": "COND. NADJA AGUIAR", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 207, "nome": "COND. NAPOLI CITY", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 208, "nome": "COND. NATERCIA RIOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 209, "nome": "COND. OASI FELICE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 210, "nome": "COND. PACO DE MESSEJANA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 211, "nome": "COND. PAGANINI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 212, "nome": "COND. PALAIS ROYAL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 213, "nome": "COND. PANORAMA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 214, "nome": "COND. PARANOA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 215, "nome": "COND. PARMA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 216, "nome": "COND. PAUL RICHARD", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 217, "nome": "COND. PETIT TRIANON", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 218, "nome": "COND. PLAZA VERONNESE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 219, "nome": "COND. PORTA ROMANA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 220, "nome": "COND. PORTAL DE LION", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 221, "nome": "COND. PORTAL DE SERRAMBI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 222, "nome": "COND. PORTAL DO PASSARE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 223, "nome": "COND. PORTO GUILHERME", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 224, "nome": "COND. PORTO SEGURO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 225, "nome": "COND. PRIMAVERA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 226, "nome": "COND. QUEBEC", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 227, "nome": "COND. RAUL FONTENELLE DOUBLE SPACE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 228, "nome": "COND. REAL PARK", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 229, "nome": "COND. RESERVA NATURA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 230, "nome": "COND. RESIDENCIAL 3 ESTRELAS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 231, "nome": "COND. RESIDENCIAL AIRTON BEZERRA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 232, "nome": "COND. RESIDENCIAL DE ASSIS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 233, "nome": "COND. RESIDENCIAL SABLES BLANC", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 234, "nome": "COND. RESIDENCIAL VILA REAL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 235, "nome": "COND. RIVIERA DI CAPRI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 236, "nome": "COND. ROSA MARIA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 237, "nome": "COND. SAN GERARDO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 238, "nome": "COND. SAN JULIANO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 239, "nome": "COND. SAN MAGNUM", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 240, "nome": "COND. SAN MICHAEL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 241, "nome": "COND. SAN SEBASTIAN", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 242, "nome": "COND. SANTANA DE PARNAIBA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 243, "nome": "COND. SARGITARIUS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 244, "nome": "COND. SATURNO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 245, "nome": "COND. SINGOLARE", "filial": "MARANHÃO", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 246, "nome": "COND. SOBERANO III", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 247, "nome": "COND. SOCORRO VILLAGE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 248, "nome": "COND. SOLAR DOS VENTOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 249, "nome": "COND. ST MARCOS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 250, "nome": "COND. STILO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 251, "nome": "COND. TICIANA MENDES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 252, "nome": "COND. TM RESIDENCIAL 02", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 253, "nome": "COND. UIRAPURU", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 254, "nome": "COND. VALENCIA RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 255, "nome": "COND. VENEZA II", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 256, "nome": "COND. VIA LUMINI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 257, "nome": "COND. VILA VERANA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 258, "nome": "COND. VILLA BELLAGIO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 259, "nome": "COND. VILLA DI FIORI", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 260, "nome": "COND. VILLA PARADISO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 261, "nome": "COND. VILLA SOLARIUM", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 262, "nome": "COND. VILLAGE DEL MONTE III", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 263, "nome": "COND. VISCONDE DE MAUA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 264, "nome": "COND. VITORIA PARK", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 265, "nome": "CONDOMINIO AMILCAR ARAUJO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 266, "nome": "EDIFICIO ANTONIO FRADIQUE ACCIOLY", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 267, "nome": "EMPRESA BELECO OCARA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 268, "nome": "EMPRESA BELECO SETOR CRISTAIS ARUARU MORADA NOVA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 269, "nome": "EMPRESA CARMEHIL ANTONIO SALES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 270, "nome": "EMPRESA CARMEHIL BEZERRA DE MENEZES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 271, "nome": "EMPRESA CARMEHIL GUSTAVO SAMPAIO", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 272, "nome": "EMPRESA ECOMAX", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 273, "nome": "EMPRESA FASTINOX", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 274, "nome": "EMPRESA FONNET NETWORKS", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 275, "nome": "EMPRESA LINK LOGISTICS TRANSPORTES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 276, "nome": "EMPRESA MARESIA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 277, "nome": "EMPRESA PATRAO PARTICIPACOES", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 278, "nome": "EMPRESA TV JANGADEIRO SOBRAL", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 279, "nome": "ESCOLA ESTACAO DA LUZ", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 280, "nome": "HD TROPICAL RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 281, "nome": "HELBOR RESERVA DA PRACA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 282, "nome": "IRACEMA RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 283, "nome": "JARDIM AMERICA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 284, "nome": "RESIDENCIAL MORADA DA MESSEJANA", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 285, "nome": "SINDICATO DOS POLICIAIS PRF", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}, {"id": 286, "nome": "COND. SUNVILLE RESIDENCE", "filial": "CEARÁ", "responsavel": "Rose", "status": "Ativo", "sindico": "", "modalidade": "", "obs": ""}]<\/script>
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "servis_cadastro_condominios_v1";
+  var FILIAIS = ["CEARÁ","SECOPI","MARANHÃO","MANAUS"];
+  var state = { data: [], editingId: null };
+
+  // ---------- Supabase (sincroniza entre todos os dispositivos) ----------
+  var SUPABASE_URL = 'https://nnfwmkkcctnwcrjmspij.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_Ua2Ua9PYKoeHjN87dDP2_g_TM5ctjRw';
+  var sb = null;
+  try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }catch(e){ sb = null; }
+
+  function rowToCondo(row){
+    return {
+      id: row.item_id, nome: row.nome, filial: row.filial, responsavel: row.responsavel,
+      status: row.status, sindico: row.sindico, modalidade: row.modalidade, obs: row.obs,
+      pesquisaNota: row.pesquisa_nota, pesquisaMes: row.pesquisa_mes, pesquisaStatus: row.pesquisa_status,
+      contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo
+    };
+  }
+  function condoToRow(c){
+    return {
+      item_id: c.id, nome: c.nome, filial: c.filial, responsavel: c.responsavel,
+      status: c.status, sindico: c.sindico, modalidade: c.modalidade, obs: c.obs,
+      pesquisa_nota: c.pesquisaNota, pesquisa_mes: c.pesquisaMes, pesquisa_status: c.pesquisaStatus,
+      contrato_inicio: c.contratoInicio || null, contrato_fim: c.contratoFim || null, possui_aditivo: c.possuiAditivo || null,
+      updated_at: new Date().toISOString()
+    };
+  }
+  function setSyncTag(text){
+    var el = document.getElementById("lastSync");
+    if (el) el.textContent = text;
+  }
+
+  function loadData(){
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      try{ return JSON.parse(raw); }catch(e){ /* fall through to seed */ }
+    }
+    var seed = JSON.parse(document.getElementById("seedData").textContent);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+    return seed;
+  }
+  function saveData(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+  }
+
+  async function pullFromSupabase(){
+    if (!sb) { setSyncTag("⚪ offline — salvando só neste navegador"); return; }
+    setSyncTag("🟡 sincronizando...");
+    try{
+      var res = await sb.from('cadastro_condominios').select('*');
+      if (res.error) throw res.error;
+      if (!res.data || !res.data.length){
+        var seedRows = state.data.map(condoToRow);
+        if (seedRows.length){ await sb.from('cadastro_condominios').insert(seedRows); }
+      } else {
+        state.data = res.data.map(rowToCondo);
+        saveData();
+      }
+      setSyncTag("🟢 sincronizado");
+      renderAll();
+    }catch(e){
+      console.error('Falha ao sincronizar cadastro:', e);
+      setSyncTag("🔴 erro de sincronização — salvando só neste navegador");
+    }
+  }
+
+  function subscribeRealtime(){
+    if (!sb) return;
+    sb.channel('cadastro_condominios_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cadastro_condominios' }, function(payload){
+        if (payload.eventType === 'DELETE'){
+          var oldId = payload.old && payload.old.item_id;
+          state.data = state.data.filter(function(c){ return c.id !== oldId; });
+        } else {
+          var row = payload.new;
+          if (!row) return;
+          var condo = rowToCondo(row);
+          var idx = state.data.findIndex(function(c){ return c.id === condo.id; });
+          if (idx >= 0) state.data[idx] = condo; else state.data.push(condo);
+        }
+        saveData();
+        renderAll();
+      })
+      .subscribe(function(status){ if (status === 'SUBSCRIBED') setSyncTag("🟢 sincronizado"); });
+  }
+
+  async function addToPesquisaAtual(condo){
+    if (!sb) return;
+    try{
+      const res = await sb.from('condo_extra').select('mes_referencia');
+      const meses = (res && res.data ? res.data : []).map(function(r){ return r.mes_referencia; }).filter(Boolean);
+      meses.push('2026-06'); // piso: mês base sempre existe, mesmo sem linha correspondente no condo_extra
+      meses.sort();
+      const mesAtivo = meses[meses.length - 1];
+      const row = {
+        item_n: Date.now(), filial: condo.filial || 'Não definida', nome: condo.nome, nota: null,
+        data_pesquisa: null, status_pesquisa: 'Pendente', crit: 'pendente', setor: 'Não se aplica',
+        motivo: '—', resolvido: null, nota_pos_resolucao: null,
+        pend: 'Pesquisa registrada como não realizada.', resolucao: '',
+        mes_referencia: mesAtivo, created_by: 'cadastro-auto'
+      };
+      await sb.from('condo_extra').insert(row);
+    }catch(e){ console.error('Falha ao adicionar condomínio na Pesquisa:', e); }
+  }
+
+  async function pushUpsert(condo){
+    if (!sb || !condo) return;
+    try{ var r = await sb.from('cadastro_condominios').upsert(condoToRow(condo)); if (r.error) throw r.error; }
+    catch(e){ console.error('Falha ao salvar no Supabase:', e); setSyncTag("🔴 erro ao sincronizar última alteração"); }
+  }
+  async function pushDelete(id){
+    if (!sb) return;
+    try{ var r = await sb.from('cadastro_condominios').delete().eq('item_id', id); if (r.error) throw r.error; }
+    catch(e){ console.error('Falha ao excluir no Supabase:', e); }
+  }
+
+  function nextId(){
+    return state.data.reduce(function(m,c){ return Math.max(m, c.id); }, 0) + 1;
+  }
+
+  // ---------- populate static selects ----------
+  function fillFilialSelects(){
+    var filterSel = document.getElementById("filterFilial");
+    var formSel = document.getElementById("fFilial");
+    FILIAIS.forEach(function(f){
+      var o1 = document.createElement("option"); o1.value = f; o1.textContent = f; filterSel.appendChild(o1);
+      var o2 = document.createElement("option"); o2.value = f; o2.textContent = f; formSel.appendChild(o2);
+    });
+  }
+
+  // ---------- rendering ----------
+  function badgeStatus(status){
+    if(status === "Ativo") return '<span class="badge badge-ativo">Ativo</span>';
+    if(status === "Inativo") return '<span class="badge badge-inativo">Inativo</span>';
+    return '<span class="badge badge-pendente">Indefinido</span>';
+  }
+  function tagSindico(s){
+    if(s === "Profissional") return '<span class="tag tag-prof">Profissional</span>';
+    if(s === "Morador") return '<span class="tag tag-mor">Morador</span>';
+    return '<span class="tag">Não definido</span>';
+  }
+  function tagModalidade(m){
+    if(m === "Autônomo") return '<span class="tag mod-autonomo">Autônomo</span>';
+    if(m === "Controle de Acesso") return '<span class="tag mod-controle">Controle de Acesso</span>';
+    if(m === "Assistida") return '<span class="tag mod-assistida">Assistida</span>';
+    return '<span class="tag">Não definida</span>';
+  }
+  function mesLabel(mes){
+    if(!mes) return "";
+    var parts = mes.split("-");
+    if(parts.length !== 2) return mes;
+    var meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    var idx = parseInt(parts[1],10)-1;
+    return (meses[idx]||parts[1])+"/"+parts[0];
+  }
+  function fmtDataBR(iso){
+    if(!iso) return "";
+    var m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(iso);
+    if(!m) return iso;
+    return m[3]+"/"+m[2]+"/"+m[1];
+  }
+  function pesquisaCell(c){
+    var status = c.pesquisaStatus || "";
+    var badge;
+    if(status === "Concluída") badge = '<span class="badge badge-pesq-concluida">Concluída</span>';
+    else if(status === "Pendente de Retorno") badge = '<span class="badge badge-pesq-pendente">Pendente de Retorno</span>';
+    else badge = '<span class="badge badge-pesq-none">Não realizada</span>';
+    var meta = [];
+    if(c.pesquisaNota !== undefined && c.pesquisaNota !== null && c.pesquisaNota !== "") meta.push("Nota "+c.pesquisaNota);
+    if(c.pesquisaMes) meta.push(mesLabel(c.pesquisaMes));
+    return '<div class="pesq-cell">'+badge+(meta.length? '<span class="pesq-meta">'+esc(meta.join(" · "))+'</span>':'')+'</div>';
+  }
+  function esc(s){
+    return (s||"").toString().replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function getFiltered(){
+    var q = document.getElementById("searchInput").value.trim().toLowerCase();
+    var fFilial = document.getElementById("filterFilial").value;
+    var fStatus = document.getElementById("filterStatus").value;
+    var fSindico = document.getElementById("filterSindico").value;
+    var fModalidade = document.getElementById("filterModalidade").value;
+    var fPesquisa = document.getElementById("filterPesquisa").value;
+    var sindicoSelectedNaoDefinido = document.getElementById("filterSindico").selectedIndex === 3;
+
+    return state.data.filter(function(c){
+      if(q && !(c.nome.toLowerCase().indexOf(q)>-1 || (c.responsavel||"").toLowerCase().indexOf(q)>-1)) return false;
+      if(fFilial && c.filial !== fFilial) return false;
+      if(fStatus && c.status !== fStatus) return false;
+      if(fModalidade && c.modalidade !== fModalidade) return false;
+      if(sindicoSelectedNaoDefinido){ if(c.sindico) return false; }
+      else if(fSindico && c.sindico !== fSindico) return false;
+      if(fPesquisa && (c.pesquisaStatus || "Não realizada") !== fPesquisa) return false;
+      return true;
+    });
+  }
+
+  function renderTable(){
+    var list = getFiltered();
+    var tbody = document.getElementById("tableBody");
+    var empty = document.getElementById("emptyState");
+    var note = document.getElementById("resultsNote");
+    note.textContent = list.length + " de " + state.data.length + " condomínios";
+    if(list.length === 0){
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = list.map(function(c){
+      return '<tr>'+
+        '<td class="cell-nome">'+esc(c.nome)+(c.responsavel? '<span class="resp">'+esc(c.responsavel)+'</span>':'')+(c.contratoFim? '<span class="resp contrato-fim-tag">Fim do contrato: '+fmtDataBR(c.contratoFim)+'</span>':'')+'</td>'+
+        '<td>'+esc(c.filial)+'</td>'+
+        '<td>'+badgeStatus(c.status)+'</td>'+
+        '<td>'+tagSindico(c.sindico)+'</td>'+
+        '<td>'+tagModalidade(c.modalidade)+'</td>'+
+        '<td><div class="row-actions" style="justify-content:flex-end;">'+
+          '<button class="icon-btn" data-edit="'+c.id+'" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>'+
+          '<button class="icon-btn danger" data-del="'+c.id+'" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg></button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join("");
+  }
+
+  function renderSummary(){
+    var total = state.data.length;
+    var ativos = state.data.filter(function(c){return c.status==="Ativo";}).length;
+    var inativos = state.data.filter(function(c){return c.status==="Inativo";}).length;
+    var pendentes = state.data.filter(function(c){return !c.sindico || !c.modalidade;}).length;
+    var hoje = new Date();
+    var em90dias = new Date(); em90dias.setDate(hoje.getDate()+90);
+    var vencendo = state.data.filter(function(c){
+      if(!c.contratoFim) return false;
+      var d = new Date(c.contratoFim+"T00:00:00");
+      return d >= hoje && d <= em90dias;
+    }).length;
+    var grid = document.getElementById("summaryGrid");
+    grid.innerHTML = [
+      statCard(total, "Total de Condomínios", "navy", iconBuilding()),
+      statCard(ativos, "Ativos", "teal", iconCheck()),
+      statCard(inativos, "Inativos", "red", iconX()),
+      statCard(pendentes, "Pendentes de Classificação", "amber", iconAlert()),
+      statCard(vencendo, "Fim de Contrato (próx. 90 dias)", "amber", iconClock())
+    ].join("");
+  }
+  function statCard(num, lbl, accent, icon){
+    return '<div class="stat-card accent-'+accent+'"><div class="bar-icon">'+icon+'</div><div class="num">'+num+'</div><div class="lbl">'+lbl+'</div></div>';
+  }
+  function iconBuilding(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>';}
+  function iconCheck(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';}
+  function iconX(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>';}
+  function iconAlert(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4m0 4h.01M10.3 3.9L2.5 17a1.5 1.5 0 001.3 2.2h16.4a1.5 1.5 0 001.3-2.2L13.7 3.9a1.5 1.5 0 00-2.4 0z"/></svg>';}
+  function iconStar(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17l-6.1 3.5 1.5-6.8-5.2-4.7 6.9-.7z"/></svg>';}
+  function iconClock(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';}
+
+  function renderBreakdowns(){
+    var total = state.data.length || 1;
+    var colorsMod = {"Autônomo":"#1E6FA8","Controle de Acesso":"#B5691C","Assistida":"#2C8A4E","Não definida":"#9AA7B8"};
+    var mods = groupCount(state.data, function(c){return c.modalidade || "Não definida";});
+    document.getElementById("breakdownModalidade").innerHTML = renderBreakdownRows(mods, total, colorsMod);
+
+    var colorsSindico = {"Profissional":"#3450A8","Morador":"#7040A8","Não definido":"#9AA7B8"};
+    var sind = groupCount(state.data, function(c){return c.sindico || "Não definido";});
+    document.getElementById("breakdownSindico").innerHTML = renderBreakdownRows(sind, total, colorsSindico);
+
+    var colorsFilial = {"CEARÁ":"#0F9D93","SECOPI":"#3450A8","MARANHÃO":"#B5691C","MANAUS":"#7040A8"};
+    var fil = groupCount(state.data, function(c){return c.filial;});
+    document.getElementById("breakdownFilial").innerHTML = renderBreakdownRows(fil, total, colorsFilial);
+
+    var colorsPesquisa = {"Concluída":"#1D8A57","Pendente de Retorno":"#C97A26","Não realizada":"#9AA7B8"};
+    var pesq = groupCount(state.data, function(c){return c.pesquisaStatus || "Não realizada";});
+    document.getElementById("breakdownPesquisa").innerHTML = renderBreakdownRows(pesq, total, colorsPesquisa);
+    renderDonut("pesquisaDonut", pesq, total, colorsPesquisa);
+  }
+  function renderDonut(elId, map, total, colors){
+    var el = document.getElementById(elId);
+    if(!el) return;
+    var entries = Object.keys(map).map(function(k){ return [k, map[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+    var r = 40, cx = 52, cy = 52, stroke = 14, circumference = 2*Math.PI*r;
+    var offset = 0;
+    var segs = total ? entries.map(function(e){
+      var label = e[0], n = e[1];
+      var color = colors[label] || "#B7C1CC";
+      var dash = (n/total)*circumference;
+      var seg = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+stroke+'" ' +
+        'stroke-dasharray="'+dash+' '+(circumference-dash)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+      offset += dash;
+      return seg;
+    }).join('') : '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#E2E7ED" stroke-width="'+stroke+'"/>';
+    el.innerHTML = '<svg width="104" height="104" viewBox="0 0 104 104">' + segs +
+      '<text x="52" y="49" text-anchor="middle" font-size="18" font-weight="700" fill="var(--ink)" font-family="Space Grotesk, sans-serif">'+total+'</text>' +
+      '<text x="52" y="64" text-anchor="middle" font-size="8" fill="var(--ink-soft)">Total</text></svg>';
+  }
+  function groupCount(arr, keyFn){
+    var m = {};
+    arr.forEach(function(c){ var k = keyFn(c); m[k] = (m[k]||0)+1; });
+    return m;
+  }
+  function renderBreakdownRows(map, total, colors){
+    return Object.keys(map).sort(function(a,b){return map[b]-map[a];}).map(function(k){
+      var v = map[k];
+      var pct = Math.round((v/total)*100);
+      var color = colors[k] || "#9AA7B8";
+      return '<div class="breakdown-row"><span class="name">'+esc(k)+'</span>'+
+        '<span class="track"><span class="fill" style="width:'+pct+'%;background:'+color+';"></span></span>'+
+        '<span class="count">'+v+'</span></div>';
+    }).join("") || '<div class="breakdown-row"><span class="name">Sem dados</span></div>';
+  }
+
+  function renderAll(){
+    renderSummary();
+    renderBreakdowns();
+    renderTable();
+  }
+
+  // ---------- modal ----------
+  var overlay = document.getElementById("modalOverlay");
+  function openModal(id){
+    state.editingId = id || null;
+    var c = id ? state.data.find(function(x){return x.id===id;}) : null;
+    document.getElementById("modalTitle").textContent = c ? "Editar Condomínio" : "Novo Condomínio";
+    document.getElementById("modalSubtitle").textContent = c ? c.nome : "Preencha os dados de cadastro";
+    document.getElementById("fNome").value = c ? c.nome : "";
+    document.getElementById("fFilial").value = c ? c.filial : FILIAIS[0];
+    document.getElementById("fResponsavel").value = c ? (c.responsavel||"") : "";
+    document.getElementById("fObs").value = c ? (c.obs||"") : "";
+    document.getElementById("fContratoInicio").value = c ? (c.contratoInicio||"") : "";
+    document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
+    setSeg("segStatus", c ? c.status : "Ativo");
+    setSeg("segSindico", c ? (c.sindico||"") : "");
+    setSeg("segModalidade", c ? (c.modalidade||"") : "");
+    setSeg("segAditivo", c ? (c.possuiAditivo||"") : "");
+    document.getElementById("btnDeleteInModal").style.display = c ? "inline-flex" : "none";
+    overlay.classList.add("open");
+    document.getElementById("fNome").focus();
+  }
+  function closeModal(){ overlay.classList.remove("open"); }
+  function setSeg(groupId, val){
+    var group = document.getElementById(groupId);
+    Array.prototype.forEach.call(group.children, function(opt){
+      opt.classList.remove("active-ativo","active-inativo","active-prof","active-mor","active-mod","active-pesq-concluida","active-pesq-pendente","active-pesq-none");
+      if(opt.getAttribute("data-val") === val){
+        var cls = "";
+        if(groupId==="segStatus") cls = (val==="Ativo"?"active-ativo":"active-inativo");
+        else if(groupId==="segSindico") cls = (val==="Profissional"?"active-prof":(val==="Morador"?"active-mor":""));
+        else if(groupId==="segPesquisa") cls = (val==="Concluída"?"active-pesq-concluida":(val==="Pendente de Retorno"?"active-pesq-pendente":"active-pesq-none"));
+        else cls = "active-mod";
+        if(cls) opt.classList.add(cls);
+      }
+    });
+  }
+  function getSeg(groupId){
+    var group = document.getElementById(groupId);
+    var active = Array.prototype.find.call(group.children, function(opt){
+      return opt.classList.contains("active-ativo")||opt.classList.contains("active-inativo")||opt.classList.contains("active-prof")||opt.classList.contains("active-mor")||opt.classList.contains("active-mod")||opt.classList.contains("active-pesq-concluida")||opt.classList.contains("active-pesq-pendente")||opt.classList.contains("active-pesq-none");
+    });
+    return active ? active.getAttribute("data-val") : "";
+  }
+  ["segStatus","segSindico","segModalidade","segAditivo"].forEach(function(gid){
+    document.getElementById(gid).addEventListener("click", function(e){
+      var opt = e.target.closest(".seg-opt");
+      if(!opt) return;
+      setSeg(gid, opt.getAttribute("data-val"));
+    });
+  });
+
+  function showToast(msg, danger){
+    var t = document.getElementById("toast");
+    document.getElementById("toastMsg").textContent = msg;
+    t.classList.toggle("toast-danger", !!danger);
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+
+  document.getElementById("btnNew").addEventListener("click", function(){ openModal(null); });
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  document.getElementById("btnCancel").addEventListener("click", closeModal);
+  overlay.addEventListener("click", function(e){ if(e.target === overlay) closeModal(); });
+
+  document.getElementById("btnSave").addEventListener("click", function(){
+    var nome = document.getElementById("fNome").value.trim();
+    if(!nome){ showToast("Informe o nome do condomínio.", true); return; }
+    var payload = {
+      nome: nome,
+      filial: document.getElementById("fFilial").value,
+      responsavel: document.getElementById("fResponsavel").value.trim(),
+      status: getSeg("segStatus") || "Ativo",
+      sindico: getSeg("segSindico"),
+      modalidade: getSeg("segModalidade"),
+      obs: document.getElementById("fObs").value.trim(),
+      pesquisaNota: (state.editingId ? (state.data.find(function(x){return x.id===state.editingId;})||{}).pesquisaNota : "") || "",
+      pesquisaMes: (state.editingId ? (state.data.find(function(x){return x.id===state.editingId;})||{}).pesquisaMes : "") || "",
+      pesquisaStatus: (state.editingId ? (state.data.find(function(x){return x.id===state.editingId;})||{}).pesquisaStatus : "") || "",
+      contratoInicio: document.getElementById("fContratoInicio").value,
+      contratoFim: document.getElementById("fContratoFim").value,
+      possuiAditivo: getSeg("segAditivo")
+    };
+    var savedCondo;
+    var isNovo = !state.editingId;
+    if(state.editingId){
+      var idx = state.data.findIndex(function(c){return c.id===state.editingId;});
+      state.data[idx] = Object.assign({id: state.editingId}, payload);
+      savedCondo = state.data[idx];
+      showToast("Condomínio atualizado com sucesso.");
+    } else {
+      payload.id = nextId();
+      state.data.push(payload);
+      savedCondo = payload;
+      showToast("Condomínio cadastrado com sucesso.");
+    }
+    saveData();
+    pushUpsert(savedCondo);
+    if (isNovo) addToPesquisaAtual(savedCondo);
+    renderAll();
+    closeModal();
+  });
+
+  document.getElementById("btnDeleteInModal").addEventListener("click", function(){
+    if(!state.editingId) return;
+    if(!confirm("Tem certeza que deseja excluir este condomínio do cadastro?")) return;
+    var deletedId = state.editingId;
+    state.data = state.data.filter(function(c){return c.id !== deletedId;});
+    saveData();
+    pushDelete(deletedId);
+    renderAll();
+    closeModal();
+    showToast("Condomínio excluído.", true);
+  });
+
+  document.getElementById("tableBody").addEventListener("click", function(e){
+    var editBtn = e.target.closest("[data-edit]");
+    var delBtn = e.target.closest("[data-del]");
+    if(editBtn){ openModal(Number(editBtn.getAttribute("data-edit"))); }
+    if(delBtn){
+      var id = Number(delBtn.getAttribute("data-del"));
+      if(confirm("Excluir este condomínio do cadastro?")){
+        state.data = state.data.filter(function(c){return c.id !== id;});
+        saveData();
+        pushDelete(id);
+        renderAll();
+        showToast("Condomínio excluído.", true);
+      }
+    }
+  });
+
+  // ---------- filters ----------
+  ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterPesquisa"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", renderTable);
+    document.getElementById(id).addEventListener("change", renderTable);
+  });
+
+  // ---------- export ----------
+  document.getElementById("btnExport").addEventListener("click", function(){
+    var rows = [["Nome","Filial","Responsável","Status","Síndico","Modalidade","Nota Pesquisa","Mês Pesquisa","Status Pesquisa","Observações"]];
+    getFiltered().forEach(function(c){
+      rows.push([c.nome, c.filial, c.responsavel||"", c.status, c.sindico||"Não definido", c.modalidade||"Não definida", c.pesquisaNota||"", mesLabel(c.pesquisaMes)||"", c.pesquisaStatus||"Não realizada", c.obs||""]);
+    });
+    var csv = rows.map(function(r){
+      return r.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\\r\\n");
+    var blob = new Blob(["\\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "cadastro_condominios.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Exportação CSV gerada.");
+  });
+
+  // ---------- export PDF (print) ----------
+  document.getElementById("btnExportPdf").addEventListener("click", function(){
+    var list = getFiltered();
+    var now = new Date();
+    var filtros = [];
+    if(document.getElementById("searchInput").value.trim()) filtros.push('busca "'+document.getElementById("searchInput").value.trim()+'"');
+    if(document.getElementById("filterFilial").value) filtros.push("filial "+document.getElementById("filterFilial").value);
+    if(document.getElementById("filterStatus").value) filtros.push("status "+document.getElementById("filterStatus").value);
+    if(document.getElementById("filterSindico").value) filtros.push("síndico "+document.getElementById("filterSindico").value);
+    if(document.getElementById("filterModalidade").value) filtros.push("modalidade "+document.getElementById("filterModalidade").value);
+    if(document.getElementById("filterPesquisa").value) filtros.push("pesquisa "+document.getElementById("filterPesquisa").value);
+    var filtroTxt = filtros.length ? " · Filtros: "+filtros.join(", ") : " · Sem filtros aplicados";
+    document.getElementById("printHeaderMeta").textContent =
+      "Gerado em "+now.toLocaleDateString("pt-BR")+" às "+now.toLocaleTimeString("pt-BR")+" · "+list.length+" condomínio(s) listado(s)"+filtroTxt;
+    window.print();
+  });
+
+  // ---------- save backup as standalone HTML ----------
+  document.getElementById("btnSaveBackup").addEventListener("click", function(){
+    saveData();
+    var seedEl = document.getElementById("seedData");
+    var originalSeed = seedEl.textContent;
+    seedEl.textContent = JSON.stringify(state.data);
+    var docClone = document.documentElement.cloneNode(true);
+    var clonedSeed = docClone.querySelector("#seedData");
+    if(clonedSeed) clonedSeed.textContent = JSON.stringify(state.data);
+    var overlayInClone = docClone.querySelector("#modalOverlay");
+    if(overlayInClone) overlayInClone.classList.remove("open");
+    var htmlStr = "<!DOCTYPE html>\\n" + docClone.outerHTML;
+    seedEl.textContent = originalSeed;
+    var blob = new Blob([htmlStr], {type:"text/html;charset=utf-8;"});
+    var url = URL.createObjectURL(blob);
+    var pad = function(n){ return String(n).padStart(2,"0"); };
+    var now = new Date();
+    var fname = "cadastro-condominios_"+now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate())+"_"+pad(now.getHours())+pad(now.getMinutes())+".html";
+    var a = document.createElement("a");
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Cadastro salvo e arquivo HTML baixado.");
+  });
+
+  // ---------- init ----------
+  fillFilialSelects();
+  state.data = loadData();
+  renderAll();
+  pullFromSupabase();
+  subscribeRealtime();
+})();
+
+<\/script>
+</body>
+</html>
+`;
+
+function initTabs(){
+  const frame = document.getElementById('cadastroFrame');
+  let cadastroLoaded = false;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tabPesquisa').style.display = tab === 'pesquisa' ? 'block' : 'none';
+      document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
+      if (tab === 'cadastro' && !cadastroLoaded){
+        frame.srcdoc = CADASTRO_HTML;
+        cadastroLoaded = true;
+      }
+    });
+  });
+}
+initTabs();
+
 initAuth();
 </script>
 </body>
