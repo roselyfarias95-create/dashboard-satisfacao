@@ -276,6 +276,16 @@
   .edit-btn:hover{ border-color:var(--accent); }
   .body-actions{ display:flex; justify-content:flex-end; padding:10px 18px 0 64px; }
   .edit-form{ padding:6px 18px 18px 64px; display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
+  .cb-box{
+    max-height:150px; overflow-y:auto; border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; background:var(--bg-panel-2); display:flex; flex-direction:column; gap:4px;
+  }
+  .cb-box label{
+    display:flex; align-items:center; gap:7px; font-size:12px; font-weight:400;
+    text-transform:none; letter-spacing:normal; color:var(--text); cursor:pointer; padding:2px 0;
+  }
+  .cb-box input[type="checkbox"]{ accent-color:var(--accent); width:14px; height:14px; cursor:pointer; }
+
   .edit-form label{ display:flex; flex-direction:column; gap:5px; font-size:10.5px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.05em; }
   .edit-form label.full{ grid-column:1 / -1; }
   .edit-form input, .edit-form select, .edit-form textarea{
@@ -2339,7 +2349,7 @@ function extraRowToItem(row){
     n: row.item_n, filial: row.filial, nome: row.nome, nota: row.nota, dataPesquisa: row.data_pesquisa || '',
     statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor, motivo: row.motivo,
     resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao || '', pend: row.pend, resolucao: row.resolucao,
-    mesReferencia: row.mes_referencia || '2026-06',
+    mesReferencia: row.mes_referencia || '2026-06', houveReclamacao: !!row.houve_reclamacao, houveElogio: !!row.houve_elogio,
   };
 }
 function itemToExtraRow(item){
@@ -2347,7 +2357,7 @@ function itemToExtraRow(item){
     item_n: item.n, filial: item.filial, nome: item.nome, nota: item.nota, data_pesquisa: item.dataPesquisa || null,
     status_pesquisa: item.statusPesquisa, crit: item.crit, setor: item.setor, motivo: item.motivo,
     resolvido: item.resolvido, nota_pos_resolucao: item.notaPosResolucao || null, pend: item.pend, resolucao: item.resolucao,
-    mes_referencia: item.mesReferencia || '2026-06',
+    mes_referencia: item.mesReferencia || '2026-06', houve_reclamacao: !!item.houveReclamacao, houve_elogio: !!item.houveElogio,
     created_by: currentUsername || 'desconhecido',
   };
 }
@@ -2400,13 +2410,15 @@ function rowToUpdates(row){
   return {
     nota: row.nota, dataPesquisa: row.data_pesquisa, statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor,
     motivo: row.motivo, resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao, pend: row.pend, resolucao: row.resolucao,
+    houveReclamacao: !!row.houve_reclamacao, houveElogio: !!row.houve_elogio,
   };
 }
 function updatesToRow(itemN, updates){
   return {
     item_n: itemN, nota: updates.nota, data_pesquisa: updates.dataPesquisa || null, status_pesquisa: updates.statusPesquisa, crit: updates.crit,
     setor: updates.setor, motivo: updates.motivo, resolvido: updates.resolvido, nota_pos_resolucao: updates.notaPosResolucao || null, pend: updates.pend,
-    resolucao: updates.resolucao, updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
+    resolucao: updates.resolucao, houve_reclamacao: !!updates.houveReclamacao, houve_elogio: !!updates.houveElogio,
+    updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
   };
 }
 
@@ -2879,7 +2891,7 @@ function populateFilterOptions(){
     options: statuses.map(s=>({value:s,label:s})), prefixLabel:'Status da pesquisa',
   });
 
-  const setores = [...new Set(DATA.flatMap(d=> d.setor.split('/').map(s=>s.trim())).filter(s=>s && s!=='—'))].sort();
+  const setores = [...new Set(DATA.flatMap(d=> d.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; })).filter(s=>s && s!=='—'))].sort();
   SETORES_CANONICOS = setores;
   setupMultiFilter({
     btnId:'setorFilterBtn', panelId:'setorFilterPanel', wrapId:'setorFilterWrap',
@@ -2975,9 +2987,9 @@ function editFormHTML(item){
       </label>
       <label>Criticidade<select class="ef-crit">${critOptions}</select></label>
       <label>Setor responsável
-        <select class="ef-setor" multiple size="6">
-          ${SETORES_CANONICOS.map(s => `<option value="${escapeHtml(s)}" ${(item.setor||'').split('/').map(x=>x.trim()).includes(s) ? 'selected':''}>${escapeHtml(s)}</option>`).join('')}
-        </select>
+        <div class="cb-box ef-setor-box">
+          ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ef-setor-cb" value="${escapeHtml(s)}" ${(item.setor||'').split('/').map(x=>{ const t=x.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(s) ? 'checked':''}> ${escapeHtml(s)}</label>`).join('')}
+        </div>
       </label>
       <label>Motivo da reclamação
         <select class="ef-motivo" multiple size="6">
@@ -3004,6 +3016,12 @@ function editFormHTML(item){
       </label>
       <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
         <input type="text" class="ef-nota-pos" placeholder="ex: 9" value="${escapeHtml(item.notaPosResolucao || '')}">
+      </label>
+      <label>Houve reclamação?
+        <div class="cb-box"><label><input type="checkbox" class="ef-houve-reclamacao" ${item.houveReclamacao ? 'checked':''}> Sim, houve reclamação</label></div>
+      </label>
+      <label>Houve elogio?
+        <div class="cb-box"><label><input type="checkbox" class="ef-houve-elogio" ${item.houveElogio ? 'checked':''}> Sim, houve elogio</label></div>
       </label>
       <label class="full">Pendências / Reclamações<textarea class="ef-pend">${escapeHtml(item.pend)}</textarea></label>
       <label class="full">Encaminhamento / Retorno<textarea class="ef-resolucao">${escapeHtml(item.resolucao)}</textarea></label>
@@ -3038,9 +3056,9 @@ function newItemFormHTML(){
       </label>
       <label>Criticidade<select class="ni-crit">${critOptions}</select></label>
       <label>Setor responsável
-        <select class="ni-setor" multiple size="6">
-          ${SETORES_CANONICOS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
-        </select>
+        <div class="cb-box">
+          ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ni-setor-cb" value="${escapeHtml(s)}"> ${escapeHtml(s)}</label>`).join('')}
+        </div>
       </label>
       <label>Motivo da reclamação
         <select class="ni-motivo" multiple size="6">
@@ -3060,6 +3078,12 @@ function newItemFormHTML(){
       </label>
       <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
         <input type="text" class="ni-nota-pos" placeholder="ex: 9">
+      </label>
+      <label>Houve reclamação?
+        <div class="cb-box"><label><input type="checkbox" class="ni-houve-reclamacao"> Sim, houve reclamação</label></div>
+      </label>
+      <label>Houve elogio?
+        <div class="cb-box"><label><input type="checkbox" class="ni-houve-elogio"> Sim, houve elogio</label></div>
       </label>
       <label class="full">Pendências / Reclamações<textarea class="ni-pend"></textarea></label>
       <label class="full">Encaminhamento / Retorno<textarea class="ni-resolucao"></textarea></label>
@@ -3195,10 +3219,12 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
       dataPesquisa: wrap.querySelector('.ni-data').value.trim(),
       statusPesquisa: wrap.querySelector('.ni-status').value.trim() || 'Concluída',
       crit: wrap.querySelector('.ni-crit').value,
-      setor: [...wrap.querySelector('.ni-setor').selectedOptions].map(o=>o.value).join(' / ') || '—',
+      setor: [...wrap.querySelectorAll('.ni-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
       motivo: motivoFinal.join(' / ') || '—',
       resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
       notaPosResolucao: wrap.querySelector('.ni-nota-pos').value.trim(),
+      houveReclamacao: wrap.querySelector('.ni-houve-reclamacao').checked,
+      houveElogio: wrap.querySelector('.ni-houve-elogio').checked,
       pend: wrap.querySelector('.ni-pend').value.trim(),
       resolucao: wrap.querySelector('.ni-resolucao').value.trim(),
       mesReferencia: selectedMes || '2026-06',
@@ -3327,10 +3353,12 @@ function render(){
         dataPesquisa: form.querySelector('.ef-data').value.trim(),
         statusPesquisa: form.querySelector('.ef-status').value.trim(),
         crit: form.querySelector('.ef-crit').value,
-        setor: [...form.querySelector('.ef-setor').selectedOptions].map(o=>o.value).join(' / ') || '—',
+        setor: [...form.querySelectorAll('.ef-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
         motivo: motivoFinal.join(' / ') || '—',
         resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
         notaPosResolucao: form.querySelector('.ef-nota-pos').value.trim(),
+        houveReclamacao: form.querySelector('.ef-houve-reclamacao').checked,
+        houveElogio: form.querySelector('.ef-houve-elogio').checked,
         pend: form.querySelector('.ef-pend').value.trim(),
         resolucao: form.querySelector('.ef-resolucao').value.trim(),
       };
