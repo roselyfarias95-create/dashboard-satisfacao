@@ -60,20 +60,37 @@
   .users-sub{ font-size:11.5px; color:var(--text-faint); margin:0 0 16px; }
   .users-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
   .user-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px;
     padding:8px 12px; font-size:12.5px;
   }
+  .user-row-main{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .user-row-btns{ display:flex; gap:6px; }
   .user-row .u-name{ font-weight:600; color:var(--text); }
   .user-row .u-role{
     font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint);
     border:1px solid var(--line); border-radius:20px; padding:2px 8px; margin-left:8px;
   }
-  .user-row .u-del{
-    background:none; border:1px solid var(--line); color:var(--critico);
-    border-radius:6px; padding:3px 9px; font-size:11px; cursor:pointer;
+  .user-row .u-del, .user-row .u-edit{
+    background:none; border:1px solid var(--line); color:var(--text-faint);
+    border-radius:6px; padding:3px 9px; font-size:11px; cursor:pointer; font-family:inherit;
   }
+  .user-row .u-del{ color:var(--critico); }
   .user-row .u-del:hover{ border-color:var(--critico); }
+  .user-row .u-edit:hover{ border-color:var(--accent); color:var(--accent); }
+  .user-edit-form{
+    display:flex; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .user-edit-form select, .user-edit-form input{
+    background:#eef1fb; border:1px solid transparent; border-radius:6px;
+    padding:6px 9px; font-size:12px; color:#1a2333; font-family:inherit;
+  }
+  .user-edit-form input{ flex:1; min-width:140px; }
+  .user-edit-form .u-edit-save, .user-edit-form .u-edit-cancel{
+    background:none; border:1px solid var(--line); color:var(--text-dim);
+    border-radius:6px; padding:6px 11px; font-size:11.5px; cursor:pointer; font-family:inherit;
+  }
+  .user-edit-form .u-edit-save{ border-color:var(--accent); color:var(--accent); }
   .users-form{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .users-form input, .users-form select{
     background:#eef1fb; border:1px solid transparent; border-radius:8px;
@@ -769,9 +786,56 @@ async function renderUsersList(){
     if (error) throw error;
     el.innerHTML = (data||[]).map(u => `
       <div class="user-row" data-username="${escapeHtml(u.username)}">
-        <div><span class="u-name">${escapeHtml(u.username)}</span><span class="u-role">${ROLE_LABELS[u.role] || u.role}</span></div>
-        <button type="button" class="u-del">Remover</button>
+        <div class="user-row-main">
+          <div><span class="u-name">${escapeHtml(u.username)}</span><span class="u-role">${ROLE_LABELS[u.role] || u.role}</span></div>
+          <div class="user-row-btns">
+            <button type="button" class="u-edit">Editar</button>
+            <button type="button" class="u-del">Remover</button>
+          </div>
+        </div>
+        <div class="user-edit-form" style="display:none;">
+          <select class="u-edit-role">
+            <option value="admin" ${u.role==='admin'?'selected':''}>Administrador</option>
+            <option value="editor" ${u.role==='editor'?'selected':''}>Editor</option>
+            <option value="viewer" ${u.role==='viewer'?'selected':''}>Visualização</option>
+          </select>
+          <input type="password" class="u-edit-pass" placeholder="Nova senha (deixe em branco pra manter)">
+          <button type="button" class="u-edit-save">Salvar</button>
+          <button type="button" class="u-edit-cancel">Cancelar</button>
+        </div>
       </div>`).join('') || '<p style="color:var(--text-faint);font-size:12px;">Nenhum usuário cadastrado.</p>';
+
+    el.querySelectorAll('.u-edit').forEach(btn=>{
+      btn.onclick = ()=>{
+        const row = btn.closest('.user-row');
+        const form = row.querySelector('.user-edit-form');
+        form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+      };
+    });
+    el.querySelectorAll('.u-edit-cancel').forEach(btn=>{
+      btn.onclick = ()=>{ btn.closest('.user-edit-form').style.display = 'none'; };
+    });
+    el.querySelectorAll('.u-edit-save').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const row = btn.closest('.user-row');
+        const username = row.dataset.username;
+        const newRole = row.querySelector('.u-edit-role').value;
+        const newPass = row.querySelector('.u-edit-pass').value;
+        const updates = { role: newRole };
+        if (newPass.trim()){
+          updates.password_hash = await sha256(newPass.trim());
+        }
+        try{
+          const { error } = await sb.from('app_users').update(updates).eq('username', username);
+          if (error) throw error;
+          if (username === currentUsername && newRole !== currentRole){
+            // papel do próprio usuário logado mudou — atualiza a sessão local também
+            localStorage.setItem(AUTH_KEY, JSON.stringify({ role: newRole, username }));
+          }
+          renderUsersList();
+        }catch(e){ alert('Erro ao salvar: ' + e.message); }
+      };
+    });
     el.querySelectorAll('.u-del').forEach(btn=>{
       btn.onclick = async ()=>{
         const username = btn.closest('.user-row').dataset.username;
@@ -2586,7 +2650,7 @@ function formatDateBR(iso){
 }
 
 const CRIT_LABELS = {
-  critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)", icon:"🔴"},
+  critico:  {label:"Crítico",  sub:"nota ≤4 ou risco de cancelamento", color:"var(--critico)", bg:"var(--critico-bg)", icon:"😡"},
   atencao:  {label:"Atenção",  sub:"nota 5–6 ou pendências graves",    color:"var(--atencao)", bg:"var(--atencao-bg)", icon:"⚠️"},
   pendente: {label:"Pendente", sub:"síndico não respondeu",            color:"var(--pendente)", bg:"var(--pendente-bg)", icon:"⏳"},
   ok:       {label:"OK",       sub:"sem pendências relevantes",        color:"var(--ok)", bg:"var(--ok-bg)", icon:"✅"},
@@ -2892,6 +2956,7 @@ function populateFilterOptions(){
   });
 
   const setores = [...new Set(DATA.flatMap(d=> d.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; })).filter(s=>s && s!=='—'))].sort();
+  if (!setores.includes('Outros')) setores.push('Outros');
   SETORES_CANONICOS = setores;
   setupMultiFilter({
     btnId:'setorFilterBtn', panelId:'setorFilterPanel', wrapId:'setorFilterWrap',
@@ -2991,6 +3056,11 @@ function editFormHTML(item){
           ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ef-setor-cb" value="${escapeHtml(s)}" ${(item.setor||'').split('/').map(x=>{ const t=x.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(s) ? 'checked':''}> ${escapeHtml(s)}</label>`).join('')}
         </div>
       </label>
+      <label class="ef-setor-outro-wrap" style="display:${(item.setor||'').split('/').some(p=>p.trim().toLowerCase().startsWith('outros')) ? 'block':'none'}">
+        Especifique o setor
+        <input type="text" class="ef-setor-outro" placeholder="Descreva o setor..."
+          value="${escapeHtml(((item.setor||'').split('/').find(p=>p.trim().toLowerCase().startsWith('outros')) || '').replace(/^outros\s*:?\s*/i,'').trim())}">
+      </label>
       <label>Motivo da reclamação
         <select class="ef-motivo" multiple size="6">
           ${MOTIVOS_CANONICOS.map(m => {
@@ -3059,6 +3129,10 @@ function newItemFormHTML(){
         <div class="cb-box">
           ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ni-setor-cb" value="${escapeHtml(s)}"> ${escapeHtml(s)}</label>`).join('')}
         </div>
+      </label>
+      <label class="ni-setor-outro-wrap" style="display:none;">
+        Especifique o setor
+        <input type="text" class="ni-setor-outro" placeholder="Descreva o setor...">
       </label>
       <label>Motivo da reclamação
         <select class="ni-motivo" multiple size="6">
@@ -3193,6 +3267,12 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
     const outrosSelected = [...wrap.querySelector('.ni-motivo').selectedOptions].some(o=>o.value==='Outros');
     wrap.querySelector('.ni-motivo-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
   });
+  wrap.querySelectorAll('.ni-setor-cb').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const outrosSelected = [...wrap.querySelectorAll('.ni-setor-cb:checked')].some(c=>c.value==='Outros');
+      wrap.querySelector('.ni-setor-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
+    });
+  });
   wrap.querySelector('#niCancelBtn').addEventListener('click', ()=>{
     document.getElementById('newItemModal').style.display = 'none';
   });
@@ -3210,6 +3290,9 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
     const motivoVals = [...wrap.querySelector('.ni-motivo').selectedOptions].map(o=>o.value);
     const outroTexto = wrap.querySelector('.ni-motivo-outro').value.trim();
     const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+    const setorVals = [...wrap.querySelectorAll('.ni-setor-cb:checked')].map(cb=>cb.value);
+    const setorOutroTexto = wrap.querySelector('.ni-setor-outro').value.trim();
+    const setorFinal = setorVals.map(v => (v === 'Outros' && setorOutroTexto) ? `Outros: ${setorOutroTexto}` : v);
     const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
     const item = {
       n: newN,
@@ -3219,7 +3302,7 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
       dataPesquisa: wrap.querySelector('.ni-data').value.trim(),
       statusPesquisa: wrap.querySelector('.ni-status').value.trim() || 'Concluída',
       crit: wrap.querySelector('.ni-crit').value,
-      setor: [...wrap.querySelectorAll('.ni-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
+      setor: setorFinal.join(' / ') || '—',
       motivo: motivoFinal.join(' / ') || '—',
       resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
       notaPosResolucao: wrap.querySelector('.ni-nota-pos').value.trim(),
@@ -3333,6 +3416,14 @@ function render(){
       wrap.style.display = outrosSelected ? 'block' : 'none';
     });
 
+    card.querySelectorAll('.ef-setor-cb').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const wrap = card.querySelector('.ef-setor-outro-wrap');
+        const outrosSelected = [...card.querySelectorAll('.ef-setor-cb:checked')].some(c=>c.value==='Outros');
+        if (wrap) wrap.style.display = outrosSelected ? 'block' : 'none';
+      });
+    });
+
     const cancelBtn = card.querySelector('.btn-cancel');
     if (cancelBtn) cancelBtn.onclick = (e)=>{
       e.stopPropagation();
@@ -3348,12 +3439,15 @@ function render(){
       const motivoVals = [...form.querySelector('.ef-motivo').selectedOptions].map(o=>o.value);
       const outroTexto = form.querySelector('.ef-motivo-outro').value.trim();
       const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+      const setorVals = [...form.querySelectorAll('.ef-setor-cb:checked')].map(cb=>cb.value);
+      const setorOutroTexto = form.querySelector('.ef-setor-outro').value.trim();
+      const setorFinal = setorVals.map(v => (v === 'Outros' && setorOutroTexto) ? `Outros: ${setorOutroTexto}` : v);
       const updates = {
         nota: form.querySelector('.ef-nota').value.trim(),
         dataPesquisa: form.querySelector('.ef-data').value.trim(),
         statusPesquisa: form.querySelector('.ef-status').value.trim(),
         crit: form.querySelector('.ef-crit').value,
-        setor: [...form.querySelectorAll('.ef-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
+        setor: setorFinal.join(' / ') || '—',
         motivo: motivoFinal.join(' / ') || '—',
         resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
         notaPosResolucao: form.querySelector('.ef-nota-pos').value.trim(),
@@ -3960,6 +4054,20 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <input type="text" id="fResponsavel" placeholder="Ex: Rose">
         </div>
       </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Área</label>
+          <input type="text" id="fArea" placeholder="Ex: Zona Leste">
+        </div>
+        <div class="field">
+          <label>Supervisor Responsável</label>
+          <input type="text" id="fSupervisor" placeholder="Ex: João Silva">
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome do Síndico</label>
+        <input type="text" id="fSindicoNome" placeholder="Ex: Maria Oliveira">
+      </div>
       <div class="field">
         <label>Status</label>
         <div class="seg" id="segStatus">
@@ -4038,7 +4146,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       id: row.item_id, nome: row.nome, filial: row.filial, responsavel: row.responsavel,
       status: row.status, sindico: row.sindico, modalidade: row.modalidade, obs: row.obs,
       pesquisaNota: row.pesquisa_nota, pesquisaMes: row.pesquisa_mes, pesquisaStatus: row.pesquisa_status,
-      contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo
+      contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo,
+      area: row.area, supervisor: row.supervisor, sindicoNome: row.sindico_nome
     };
   }
   function condoToRow(c){
@@ -4047,6 +4156,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       status: c.status, sindico: c.sindico, modalidade: c.modalidade, obs: c.obs,
       pesquisa_nota: c.pesquisaNota, pesquisa_mes: c.pesquisaMes, pesquisa_status: c.pesquisaStatus,
       contrato_inicio: c.contratoInicio || null, contrato_fim: c.contratoFim || null, possui_aditivo: c.possuiAditivo || null,
+      area: c.area || null, supervisor: c.supervisor || null, sindico_nome: c.sindicoNome || null,
       updated_at: new Date().toISOString()
     };
   }
@@ -4234,7 +4344,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     empty.style.display = "none";
     tbody.innerHTML = list.map(function(c){
       return '<tr>'+
-        '<td class="cell-nome">'+esc(c.nome)+(c.responsavel? '<span class="resp">'+esc(c.responsavel)+'</span>':'')+(c.contratoFim? '<span class="resp contrato-fim-tag">Fim do contrato: '+fmtDataBR(c.contratoFim)+'</span>':'')+'</td>'+
+        '<td class="cell-nome">'+esc(c.nome)+(c.responsavel? '<span class="resp">'+esc(c.responsavel)+'</span>':'')+(c.area? '<span class="resp">Área: '+esc(c.area)+'</span>':'')+(c.supervisor? '<span class="resp">Supervisor: '+esc(c.supervisor)+'</span>':'')+(c.contratoFim? '<span class="resp contrato-fim-tag">Fim do contrato: '+fmtDataBR(c.contratoFim)+'</span>':'')+'</td>'+
         '<td>'+esc(c.filial)+'</td>'+
         '<td>'+badgeStatus(c.status)+'</td>'+
         '<td>'+tagSindico(c.sindico)+'</td>'+
@@ -4343,6 +4453,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fNome").value = c ? c.nome : "";
     document.getElementById("fFilial").value = c ? c.filial : FILIAIS[0];
     document.getElementById("fResponsavel").value = c ? (c.responsavel||"") : "";
+    document.getElementById("fArea").value = c ? (c.area||"") : "";
+    document.getElementById("fSupervisor").value = c ? (c.supervisor||"") : "";
+    document.getElementById("fSindicoNome").value = c ? (c.sindicoNome||"") : "";
     document.getElementById("fObs").value = c ? (c.obs||"") : "";
     document.getElementById("fContratoInicio").value = c ? (c.contratoInicio||"") : "";
     document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
@@ -4405,6 +4518,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       nome: nome,
       filial: document.getElementById("fFilial").value,
       responsavel: document.getElementById("fResponsavel").value.trim(),
+      area: document.getElementById("fArea").value.trim(),
+      supervisor: document.getElementById("fSupervisor").value.trim(),
+      sindicoNome: document.getElementById("fSindicoNome").value.trim(),
       status: getSeg("segStatus") || "Ativo",
       sindico: getSeg("segSindico"),
       modalidade: getSeg("segModalidade"),
