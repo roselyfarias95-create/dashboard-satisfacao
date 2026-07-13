@@ -296,15 +296,9 @@
     animation:pulse 2s infinite;
   }
   @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
-  .header-logo-box{
-    background:#fff; border-radius:10px; padding:6px; display:inline-flex;
-    align-items:center; justify-content:center; margin-top:8px;
-    box-shadow:0 4px 12px -4px rgba(0,0,0,0.35);
-    width:90px;
-  }
-  .header-logo{ width:100%; height:auto; display:block; }
   .headmeta{ text-align:right; font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--text-faint); line-height:1.7; }
   .headmeta b{ color:var(--text-dim); font-weight:600; }
+  #lastUpdateInfo{ font-size:11px; color:var(--text-faint); }
 
   /* ---------- KPI ROW ---------- */
   .kpis{
@@ -736,13 +730,11 @@
   <header>
     <div>
       <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
-      <div class="header-logo-box">
-        <img src="data:image/png;base64,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" alt="Servis Eletrônica" class="header-logo">
-      </div>
     </div>
     <div class="headmeta">
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
+      <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -751,6 +743,14 @@
       </div>
     </div>
   </header>
+  <script>
+    (function(){
+      var el = document.getElementById('lastUpdateTime');
+      if (el) {
+        el.textContent = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      }
+    })();
+  </script>
 
   <div class="main-layout">
     <nav class="sidebar">
@@ -4196,6 +4196,32 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <option value="Controle de Acesso">Controle de Acesso</option>
       <option value="Assistida">Assistida</option>
     </select>
+    <select class="filter-select" id="filterArmario">
+      <option value="">Armário: todos</option>
+      <option value="Sim">Possui</option>
+      <option value="Não">Não possui</option>
+    </select>
+    <select class="filter-select" id="filterGphone">
+      <option value="">Gphone: todos</option>
+      <option value="Sim">Possui</option>
+      <option value="Não">Não possui</option>
+    </select>
+    <select class="filter-select" id="filterFacial">
+      <option value="">Facial: todos</option>
+      <option value="Sim">Possui</option>
+      <option value="Não">Não possui</option>
+    </select>
+    <select class="filter-select" id="filterAcessoVeicular">
+      <option value="">Acesso veicular: todos</option>
+      <option value="Controle">Controle</option>
+      <option value="Antena Veicular">Antena Veicular</option>
+      <option value="Controle e Antena">Controle e Antena</option>
+    </select>
+    <select class="filter-select" id="filterSistema">
+      <option value="">Sistema: todos</option>
+      <option value="MIP 1000">MIP 1000</option>
+      <option value="Módulo Guarita">Módulo Guarita</option>
+    </select>
     <button class="btn btn-ghost" id="btnExport">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
       Exportar CSV
@@ -4224,6 +4250,13 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <th>Status</th>
           <th>Síndico</th>
           <th>Modalidade</th>
+          <th>Mensalidade</th>
+          <th>Unidades</th>
+          <th>Armário</th>
+          <th>Gphone</th>
+          <th>Facial</th>
+          <th>Acesso Veicular</th>
+          <th>Sistema</th>
           <th style="text-align:right;">Ações</th>
         </tr>
       </thead>
@@ -4288,6 +4321,53 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <div class="seg-opt" data-val="Assistida">Assistida</div>
         </div>
       </div>
+      <div class="field" style="border-top:1px solid var(--line); padding-top:14px;">
+        <label>Questionário Técnico</label>
+        <div class="field-row">
+          <div class="field">
+            <label>Mensalidade do Condomínio (R$)</label>
+            <input type="number" step="0.01" min="0" id="fMensalidade" placeholder="Ex: 450.00">
+          </div>
+          <div class="field">
+            <label>Quantidade de Unidades</label>
+            <input type="number" step="1" min="0" id="fUnidades" placeholder="Ex: 120">
+          </div>
+        </div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr; margin-top:12px;">
+          <div class="field">
+            <label>Possui Armário?</label>
+            <div class="seg" id="segArmario">
+              <div class="seg-opt" data-val="Sim">Sim</div>
+              <div class="seg-opt" data-val="Não">Não</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Possui Gphone?</label>
+            <div class="seg" id="segGphone">
+              <div class="seg-opt" data-val="Sim">Sim</div>
+              <div class="seg-opt" data-val="Não">Não</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Possui Facial?</label>
+            <div class="seg" id="segFacial">
+              <div class="seg-opt" data-val="Sim">Sim</div>
+              <div class="seg-opt" data-val="Não">Não</div>
+            </div>
+          </div>
+        </div>
+        <label style="margin-top:12px;">Acesso Veicular</label>
+        <div class="seg" id="segAcessoVeicular" style="margin-top:6px;">
+          <div class="seg-opt" data-val="Controle">Controle</div>
+          <div class="seg-opt" data-val="Antena Veicular">Antena Veicular</div>
+          <div class="seg-opt" data-val="Controle e Antena">Controle e Antena</div>
+        </div>
+        <label style="margin-top:12px;">Sistema</label>
+        <div class="seg" id="segSistema" style="margin-top:6px;">
+          <div class="seg-opt" data-val="MIP 1000">MIP 1000</div>
+          <div class="seg-opt" data-val="Módulo Guarita">Módulo Guarita</div>
+        </div>
+      </div>
       <div class="field">
         <label>Observações</label>
         <textarea id="fObs" placeholder="Notas internas sobre o condomínio (opcional)"></textarea>
@@ -4346,7 +4426,10 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       id: row.item_id, nome: row.nome, filial: row.filial, responsavel: row.responsavel,
       status: row.status, sindico: row.sindico, modalidade: row.modalidade, obs: row.obs,
       pesquisaNota: row.pesquisa_nota, pesquisaMes: row.pesquisa_mes, pesquisaStatus: row.pesquisa_status,
-      contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo
+      contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo,
+      mensalidade: row.mensalidade, unidades: row.qtd_unidades,
+      possuiArmario: row.possui_armario, possuiGphone: row.possui_gphone, possuiFacial: row.possui_facial,
+      acessoVeicular: row.acesso_veicular, sistema: row.sistema_guarita
     };
   }
   function condoToRow(c){
@@ -4355,6 +4438,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       status: c.status, sindico: c.sindico, modalidade: c.modalidade, obs: c.obs,
       pesquisa_nota: c.pesquisaNota, pesquisa_mes: c.pesquisaMes, pesquisa_status: c.pesquisaStatus,
       contrato_inicio: c.contratoInicio || null, contrato_fim: c.contratoFim || null, possui_aditivo: c.possuiAditivo || null,
+      mensalidade: c.mensalidade || null, qtd_unidades: c.unidades || null,
+      possui_armario: c.possuiArmario || null, possui_gphone: c.possuiGphone || null, possui_facial: c.possuiFacial || null,
+      acesso_veicular: c.acessoVeicular || null, sistema_guarita: c.sistema || null,
       updated_at: new Date().toISOString()
     };
   }
@@ -4489,6 +4575,30 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     if(m === "Assistida") return '<span class="tag mod-assistida">Assistida</span>';
     return '<span class="tag">Não definida</span>';
   }
+  function tagSimNao(v){
+    if(v === "Sim") return '<span class="tag mod-autonomo">Sim</span>';
+    if(v === "Não") return '<span class="tag">Não</span>';
+    return '<span class="tag">Não definido</span>';
+  }
+  function tagAcessoVeicular(v){
+    if(v === "Controle") return '<span class="tag mod-controle">Controle</span>';
+    if(v === "Antena Veicular") return '<span class="tag mod-autonomo">Antena Veicular</span>';
+    if(v === "Controle e Antena") return '<span class="tag mod-assistida">Controle e Antena</span>';
+    return '<span class="tag">Não definido</span>';
+  }
+  function tagSistema(v){
+    if(v === "MIP 1000") return '<span class="tag mod-controle">MIP 1000</span>';
+    if(v === "Módulo Guarita") return '<span class="tag mod-assistida">Módulo Guarita</span>';
+    return '<span class="tag">Não definido</span>';
+  }
+  function fmtMoeda(v){
+    if(v === null || v === undefined || v === "") return '<span class="tag">—</span>';
+    return "R$ " + Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtUnidades(v){
+    if(v === null || v === undefined || v === "") return '<span class="tag">—</span>';
+    return Number(v).toLocaleString("pt-BR");
+  }
   function mesLabel(mes){
     if(!mes) return "";
     var parts = mes.split("-");
@@ -4526,6 +4636,11 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var fStatus = document.getElementById("filterStatus").value;
     var fSindico = document.getElementById("filterSindico").value;
     var fModalidade = document.getElementById("filterModalidade").value;
+    var fArmario = document.getElementById("filterArmario").value;
+    var fGphone = document.getElementById("filterGphone").value;
+    var fFacial = document.getElementById("filterFacial").value;
+    var fAcessoVeicular = document.getElementById("filterAcessoVeicular").value;
+    var fSistema = document.getElementById("filterSistema").value;
     var sindicoSelectedNaoDefinido = document.getElementById("filterSindico").selectedIndex === 3;
 
     return state.data.filter(function(c){
@@ -4533,6 +4648,11 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       if(fFilial && c.filial !== fFilial) return false;
       if(fStatus && c.status !== fStatus) return false;
       if(fModalidade && c.modalidade !== fModalidade) return false;
+      if(fArmario && c.possuiArmario !== fArmario) return false;
+      if(fGphone && c.possuiGphone !== fGphone) return false;
+      if(fFacial && c.possuiFacial !== fFacial) return false;
+      if(fAcessoVeicular && c.acessoVeicular !== fAcessoVeicular) return false;
+      if(fSistema && c.sistema !== fSistema) return false;
       if(sindicoSelectedNaoDefinido){ if(c.sindico) return false; }
       else if(fSindico && c.sindico !== fSindico) return false;
       return true;
@@ -4561,6 +4681,13 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         '<td>'+badgeStatus(c.status)+'</td>'+
         '<td>'+tagSindico(c.sindico)+'</td>'+
         '<td>'+tagModalidade(c.modalidade)+'</td>'+
+        '<td>'+fmtMoeda(c.mensalidade)+'</td>'+
+        '<td>'+fmtUnidades(c.unidades)+'</td>'+
+        '<td>'+tagSimNao(c.possuiArmario)+'</td>'+
+        '<td>'+tagSimNao(c.possuiGphone)+'</td>'+
+        '<td>'+tagSimNao(c.possuiFacial)+'</td>'+
+        '<td>'+tagAcessoVeicular(c.acessoVeicular)+'</td>'+
+        '<td>'+tagSistema(c.sistema)+'</td>'+
         '<td><div class="row-actions" style="justify-content:flex-end;">'+
           '<button class="icon-btn" data-edit="'+c.id+'" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>'+
           '<button class="icon-btn danger" data-del="'+c.id+'" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg></button>'+
@@ -4674,10 +4801,17 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fObs").value = c ? (c.obs||"") : "";
     document.getElementById("fContratoInicio").value = c ? (c.contratoInicio||"") : "";
     document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
+    document.getElementById("fMensalidade").value = c ? (c.mensalidade||"") : "";
+    document.getElementById("fUnidades").value = c ? (c.unidades||"") : "";
     setSeg("segStatus", c ? c.status : "Ativo");
     setSeg("segSindico", c ? (c.sindico||"") : "");
     setSeg("segModalidade", c ? (c.modalidade||"") : "");
     setSeg("segAditivo", c ? (c.possuiAditivo||"") : "");
+    setSeg("segArmario", c ? (c.possuiArmario||"") : "");
+    setSeg("segGphone", c ? (c.possuiGphone||"") : "");
+    setSeg("segFacial", c ? (c.possuiFacial||"") : "");
+    setSeg("segAcessoVeicular", c ? (c.acessoVeicular||"") : "");
+    setSeg("segSistema", c ? (c.sistema||"") : "");
     document.getElementById("btnDeleteInModal").style.display = c ? "inline-flex" : "none";
     overlay.classList.add("open");
     document.getElementById("fNome").focus();
@@ -4704,7 +4838,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     });
     return active ? active.getAttribute("data-val") : "";
   }
-  ["segStatus","segSindico","segModalidade","segAditivo"].forEach(function(gid){
+  ["segStatus","segSindico","segModalidade","segAditivo","segArmario","segGphone","segFacial","segAcessoVeicular","segSistema"].forEach(function(gid){
     document.getElementById(gid).addEventListener("click", function(e){
       var opt = e.target.closest(".seg-opt");
       if(!opt) return;
@@ -4745,7 +4879,14 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       pesquisaStatus: (state.editingId ? (state.data.find(function(x){return x.id===state.editingId;})||{}).pesquisaStatus : "") || "",
       contratoInicio: document.getElementById("fContratoInicio").value,
       contratoFim: document.getElementById("fContratoFim").value,
-      possuiAditivo: getSeg("segAditivo")
+      possuiAditivo: getSeg("segAditivo"),
+      mensalidade: document.getElementById("fMensalidade").value ? parseFloat(document.getElementById("fMensalidade").value) : null,
+      unidades: document.getElementById("fUnidades").value ? parseInt(document.getElementById("fUnidades").value, 10) : null,
+      possuiArmario: getSeg("segArmario"),
+      possuiGphone: getSeg("segGphone"),
+      possuiFacial: getSeg("segFacial"),
+      acessoVeicular: getSeg("segAcessoVeicular"),
+      sistema: getSeg("segSistema")
     };
     var savedCondo;
     var isNovo = !state.editingId;
@@ -4799,7 +4940,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   // ==========================================================================
   // EVENTOS: FILTROS DA TABELA
   // ==========================================================================
-  ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade"].forEach(function(id){
+  ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema"].forEach(function(id){
     document.getElementById(id).addEventListener("input", renderTable);
     document.getElementById(id).addEventListener("change", renderTable);
   });
@@ -4809,9 +4950,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   // EXPORTAÇÃO (CSV / PDF via impressão / backup HTML autônomo)
   // ==========================================================================
   document.getElementById("btnExport").addEventListener("click", function(){
-    var rows = [["Nome","Filial","Responsável","Status","Síndico","Modalidade","Nota Pesquisa","Mês Pesquisa","Status Pesquisa","Observações"]];
+    var rows = [["Nome","Filial","Responsável","Status","Síndico","Modalidade","Mensalidade","Unidades","Armário","Gphone","Facial","Acesso Veicular","Sistema","Nota Pesquisa","Mês Pesquisa","Status Pesquisa","Observações"]];
     getFiltered().forEach(function(c){
-      rows.push([c.nome, c.filial, c.responsavel||"", c.status, c.sindico||"Não definido", c.modalidade||"Não definida", c.pesquisaNota||"", mesLabel(c.pesquisaMes)||"", c.pesquisaStatus||"Não realizada", c.obs||""]);
+      rows.push([c.nome, c.filial, c.responsavel||"", c.status, c.sindico||"Não definido", c.modalidade||"Não definida", c.mensalidade||"", c.unidades||"", c.possuiArmario||"Não definido", c.possuiGphone||"Não definido", c.possuiFacial||"Não definido", c.acessoVeicular||"Não definido", c.sistema||"Não definido", c.pesquisaNota||"", mesLabel(c.pesquisaMes)||"", c.pesquisaStatus||"Não realizada", c.obs||""]);
     });
     var csv = rows.map(function(r){
       return r.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(",");
@@ -4835,6 +4976,11 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     if(document.getElementById("filterStatus").value) filtros.push("status "+document.getElementById("filterStatus").value);
     if(document.getElementById("filterSindico").value) filtros.push("síndico "+document.getElementById("filterSindico").value);
     if(document.getElementById("filterModalidade").value) filtros.push("modalidade "+document.getElementById("filterModalidade").value);
+    if(document.getElementById("filterArmario").value) filtros.push("armário "+document.getElementById("filterArmario").value);
+    if(document.getElementById("filterGphone").value) filtros.push("gphone "+document.getElementById("filterGphone").value);
+    if(document.getElementById("filterFacial").value) filtros.push("facial "+document.getElementById("filterFacial").value);
+    if(document.getElementById("filterAcessoVeicular").value) filtros.push("acesso veicular "+document.getElementById("filterAcessoVeicular").value);
+    if(document.getElementById("filterSistema").value) filtros.push("sistema "+document.getElementById("filterSistema").value);
     var filtroTxt = filtros.length ? " · Filtros: "+filtros.join(", ") : " · Sem filtros aplicados";
     document.getElementById("printHeaderMeta").textContent =
       "Gerado em "+now.toLocaleDateString("pt-BR")+" às "+now.toLocaleTimeString("pt-BR")+" · "+list.length+" condomínio(s) listado(s)"+filtroTxt;
