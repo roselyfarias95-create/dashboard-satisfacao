@@ -14,9 +14,11 @@
      - usersModal          — gerenciar usuários (admin)
      - newItemModal        — cadastrar novo item de pesquisa
      - rodadaModal         — abrir nova rodada mensal
-     - sidebar + tabPesquisa / tabCadastro — as duas abas do app
+     - sidebar + tabPesquisa / tabCadastro / tabChecklist — as três abas do app
      - tabCadastro > #cadastroFrame  — iframe que recebe o Cadastro de
        Condomínios via `.srcdoc` (é outro mini-app completo, ver item 4)
+     - tabChecklist — checklist operacional por condomínio (tabela
+       checklist_condominios no Supabase, ver seção CHECK LIST DE CONDOMÍNIOS)
   3. 1º bloco de script  — AUTENTICAÇÃO (login, sessão, gerenciar usuários)
   4. 2º bloco de script  — APP PRINCIPAL, nesta ordem:
      DADOS (DATA) → CLASSIFICAÇÃO → CONFIG/SUPABASE → SINCRONIZAÇÃO →
@@ -597,6 +599,42 @@
 
   footer{ margin-top:46px; padding-top:18px; border-top:1px solid var(--line); font-size:11px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
 
+  /* ---------- CHECKLIST DE CONDOMÍNIOS ---------- */
+  .checklist-toolbar{
+    display:flex; gap:10px; align-items:center; margin:18px 0 16px; flex-wrap:wrap;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:12px 14px; box-shadow:var(--shadow-panel);
+  }
+  .checklist-toolbar .search{ flex:1; min-width:220px; }
+  .checklist-table-wrap{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
+    overflow-x:auto; box-shadow:var(--shadow-panel);
+  }
+  .checklist-table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .checklist-table thead th{
+    position:sticky; top:0; z-index:2;
+    background:var(--bg-panel-3); color:var(--text-faint);
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; text-transform:uppercase;
+    letter-spacing:.04em; font-weight:600; text-align:center;
+    padding:10px 8px; border-bottom:1px solid var(--line); line-height:1.3; white-space:nowrap;
+  }
+  .checklist-table thead th.ck-name{ text-align:left; min-width:220px; white-space:normal; }
+  .checklist-table tbody td{
+    padding:8px; border-bottom:1px solid var(--line-soft); text-align:center; color:var(--text-dim);
+  }
+  .checklist-table tbody tr:hover td{ background:var(--bg-panel-2); }
+  .checklist-table tbody tr:last-child td{ border-bottom:none; }
+  .checklist-table td.ck-name{
+    text-align:left; color:var(--text); font-weight:600; white-space:nowrap;
+  }
+  .checklist-table td.ck-name small{ display:block; font-weight:400; color:var(--text-faint); font-size:10px; margin-top:1px; }
+  .checklist-table input[type="checkbox"]{
+    width:16px; height:16px; accent-color:var(--ok); cursor:pointer; vertical-align:middle;
+  }
+  .checklist-table td.ck-progress{ min-width:70px; }
+  .ck-bar{ background:var(--bg-panel-2); border-radius:5px; height:6px; overflow:hidden; width:56px; margin:0 auto; }
+  .ck-bar-fill{ height:100%; background:var(--ok); border-radius:5px; }
+
   @media (max-width:1400px){
     .wrap{ padding:26px 24px 80px; }
   }
@@ -724,6 +762,7 @@
       </div>
       <button type="button" class="tab-btn active" data-tab="pesquisa"><span class="tab-icon">📋</span><span class="tab-label">Pesquisa de Satisfação</span></button>
       <button type="button" class="tab-btn" data-tab="cadastro"><span class="tab-icon">🏢</span><span class="tab-label">Cadastro de Condomínios</span></button>
+      <button type="button" class="tab-btn" data-tab="checklist"><span class="tab-icon">✅</span><span class="tab-label">Check List Condomínios</span></button>
     </nav>
 
     <div class="content-area">
@@ -819,6 +858,41 @@
 
   <div id="tabCadastro" class="tab-panel" style="display:none;">
     <iframe id="cadastroFrame" title="Cadastro de Condomínios"></iframe>
+  </div>
+
+  <div id="tabChecklist" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+    <div class="checklist-toolbar">
+      <input type="text" id="checklistSearch" class="search" placeholder="Buscar condomínio...">
+      <select id="checklistFilialSel"><option value="">Filial: todas</option></select>
+      <span id="checklistProgress" class="count-line" style="margin:0;"></span>
+    </div>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="checklistTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th>
+            <th title="Ordem de CTT">Ordem de CTT</th>
+            <th title="Retirado AP na frente dos nomes">Retirado AP<br>na frente dos nomes</th>
+            <th title="Regras">Regras</th>
+            <th title="Conferência da aba notificação e se os tokens estão ativos">Notificação /<br>Tokens ativos</th>
+            <th title="Eventos porta aberta">Eventos<br>porta aberta</th>
+            <th title="Eventos porta violada">Eventos<br>porta violada</th>
+            <th title="Pânico">Pânico</th>
+            <th title="Contatos das empresas de elevadores">Contatos<br>elevadores</th>
+            <th title="Cadastro de moradores">Cadastro<br>moradores</th>
+            <th title="Síndico">Síndico</th>
+          </tr>
+        </thead>
+        <tbody id="checklistBody">
+          <tr><td colspan="11" class="empty">Carregando condomínios...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
     </div>
@@ -4806,6 +4880,148 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
 `;
 
 // ============================================================================
+// CHECK LIST DE CONDOMÍNIOS
+// Lista todos os condomínios cadastrados (tabela cadastro_condominios) com um
+// checklist de itens operacionais por condomínio (tabela checklist_condominios,
+// uma linha por condomínio, chave = item_id do Cadastro). Cada item é um
+// boolean simples (feito / não feito), persistido no Supabase em tempo real.
+// ============================================================================
+const CHECKLIST_ITEMS = [
+  { key:'ordem_ctt',               label:'Ordem de CTT' },
+  { key:'retirado_ap_frente_nomes', label:'Retirado AP na frente dos nomes' },
+  { key:'regras',                  label:'Regras' },
+  { key:'conf_notificacao_tokens', label:'Conferência da aba notificação e se os tokens estão ativos' },
+  { key:'eventos_porta_aberta',    label:'Eventos porta aberta' },
+  { key:'eventos_porta_violada',   label:'Eventos porta violada' },
+  { key:'panico',                  label:'Pânico' },
+  { key:'contatos_elevadores',     label:'Contatos das empresas de elevadores' },
+  { key:'cadastro_moradores',      label:'Cadastro de moradores' },
+  { key:'sindico',                 label:'Síndico' },
+];
+let checklistCondos = [];   // [{id, nome, filial}]
+let checklistState = {};    // { [id]: { ordem_ctt:bool, ... } }
+let checklistLoaded = false;
+
+function emptyChecklistRow(){
+  const r = {};
+  CHECKLIST_ITEMS.forEach(it => r[it.key] = false);
+  return r;
+}
+
+async function loadChecklistData(){
+  const body = document.getElementById('checklistBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="11" class="empty">Sem conexão com o Supabase — não é possível carregar o checklist agora.</td></tr>';
+    return;
+  }
+  body.innerHTML = '<tr><td colspan="11" class="empty">Carregando condomínios...</td></tr>';
+  try{
+    const [{ data: condos, error: e1 }, { data: rows, error: e2 }] = await Promise.all([
+      sb.from('cadastro_condominios').select('item_id,nome,filial,status'),
+      sb.from('checklist_condominios').select('*'),
+    ]);
+    if (e1) throw e1;
+    // Tabela checklist_condominios pode ainda não existir no banco — se der erro,
+    // seguimos só com a lista de condomínios e checklist zerado localmente.
+    checklistCondos = (condos || [])
+      .filter(c => (c.status || 'Ativo') !== 'Inativo')
+      .map(c => ({ id:c.item_id, nome:c.nome, filial:c.filial }))
+      .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    checklistState = {};
+    checklistCondos.forEach(c => checklistState[c.id] = emptyChecklistRow());
+    if (!e2 && rows){
+      rows.forEach(r => {
+        if (checklistState[r.condo_id]){
+          CHECKLIST_ITEMS.forEach(it => checklistState[r.condo_id][it.key] = !!r[it.key]);
+        }
+      });
+    } else if (e2){
+      console.warn('Tabela checklist_condominios indisponível (crie-a no Supabase):', e2.message || e2);
+    }
+
+    fillChecklistFilialFilter();
+    renderChecklistTable();
+    checklistLoaded = true;
+  }catch(e){
+    console.error('Falha ao carregar checklist:', e);
+    body.innerHTML = '<tr><td colspan="11" class="empty">Erro ao carregar condomínios do Cadastro.</td></tr>';
+  }
+}
+
+function fillChecklistFilialFilter(){
+  const sel = document.getElementById('checklistFilialSel');
+  const atual = sel.value;
+  const filiais = Array.from(new Set(checklistCondos.map(c => c.filial || 'Não definida'))).sort();
+  sel.innerHTML = '<option value="">Filial: todas</option>' +
+    filiais.map(f => `<option value="${f}">${f}</option>`).join('');
+  sel.value = atual || '';
+}
+
+function checklistRowProgress(id){
+  const st = checklistState[id] || {};
+  const done = CHECKLIST_ITEMS.filter(it => st[it.key]).length;
+  return { done, total: CHECKLIST_ITEMS.length };
+}
+
+function renderChecklistTable(){
+  const body = document.getElementById('checklistBody');
+  const termo = (document.getElementById('checklistSearch').value || '').toLowerCase().trim();
+  const filial = document.getElementById('checklistFilialSel').value;
+
+  const filtrados = checklistCondos.filter(c => {
+    if (filial && c.filial !== filial) return false;
+    if (termo && !c.nome.toLowerCase().includes(termo)) return false;
+    return true;
+  });
+
+  if (!filtrados.length){
+    body.innerHTML = '<tr><td colspan="11" class="empty">Nenhum condomínio encontrado.</td></tr>';
+  } else {
+    body.innerHTML = filtrados.map(c => {
+      const st = checklistState[c.id] || emptyChecklistRow();
+      const cells = CHECKLIST_ITEMS.map(it =>
+        `<td><input type="checkbox" data-condo="${c.id}" data-item="${it.key}" ${st[it.key] ? 'checked' : ''}></td>`
+      ).join('');
+      return `<tr>
+        <td class="ck-name">${c.nome}<small>${c.filial || 'Não definida'}</small></td>
+        ${cells}
+      </tr>`;
+    }).join('');
+  }
+
+  const totalDone = filtrados.reduce((s,c) => s + checklistRowProgress(c.id).done, 0);
+  const totalPossible = filtrados.length * CHECKLIST_ITEMS.length;
+  const pct = totalPossible ? Math.round((totalDone/totalPossible)*100) : 0;
+  document.getElementById('checklistProgress').textContent =
+    `${filtrados.length} condomínio(s) · ${pct}% do checklist concluído`;
+}
+
+async function toggleChecklistItem(condoId, itemKey, checked){
+  if (!checklistState[condoId]) checklistState[condoId] = emptyChecklistRow();
+  checklistState[condoId][itemKey] = checked;
+  renderChecklistTable();
+  if (!sb) return;
+  try{
+    const row = Object.assign({ condo_id: condoId, updated_at: new Date().toISOString() }, checklistState[condoId]);
+    const { error } = await sb.from('checklist_condominios').upsert(row);
+    if (error) console.warn('Falha ao salvar checklist (crie a tabela checklist_condominios no Supabase):', error.message || error);
+  }catch(e){ console.warn('Falha ao salvar checklist:', e); }
+}
+
+function initChecklistUI(){
+  document.getElementById('checklistSearch').addEventListener('input', renderChecklistTable);
+  document.getElementById('checklistFilialSel').addEventListener('change', renderChecklistTable);
+  document.getElementById('checklistBody').addEventListener('change', (ev) => {
+    const t = ev.target;
+    if (t && t.matches('input[type="checkbox"][data-condo]')){
+      toggleChecklistItem(t.dataset.condo, t.dataset.item, t.checked);
+    }
+  });
+}
+initChecklistUI();
+
+// ============================================================================
 // NAVEGAÇÃO POR ABAS + INICIALIZAÇÃO
 // ============================================================================
 function initTabs(){
@@ -4818,9 +5034,13 @@ function initTabs(){
       const tab = btn.dataset.tab;
       document.getElementById('tabPesquisa').style.display = tab === 'pesquisa' ? 'block' : 'none';
       document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
+      document.getElementById('tabChecklist').style.display = tab === 'checklist' ? 'block' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
         cadastroLoaded = true;
+      }
+      if (tab === 'checklist' && !checklistLoaded){
+        loadChecklistData();
       }
     });
   });
