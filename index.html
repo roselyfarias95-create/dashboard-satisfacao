@@ -137,12 +137,24 @@
   }
   .user-row .u-del:hover{ border-color:var(--critico); background:var(--critico-bg); }
   .users-form{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-  .users-form input, .users-form select{
+  .users-form input, .users-form select, .users-form textarea{
     background:#eef1fb; border:1px solid transparent; border-radius:9px;
     padding:10px 12px; font-size:13px; color:#1a2333; font-family:inherit;
   }
   .users-add-btn{ grid-column:1 / -1; margin-top:2px; }
   .users-error{ color:var(--critico); font-size:12px; margin:10px 0 0; text-align:center; }
+  .combo-dropdown{
+    display:none; position:absolute; top:100%; left:0; right:0; z-index:50;
+    background:#eef1fb; border-radius:9px; margin-top:4px;
+    max-height:220px; overflow-y:auto;
+    box-shadow:0 12px 28px -8px rgba(0,0,0,0.5);
+  }
+  .combo-dropdown.open{ display:block; }
+  .combo-option{
+    padding:9px 12px; font-size:12.5px; color:#1a2333; cursor:pointer; font-weight:500;
+  }
+  .combo-option:hover, .combo-option.hl{ background:#d7deee; }
+  .combo-empty{ padding:9px 12px; font-size:12px; color:#6b7280; }
 
   .login-box{
     background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel) 60%, var(--bg-panel-2));
@@ -629,6 +641,29 @@
   .ck-bar{ background:var(--bg-panel-2); border-radius:5px; height:6px; overflow:hidden; width:56px; margin:0 auto; }
   .ck-bar-fill{ height:100%; background:var(--ok); border-radius:5px; }
 
+  /* ---------- RENOVAÇÃO DE CONTRATOS ---------- */
+  .neg-badge{
+    display:inline-flex; align-items:center; font-size:10.5px; font-weight:650;
+    padding:4px 10px; border-radius:20px; white-space:nowrap;
+  }
+  .neg-badge.andamento{ color:var(--pendente); background:var(--pendente-bg); }
+  .neg-badge.renovado{ color:var(--ok); background:var(--ok-bg); }
+  .neg-badge.nao-renovado{ color:var(--critico); background:var(--critico-bg); }
+  .neg-badge.cancelado{ color:var(--text-faint); background:var(--bg-panel-3); }
+  .renov-dias{ color:var(--critico); font-family:"IBM Plex Mono",monospace; font-weight:650; }
+  .renov-action-btn{
+    background:var(--bg-panel-3); border:1px solid var(--line); color:var(--accent);
+    border-radius:7px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:inherit;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .renov-action-btn:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .renov-del-btn{
+    background:none; border:1px solid var(--line); color:var(--critico);
+    border-radius:7px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:inherit;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .renov-del-btn:hover{ border-color:var(--critico); background:var(--critico-bg); }
+
   @media (max-width:1400px){
     .wrap{ padding:26px 24px 80px; }
   }
@@ -762,6 +797,7 @@
       </div>
       <button type="button" class="tab-btn active" data-tab="pesquisa"><span class="tab-icon">📋</span><span class="tab-label">Pesquisa de Satisfação</span></button>
       <button type="button" class="tab-btn" data-tab="cadastro"><span class="tab-icon">🏢</span><span class="tab-label">Cadastro de Condomínios</span></button>
+      <button type="button" class="tab-btn" data-tab="renovacao"><span class="tab-icon">🔄</span><span class="tab-label">Renovação de Contratos</span></button>
       <button type="button" class="tab-btn" data-tab="checklist"><span class="tab-icon">✅</span><span class="tab-label">Check List Condomínios</span></button>
     </nav>
 
@@ -858,6 +894,108 @@
 
   <div id="tabCadastro" class="tab-panel" style="display:none;">
     <iframe id="cadastroFrame" title="Cadastro de Condomínios"></iframe>
+  </div>
+
+  <div id="tabRenovacao" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+
+    <div class="checklist-toolbar">
+      <strong style="color:var(--text); font-size:13px;">⚠️ Contratos Vencidos</strong>
+      <span id="renovVencidosCount" class="count-line" style="margin:0;"></span>
+    </div>
+    <div class="checklist-table-wrap" style="margin-bottom:22px;">
+      <table class="checklist-table" id="renovVencidosTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th>
+            <th>Filial</th>
+            <th>Responsável</th>
+            <th>Fim do Contrato</th>
+            <th>Dias Vencido</th>
+            <th>Mensalidade</th>
+            <th>Unidades</th>
+            <th>Armário</th>
+            <th>Gphone</th>
+            <th>Facial</th>
+            <th>Acesso Veicular</th>
+            <th>Sistema</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="renovVencidosBody">
+          <tr><td colspan="13" class="empty">Carregando condomínios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="checklist-toolbar">
+      <strong style="color:var(--text); font-size:13px; flex:1;">📝 Negociações de Renovação</strong>
+      <button type="button" class="logout-btn" id="btnNovaNegociacao" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Negociação</button>
+    </div>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="renovNegociacoesTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th>
+            <th>Data Negociação</th>
+            <th>Responsável</th>
+            <th>Status</th>
+            <th>Nova Data Proposta</th>
+            <th>Observações</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="renovNegociacoesBody">
+          <tr><td colspan="7" class="empty">Nenhuma negociação registrada.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="users-modal" id="negociacaoModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:500px;">
+      <div class="users-head">
+        <h3>Nova Negociação de Renovação</h3>
+        <button type="button" class="logout-btn" id="negociacaoModalClose">✕</button>
+      </div>
+      <p class="users-sub">Registre manualmente uma negociação de renovação de contrato.</p>
+      <div class="users-form" style="margin-bottom:14px;">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600; position:relative;">Condomínio
+          <input type="text" id="negCondoInput" autocomplete="off" placeholder="Digite para buscar o condomínio..." style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <input type="hidden" id="negCondoSel">
+          <div id="negCondoDropdown" class="combo-dropdown"></div>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+          <input type="text" id="negResponsavel" placeholder="Ex: Rose" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data da Negociação
+          <input type="date" id="negData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
+          <select id="negStatus" style="width:100%; margin-top:4px;">
+            <option value="Em negociação">Em negociação</option>
+            <option value="Renovado">Renovado</option>
+            <option value="Não renovado">Não renovado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
+          <input type="date" id="negNovaData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
+          <textarea id="negObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Notas sobre a negociação (opcional)"></textarea>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="negociacaoCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="negociacaoSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Negociação</button>
+      </div>
+      <p class="users-error" id="negociacaoError" style="display:none;"></p>
+    </div>
   </div>
 
   <div id="tabChecklist" class="tab-panel" style="display:none;">
@@ -3968,6 +4106,20 @@ body{
   font-family:'Inter',sans-serif; font-size:13.5px; background:var(--slate-soft);
 }
 .search-wrap input:focus{outline:2px solid var(--teal); outline-offset:-1px; background:#fff;}
+.search-suggest{
+  display:none; position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:30;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  box-shadow:var(--shadow); max-height:260px; overflow-y:auto; padding:6px;
+}
+.search-suggest.open{ display:block; }
+.search-suggest-item{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 11px; border-radius:7px; cursor:pointer; font-size:13px; color:var(--ink);
+}
+.search-suggest-item:hover, .search-suggest-item.active{ background:var(--slate-soft); }
+.search-suggest-item .ssi-name{ font-weight:600; }
+.search-suggest-item .ssi-meta{ font-size:11px; color:var(--ink-soft); font-family:'Space Grotesk',sans-serif; white-space:nowrap; }
+.search-suggest-empty{ padding:10px 11px; font-size:12.5px; color:var(--ink-soft); }
 select.filter-select{
   padding:9px 30px 9px 11px; border-radius:8px; border:1px solid var(--line); background:var(--slate-soft);
   font-family:'Inter',sans-serif; font-size:13px; color:var(--ink); cursor:pointer;
@@ -4176,7 +4328,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   <div class="toolbar">
     <div class="search-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input type="text" id="searchInput" placeholder="Buscar por nome do condomínio ou responsável...">
+      <input type="text" id="searchInput" autocomplete="off" placeholder="Buscar por nome do condomínio ou responsável...">
+      <div class="search-suggest" id="searchSuggest"></div>
     </div>
     <select class="filter-select" id="filterFilial"><option value="">Todas as filiais</option></select>
     <select class="filter-select" id="filterStatus">
@@ -4945,6 +5098,50 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById(id).addEventListener("change", renderTable);
   });
 
+  // ==========================================================================
+  // AUTOCOMPLETE: SUGESTÕES DE CONDOMÍNIO NO CAMPO DE BUSCA
+  // ==========================================================================
+  (function(){
+    var input = document.getElementById("searchInput");
+    var box = document.getElementById("searchSuggest");
+    function closeSuggest(){ box.classList.remove("open"); box.innerHTML = ""; }
+    function renderSuggest(){
+      var q = input.value.trim().toLowerCase();
+      if(!q){ closeSuggest(); return; }
+      var matches = state.data.filter(function(c){
+        return c.nome.toLowerCase().indexOf(q) > -1 || (c.responsavel||"").toLowerCase().indexOf(q) > -1;
+      }).slice(0, 8);
+      if(matches.length === 0){
+        box.innerHTML = '<div class="search-suggest-empty">Nenhum condomínio encontrado</div>';
+        box.classList.add("open");
+        return;
+      }
+      box.innerHTML = matches.map(function(c){
+        return '<div class="search-suggest-item" data-id="'+c.id+'">'+
+          '<span class="ssi-name">'+esc(c.nome)+'</span>'+
+          '<span class="ssi-meta">'+esc(c.filial)+'</span>'+
+        '</div>';
+      }).join("");
+      box.classList.add("open");
+    }
+    input.addEventListener("input", renderSuggest);
+    input.addEventListener("focus", function(){ if(input.value.trim()) renderSuggest(); });
+    box.addEventListener("click", function(e){
+      var item = e.target.closest(".search-suggest-item");
+      if(!item || !item.dataset.id) return;
+      closeSuggest();
+      input.value = "";
+      renderTable();
+      openModal(parseInt(item.dataset.id, 10));
+    });
+    document.addEventListener("click", function(e){
+      if(e.target !== input && !box.contains(e.target)) closeSuggest();
+    });
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Escape") closeSuggest();
+    });
+  })();
+
   // ---------- export ----------
   // ==========================================================================
   // EXPORTAÇÃO (CSV / PDF via impressão / backup HTML autônomo)
@@ -5168,6 +5365,251 @@ function initChecklistUI(){
 initChecklistUI();
 
 // ============================================================================
+// RENOVAÇÃO DE CONTRATOS
+// ============================================================================
+let renovVencidos = [];      // condomínios com contrato_fim < hoje
+let renovNegociacoes = [];   // negociações registradas manualmente
+let renovAllCondos = [];     // lista completa p/ preencher o select do modal
+let renovLoaded = false;
+let renovNegSalvaNoSupabase = true; // vira false se a tabela ainda não existir
+
+function fmtDataBRRenov(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function diasVencido(iso){
+  const fim = new Date(iso+"T00:00:00");
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return Math.max(0, Math.round((hoje - fim) / 86400000));
+}
+
+async function loadRenovacaoData(){
+  const bodyVenc = document.getElementById('renovVencidosBody');
+  const bodyNeg = document.getElementById('renovNegociacoesBody');
+  if (!sb){
+    bodyVenc.innerHTML = '<tr><td colspan="13" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  bodyVenc.innerHTML = '<tr><td colspan="13" class="empty">Carregando condomínios...</td></tr>';
+  try{
+    const { data: condos, error: e1 } = await sb.from('cadastro_condominios')
+      .select('item_id,nome,filial,responsavel,status,contrato_fim,mensalidade,qtd_unidades,possui_armario,possui_gphone,possui_facial,acesso_veicular,sistema_guarita');
+    if (e1) throw e1;
+
+    renovAllCondos = (condos || []).slice().sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    const hojeStr = new Date().toISOString().slice(0,10);
+    renovVencidos = renovAllCondos.filter(c =>
+      (c.status || 'Ativo') !== 'Inativo' && c.contrato_fim && c.contrato_fim < hojeStr
+    ).sort((a,b) => a.contrato_fim.localeCompare(b.contrato_fim));
+
+    // Tabela de negociações pode ainda não existir no banco.
+    const { data: negs, error: e2 } = await sb.from('negociacoes_contrato').select('*');
+    if (!e2 && negs){
+      renovNegociacoes = negs.slice().sort((a,b) => (b.data_negociacao||"").localeCompare(a.data_negociacao||""));
+      renovNegSalvaNoSupabase = true;
+    } else if (e2){
+      console.warn('Tabela negociacoes_contrato indisponível (crie-a no Supabase):', e2.message || e2);
+      renovNegSalvaNoSupabase = false;
+    }
+
+    fillNegCondoSelect();
+    renderRenovVencidos();
+    renderRenovNegociacoes();
+    renovLoaded = true;
+  }catch(e){
+    console.error('Falha ao carregar renovação de contratos:', e);
+    bodyVenc.innerHTML = '<tr><td colspan="13" class="empty">Erro ao carregar condomínios do Cadastro.</td></tr>';
+  }
+}
+
+function simNaoBadgeRenov(v){
+  if (v === 'Sim') return '<span class="rbadge yes">Sim</span>';
+  if (v === 'Não') return '<span class="rbadge no">Não</span>';
+  return '<span class="rbadge">—</span>';
+}
+function fmtMoedaRenov(v){
+  if (v === null || v === undefined || v === '') return '—';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function renderRenovVencidos(){
+  const body = document.getElementById('renovVencidosBody');
+  document.getElementById('renovVencidosCount').textContent = renovVencidos.length + " condomínio(s) com contrato vencido";
+  if (!renovVencidos.length){
+    body.innerHTML = '<tr><td colspan="13" class="empty">Nenhum condomínio com contrato vencido. 🎉</td></tr>';
+    return;
+  }
+  body.innerHTML = renovVencidos.map(c => `
+    <tr>
+      <td class="ck-name">${c.nome}</td>
+      <td>${c.filial || ''}</td>
+      <td>${c.responsavel || ''}</td>
+      <td>${fmtDataBRRenov(c.contrato_fim)}</td>
+      <td class="renov-dias">${diasVencido(c.contrato_fim)} dia(s)</td>
+      <td>${fmtMoedaRenov(c.mensalidade)}</td>
+      <td>${c.qtd_unidades ?? '—'}</td>
+      <td>${simNaoBadgeRenov(c.possui_armario)}</td>
+      <td>${simNaoBadgeRenov(c.possui_gphone)}</td>
+      <td>${simNaoBadgeRenov(c.possui_facial)}</td>
+      <td>${c.acesso_veicular || '—'}</td>
+      <td>${c.sistema_guarita || '—'}</td>
+      <td><button type="button" class="renov-action-btn" data-registrar="${c.item_id}">+ Registrar negociação</button></td>
+    </tr>
+  `).join('');
+}
+
+function negBadge(status){
+  const map = {
+    "Em negociação": ["andamento","Em negociação"],
+    "Renovado": ["renovado","Renovado"],
+    "Não renovado": ["nao-renovado","Não renovado"],
+    "Cancelado": ["cancelado","Cancelado"]
+  };
+  const [cls,label] = map[status] || ["cancelado", status || "—"];
+  return `<span class="neg-badge ${cls}">${label}</span>`;
+}
+
+function renderRenovNegociacoes(){
+  const body = document.getElementById('renovNegociacoesBody');
+  if (!renovNegociacoes.length){
+    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma negociação registrada.</td></tr>';
+    return;
+  }
+  body.innerHTML = renovNegociacoes.map(n => `
+    <tr>
+      <td class="ck-name">${n.condo_nome || ''}</td>
+      <td>${fmtDataBRRenov(n.data_negociacao)}</td>
+      <td>${n.responsavel || ''}</td>
+      <td>${negBadge(n.status)}</td>
+      <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
+      <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
+      <td><button type="button" class="renov-del-btn" data-del-neg="${n.id}">Excluir</button></td>
+    </tr>
+  `).join('');
+}
+
+function fillNegCondoSelect(){
+  renderNegCondoDropdown(renovAllCondos);
+}
+function renderNegCondoDropdown(list){
+  const dd = document.getElementById('negCondoDropdown');
+  if (!list.length){
+    dd.innerHTML = '<div class="combo-empty">Nenhum condomínio encontrado.</div>';
+    return;
+  }
+  dd.innerHTML = list.map(c => `<div class="combo-option" data-id="${c.item_id}">${c.nome}</div>`).join('');
+}
+function setNegCondo(condoId){
+  const condo = renovAllCondos.find(c => String(c.item_id) === String(condoId));
+  document.getElementById('negCondoSel').value = condo ? condo.item_id : '';
+  document.getElementById('negCondoInput').value = condo ? condo.nome : '';
+}
+(function initNegCondoCombo(){
+  const input = document.getElementById('negCondoInput');
+  const dd = document.getElementById('negCondoDropdown');
+  if (!input || !dd) return;
+  input.addEventListener('focus', function(){
+    renderNegCondoDropdown(renovAllCondos);
+    dd.classList.add('open');
+  });
+  input.addEventListener('input', function(){
+    const q = input.value.trim().toLowerCase();
+    document.getElementById('negCondoSel').value = '';
+    const filtered = q ? renovAllCondos.filter(c => c.nome.toLowerCase().indexOf(q) > -1) : renovAllCondos;
+    renderNegCondoDropdown(filtered);
+    dd.classList.add('open');
+  });
+  dd.addEventListener('mousedown', function(e){
+    const opt = e.target.closest('.combo-option');
+    if (!opt) return;
+    e.preventDefault();
+    setNegCondo(opt.getAttribute('data-id'));
+    dd.classList.remove('open');
+  });
+  document.addEventListener('click', function(e){
+    if (e.target !== input && !dd.contains(e.target)) dd.classList.remove('open');
+  });
+})();
+
+function openNegociacaoModal(condoId){
+  document.getElementById('negociacaoError').style.display = 'none';
+  document.getElementById('negResponsavel').value = '';
+  document.getElementById('negData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('negStatus').value = 'Em negociação';
+  document.getElementById('negNovaData').value = '';
+  document.getElementById('negObs').value = '';
+  document.getElementById('negCondoDropdown').classList.remove('open');
+  if (condoId) setNegCondo(condoId);
+  else setNegCondo(null);
+  document.getElementById('negociacaoModalOverlay').style.display = 'flex';
+}
+function closeNegociacaoModal(){
+  document.getElementById('negociacaoModalOverlay').style.display = 'none';
+}
+
+async function salvarNegociacao(){
+  const condoId = document.getElementById('negCondoSel').value;
+  const condo = renovAllCondos.find(c => String(c.item_id) === String(condoId));
+  if (!condo){
+    const err = document.getElementById('negociacaoError');
+    err.textContent = 'Selecione um condomínio.';
+    err.style.display = 'block';
+    return;
+  }
+  const registro = {
+    id: 'neg_' + Date.now(),
+    condo_id: condo.item_id,
+    condo_nome: condo.nome,
+    responsavel: document.getElementById('negResponsavel').value.trim(),
+    data_negociacao: document.getElementById('negData').value,
+    status: document.getElementById('negStatus').value,
+    nova_data: document.getElementById('negNovaData').value || null,
+    obs: document.getElementById('negObs').value.trim(),
+    updated_at: new Date().toISOString()
+  };
+  renovNegociacoes.unshift(registro);
+  renderRenovNegociacoes();
+  closeNegociacaoModal();
+  if (sb){
+    try{
+      const { error } = await sb.from('negociacoes_contrato').upsert(registro);
+      if (error){ renovNegSalvaNoSupabase = false; console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error); }
+    }catch(e){ renovNegSalvaNoSupabase = false; console.warn('Falha ao salvar negociação:', e); }
+  }
+}
+
+async function excluirNegociacao(id){
+  renovNegociacoes = renovNegociacoes.filter(n => n.id !== id);
+  renderRenovNegociacoes();
+  if (sb){
+    try{ await sb.from('negociacoes_contrato').delete().eq('id', id); }
+    catch(e){ console.warn('Falha ao excluir negociação:', e); }
+  }
+}
+
+function initRenovacaoUI(){
+  document.getElementById('btnNovaNegociacao').addEventListener('click', () => openNegociacaoModal(null));
+  document.getElementById('negociacaoModalClose').addEventListener('click', closeNegociacaoModal);
+  document.getElementById('negociacaoCancelBtn').addEventListener('click', closeNegociacaoModal);
+  document.getElementById('negociacaoSaveBtn').addEventListener('click', salvarNegociacao);
+  document.getElementById('negociacaoModalOverlay').addEventListener('click', (ev) => {
+    if (ev.target.id === 'negociacaoModalOverlay') closeNegociacaoModal();
+  });
+  document.getElementById('renovVencidosBody').addEventListener('click', (ev) => {
+    const t = ev.target.closest('[data-registrar]');
+    if (t) openNegociacaoModal(t.dataset.registrar);
+  });
+  document.getElementById('renovNegociacoesBody').addEventListener('click', (ev) => {
+    const t = ev.target.closest('[data-del-neg]');
+    if (t) excluirNegociacao(t.dataset.delNeg);
+  });
+}
+initRenovacaoUI();
+
+// ============================================================================
 // NAVEGAÇÃO POR ABAS + INICIALIZAÇÃO
 // ============================================================================
 function initTabs(){
@@ -5180,10 +5622,14 @@ function initTabs(){
       const tab = btn.dataset.tab;
       document.getElementById('tabPesquisa').style.display = tab === 'pesquisa' ? 'block' : 'none';
       document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
+      document.getElementById('tabRenovacao').style.display = tab === 'renovacao' ? 'block' : 'none';
       document.getElementById('tabChecklist').style.display = tab === 'checklist' ? 'block' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
         cadastroLoaded = true;
+      }
+      if (tab === 'renovacao' && !renovLoaded){
+        loadRenovacaoData();
       }
       if (tab === 'checklist' && !checklistLoaded){
         loadChecklistData();
