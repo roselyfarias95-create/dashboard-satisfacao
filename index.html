@@ -655,6 +655,7 @@
     background:var(--bg-panel-3); border:1px solid var(--line); color:var(--accent);
     border-radius:7px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:inherit;
     transition:border-color .15s ease, background .15s ease;
+    margin-right:6px;
   }
   .renov-action-btn:hover{ border-color:var(--accent); background:var(--accent-soft); }
   .renov-del-btn{
@@ -725,9 +726,44 @@
         <option value="editor">Editor</option>
         <option value="admin">Administrador</option>
       </select>
+      <div style="grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; margin-top:2px;">
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="pesquisa" checked> Pesquisa de Satisfação</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="cadastro" checked> Cadastro de Condomínios</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="renovacao" checked> Renovação de Contratos</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="checklist" checked> Check List Condomínios</label>
+      </div>
+      <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
     </form>
     <p class="users-error" id="usersError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="editUserModal" class="users-modal" style="display:none;">
+  <div class="users-box" style="max-width:420px;">
+    <div class="users-head">
+      <h3>Editar usuário: <span id="editUserNameLabel"></span></h3>
+      <button type="button" id="closeEditUserBtn" class="logout-btn">Fechar</button>
+    </div>
+    <p class="users-sub">Deixe a senha em branco para não alterá-la.</p>
+    <form id="editUserForm" class="users-form">
+      <input type="hidden" id="editUserName">
+      <input type="password" id="editUserPass" placeholder="nova senha (opcional)" autocomplete="new-password" style="grid-column:1 / -1;">
+      <select id="editUserRole" style="grid-column:1 / -1;">
+        <option value="viewer">Visualização</option>
+        <option value="editor">Editor</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <div style="grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; margin-top:2px;">
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="pesquisa"> Pesquisa de Satisfação</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="cadastro"> Cadastro de Condomínios</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="renovacao"> Renovação de Contratos</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="checklist"> Check List Condomínios</label>
+      </div>
+      <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
+      <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
+    </form>
+    <p class="users-error" id="editUserError" style="display:none;"></p>
   </div>
 </div>
 
@@ -959,7 +995,7 @@
   <div class="users-modal" id="negociacaoModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:500px;">
       <div class="users-head">
-        <h3>Nova Negociação de Renovação</h3>
+        <h3 id="negociacaoModalTitle">Nova Negociação de Renovação</h3>
         <button type="button" class="logout-btn" id="negociacaoModalClose">✕</button>
       </div>
       <p class="users-sub">Registre manualmente uma negociação de renovação de contrato.</p>
@@ -981,6 +1017,15 @@
             <option value="Renovado">Renovado</option>
             <option value="Não renovado">Não renovado</option>
             <option value="Cancelado">Cancelado</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tempo Renovado (opcional)
+          <select id="negTempoRenovado" style="width:100%; margin-top:4px;">
+            <option value="">Escolher e preencher a data ao lado</option>
+            <option value="6">6 meses</option>
+            <option value="12">12 meses</option>
+            <option value="24">24 meses</option>
+            <option value="36">36 meses</option>
           </select>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
@@ -1049,6 +1094,8 @@
 const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
+let currentAllowedTabs = null; // null/empty = acesso a todas as abas
+const ALL_TABS = ['pesquisa','cadastro','renovacao','checklist'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -1071,15 +1118,33 @@ async function seedDefaultUsersIfEmpty(){
   }catch(e){ console.error('Falha ao semear usuários padrão:', e); }
 }
 
-function showApp(role, username){
+function applyTabPermissions(){
+  const isAdmin = currentRole === 'admin';
+  const allowed = (!isAdmin && currentAllowedTabs && currentAllowedTabs.length) ? currentAllowedTabs : ALL_TABS;
+  let firstAllowedBtn = null;
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    const tab = btn.dataset.tab;
+    const ok = allowed.includes(tab);
+    btn.style.display = ok ? '' : 'none';
+    if (ok && !firstAllowedBtn) firstAllowedBtn = btn;
+  });
+  const activeBtn = document.querySelector('.tab-btn.active');
+  if (activeBtn && activeBtn.style.display === 'none' && firstAllowedBtn){
+    firstAllowedBtn.click();
+  }
+}
+
+function showApp(role, username, allowedTabs){
   currentRole = role;
   currentUsername = username;
+  currentAllowedTabs = allowedTabs || null;
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
   document.getElementById('roleTag').textContent = `${username} · ${ROLE_LABELS[role] || role}`;
   document.getElementById('manageUsersBtn').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   document.getElementById('newRodadaBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
+  applyTabPermissions();
   render();
   updateSyncTag();
   pullOverridesFromSupabase();
@@ -1090,7 +1155,7 @@ function showApp(role, username){
 
 function initAuth(){
   const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-  if (saved && saved.role && saved.username) showApp(saved.role, saved.username);
+  if (saved && saved.role && saved.username) showApp(saved.role, saved.username, saved.allowedTabs);
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
@@ -1117,8 +1182,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
       document.getElementById('loginPassword').focus();
       return;
     }
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ role: row.role, username: row.username }));
-    showApp(row.role, row.username);
+    const allowedTabs = row.allowed_tabs ? String(row.allowed_tabs).split(',').map(s=>s.trim()).filter(Boolean) : null;
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ role: row.role, username: row.username, allowedTabs }));
+    showApp(row.role, row.username, allowedTabs);
   }catch(err){
     console.error(err);
     errEl.textContent = 'Erro ao conectar com o servidor de login. Tente novamente.';
@@ -1145,8 +1211,17 @@ async function renderUsersList(){
     el.innerHTML = (data||[]).map(u => `
       <div class="user-row" data-username="${escapeHtml(u.username)}">
         <div><span class="u-name">${escapeHtml(u.username)}</span><span class="u-role">${ROLE_LABELS[u.role] || u.role}</span></div>
-        <button type="button" class="u-del">Remover</button>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="u-edit" style="background:none; border:1px solid var(--line); color:var(--accent); border-radius:7px; padding:4px 10px; font-size:11px; cursor:pointer;">Editar</button>
+          <button type="button" class="u-del">Remover</button>
+        </div>
       </div>`).join('') || '<p style="color:var(--text-faint);font-size:12px;">Nenhum usuário cadastrado.</p>';
+    el.querySelectorAll('.u-edit').forEach(btn=>{
+      btn.onclick = ()=>{
+        const row = (data||[]).find(u => u.username === btn.closest('.user-row').dataset.username);
+        if (row) openEditUserModal(row);
+      };
+    });
     el.querySelectorAll('.u-del').forEach(btn=>{
       btn.onclick = async ()=>{
         const username = btn.closest('.user-row').dataset.username;
@@ -1185,9 +1260,10 @@ document.getElementById('newUserForm').addEventListener('submit', async (e)=>{
   const role = document.getElementById('newUserRole').value;
   if (!username || !password){ return; }
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  const allowedTabs = Array.from(document.querySelectorAll('.newUserTab:checked')).map(cb => cb.value).join(',');
   try{
     const password_hash = await sha256(password);
-    const { error } = await sb.from('app_users').insert({ username, password_hash, role, created_by: currentUsername });
+    const { error } = await sb.from('app_users').insert({ username, password_hash, role, allowed_tabs: allowedTabs, created_by: currentUsername });
     if (error){
       if (String(error.message||'').toLowerCase().includes('duplicate')){
         errEl.textContent = `O usuário "${username}" já existe.`;
@@ -1201,6 +1277,54 @@ document.getElementById('newUserForm').addEventListener('submit', async (e)=>{
     renderUsersList();
   }catch(e){
     errEl.textContent = 'Erro ao criar usuário: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+
+function openEditUserModal(row){
+  document.getElementById('editUserError').style.display = 'none';
+  document.getElementById('editUserNameLabel').textContent = row.username;
+  document.getElementById('editUserName').value = row.username;
+  document.getElementById('editUserPass').value = '';
+  document.getElementById('editUserRole').value = row.role;
+  const allowed = row.allowed_tabs ? String(row.allowed_tabs).split(',').map(s=>s.trim()).filter(Boolean) : ALL_TABS;
+  document.querySelectorAll('.editUserTab').forEach(cb=>{
+    cb.checked = allowed.includes(cb.value);
+  });
+  document.getElementById('editUserModal').style.display = 'flex';
+}
+document.getElementById('closeEditUserBtn').addEventListener('click', ()=>{
+  document.getElementById('editUserModal').style.display = 'none';
+});
+
+document.getElementById('editUserForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const errEl = document.getElementById('editUserError');
+  errEl.style.display = 'none';
+  const username = document.getElementById('editUserName').value;
+  const newPass = document.getElementById('editUserPass').value;
+  const role = document.getElementById('editUserRole').value;
+  const allowedTabs = Array.from(document.querySelectorAll('.editUserTab:checked')).map(cb => cb.value).join(',');
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const patch = { role, allowed_tabs: allowedTabs };
+    if (newPass) patch.password_hash = await sha256(newPass);
+    const { error } = await sb.from('app_users').update(patch).eq('username', username);
+    if (error) throw error;
+    document.getElementById('editUserModal').style.display = 'none';
+    renderUsersList();
+    if (username === currentUsername){
+      const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+      const newAllowed = allowedTabs ? allowedTabs.split(',') : null;
+      if (saved){
+        saved.role = role;
+        saved.allowedTabs = newAllowed;
+        localStorage.setItem(AUTH_KEY, JSON.stringify(saved));
+      }
+      showApp(role, currentUsername, newAllowed);
+    }
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar alterações: ' + e.message;
     errEl.style.display = 'block';
   }
 });
@@ -5486,7 +5610,10 @@ function renderRenovNegociacoes(){
       <td>${negBadge(n.status)}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
-      <td><button type="button" class="renov-del-btn" data-del-neg="${n.id}">Excluir</button></td>
+      <td>
+        <button type="button" class="renov-action-btn" data-edit-neg="${n.id}">Editar</button>
+        <button type="button" class="renov-del-btn" data-del-neg="${n.id}">Excluir</button>
+      </td>
     </tr>
   `).join('');
 }
@@ -5534,11 +5661,17 @@ function setNegCondo(condoId){
   });
 })();
 
+let negociacaoEditingId = null;
+
 function openNegociacaoModal(condoId){
+  negociacaoEditingId = null;
+  document.getElementById('negociacaoModalTitle').textContent = 'Nova Negociação de Renovação';
+  document.getElementById('negociacaoSaveBtn').textContent = 'Salvar Negociação';
   document.getElementById('negociacaoError').style.display = 'none';
   document.getElementById('negResponsavel').value = '';
   document.getElementById('negData').value = new Date().toISOString().slice(0,10);
   document.getElementById('negStatus').value = 'Em negociação';
+  document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = '';
   document.getElementById('negObs').value = '';
   document.getElementById('negCondoDropdown').classList.remove('open');
@@ -5546,6 +5679,39 @@ function openNegociacaoModal(condoId){
   else setNegCondo(null);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
 }
+
+function editNegociacao(id){
+  const n = renovNegociacoes.find(x => String(x.id) === String(id));
+  if (!n) return;
+  negociacaoEditingId = n.id;
+  document.getElementById('negociacaoModalTitle').textContent = 'Editar Negociação';
+  document.getElementById('negociacaoSaveBtn').textContent = 'Salvar Alterações';
+  document.getElementById('negociacaoError').style.display = 'none';
+  setNegCondo(n.condo_id);
+  document.getElementById('negResponsavel').value = n.responsavel || '';
+  document.getElementById('negData').value = n.data_negociacao || '';
+  document.getElementById('negStatus').value = n.status || 'Em negociação';
+  document.getElementById('negTempoRenovado').value = '';
+  document.getElementById('negNovaData').value = n.nova_data || '';
+  document.getElementById('negObs').value = n.obs || '';
+  document.getElementById('negCondoDropdown').classList.remove('open');
+  document.getElementById('negociacaoModalOverlay').style.display = 'flex';
+}
+
+// Ao escolher um tempo de renovação (6/12/24/36 meses), calcula a nova data
+// de vencimento a partir do fim de contrato atual do condomínio (ou de hoje,
+// se o condomínio não tiver data de fim cadastrada).
+document.getElementById('negTempoRenovado').addEventListener('change', function(){
+  const meses = parseInt(this.value, 10);
+  if (!meses) return;
+  const condoId = document.getElementById('negCondoSel').value;
+  const condo = renovAllCondos.find(c => String(c.item_id) === String(condoId));
+  const base = (condo && condo.contrato_fim) ? new Date(condo.contrato_fim + 'T00:00:00') : new Date();
+  base.setMonth(base.getMonth() + meses);
+  document.getElementById('negNovaData').value = base.toISOString().slice(0,10);
+  document.getElementById('negStatus').value = 'Renovado';
+});
+
 function closeNegociacaoModal(){
   document.getElementById('negociacaoModalOverlay').style.display = 'none';
 }
@@ -5559,25 +5725,48 @@ async function salvarNegociacao(){
     err.style.display = 'block';
     return;
   }
+  const status = document.getElementById('negStatus').value;
+  const novaData = document.getElementById('negNovaData').value || null;
   const registro = {
-    id: 'neg_' + Date.now(),
+    id: negociacaoEditingId || ('neg_' + Date.now()),
     condo_id: condo.item_id,
     condo_nome: condo.nome,
     responsavel: document.getElementById('negResponsavel').value.trim(),
     data_negociacao: document.getElementById('negData').value,
-    status: document.getElementById('negStatus').value,
-    nova_data: document.getElementById('negNovaData').value || null,
+    status: status,
+    nova_data: novaData,
     obs: document.getElementById('negObs').value.trim(),
     updated_at: new Date().toISOString()
   };
-  renovNegociacoes.unshift(registro);
+
+  if (negociacaoEditingId){
+    const idx = renovNegociacoes.findIndex(n => String(n.id) === String(negociacaoEditingId));
+    if (idx > -1) renovNegociacoes[idx] = registro; else renovNegociacoes.unshift(registro);
+  } else {
+    renovNegociacoes.unshift(registro);
+  }
   renderRenovNegociacoes();
   closeNegociacaoModal();
+
   if (sb){
     try{
       const { error } = await sb.from('negociacoes_contrato').upsert(registro);
-      if (error){ renovNegSalvaNoSupabase = false; console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error); }
-    }catch(e){ renovNegSalvaNoSupabase = false; console.warn('Falha ao salvar negociação:', e); }
+      if (error){ console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error); }
+    }catch(e){ console.warn('Falha ao salvar negociação:', e); }
+  }
+
+  // Se a negociação foi concluída como "Renovado" e há uma nova data de
+  // vencimento, atualiza automaticamente o Fim do Contrato no Cadastro de
+  // Condomínios (tabela cadastro_condominios) para esse condomínio.
+  if (status === 'Renovado' && novaData && sb){
+    try{
+      const { error } = await sb.from('cadastro_condominios').update({ contrato_fim: novaData }).eq('item_id', condo.item_id);
+      if (error) throw error;
+      loadRenovacaoData();
+    }catch(e){
+      console.warn('Falha ao atualizar Fim do Contrato no Cadastro:', e);
+      alert('A negociação foi salva, mas não consegui atualizar automaticamente o Fim do Contrato no Cadastro de Condomínios: ' + (e.message||e) + '\n\nAtualize manualmente na aba Cadastro de Condomínios.');
+    }
   }
 }
 
@@ -5603,8 +5792,10 @@ function initRenovacaoUI(){
     if (t) openNegociacaoModal(t.dataset.registrar);
   });
   document.getElementById('renovNegociacoesBody').addEventListener('click', (ev) => {
-    const t = ev.target.closest('[data-del-neg]');
-    if (t) excluirNegociacao(t.dataset.delNeg);
+    const editBtn = ev.target.closest('[data-edit-neg]');
+    if (editBtn){ editNegociacao(editBtn.dataset.editNeg); return; }
+    const delBtn = ev.target.closest('[data-del-neg]');
+    if (delBtn) excluirNegociacao(delBtn.dataset.delNeg);
   });
 }
 initRenovacaoUI();
