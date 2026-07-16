@@ -647,6 +647,9 @@
     padding:4px 10px; border-radius:20px; white-space:nowrap;
   }
   .neg-badge.andamento{ color:var(--pendente); background:var(--pendente-bg); }
+  .neg-badge.aguardando-aditivo{ color:var(--atencao); background:var(--atencao-bg); }
+  .neg-badge.aguardando-tecnico{ color:var(--moderado); background:var(--moderado-bg); }
+  .neg-badge.pendente-assinatura{ color:var(--accent); background:var(--accent-soft); }
   .neg-badge.renovado{ color:var(--ok); background:var(--ok-bg); }
   .neg-badge.nao-renovado{ color:var(--critico); background:var(--critico-bg); }
   .neg-badge.cancelado{ color:var(--text-faint); background:var(--bg-panel-3); }
@@ -1014,6 +1017,9 @@
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
           <select id="negStatus" style="width:100%; margin-top:4px;">
             <option value="Em negociação">Em negociação</option>
+            <option value="Aguardando envio do aditivo pelo comercial">Aguardando envio do aditivo pelo comercial</option>
+            <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
+            <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
             <option value="Renovado">Renovado</option>
             <option value="Não renovado">Não renovado</option>
             <option value="Cancelado">Cancelado</option>
@@ -1026,6 +1032,8 @@
             <option value="12">12 meses</option>
             <option value="24">24 meses</option>
             <option value="36">36 meses</option>
+            <option value="48">48 meses</option>
+            <option value="60">60 meses</option>
           </select>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
@@ -5588,6 +5596,9 @@ function renderRenovVencidos(){
 function negBadge(status){
   const map = {
     "Em negociação": ["andamento","Em negociação"],
+    "Aguardando envio do aditivo pelo comercial": ["aguardando-aditivo","Aguardando aditivo (Comercial)"],
+    "Aguardando levantamento técnico": ["aguardando-tecnico","Aguardando levantamento técnico"],
+    "Pendente assinatura síndico": ["pendente-assinatura","Pendente assinatura síndico"],
     "Renovado": ["renovado","Renovado"],
     "Não renovado": ["nao-renovado","Não renovado"],
     "Cancelado": ["cancelado","Cancelado"]
