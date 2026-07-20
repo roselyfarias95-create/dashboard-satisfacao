@@ -650,6 +650,11 @@
   .neg-badge.aguardando-aditivo{ color:var(--atencao); background:var(--atencao-bg); }
   .neg-badge.aguardando-tecnico{ color:var(--moderado); background:var(--moderado-bg); }
   .neg-badge.pendente-assinatura{ color:var(--accent); background:var(--accent-soft); }
+  .neg-badge.pendente-erp{ color:var(--moderado); background:var(--moderado-bg); }
+  .neg-badge.aguardando-giuliano{ color:var(--accent); background:var(--accent-soft); }
+  .neg-badge.aguardando-boleto{ color:var(--atencao); background:var(--atencao-bg); }
+  .neg-badge.aguardando-ampliacao{ color:var(--pendente); background:var(--pendente-bg); }
+  .neg-badge.ampliacao-concluida{ color:var(--ok); background:var(--ok-bg); }
   .neg-badge.renovado{ color:var(--ok); background:var(--ok-bg); }
   .neg-badge.nao-renovado{ color:var(--critico); background:var(--critico-bg); }
   .neg-badge.cancelado{ color:var(--text-faint); background:var(--bg-panel-3); }
@@ -946,6 +951,10 @@
       <strong style="color:var(--text); font-size:13px;">⚠️ Contratos Vencidos</strong>
       <span id="renovVencidosCount" class="count-line" style="margin:0;"></span>
     </div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <select class="filter-select" id="renovFilterFilial"><option value="">Filial: todas</option></select>
+      <select class="filter-select" id="renovFilterResponsavel"><option value="">Responsável: todos</option></select>
+    </div>
     <div class="checklist-table-wrap" style="margin-bottom:22px;">
       <table class="checklist-table" id="renovVencidosTable">
         <thead>
@@ -980,6 +989,7 @@
         <thead>
           <tr>
             <th class="ck-name">Condomínio</th>
+            <th>Filial</th>
             <th>Data Negociação</th>
             <th>Responsável</th>
             <th>Status</th>
@@ -989,7 +999,7 @@
           </tr>
         </thead>
         <tbody id="renovNegociacoesBody">
-          <tr><td colspan="7" class="empty">Nenhuma negociação registrada.</td></tr>
+          <tr><td colspan="8" class="empty">Nenhuma negociação registrada.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1008,6 +1018,9 @@
           <input type="hidden" id="negCondoSel">
           <div id="negCondoDropdown" class="combo-dropdown"></div>
         </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
+          <input type="text" id="negFilial" readonly style="width:100%; margin-top:4px; box-sizing:border-box; background:#e5e9f2; color:#6b7280; cursor:not-allowed;" placeholder="Preenchida automaticamente">
+        </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
           <input type="text" id="negResponsavel" placeholder="Ex: Rose" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
@@ -1020,6 +1033,11 @@
             <option value="Aguardando envio do aditivo pelo comercial">Aguardando envio do aditivo pelo comercial</option>
             <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
             <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
+            <option value="Pendente lançar pedido no ERP">Pendente lançar pedido no ERP</option>
+            <option value="Aguardando assinatura Sr. Giuliano">Aguardando assinatura Sr. Giuliano</option>
+            <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
+            <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
+            <option value="Ampliação concluída">Ampliação concluída</option>
             <option value="Renovado">Renovado</option>
             <option value="Não renovado">Não renovado</option>
             <option value="Cancelado">Cancelado</option>
@@ -1038,6 +1056,21 @@
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
           <input type="date" id="negNovaData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📦 Ampliação</label>
+        </div>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Equipamentos da Ampliação
+          <textarea id="negAmpliacaoMaterial" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Ex: 3 câmeras IP, 1 controlador de acesso, cabeamento..."></textarea>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Número do Pedido
+          <input type="text" id="negAmpliacaoPedido" placeholder="Ex: 12345" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Número da O.S.
+          <input type="text" id="negAmpliacaoOS" placeholder="Ex: OS-6789" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Número da Requisição
+          <input type="text" id="negAmpliacaoRequisicao" placeholder="Ex: REQ-4321" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
           <textarea id="negObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Notas sobre a negociação (opcional)"></textarea>
@@ -1086,8 +1119,6 @@
     </div>
   </div>
 
-    </div>
-  </div>
 
 </div>
 
@@ -4652,6 +4683,27 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <div class="seg-opt" data-val="MIP 1000">MIP 1000</div>
           <div class="seg-opt" data-val="Módulo Guarita">Módulo Guarita</div>
         </div>
+        <div class="field-row" style="margin-top:12px;">
+          <div class="field">
+            <label>Status do Pedido / Instalação</label>
+            <select id="fStatusPedido">
+              <option value="">Não definido</option>
+              <option value="Aguardando Faturar Boleto">Aguardando Faturar Boleto</option>
+              <option value="Pendente Lançar Pedido no ERP">Pendente Lançar Pedido no ERP</option>
+              <option value="Pendente Assinatura do Sr. Giuliano">Pendente Assinatura do Sr. Giuliano</option>
+              <option value="Aguardando Instalação Técnico">Aguardando Instalação Técnico</option>
+              <option value="Instalação Finalizada">Instalação Finalizada</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Número do Pedido</label>
+            <input type="text" id="fNumeroPedido" placeholder="Ex: 12345">
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Materiais — Levantamento Técnico</label>
+          <textarea id="fMateriaisLevantamento" placeholder="Liste os materiais que o técnico levantou (ex: 2 faciais, 1 sensor magnético, sirene...)"></textarea>
+        </div>
       </div>
       <div class="field">
         <label>Observações</label>
@@ -4714,7 +4766,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       contratoInicio: row.contrato_inicio, contratoFim: row.contrato_fim, possuiAditivo: row.possui_aditivo,
       mensalidade: row.mensalidade, unidades: row.qtd_unidades,
       possuiArmario: row.possui_armario, possuiGphone: row.possui_gphone, possuiFacial: row.possui_facial,
-      acessoVeicular: row.acesso_veicular, sistema: row.sistema_guarita
+      acessoVeicular: row.acesso_veicular, sistema: row.sistema_guarita,
+      statusPedido: row.status_pedido, numeroPedido: row.numero_pedido, materiaisLevantamento: row.materiais_levantamento
     };
   }
   function condoToRow(c){
@@ -4726,6 +4779,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       mensalidade: c.mensalidade || null, qtd_unidades: c.unidades || null,
       possui_armario: c.possuiArmario || null, possui_gphone: c.possuiGphone || null, possui_facial: c.possuiFacial || null,
       acesso_veicular: c.acessoVeicular || null, sistema_guarita: c.sistema || null,
+      status_pedido: c.statusPedido || null, numero_pedido: c.numeroPedido || null, materiais_levantamento: c.materiaisLevantamento || null,
       updated_at: new Date().toISOString()
     };
   }
@@ -5088,6 +5142,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
     document.getElementById("fMensalidade").value = c ? (c.mensalidade||"") : "";
     document.getElementById("fUnidades").value = c ? (c.unidades||"") : "";
+    document.getElementById("fStatusPedido").value = c ? (c.statusPedido||"") : "";
+    document.getElementById("fNumeroPedido").value = c ? (c.numeroPedido||"") : "";
+    document.getElementById("fMateriaisLevantamento").value = c ? (c.materiaisLevantamento||"") : "";
     setSeg("segStatus", c ? c.status : "Ativo");
     setSeg("segSindico", c ? (c.sindico||"") : "");
     setSeg("segModalidade", c ? (c.modalidade||"") : "");
@@ -5171,7 +5228,10 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       possuiGphone: getSeg("segGphone"),
       possuiFacial: getSeg("segFacial"),
       acessoVeicular: getSeg("segAcessoVeicular"),
-      sistema: getSeg("segSistema")
+      sistema: getSeg("segSistema"),
+      statusPedido: document.getElementById("fStatusPedido").value || null,
+      numeroPedido: document.getElementById("fNumeroPedido").value.trim() || null,
+      materiaisLevantamento: document.getElementById("fMateriaisLevantamento").value.trim() || null
     };
     var savedCondo;
     var isNovo = !state.editingId;
@@ -5377,6 +5437,7 @@ let checklistCondos = [];   // [{id, nome, filial}]
 let checklistState = {};    // { [id]: { ordem_ctt:bool, ... } }
 let checklistLoaded = false;
 
+
 function emptyChecklistRow(){
   const r = {};
   CHECKLIST_ITEMS.forEach(it => r[it.key] = false);
@@ -5526,8 +5587,7 @@ async function loadRenovacaoData(){
   }
   bodyVenc.innerHTML = '<tr><td colspan="13" class="empty">Carregando condomínios...</td></tr>';
   try{
-    const { data: condos, error: e1 } = await sb.from('cadastro_condominios')
-      .select('item_id,nome,filial,responsavel,status,contrato_fim,mensalidade,qtd_unidades,possui_armario,possui_gphone,possui_facial,acesso_veicular,sistema_guarita');
+    const { data: condos, error: e1 } = await sb.from('cadastro_condominios').select('*');
     if (e1) throw e1;
 
     renovAllCondos = (condos || []).slice().sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -5548,6 +5608,7 @@ async function loadRenovacaoData(){
     }
 
     fillNegCondoSelect();
+    populateRenovFiltros();
     renderRenovVencidos();
     renderRenovNegociacoes();
     renovLoaded = true;
@@ -5567,14 +5628,42 @@ function fmtMoedaRenov(v){
   return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+function populateRenovFiltros(){
+  function fillSelect(id, values){
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  }
+  const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  fillSelect('renovFilterFilial', uniq(renovAllCondos.map(c => c.filial)));
+  fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel)));
+}
+
+function getFilteredRenovVencidos(){
+  const fFilial = document.getElementById('renovFilterFilial').value;
+  const fResp = document.getElementById('renovFilterResponsavel').value;
+  return renovVencidos.filter(c=>{
+    if (fFilial && c.filial !== fFilial) return false;
+    if (fResp && c.responsavel !== fResp) return false;
+    return true;
+  });
+}
+
 function renderRenovVencidos(){
   const body = document.getElementById('renovVencidosBody');
-  document.getElementById('renovVencidosCount').textContent = renovVencidos.length + " condomínio(s) com contrato vencido";
-  if (!renovVencidos.length){
-    body.innerHTML = '<tr><td colspan="13" class="empty">Nenhum condomínio com contrato vencido. 🎉</td></tr>';
+  const filtered = getFilteredRenovVencidos();
+  document.getElementById('renovVencidosCount').textContent = `${filtered.length} de ${renovVencidos.length} condomínio(s) com contrato vencido`;
+  if (!filtered.length){
+    body.innerHTML = '<tr><td colspan="13" class="empty">Nenhum condomínio encontrado com esses filtros.</td></tr>';
     return;
   }
-  body.innerHTML = renovVencidos.map(c => `
+  body.innerHTML = filtered.map(c => `
     <tr>
       <td class="ck-name">${c.nome}</td>
       <td>${c.filial || ''}</td>
@@ -5593,12 +5682,21 @@ function renderRenovVencidos(){
   `).join('');
 }
 
+['renovFilterFilial','renovFilterResponsavel'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderRenovVencidos);
+});
+
 function negBadge(status){
   const map = {
     "Em negociação": ["andamento","Em negociação"],
     "Aguardando envio do aditivo pelo comercial": ["aguardando-aditivo","Aguardando aditivo (Comercial)"],
     "Aguardando levantamento técnico": ["aguardando-tecnico","Aguardando levantamento técnico"],
     "Pendente assinatura síndico": ["pendente-assinatura","Pendente assinatura síndico"],
+    "Pendente lançar pedido no ERP": ["pendente-erp","Pendente lançar pedido no ERP"],
+    "Aguardando assinatura Sr. Giuliano": ["aguardando-giuliano","Aguardando assinatura Sr. Giuliano"],
+    "Aguardando faturar o boleto": ["aguardando-boleto","Aguardando faturar o boleto"],
+    "Aguardando cronograma da ampliação": ["aguardando-ampliacao","Aguardando cronograma da ampliação"],
+    "Ampliação concluída": ["ampliacao-concluida","Ampliação concluída"],
     "Renovado": ["renovado","Renovado"],
     "Não renovado": ["nao-renovado","Não renovado"],
     "Cancelado": ["cancelado","Cancelado"]
@@ -5610,12 +5708,15 @@ function negBadge(status){
 function renderRenovNegociacoes(){
   const body = document.getElementById('renovNegociacoesBody');
   if (!renovNegociacoes.length){
-    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma negociação registrada.</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" class="empty">Nenhuma negociação registrada.</td></tr>';
     return;
   }
-  body.innerHTML = renovNegociacoes.map(n => `
+  body.innerHTML = renovNegociacoes.map(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    return `
     <tr>
       <td class="ck-name">${n.condo_nome || ''}</td>
+      <td>${escapeHtml((condo && condo.filial) || '—')}</td>
       <td>${fmtDataBRRenov(n.data_negociacao)}</td>
       <td>${n.responsavel || ''}</td>
       <td>${negBadge(n.status)}</td>
@@ -5625,8 +5726,8 @@ function renderRenovNegociacoes(){
         <button type="button" class="renov-action-btn" data-edit-neg="${n.id}">Editar</button>
         <button type="button" class="renov-del-btn" data-del-neg="${n.id}">Excluir</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function fillNegCondoSelect(){
@@ -5644,6 +5745,7 @@ function setNegCondo(condoId){
   const condo = renovAllCondos.find(c => String(c.item_id) === String(condoId));
   document.getElementById('negCondoSel').value = condo ? condo.item_id : '';
   document.getElementById('negCondoInput').value = condo ? condo.nome : '';
+  document.getElementById('negFilial').value = condo ? (condo.filial || '') : '';
 }
 (function initNegCondoCombo(){
   const input = document.getElementById('negCondoInput');
@@ -5685,6 +5787,10 @@ function openNegociacaoModal(condoId){
   document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = '';
   document.getElementById('negObs').value = '';
+  document.getElementById('negAmpliacaoMaterial').value = '';
+  document.getElementById('negAmpliacaoPedido').value = '';
+  document.getElementById('negAmpliacaoOS').value = '';
+  document.getElementById('negAmpliacaoRequisicao').value = '';
   document.getElementById('negCondoDropdown').classList.remove('open');
   if (condoId) setNegCondo(condoId);
   else setNegCondo(null);
@@ -5705,6 +5811,10 @@ function editNegociacao(id){
   document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = n.nova_data || '';
   document.getElementById('negObs').value = n.obs || '';
+  document.getElementById('negAmpliacaoMaterial').value = n.ampliacao_material || '';
+  document.getElementById('negAmpliacaoPedido').value = n.ampliacao_pedido || '';
+  document.getElementById('negAmpliacaoOS').value = n.ampliacao_os || '';
+  document.getElementById('negAmpliacaoRequisicao').value = n.ampliacao_requisicao || '';
   document.getElementById('negCondoDropdown').classList.remove('open');
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
 }
@@ -5747,6 +5857,10 @@ async function salvarNegociacao(){
     status: status,
     nova_data: novaData,
     obs: document.getElementById('negObs').value.trim(),
+    ampliacao_material: document.getElementById('negAmpliacaoMaterial').value.trim() || null,
+    ampliacao_pedido: document.getElementById('negAmpliacaoPedido').value.trim() || null,
+    ampliacao_os: document.getElementById('negAmpliacaoOS').value.trim() || null,
+    ampliacao_requisicao: document.getElementById('negAmpliacaoRequisicao').value.trim() || null,
     updated_at: new Date().toISOString()
   };
 
@@ -5810,6 +5924,7 @@ function initRenovacaoUI(){
   });
 }
 initRenovacaoUI();
+
 
 // ============================================================================
 // NAVEGAÇÃO POR ABAS + INICIALIZAÇÃO
