@@ -982,6 +982,7 @@
 
     <div class="checklist-toolbar">
       <strong style="color:var(--text); font-size:13px; flex:1;">📝 Negociações de Renovação</strong>
+      <span id="renovNegociacoesCount" class="count-line" style="margin:0 12px 0 0;"></span>
       <button type="button" class="logout-btn" id="btnNovaNegociacao" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Negociação</button>
     </div>
     <div class="checklist-table-wrap">
@@ -5642,7 +5643,7 @@ function populateRenovFiltros(){
   }
   const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   fillSelect('renovFilterFilial', uniq(renovAllCondos.map(c => c.filial)));
-  fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel)));
+  fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel).concat(renovNegociacoes.map(n => n.responsavel))));
 }
 
 function getFilteredRenovVencidos(){
@@ -5651,6 +5652,18 @@ function getFilteredRenovVencidos(){
   return renovVencidos.filter(c=>{
     if (fFilial && c.filial !== fFilial) return false;
     if (fResp && c.responsavel !== fResp) return false;
+    return true;
+  });
+}
+
+function getFilteredRenovNegociacoes(){
+  const fFilial = document.getElementById('renovFilterFilial').value;
+  const fResp = document.getElementById('renovFilterResponsavel').value;
+  return renovNegociacoes.filter(n=>{
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    const filial = condo ? condo.filial : null;
+    if (fFilial && filial !== fFilial) return false;
+    if (fResp && n.responsavel !== fResp) return false;
     return true;
   });
 }
@@ -5683,7 +5696,10 @@ function renderRenovVencidos(){
 }
 
 ['renovFilterFilial','renovFilterResponsavel'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', renderRenovVencidos);
+  document.getElementById(id).addEventListener('change', ()=>{
+    renderRenovVencidos();
+    renderRenovNegociacoes();
+  });
 });
 
 function negBadge(status){
@@ -5707,11 +5723,14 @@ function negBadge(status){
 
 function renderRenovNegociacoes(){
   const body = document.getElementById('renovNegociacoesBody');
-  if (!renovNegociacoes.length){
-    body.innerHTML = '<tr><td colspan="8" class="empty">Nenhuma negociação registrada.</td></tr>';
+  const filtered = getFilteredRenovNegociacoes();
+  const countEl = document.getElementById('renovNegociacoesCount');
+  if (countEl) countEl.textContent = `${filtered.length} de ${renovNegociacoes.length} negociação(ões)`;
+  if (!filtered.length){
+    body.innerHTML = `<tr><td colspan="8" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
     return;
   }
-  body.innerHTML = renovNegociacoes.map(n => {
+  body.innerHTML = filtered.map(n => {
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     return `
     <tr>
