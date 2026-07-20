@@ -501,7 +501,7 @@
   .card:hover{ border-color:var(--text-faint); }
   .list-header{
     display:grid;
-    grid-template-columns:34px 1fr 150px 70px 80px 110px 74px 60px 90px 120px 22px;
+    grid-template-columns:34px 1fr 150px 76px 60px 90px 80px 110px 74px 90px 120px 22px;
     align-items:center;
     gap:14px;
     padding:0 20px 10px;
@@ -520,7 +520,7 @@
 
   .card-head{
     display:grid;
-    grid-template-columns:34px 1fr 150px 70px 80px 110px 74px 60px 90px 120px 22px;
+    grid-template-columns:34px 1fr 150px 76px 60px 90px 80px 110px 74px 90px 120px 22px;
     align-items:center;
     gap:14px;
     padding:12px 20px;
@@ -602,6 +602,44 @@
   }
 
   .empty{ text-align:center; padding:70px 20px; color:var(--text-faint); font-size:13px; }
+
+  .view-toggle-btn{
+    background:none; border:none; color:var(--text-faint); font-family:inherit; font-size:11.5px;
+    font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .view-toggle-btn.active{ background:var(--bg-panel-3); color:var(--text); }
+  .view-toggle-btn:hover{ color:var(--text); }
+
+  .kanban-board{ display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; align-items:flex-start; }
+  .kanban-col{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
+    min-width:270px; max-width:290px; flex-shrink:0; box-shadow:var(--shadow-panel);
+  }
+  .kanban-col-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:13px 15px; border-bottom:1px solid var(--line);
+  }
+  .kanban-col-title{ font-size:12.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px; }
+  .kanban-col-dot{ width:8px; height:8px; border-radius:50%; }
+  .kanban-col-count{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text-faint);
+    background:var(--bg-panel-2); border-radius:20px; padding:2px 9px;
+  }
+  .kanban-col-body{ padding:10px; display:flex; flex-direction:column; gap:8px; max-height:70vh; overflow-y:auto; }
+  .kanban-card{
+    background:var(--bg-panel-2); border:1px solid var(--line); border-left:3px solid var(--kc);
+    border-radius:9px; padding:10px 12px; cursor:pointer;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .kanban-card:hover{ border-color:var(--text-faint); transform:translateY(-1px); }
+  .kanban-card-name{ font-size:12.5px; font-weight:650; color:var(--text); line-height:1.3; }
+  .kanban-card-meta{ font-size:10.5px; color:var(--text-faint); margin-top:4px; }
+  .kanban-card-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px; }
+  .kanban-card-nota{ font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:700; color:var(--kc); }
+  @media (max-width:820px){
+    .kanban-col{ min-width:240px; }
+  }
 
   footer{ margin-top:46px; padding-top:18px; border-top:1px solid var(--line); font-size:11px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
 
@@ -912,21 +950,29 @@
     </div>
   </div>
 
-  <div class="count-line" id="countLine"></div>
-  <div class="list-header">
+  <div class="count-line" id="countLine" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <span id="countLineText"></span>
+    <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+      <button type="button" id="viewListBtn" class="view-toggle-btn active">📋 Lista</button>
+      <button type="button" id="viewKanbanBtn" class="view-toggle-btn">🗂 Kanban</button>
+    </span>
+  </div>
+  <div class="list-header" id="listHeader">
     <div></div>
     <div>Condomínio</div>
     <div>Motivo</div>
-    <div class="lh-nota">Nota</div>
+    <div class="lh-nota">Nota (Média)</div>
+    <div class="lh-nota2">Nota 1</div>
+    <div class="lh-nota2">Nota 2</div>
     <div class="lh-data">Data</div>
     <div class="lh-crit">Criticidade</div>
     <div class="lh-humor">Humor</div>
-    <div class="lh-nota2">Nota 2</div>
     <div class="lh-res">Resolução</div>
     <div class="lh-status">Status da pesquisa</div>
     <div></div>
   </div>
   <div class="list" id="list"></div>
+  <div class="kanban-board" id="kanbanBoard" style="display:none;"></div>
   <div class="empty" id="emptyMsg" style="display:none;">Nenhum condomínio encontrado com esses filtros.</div>
 
   <footer>
@@ -2819,54 +2865,43 @@ function classifyMotivos(item){
 // Quando não houve contato (síndico não atende / pesquisa pendente), não dá pra
 // saber o humor — nesses casos o campo fica "Não avaliado" em vez de arriscar um chute.
 const HUMOR_LABELS = {
-  muito_insatisfeito: { label: 'Muito insatisfeito', emoji: '😠', color: 'var(--critico)' },
-  insatisfeito:        { label: 'Insatisfeito',        emoji: '🙁', color: 'var(--atencao)' },
-  insatisfeito_pos:    { label: 'Insatisfeito (nota pós-resolução abaixo de 8)', emoji: '😠', color: 'var(--critico)' },
-  satisfeito:           { label: 'Satisfeito',          emoji: '🙂', color: 'var(--ok)' },
+  insatisfeito:        { label: 'Insatisfeito (nota até 7,9)',    emoji: '😡', color: 'var(--critico)' },
+  satisfeito:           { label: 'Satisfeito (nota 8 a 8,9)',      emoji: '🙂', color: 'var(--ok)' },
+  muito_satisfeito:     { label: 'Muito satisfeito (nota 9 a 10)', emoji: '🤩', color: 'var(--ok)' },
   nao_avaliado:         { label: 'Não avaliado',        emoji: '⚪', color: 'var(--pendente)' },
   aguardando:           { label: 'Aguardando resolução', emoji: '⏳', color: 'var(--pendente)' },
 };
+
+// Humor passou a ser 100% baseado na nota (pedido da Rosely em 20/07): não avaliado e
+// aguardando resolução continuam sendo definidos pelo status/resolução, mas o humor em
+// si (insatisfeito / satisfeito / muito satisfeito) vem direto da faixa de nota.
+function humorPorNota(nota){
+  const n = parseFloat(String(nota).replace(',', '.'));
+  if (isNaN(n)) return null;
+  if (n < 8) return 'insatisfeito';
+  if (n < 9) return 'satisfeito';
+  return 'muito_satisfeito';
+}
+
 function classifyHumor(item){
   if (item.statusPesquisa === 'Síndico não atende' || item.statusPesquisa === 'Pendente') return 'nao_avaliado';
-  const t = ((item.pend || '') + ' ' + (item.resolucao || '')).toLowerCase();
-
-  if (/muito insatisfeit|pretende cancelar|pretende mudar de empresa|n[ãa]o est(á|a) tendo uma experi[êe]ncia satisfat[óo]ria|impress[ãa]o .{0,20}abandonado|furto|roubo|arrombamento|n[ãa]o ter interesse em renovar/.test(t)) {
-    return 'muito_insatisfeito';
-  }
-  if (/insatisfeit|insatisfa[çc][ãa]o|reclama[çc][ãa]o (antiga e )?recorrente|n[ãa]o atende (plenamente )?[àa]s expectativas|preferiu n[ãa]o detalhar/.test(t)) {
-    return 'insatisfeito';
-  }
-  return 'satisfeito'; // demais casos (inclusive tom neutro/sem sinal forte) contam como satisfeito
+  return humorPorNota(item.nota) || 'nao_avaliado';
 }
 
 // Quando há nota baixa ou pendência/reclamação registrada, o humor único não conta a
-// história toda — o síndico pode ter ficado chateado no início e satisfeito depois que
-// o problema foi resolvido. Por isso, nesses casos, mostramos dois humores: o inicial
-// (a partir do texto da reclamação) e o atual (a partir do status de resolução).
+// história toda — o síndico pode ter ficado insatisfeito na primeira nota e satisfeito
+// depois que o problema foi resolvido (segunda nota). Por isso, nesses casos, mostramos
+// dois humores: o inicial (nota da 1ª pesquisa) e o atual (nota pós-resolução).
 function classifyHumorInicial(item){
   if (item.statusPesquisa === 'Síndico não atende' || item.statusPesquisa === 'Pendente') return 'nao_avaliado';
-  const t = (item.pend || '').toLowerCase();
-  if (/muito insatisfeit|pretende cancelar|pretende mudar de empresa|n[ãa]o est(á|a) tendo uma experi[êe]ncia satisfat[óo]ria|impress[ãa]o .{0,20}abandonado|furto|roubo|arrombamento|n[ãa]o ter interesse em renovar/.test(t)) {
-    return 'muito_insatisfeito';
-  }
-  if (/insatisfeit|insatisfa[çc][ãa]o|reclama[çc][ãa]o (antiga e )?recorrente|n[ãa]o atende (plenamente )?[àa]s expectativas|preferiu n[ãa]o detalhar/.test(t)) {
-    return 'insatisfeito';
-  }
-  if (classifyMotivos(item).length > 0) return 'insatisfeito'; // registrou pendência, mesmo sem linguagem forte
-  return 'satisfeito';
+  return humorPorNota(item.nota) || 'nao_avaliado';
 }
 function classifyHumorFinal(item){
-  // Se o síndico deu uma nota nova após a resolução, ela manda mais que qualquer
-  // suposição por texto: abaixo de 8, o problema não foi bem resolvido de verdade.
   if (item.notaPosResolucao){
-    const n2 = parseFloat(String(item.notaPosResolucao).replace(',', '.'));
-    if (!isNaN(n2)) return n2 < 8 ? 'insatisfeito_pos' : 'satisfeito';
+    const h = humorPorNota(item.notaPosResolucao);
+    if (h) return h;
   }
-  if (item.resolvido === true){
-    const t = (item.resolucao || '').toLowerCase();
-    if (/insatisfeit|n[ãa]o resolvid|sem solu[çc][ãa]o|pretende cancelar/.test(t)) return 'insatisfeito';
-    return 'satisfeito';
-  }
+  if (item.resolvido === true) return 'satisfeito';
   if (item.resolvido === false) return 'aguardando';
   return null; // não se aplica — não mostramos segundo humor
 }
@@ -3125,6 +3160,28 @@ function limparStatusPesquisaAntigos(){
   }
 }
 
+function preencherDataPesquisaFaltante(){
+  const DATA_PADRAO = '2026-07-01';
+  const corrigidos = [];
+  DATA.forEach(d=>{
+    const temNota = d.nota !== null && d.nota !== undefined && String(d.nota).trim() !== '';
+    const semData = !d.dataPesquisa || String(d.dataPesquisa).trim() === '';
+    if (temNota && semData){
+      d.dataPesquisa = DATA_PADRAO;
+      corrigidos.push(d);
+    }
+  });
+  if (corrigidos.length){
+    console.log(`Preenchendo data da pesquisa (${DATA_PADRAO}) em ${corrigidos.length} condomínio(s) com nota mas sem data.`);
+    corrigidos.forEach(item=>{
+      const updates = { dataPesquisa: item.dataPesquisa };
+      OVERRIDES[item.n] = Object.assign({}, OVERRIDES[item.n], updates);
+      pushOverrideToSupabase(item.n, Object.assign({}, item, updates));
+    });
+    persistOverrides(OVERRIDES);
+  }
+}
+
 function applyOverrides(){
   DATA.forEach(d=>{
     d.motivo = classifyMotivos(d).join(' / ') || '—'; // padronização automática
@@ -3133,6 +3190,7 @@ function applyOverrides(){
     if (o) Object.assign(d, o);
   });
   limparStatusPesquisaAntigos();
+  preencherDataPesquisaFaltante();
 }
 applyOverrides();
 
@@ -3234,6 +3292,14 @@ function notaFaixaIndex(item){
     ? NOTA_FAIXAS.length - 1
     : NOTA_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
   return idx === -1 ? NOTA_FAIXAS.length - 1 : idx;
+}
+function emojiParaNota(notaRaw){
+  const n = parseFloat(String(notaRaw).replace(',', '.'));
+  if (isNaN(n)) return '';
+  if (n <= 7) return '😡';
+  if (n === 8) return '🙂';
+  if (n >= 9) return '🤩';
+  return '';
 }
 const STATUS_DONUT_COLORS = {
   'Concluída': 'var(--ok)',
@@ -3466,7 +3532,11 @@ function populateFilterOptions(){
     options: statuses.map(s=>({value:s,label:s})), prefixLabel:'Status da pesquisa',
   });
 
-  const setores = [...new Set(DATA.flatMap(d=> d.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; })).filter(s=>s && s!=='—'))].sort();
+  const setoresMap = new Map();
+  DATA.flatMap(d => d.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }))
+    .filter(s => s && s !== '—')
+    .forEach(s => { const key = s.toLowerCase(); if (!setoresMap.has(key)) setoresMap.set(key, s); });
+  const setores = [...setoresMap.values()].sort();
   SETORES_CANONICOS = setores;
   setupMultiFilter({
     btnId:'setorFilterBtn', panelId:'setorFilterPanel', wrapId:'setorFilterWrap',
@@ -3528,9 +3598,20 @@ function resolvedBadge(r){
   return `<span class="rbadge">—</span>`;
 }
 
+function notaMedia(item){
+  const n1 = parseFloat(String(item.nota).replace(',', '.'));
+  if (isNaN(n1)) return '—';
+  const n2 = parseFloat(String(item.notaPosResolucao).replace(',', '.'));
+  // Nota 2 só existe quando a 1ª nota foi menor que 9 (pesquisa de retorno). Se não
+  // houver segunda nota, a média é simplesmente a própria 1ª nota.
+  if (isNaN(n2)) return (Math.round(n1 * 10) / 10).toString().replace('.', ',');
+  const media = (n1 + n2) / 2;
+  return (Math.round(media * 10) / 10).toString().replace('.', ',');
+}
+
 function humorBadge(h){
   const info = HUMOR_LABELS[h] || HUMOR_LABELS.satisfeito;
-  return `<span class="hbadge" title="${info.label}" aria-label="${info.label}">${info.emoji}</span>`;
+  return `<span class="hbadge" style="background:color-mix(in srgb, ${info.color} 24%, var(--bg-panel-2)); border-color:${info.color}; box-shadow:0 0 0 1px ${info.color} inset;" title="${info.label}" aria-label="${info.label}">${info.emoji}</span>`;
 }
 
 function humorCell(item){
@@ -3541,9 +3622,9 @@ function humorCell(item){
   if (!final) return humorBadge(inicial);
   const iInfo = HUMOR_LABELS[inicial], fInfo = HUMOR_LABELS[final];
   return `<span class="humor-pair">
-    <span title="${iInfo.label} (antes)">${iInfo.emoji}</span>
+    <span class="hbadge" style="width:24px;height:24px;font-size:13px;background:color-mix(in srgb, ${iInfo.color} 24%, var(--bg-panel-2)); border-color:${iInfo.color}; box-shadow:0 0 0 1px ${iInfo.color} inset;" title="${iInfo.label} (antes)">${iInfo.emoji}</span>
     <span class="humor-arrow">→</span>
-    <span title="${fInfo.label} (depois)">${fInfo.emoji}</span>
+    <span class="hbadge" style="width:24px;height:24px;font-size:13px;background:color-mix(in srgb, ${fInfo.color} 24%, var(--bg-panel-2)); border-color:${fInfo.color}; box-shadow:0 0 0 1px ${fInfo.color} inset;" title="${fInfo.label} (depois)">${fInfo.emoji}</span>
   </span>`;
 }
 
@@ -3566,22 +3647,28 @@ function editFormHTML(item){
           <option value="Pendente" ${item.statusPesquisa==='Pendente'?'selected':''}>Pendente</option>
         </select>
       </label>
+      <label>Houve reclamação?
+        <div class="cb-box"><label><input type="checkbox" class="ef-houve-reclamacao" ${item.houveReclamacao ? 'checked':''}> Sim, houve reclamação</label></div>
+      </label>
+      <label>Houve elogio?
+        <div class="cb-box"><label><input type="checkbox" class="ef-houve-elogio" ${item.houveElogio ? 'checked':''}> Sim, houve elogio</label></div>
+      </label>
       <label>Criticidade<select class="ef-crit">${critOptions}</select></label>
       <label>Setor responsável
         <div class="cb-box ef-setor-box">
           ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ef-setor-cb" value="${escapeHtml(s)}" ${(item.setor||'').split('/').map(x=>{ const t=x.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(s) ? 'checked':''}> ${escapeHtml(s)}</label>`).join('')}
         </div>
       </label>
-      <label>Motivo da reclamação
-        <select class="ef-motivo" multiple size="6">
+      <label>Motivo da reclamação <span style="font-weight:400;text-transform:none;">(pode marcar mais de um)</span>
+        <div class="cb-box ef-motivo-box">
           ${MOTIVOS_CANONICOS.map(m => {
             const parts = (item.motivo||'').split(' / ');
-            const isSelected = m === 'Outros'
+            const isChecked = m === 'Outros'
               ? parts.some(p => p.trim().toLowerCase().startsWith('outros'))
               : parts.includes(m);
-            return `<option value="${m}" ${isSelected ? 'selected':''}>${m}</option>`;
+            return `<label><input type="checkbox" class="ef-motivo-cb" value="${m}" ${isChecked ? 'checked':''}> ${m}</label>`;
           }).join('')}
-        </select>
+        </div>
       </label>
       <label class="ef-motivo-outro-wrap" style="display:${(item.motivo||'').split(' / ').some(p=>p.trim().toLowerCase().startsWith('outros')) ? 'block':'none'}">
         Especifique o motivo
@@ -3598,12 +3685,6 @@ function editFormHTML(item){
       <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
         <input type="text" class="ef-nota-pos" placeholder="ex: 9" value="${escapeHtml(item.notaPosResolucao || '')}">
       </label>
-      <label>Houve reclamação?
-        <div class="cb-box"><label><input type="checkbox" class="ef-houve-reclamacao" ${item.houveReclamacao ? 'checked':''}> Sim, houve reclamação</label></div>
-      </label>
-      <label>Houve elogio?
-        <div class="cb-box"><label><input type="checkbox" class="ef-houve-elogio" ${item.houveElogio ? 'checked':''}> Sim, houve elogio</label></div>
-      </label>
       <label class="full">Pendências / Reclamações<textarea class="ef-pend">${escapeHtml(item.pend)}</textarea></label>
       <label class="full">Encaminhamento / Retorno<textarea class="ef-resolucao">${escapeHtml(item.resolucao)}</textarea></label>
       <div class="edit-actions">
@@ -3619,6 +3700,12 @@ function newItemFormHTML(){
   const filiaisExistentes = [...new Set(DATA.map(d=>d.filial))].sort();
   return `
     <div class="edit-form">
+      <label>Houve reclamação?
+        <div class="cb-box"><label><input type="checkbox" class="ni-houve-reclamacao"> Sim, houve reclamação</label></div>
+      </label>
+      <label>Houve elogio?
+        <div class="cb-box"><label><input type="checkbox" class="ni-houve-elogio"> Sim, houve elogio</label></div>
+      </label>
       <label class="full">Condomínio
         <input type="text" class="ni-nome" placeholder="Nome do condomínio" required>
       </label>
@@ -3641,10 +3728,10 @@ function newItemFormHTML(){
           ${SETORES_CANONICOS.map(s => `<label><input type="checkbox" class="ni-setor-cb" value="${escapeHtml(s)}"> ${escapeHtml(s)}</label>`).join('')}
         </div>
       </label>
-      <label>Motivo da reclamação
-        <select class="ni-motivo" multiple size="6">
-          ${MOTIVOS_CANONICOS.map(m => `<option value="${m}">${m}</option>`).join('')}
-        </select>
+      <label>Motivo da reclamação <span style="font-weight:400;text-transform:none;">(pode marcar mais de um)</span>
+        <div class="cb-box">
+          ${MOTIVOS_CANONICOS.map(m => `<label><input type="checkbox" class="ni-motivo-cb" value="${m}"> ${m}</label>`).join('')}
+        </div>
       </label>
       <label class="ni-motivo-outro-wrap" style="display:none;">
         Especifique o motivo
@@ -3659,12 +3746,6 @@ function newItemFormHTML(){
       </label>
       <label>Nota após resolução <span style="font-weight:400;text-transform:none;">(se o síndico reavaliou)</span>
         <input type="text" class="ni-nota-pos" placeholder="ex: 9">
-      </label>
-      <label>Houve reclamação?
-        <div class="cb-box"><label><input type="checkbox" class="ni-houve-reclamacao"> Sim, houve reclamação</label></div>
-      </label>
-      <label>Houve elogio?
-        <div class="cb-box"><label><input type="checkbox" class="ni-houve-elogio"> Sim, houve elogio</label></div>
       </label>
       <label class="full">Pendências / Reclamações<textarea class="ni-pend"></textarea></label>
       <label class="full">Encaminhamento / Retorno<textarea class="ni-resolucao"></textarea></label>
@@ -3770,9 +3851,11 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
   document.getElementById('newItemModal').style.display = 'flex';
 
   const wrap = document.getElementById('newItemModal');
-  wrap.querySelector('.ni-motivo').addEventListener('change', ()=>{
-    const outrosSelected = [...wrap.querySelector('.ni-motivo').selectedOptions].some(o=>o.value==='Outros');
-    wrap.querySelector('.ni-motivo-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
+  wrap.querySelectorAll('.ni-motivo-cb').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const outrosSelected = [...wrap.querySelectorAll('.ni-motivo-cb:checked')].some(c=>c.value==='Outros');
+      wrap.querySelector('.ni-motivo-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
+    });
   });
   wrap.querySelector('#niCancelBtn').addEventListener('click', ()=>{
     document.getElementById('newItemModal').style.display = 'none';
@@ -3788,7 +3871,7 @@ document.getElementById('newItemBtn').addEventListener('click', ()=>{
       return;
     }
     const resolvidoRaw = wrap.querySelector('.ni-resolvido').value;
-    const motivoVals = [...wrap.querySelector('.ni-motivo').selectedOptions].map(o=>o.value);
+    const motivoVals = [...wrap.querySelectorAll('.ni-motivo-cb:checked')].map(cb=>cb.value);
     const outroTexto = wrap.querySelector('.ni-motivo-outro').value.trim();
     const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
     const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
@@ -3838,6 +3921,63 @@ document.getElementById('closeNewItemBtn').addEventListener('click', ()=>{
 // Função central: aplica filtros, monta KPIs/gráficos/lista sempre que os
 // dados ou filtros mudam.
 // ============================================================================
+let currentView = 'list';
+
+function renderKanban(filtered){
+  const board = document.getElementById('kanbanBoard');
+  if (currentView !== 'kanban') return;
+  const cols = Object.keys(CRIT_LABELS).map(key => ({
+    key, label: CRIT_LABELS[key].label, color: CRIT_LABELS[key].color,
+    items: filtered.filter(d => d.crit === key)
+  }));
+  board.innerHTML = cols.map(col => `
+    <div class="kanban-col">
+      <div class="kanban-col-head">
+        <div class="kanban-col-title"><span class="kanban-col-dot" style="background:${col.color};"></span>${escapeHtml(col.label)}</div>
+        <span class="kanban-col-count">${col.items.length}</span>
+      </div>
+      <div class="kanban-col-body">
+        ${col.items.length ? col.items.map(item => `
+          <div class="kanban-card" style="--kc:${col.color};" data-kanban-n="${item.n}">
+            <div class="kanban-card-name">${escapeHtml(item.nome)}</div>
+            <div class="kanban-card-meta">${escapeHtml(item.filial)}${item.motivo && item.motivo !== '—' ? ' · ' + escapeHtml(item.motivo) : ''}</div>
+            <div class="kanban-card-row">
+              <span class="kanban-card-nota">${escapeHtml(item.nota)} ${emojiParaNota(item.nota)}</span>
+              <span style="font-size:10px; color:var(--text-faint);">${escapeHtml(item.statusPesquisa)}</span>
+            </div>
+          </div>
+        `).join('') : '<p style="text-align:center; color:var(--text-faint); font-size:11.5px; padding:20px 0;">Nenhum condomínio aqui.</p>'}
+      </div>
+    </div>
+  `).join('');
+
+  board.querySelectorAll('[data-kanban-n]').forEach(card=>{
+    card.onclick = ()=>{
+      const n = parseInt(card.getAttribute('data-kanban-n'), 10);
+      const item = DATA.find(d=>d.n===n);
+      if (!item) return;
+      item._open = true;
+      document.getElementById('viewListBtn').click();
+      setTimeout(()=>{
+        const cardEl = document.querySelector(`.card[data-n="${n}"]`);
+        if (cardEl) cardEl.scrollIntoView({ behavior:'smooth', block:'center' });
+      }, 50);
+    };
+  });
+}
+
+function setView(view){
+  currentView = view;
+  document.getElementById('viewListBtn').classList.toggle('active', view === 'list');
+  document.getElementById('viewKanbanBtn').classList.toggle('active', view === 'kanban');
+  document.getElementById('listHeader').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('list').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('kanbanBoard').style.display = view === 'kanban' ? 'flex' : 'none';
+  if (view === 'kanban') render();
+}
+document.getElementById('viewListBtn').addEventListener('click', ()=>setView('list'));
+document.getElementById('viewKanbanBtn').addEventListener('click', ()=>setView('kanban'));
+
 function render(){
   const q = document.getElementById('search').value.trim();
 
@@ -3854,15 +3994,17 @@ function render(){
 
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyMsg');
-  document.getElementById('countLine').textContent = `${filtered.length} de ${DATA.length} condomínios exibidos`;
+  document.getElementById('countLineText').textContent = `${filtered.length} de ${DATA.length} condomínios exibidos`;
 
   listEl.innerHTML = '';
   emptyEl.style.display = filtered.length ? 'none' : 'block';
+  renderKanban(filtered);
 
   filtered.forEach(item=>{
     const c = CRIT_LABELS[item.crit];
     const card = document.createElement('div');
     card.className = 'card' + (item._open ? ' open' : '');
+    card.dataset.n = item.n;
     card.style.setProperty('--cc', c.color);
     card.style.setProperty('--cc-bg', c.bg);
 
@@ -3887,11 +4029,12 @@ function render(){
         <div class="idx">${String(item.n).padStart(2,'0')}</div>
         <div class="name">${escapeHtml(item.nome)}<small>${escapeHtml(item.filial)}${item.setor !== '—' ? ' · ' + escapeHtml(item.setor) : ''}</small></div>
         <div class="motivo">${escapeHtml(item.motivo || '—')}</div>
-        <div class="nota">${escapeHtml(item.nota)}<span class="nlabel">nota</span></div>
+        <div class="nota">${notaMedia(item)} ${emojiParaNota(notaMedia(item))}<span class="nlabel">média</span></div>
+        <div class="nota2col">${escapeHtml(item.nota)}</div>
+        <div class="nota2col">${item.notaPosResolucao ? escapeHtml(item.notaPosResolucao) : '—'}</div>
         <div class="datacol">${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</div>
         <div class="tag">${c.label}</div>
         <div class="humorcol">${humorCell(item)}</div>
-        <div class="nota2col">${item.notaPosResolucao ? escapeHtml(item.notaPosResolucao) : '—'}</div>
         <div class="rescol">${resolvedBadge(item.resolvido)}</div>
         <div class="status">${escapeHtml(item.statusPesquisa)}</div>
         <div class="chev">▶</div>
@@ -3912,11 +4055,12 @@ function render(){
       render();
     };
 
-    const motivoSelect = card.querySelector('.ef-motivo');
-    if (motivoSelect) motivoSelect.addEventListener('change', ()=>{
-      const wrap = card.querySelector('.ef-motivo-outro-wrap');
-      const outrosSelected = [...motivoSelect.selectedOptions].some(o=>o.value==='Outros');
-      wrap.style.display = outrosSelected ? 'block' : 'none';
+    card.querySelectorAll('.ef-motivo-cb').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const wrap = card.querySelector('.ef-motivo-outro-wrap');
+        const outrosSelected = [...card.querySelectorAll('.ef-motivo-cb:checked')].some(c=>c.value==='Outros');
+        wrap.style.display = outrosSelected ? 'block' : 'none';
+      });
     });
 
     const cancelBtn = card.querySelector('.btn-cancel');
@@ -3931,7 +4075,7 @@ function render(){
       e.stopPropagation();
       const form = card.querySelector('.edit-form');
       const resolvidoRaw = form.querySelector('.ef-resolvido').value;
-      const motivoVals = [...form.querySelector('.ef-motivo').selectedOptions].map(o=>o.value);
+      const motivoVals = [...form.querySelectorAll('.ef-motivo-cb:checked')].map(cb=>cb.value);
       const outroTexto = form.querySelector('.ef-motivo-outro').value.trim();
       const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
       const updates = {
