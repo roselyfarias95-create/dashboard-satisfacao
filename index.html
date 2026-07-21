@@ -641,6 +641,71 @@
     .kanban-col{ min-width:240px; }
   }
 
+  /* ---------- MODAL "NOVA / EDITAR PESQUISA DE SATISFAÇÃO" ---------- */
+  .pq-section{
+    background:var(--bg-panel-2); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; margin-bottom:14px;
+  }
+  .pq-label{
+    font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--text-faint); margin:0 0 8px; display:block;
+  }
+  .pq-info-line{
+    display:flex; flex-wrap:wrap; gap:16px; font-size:11.5px; color:var(--text-faint);
+    background:var(--bg-panel-3); border-radius:9px; padding:9px 12px; margin-bottom:14px;
+  }
+  .pq-info-line b{ color:var(--text-dim); font-weight:600; }
+  .pq-row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  @media (max-width:600px){ .pq-row2{ grid-template-columns:1fr; } }
+
+  .toggle-pair{ display:flex; gap:10px; }
+  .toggle-btn{
+    flex:1; padding:11px 10px; border-radius:10px; border:2px solid var(--line);
+    background:var(--bg-panel-3); color:var(--text-dim); font-weight:700; font-size:13px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:border-color .15s ease, background .15s ease, color .15s ease;
+    font-family:inherit;
+  }
+  .toggle-btn:hover{ border-color:var(--text-faint); }
+  .toggle-btn.active.pos{ border-color:var(--ok); background:color-mix(in srgb, var(--ok) 20%, var(--bg-panel-3)); color:var(--ok); }
+  .toggle-btn.active.neg{ border-color:var(--critico); background:color-mix(in srgb, var(--critico) 20%, var(--bg-panel-3)); color:var(--critico); }
+  .toggle-btn.active.warn{ border-color:var(--atencao); background:color-mix(in srgb, var(--atencao) 20%, var(--bg-panel-3)); color:var(--atencao); }
+  .toggle-btn.active.info{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 20%, var(--bg-panel-3)); color:var(--accent); }
+  .toggle-btn.active.neutral{ border-color:var(--text-faint); background:var(--bg-panel-2); color:var(--text); }
+
+  .nota-row{ display:flex; gap:6px; flex-wrap:wrap; }
+  .nota-btn{
+    width:38px; height:38px; border-radius:9px; border:2px solid var(--line);
+    background:var(--bg-panel-3); color:var(--text-dim); font-weight:700; font-size:13px;
+    cursor:pointer; font-family:"IBM Plex Mono",monospace;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .nota-btn:hover{ transform:translateY(-1px); }
+  .nota-btn.low{ color:var(--critico); }
+  .nota-btn.high{ color:var(--ok); }
+  .nota-btn.selected.low{ background:var(--critico); border-color:var(--critico); color:#fff; }
+  .nota-btn.selected.high{ background:var(--ok); border-color:var(--ok); color:#062b16; }
+  .nota-hint{ font-size:11px; color:var(--text-faint); margin-top:8px; }
+
+  .pq-checklist{ display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-bottom:10px; }
+  @media (max-width:600px){ .pq-checklist{ grid-template-columns:1fr; } }
+  .pq-checklist label{
+    display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text);
+    cursor:pointer; padding:2px 0; line-height:1.35; min-width:0;
+  }
+  .pq-checklist label span{ min-width:0; }
+  .pq-checklist input{ accent-color:var(--accent); width:14px; height:14px; cursor:pointer; flex-shrink:0; margin-top:2px; }
+
+  .pq-field{ margin-bottom:12px; }
+  .pq-field label.pq-label{ margin-bottom:6px; }
+  .pq-field input, .pq-field select, .pq-field textarea{
+    width:100%; background:var(--bg-panel-3); border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box;
+    transition:border-color .15s ease;
+  }
+  .pq-field input:focus, .pq-field select:focus, .pq-field textarea:focus{ outline:none; border-color:var(--accent); }
+  .pq-field textarea{ min-height:64px; resize:vertical; line-height:1.5; }
+
   footer{ margin-top:46px; padding-top:18px; border-top:1px solid var(--line); font-size:11px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
 
   /* ---------- CHECKLIST DE CONDOMÍNIOS ---------- */
@@ -822,6 +887,180 @@
     <p class="users-sub">O novo condomínio entra na lista e sincroniza pelo Supabase para todo mundo.</p>
     <div id="newItemFormWrap"></div>
     <p class="users-error" id="newItemError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="pesquisaModalOverlay" class="users-modal" style="display:none;">
+  <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+    <div class="users-head">
+      <h3 id="pqModalTitle">⭐ Nova Pesquisa de Satisfação</h3>
+      <button type="button" class="logout-btn" id="pqCloseBtn">✕ Fechar</button>
+    </div>
+
+    <div class="pq-section">
+      <span class="pq-label">Pesquisa realizada?</span>
+      <div class="toggle-pair">
+        <button type="button" class="toggle-btn" data-group="pqRealizada" data-val="sim">☑ Sim</button>
+        <button type="button" class="toggle-btn" data-group="pqRealizada" data-val="nao">✕ Não</button>
+      </div>
+    </div>
+
+    <div class="pq-field">
+      <label class="pq-label">Condomínio *</label>
+      <input type="text" id="pqCondominio" list="pq-condominio-list" placeholder="Nome do condomínio">
+      <datalist id="pq-condominio-list"></datalist>
+    </div>
+
+    <div class="pq-info-line" id="pqInfoLine">
+      <span>Filial: <b id="pqInfoFilial">—</b></span>
+      <span>Síndico: <b id="pqInfoSindico">—</b></span>
+      <span>Última pesquisa: <b id="pqInfoUltimaData">—</b></span>
+      <span>Última nota: <b id="pqInfoUltimaNota">—</b></span>
+    </div>
+
+    <div class="pq-row2">
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Mês de referência</label>
+        <select id="pqMesReferencia"></select>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Data</label>
+        <input type="date" id="pqData">
+      </div>
+    </div>
+
+    <div id="pqCorpoNormal">
+    <div class="pq-section">
+      <span class="pq-label">Nota (0 = péssimo · 10 = excelente) *</span>
+      <div class="nota-row" id="pqNotaRow">
+      </div>
+      <p class="nota-hint" id="pqNotaHint">Selecione uma nota</p>
+    </div>
+
+    <div class="pq-row2">
+      <div class="pq-section" style="margin-bottom:0;">
+        <span class="pq-label">⚠ Houve pendência?</span>
+        <div class="toggle-pair">
+          <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="nao">☑ Não</button>
+          <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="sim">⚠ Sim</button>
+        </div>
+      </div>
+      <div class="pq-section" style="margin-bottom:0;">
+        <span class="pq-label">📣 Houve reclamação?</span>
+        <div class="toggle-pair">
+          <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="nao">🤝 Não</button>
+          <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="sim">📣 Sim</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pqPendenciaWrap" style="display:none;">
+      <div class="pq-field">
+        <label class="pq-label">Descrição da pendência</label>
+        <textarea id="pqDescricaoPendencia" placeholder="Descreva a pendência relatada pelo síndico..."></textarea>
+      </div>
+      <div class="pq-row2">
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Retorno do setor</label>
+          <textarea id="pqRetornoPendencia" placeholder="Retorno dado pelo setor..."></textarea>
+        </div>
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Status da tratativa</label>
+          <select id="pqStatusPendencia">
+            <option value="Pendente">Pendente</option>
+            <option value="Em andamento">Em andamento</option>
+            <option value="Resolvido">Resolvido</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="pqReclamacaoWrap" style="display:none;">
+      <div class="pq-field">
+        <label class="pq-label">Motivo da reclamação</label>
+        <div class="pq-checklist" id="pqMotivoChecklist"></div>
+        <div id="pqMotivoOutroWrap" style="display:none; margin-top:8px;">
+          <label class="pq-label" style="margin-bottom:6px;">Descreva o motivo</label>
+          <input type="text" id="pqMotivoOutro" placeholder="Descreva o motivo em detalhe...">
+        </div>
+      </div>
+      <div class="pq-field">
+        <label class="pq-label">Setor da reclamação</label>
+        <select id="pqSetorReclamacao"><option value="">Selecione...</option></select>
+      </div>
+      <div class="pq-field">
+        <label class="pq-label">Descrição da situação</label>
+        <textarea id="pqDescricaoSituacao" placeholder="Descreva o que o síndico relatou..."></textarea>
+      </div>
+      <div class="pq-row2">
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Retorno do setor</label>
+          <textarea id="pqRetornoSetor" placeholder="Retorno dado pelo setor..."></textarea>
+        </div>
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Status da tratativa</label>
+          <select id="pqStatusTratativa">
+            <option value="Pendente">Pendente</option>
+            <option value="Em andamento">Em andamento</option>
+            <option value="Resolvido">Resolvido</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="pq-section">
+      <span class="pq-label">Houve elogio?</span>
+      <div class="toggle-pair">
+        <button type="button" class="toggle-btn" data-group="pqElogio" data-val="nao">😐 Não</button>
+        <button type="button" class="toggle-btn" data-group="pqElogio" data-val="sim">😊 Sim</button>
+      </div>
+    </div>
+
+    <div id="pqElogioWrap" style="display:none;">
+      <div class="pq-field">
+        <label class="pq-label">Setor que recebeu o elogio</label>
+        <select id="pqSetorElogio"><option value="">Selecione...</option></select>
+      </div>
+      <div class="pq-field">
+        <label class="pq-label">Descrição do elogio</label>
+        <textarea id="pqDescricaoElogio" placeholder="Descreva o elogio recebido..."></textarea>
+      </div>
+    </div>
+
+    <div class="pq-field">
+      <label class="pq-label">Comentário do síndico</label>
+      <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
+    </div>
+    </div>
+
+    <div id="pqNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
+      <div class="pq-field">
+        <label class="pq-label" style="color:var(--critico);">Motivo da não realização</label>
+        <select id="pqMotivoNaoRealizada">
+          <option value="">Selecione...</option>
+          <option value="Síndico não atendeu">Síndico não atendeu</option>
+          <option value="Síndico pediu para retornar depois">Síndico pediu para retornar depois</option>
+          <option value="Número incorreto ou fora de serviço">Número incorreto ou fora de serviço</option>
+          <option value="Condomínio sem síndico no momento">Condomínio sem síndico no momento</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Observação</label>
+        <textarea id="pqObservacaoNaoRealizada" placeholder="Detalhes..."></textarea>
+      </div>
+    </div>
+
+    <div class="pq-field">
+      <label class="pq-label">Responsável pela pesquisa</label>
+      <select id="pqResponsavel"><option value="">Selecione...</option></select>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+      <button type="button" class="logout-btn" id="pqCancelBtn">Cancelar</button>
+      <button type="button" class="login-btn" id="pqSaveBtn" style="width:auto; margin-top:0; padding:10px 22px;">💾 Salvar Pesquisa</button>
+    </div>
+    <p class="users-error" id="pqError" style="display:none;"></p>
   </div>
 </div>
 
@@ -2945,6 +3184,10 @@ function extraRowToItem(row){
     statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor, motivo: row.motivo,
     resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao || '', pend: row.pend, resolucao: row.resolucao,
     mesReferencia: row.mes_referencia || '2026-06', houveReclamacao: !!row.houve_reclamacao, houveElogio: !!row.houve_elogio,
+    houvePendencia: !!row.houve_pendencia, statusTratativa: row.status_tratativa,
+    elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
+    comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
+    motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
   };
 }
 function itemToExtraRow(item){
@@ -2953,6 +3196,10 @@ function itemToExtraRow(item){
     status_pesquisa: item.statusPesquisa, crit: item.crit, setor: item.setor, motivo: item.motivo,
     resolvido: item.resolvido, nota_pos_resolucao: item.notaPosResolucao || null, pend: item.pend, resolucao: item.resolucao,
     mes_referencia: item.mesReferencia || '2026-06', houve_reclamacao: !!item.houveReclamacao, houve_elogio: !!item.houveElogio,
+    houve_pendencia: !!item.houvePendencia, status_tratativa: item.statusTratativa || null,
+    elogio_setor: item.elogioSetor || null, elogio_descricao: item.elogioDescricao || null,
+    comentario_sindico: item.comentarioSindico || null, responsavel_pesquisa: item.responsavelPesquisa || null,
+    motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
     created_by: currentUsername || 'desconhecido',
   };
 }
@@ -3006,6 +3253,10 @@ function rowToUpdates(row){
     nota: row.nota, dataPesquisa: row.data_pesquisa, statusPesquisa: row.status_pesquisa, crit: row.crit, setor: row.setor,
     motivo: row.motivo, resolvido: row.resolvido, notaPosResolucao: row.nota_pos_resolucao, pend: row.pend, resolucao: row.resolucao,
     houveReclamacao: !!row.houve_reclamacao, houveElogio: !!row.houve_elogio,
+    houvePendencia: !!row.houve_pendencia, statusTratativa: row.status_tratativa,
+    elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
+    comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
+    motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
   };
 }
 function updatesToRow(itemN, updates){
@@ -3013,6 +3264,10 @@ function updatesToRow(itemN, updates){
     item_n: itemN, nota: updates.nota, data_pesquisa: updates.dataPesquisa || null, status_pesquisa: updates.statusPesquisa, crit: updates.crit,
     setor: updates.setor, motivo: updates.motivo, resolvido: updates.resolvido, nota_pos_resolucao: updates.notaPosResolucao || null, pend: updates.pend,
     resolucao: updates.resolucao, houve_reclamacao: !!updates.houveReclamacao, houve_elogio: !!updates.houveElogio,
+    houve_pendencia: !!updates.houvePendencia, status_tratativa: updates.statusTratativa || null,
+    elogio_setor: updates.elogioSetor || null, elogio_descricao: updates.elogioDescricao || null,
+    comentario_sindico: updates.comentarioSindico || null, responsavel_pesquisa: updates.responsavelPesquisa || null,
+    motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
     updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
   };
 }
@@ -3846,71 +4101,7 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
 });
 
 document.getElementById('newItemBtn').addEventListener('click', ()=>{
-  document.getElementById('newItemFormWrap').innerHTML = newItemFormHTML();
-  document.getElementById('newItemError').style.display = 'none';
-  document.getElementById('newItemModal').style.display = 'flex';
-
-  const wrap = document.getElementById('newItemModal');
-  wrap.querySelectorAll('.ni-motivo-cb').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      const outrosSelected = [...wrap.querySelectorAll('.ni-motivo-cb:checked')].some(c=>c.value==='Outros');
-      wrap.querySelector('.ni-motivo-outro-wrap').style.display = outrosSelected ? 'block' : 'none';
-    });
-  });
-  wrap.querySelector('#niCancelBtn').addEventListener('click', ()=>{
-    document.getElementById('newItemModal').style.display = 'none';
-  });
-  wrap.querySelector('#niSaveBtn').addEventListener('click', async ()=>{
-    const errEl = document.getElementById('newItemError');
-    errEl.style.display = 'none';
-    const nome = wrap.querySelector('.ni-nome').value.trim();
-    const filial = wrap.querySelector('.ni-filial').value.trim();
-    if (!nome || !filial){
-      errEl.textContent = 'Preencha ao menos o nome do condomínio e a filial.';
-      errEl.style.display = 'block';
-      return;
-    }
-    const resolvidoRaw = wrap.querySelector('.ni-resolvido').value;
-    const motivoVals = [...wrap.querySelectorAll('.ni-motivo-cb:checked')].map(cb=>cb.value);
-    const outroTexto = wrap.querySelector('.ni-motivo-outro').value.trim();
-    const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
-    const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
-    const item = {
-      n: newN,
-      filial,
-      nome,
-      nota: wrap.querySelector('.ni-nota').value.trim(),
-      dataPesquisa: wrap.querySelector('.ni-data').value.trim(),
-      statusPesquisa: wrap.querySelector('.ni-status').value.trim() || 'Concluída',
-      crit: wrap.querySelector('.ni-crit').value,
-      setor: [...wrap.querySelectorAll('.ni-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
-      motivo: motivoFinal.join(' / ') || '—',
-      resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
-      notaPosResolucao: wrap.querySelector('.ni-nota-pos').value.trim(),
-      houveReclamacao: wrap.querySelector('.ni-houve-reclamacao').checked,
-      houveElogio: wrap.querySelector('.ni-houve-elogio').checked,
-      pend: wrap.querySelector('.ni-pend').value.trim(),
-      resolucao: wrap.querySelector('.ni-resolucao').value.trim(),
-      mesReferencia: selectedMes || '2026-06',
-    };
-    item.humor = classifyHumor(item);
-
-    DATA.push(item);
-    populateFilterOptions();
-    render();
-    document.getElementById('newItemModal').style.display = 'none';
-
-    if (sb){
-      try{
-        const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
-        if (error) throw error;
-        syncPesquisaParaCadastro(item);
-      }catch(e){
-        console.error('Falha ao salvar novo condomínio no Supabase:', e);
-        alert('O condomínio foi adicionado nesta tela, mas não foi possível sincronizar com o servidor agora. Ele pode não aparecer em outros dispositivos até a conexão voltar.');
-      }
-    }
-  });
+  openPesquisaModal(null);
 });
 document.getElementById('closeNewItemBtn').addEventListener('click', ()=>{
   document.getElementById('newItemModal').style.display = 'none';
@@ -4050,9 +4241,7 @@ function render(){
     const editBtn = card.querySelector('.edit-btn');
     if (editBtn) editBtn.onclick = (e)=>{
       e.stopPropagation();
-      item._editing = true;
-      item._open = true;
-      render();
+      openPesquisaModal(item);
     };
 
     card.querySelectorAll('.ef-motivo-cb').forEach(cb=>{
@@ -6117,6 +6306,271 @@ function initTabs(){
     });
   });
 }
+// ============================================================================
+// MODAL "NOVA / EDITAR PESQUISA DE SATISFAÇÃO"
+// Substitui o antigo formulário inline no card e o antigo modal simples —
+// agora é uma única caixa com o mesmo fluxo pra criar ou editar uma pesquisa.
+// ============================================================================
+let pqEditingItem = null; // null = nova pesquisa; objeto = editando pesquisa existente
+const pqToggleState = {}; // { pqRealizada:'sim'|'nao', pqPendencia:..., pqReclamacao:..., pqElogio:... }
+let pqNotaSelecionada = null;
+
+const PQ_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josy', 'Geovana - Aprendiz'];
+
+function pqBuildNotaRow(){
+  const row = document.getElementById('pqNotaRow');
+  row.innerHTML = Array.from({length:11}, (_, n) => {
+    const cls = n < 8 ? 'low' : 'high';
+    return `<button type="button" class="nota-btn ${cls}" data-nota="${n}">${n}</button>`;
+  }).join('');
+  row.querySelectorAll('.nota-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      pqNotaSelecionada = btn.getAttribute('data-nota');
+      row.querySelectorAll('.nota-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`;
+    });
+  });
+}
+
+function pqUpdateReclamacaoWrapVisibility(){
+  document.getElementById('pqPendenciaWrap').style.display = pqToggleState.pqPendencia === 'sim' ? 'block' : 'none';
+  document.getElementById('pqReclamacaoWrap').style.display = pqToggleState.pqReclamacao === 'sim' ? 'block' : 'none';
+}
+
+function pqSetToggle(group, val){
+  pqToggleState[group] = val;
+  document.querySelectorAll(`.toggle-btn[data-group="${group}"]`).forEach(btn=>{
+    const isActive = btn.getAttribute('data-val') === val;
+    btn.classList.remove('active','pos','neg','warn','info','neutral');
+    if (isActive){
+      btn.classList.add('active');
+      if (group === 'pqRealizada') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
+      if (group === 'pqPendencia') btn.classList.add(val === 'sim' ? 'warn' : 'pos');
+      if (group === 'pqReclamacao') btn.classList.add(val === 'sim' ? 'neg' : 'pos');
+      if (group === 'pqElogio') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
+    }
+  });
+  if (group === 'pqPendencia' || group === 'pqReclamacao'){
+    pqUpdateReclamacaoWrapVisibility();
+  }
+  if (group === 'pqElogio'){
+    document.getElementById('pqElogioWrap').style.display = val === 'sim' ? 'block' : 'none';
+  }
+  if (group === 'pqRealizada'){
+    document.getElementById('pqNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
+    document.getElementById('pqCorpoNormal').style.display = val === 'nao' ? 'none' : 'block';
+  }
+}
+
+function pqPopulateDropdowns(){
+  const mesSel = document.getElementById('pqMesReferencia');
+  const mesesExistentes = [...new Set(DATA.map(d=>getMes(d)))].sort().reverse();
+  mesSel.innerHTML = mesesExistentes.map(m => `<option value="${m}">${mesLabelBR(m)}</option>`).join('');
+
+  const setorReclamacao = document.getElementById('pqSetorReclamacao');
+  const setorElogio = document.getElementById('pqSetorElogio');
+  const setorOpts = SETORES_CANONICOS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  setorReclamacao.innerHTML = '<option value="">Selecione...</option>' + setorOpts;
+  setorElogio.innerHTML = '<option value="">Selecione...</option>' + setorOpts;
+
+  const respSel = document.getElementById('pqResponsavel');
+  respSel.innerHTML = '<option value="">Selecione...</option>' + PQ_RESPONSAVEIS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+
+  document.getElementById('pqMotivoChecklist').innerHTML = MOTIVOS_CANONICOS.map(m =>
+    `<label><input type="checkbox" class="pq-motivo-cb" value="${m}"><span>${m}</span></label>`
+  ).join('');
+  document.querySelectorAll('.pq-motivo-cb').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const outrosOn = [...document.querySelectorAll('.pq-motivo-cb:checked')].some(c=>c.value==='Outros');
+      document.getElementById('pqMotivoOutroWrap').style.display = outrosOn ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('pq-condominio-list').innerHTML =
+    [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function openPesquisaModal(item){
+  pqEditingItem = item || null;
+  pqNotaSelecionada = item ? String(item.nota || '') : null;
+  document.getElementById('pqModalTitle').textContent = item ? '✏️ Editar Pesquisa de Satisfação' : '⭐ Nova Pesquisa de Satisfação';
+  document.getElementById('pqError').style.display = 'none';
+
+  pqPopulateDropdowns();
+  pqBuildNotaRow();
+
+  document.getElementById('pqCondominio').value = item ? item.nome : '';
+  document.getElementById('pqCondominio').disabled = !!item;
+
+  if (item){
+    document.getElementById('pqInfoFilial').textContent = item.filial || '—';
+    document.getElementById('pqInfoSindico').textContent = item.sindico || '—';
+    document.getElementById('pqInfoUltimaData').textContent = item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—';
+    document.getElementById('pqInfoUltimaNota').textContent = item.nota ?? '—';
+  } else {
+    document.getElementById('pqInfoFilial').textContent = '—';
+    document.getElementById('pqInfoSindico').textContent = '—';
+    document.getElementById('pqInfoUltimaData').textContent = '—';
+    document.getElementById('pqInfoUltimaNota').textContent = '—';
+  }
+
+  document.getElementById('pqMesReferencia').value = item ? getMes(item) : selectedMes;
+  document.getElementById('pqData').value = item && item.dataPesquisa ? item.dataPesquisa : new Date().toISOString().slice(0,10);
+
+  if (pqNotaSelecionada !== null && pqNotaSelecionada !== ''){
+    const btn = document.querySelector(`.nota-btn[data-nota="${pqNotaSelecionada}"]`);
+    if (btn){ btn.classList.add('selected'); document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`; }
+  }
+
+  document.getElementById('pqMotivoNaoRealizada').value = item ? (item.motivoNaoRealizada || '') : '';
+  document.getElementById('pqObservacaoNaoRealizada').value = item ? (item.observacaoNaoRealizada || '') : '';
+  pqSetToggle('pqRealizada', item ? (item.statusPesquisa === 'Pendente' ? 'nao' : 'sim') : 'sim');
+  pqSetToggle('pqPendencia', item && item.houvePendencia ? 'sim' : 'nao');
+  pqSetToggle('pqReclamacao', item && item.houveReclamacao ? 'sim' : 'nao');
+  pqSetToggle('pqElogio', item && item.houveElogio ? 'sim' : 'nao');
+
+  const motivoParts = item && item.motivo ? item.motivo.split(' / ') : [];
+  document.querySelectorAll('.pq-motivo-cb').forEach(cb=>{
+    cb.checked = cb.value === 'Outros'
+      ? motivoParts.some(p=>p.trim().toLowerCase().startsWith('outros'))
+      : motivoParts.includes(cb.value);
+  });
+  const outroTxt = motivoParts.find(p=>p.trim().toLowerCase().startsWith('outros')) || '';
+  document.getElementById('pqMotivoOutro').value = outroTxt.replace(/^outros\s*:?\s*/i,'');
+  document.getElementById('pqMotivoOutroWrap').style.display = outroTxt ? 'block' : 'none';
+
+  document.getElementById('pqSetorReclamacao').value = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
+  document.getElementById('pqDescricaoSituacao').value = item ? (item.pend || '') : '';
+  document.getElementById('pqRetornoSetor').value = item ? (item.resolucao || '') : '';
+  document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || (item.resolvido === true ? 'Resolvido' : item.resolvido === false ? 'Em andamento' : 'Pendente')) : 'Pendente';
+  document.getElementById('pqDescricaoPendencia').value = item ? (item.pend || '') : '';
+  document.getElementById('pqRetornoPendencia').value = item ? (item.resolucao || '') : '';
+  document.getElementById('pqStatusPendencia').value = item ? (item.statusTratativa || (item.resolvido === true ? 'Resolvido' : item.resolvido === false ? 'Em andamento' : 'Pendente')) : 'Pendente';
+
+  document.getElementById('pqSetorElogio').value = item ? (item.elogioSetor || '') : '';
+  document.getElementById('pqDescricaoElogio').value = item ? (item.elogioDescricao || '') : '';
+  document.getElementById('pqComentarioSindico').value = item ? (item.comentarioSindico || '') : '';
+  document.getElementById('pqResponsavel').value = item ? (item.responsavelPesquisa || '') : '';
+
+  document.getElementById('pesquisaModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('pqCondominio').addEventListener('input', ()=>{
+  if (pqEditingItem) return; // ao editar, o nome já vem fixo
+  const nome = document.getElementById('pqCondominio').value.trim();
+  const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+  if (match){
+    document.getElementById('pqInfoFilial').textContent = match.filial || '—';
+    document.getElementById('pqInfoSindico').textContent = match.sindico || '—';
+    document.getElementById('pqInfoUltimaData').textContent = match.dataPesquisa ? formatDateBR(match.dataPesquisa) : '—';
+    document.getElementById('pqInfoUltimaNota').textContent = match.nota ?? '—';
+  } else {
+    document.getElementById('pqInfoFilial').textContent = '—';
+    document.getElementById('pqInfoSindico').textContent = '—';
+    document.getElementById('pqInfoUltimaData').textContent = '—';
+    document.getElementById('pqInfoUltimaNota').textContent = '—';
+  }
+});
+
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> pqSetToggle(btn.getAttribute('data-group'), btn.getAttribute('data-val')));
+});
+
+document.getElementById('pqCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('pesquisaModalOverlay').style.display = 'none';
+});
+document.getElementById('pqCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('pesquisaModalOverlay').style.display = 'none';
+});
+
+document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('pqError');
+  errEl.style.display = 'none';
+  const nome = document.getElementById('pqCondominio').value.trim();
+  if (!nome){
+    errEl.textContent = 'Informe o condomínio.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pqToggleState.pqRealizada !== 'nao' && (pqNotaSelecionada === null || pqNotaSelecionada === '')){
+    errEl.textContent = 'Selecione uma nota de 0 a 10.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const motivoVals = [...document.querySelectorAll('.pq-motivo-cb:checked')].map(cb=>cb.value);
+  const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
+  const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+  const usaReclamacao = pqToggleState.pqReclamacao === 'sim';
+  const usaPendencia = pqToggleState.pqPendencia === 'sim';
+  const statusTratativa = usaReclamacao
+    ? document.getElementById('pqStatusTratativa').value
+    : usaPendencia
+      ? document.getElementById('pqStatusPendencia').value
+      : 'Pendente';
+  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Pendente': null };
+
+  const dados = {
+    nota: pqNotaSelecionada,
+    dataPesquisa: document.getElementById('pqData').value,
+    mesReferencia: document.getElementById('pqMesReferencia').value,
+    statusPesquisa: pqToggleState.pqRealizada === 'nao' ? 'Pendente' : 'Concluída',
+    houvePendencia: pqToggleState.pqPendencia === 'sim',
+    houveReclamacao: pqToggleState.pqReclamacao === 'sim',
+    houveElogio: pqToggleState.pqElogio === 'sim',
+    setor: usaReclamacao && document.getElementById('pqSetorReclamacao').value
+      ? document.getElementById('pqSetorReclamacao').value : (pqEditingItem ? pqEditingItem.setor : '—'),
+    motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
+    pend: usaReclamacao
+      ? document.getElementById('pqDescricaoSituacao').value.trim()
+      : usaPendencia
+        ? document.getElementById('pqDescricaoPendencia').value.trim()
+        : '',
+    resolucao: usaReclamacao
+      ? document.getElementById('pqRetornoSetor').value.trim()
+      : usaPendencia
+        ? document.getElementById('pqRetornoPendencia').value.trim()
+        : '',
+    statusTratativa,
+    resolvido: resolvidoMap[statusTratativa],
+    elogioSetor: document.getElementById('pqSetorElogio').value,
+    elogioDescricao: document.getElementById('pqDescricaoElogio').value.trim(),
+    comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
+    responsavelPesquisa: document.getElementById('pqResponsavel').value,
+    motivoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada').value : '',
+    observacaoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada').value.trim() : '',
+    crit: pqEditingItem ? pqEditingItem.crit : 'ok',
+  };
+  // Recalcula criticidade a partir da nova nota, igual ao resto do app
+  const notaNum = parseFloat(dados.nota);
+  dados.crit = notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok';
+
+  if (pqEditingItem){
+    Object.assign(pqEditingItem, dados);
+    pqEditingItem.humor = classifyHumor(pqEditingItem);
+    OVERRIDES[pqEditingItem.n] = dados;
+    persistOverrides(OVERRIDES);
+    pushOverrideToSupabase(pqEditingItem.n, dados);
+    syncPesquisaParaCadastro(pqEditingItem);
+  } else {
+    const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+    const matchExistente = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+    const item = Object.assign({ n: newN, filial: matchExistente ? matchExistente.filial : '', nome }, dados);
+    item.humor = classifyHumor(item);
+    DATA.push(item);
+    if (sb){
+      try{ await sb.from('condo_extra').insert(itemToExtraRow(item)); }
+      catch(e){ console.error('Erro ao salvar nova pesquisa no Supabase:', e); }
+    }
+    syncPesquisaParaCadastro(item);
+  }
+
+  document.getElementById('pesquisaModalOverlay').style.display = 'none';
+  populateFilterOptions();
+  render();
+});
+
 initTabs();
 
 initAuth();
