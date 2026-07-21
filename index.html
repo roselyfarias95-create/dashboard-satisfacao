@@ -603,6 +603,23 @@
 
   .empty{ text-align:center; padding:70px 20px; color:var(--text-faint); font-size:13px; }
 
+  .subtab-nav{ display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .subtab-btn{
+    background:var(--bg-panel); border:1px solid var(--line); color:var(--text-dim);
+    font-family:inherit; font-size:12.5px; font-weight:600; padding:9px 16px;
+    border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:7px;
+    transition:border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .subtab-btn:hover{ border-color:var(--text-faint); color:var(--text); }
+  .subtab-btn.active{
+    background:linear-gradient(135deg, var(--accent), var(--accent-2)); border-color:transparent; color:#fff;
+  }
+  .subtab-count{
+    font-family:"IBM Plex Mono",monospace; font-size:10.5px; background:rgba(255,255,255,0.15);
+    border-radius:20px; padding:1px 8px;
+  }
+  .subtab-btn:not(.active) .subtab-count{ background:var(--bg-panel-2); color:var(--text-faint); }
+
   .view-toggle-btn{
     background:none; border:none; color:var(--text-faint); font-family:inherit; font-size:11.5px;
     font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer;
@@ -1125,6 +1142,13 @@
     <div class="content-area">
 
   <div id="tabPesquisa" class="tab-panel">
+
+  <div class="subtab-nav" id="subtabNav">
+    <button type="button" class="subtab-btn active" data-subtab="todos">Todos <span class="subtab-count" id="subtabCountTodos"></span></button>
+    <button type="button" class="subtab-btn" data-subtab="reclamacoes">📣 Reclamações <span class="subtab-count" id="subtabCountReclamacoes"></span></button>
+    <button type="button" class="subtab-btn" data-subtab="pendencias">⚠️ Pendências <span class="subtab-count" id="subtabCountPendencias"></span></button>
+    <button type="button" class="subtab-btn" data-subtab="elogios">😊 Elogios <span class="subtab-count" id="subtabCountElogios"></span></button>
+  </div>
 
   <div class="stats-strip" id="statsStrip"></div>
 
@@ -3508,6 +3532,14 @@ function buildStats(data){
 }
 
 let activeCrit = null;
+let activeSubtab = 'todos';
+document.querySelectorAll('.subtab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    activeSubtab = btn.getAttribute('data-subtab');
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b === btn));
+    render();
+  });
+});
 let selectedMes = null; // mês da rodada exibida — null até populateMesSelector() rodar
 let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
@@ -4169,11 +4201,32 @@ function setView(view){
 document.getElementById('viewListBtn').addEventListener('click', ()=>setView('list'));
 document.getElementById('viewKanbanBtn').addEventListener('click', ()=>setView('kanban'));
 
+function temReclamacao(item){
+  if (typeof item.houveReclamacao === 'boolean') return item.houveReclamacao;
+  return classifyMotivos(item).length > 0;
+}
+function temPendencia(item){
+  if (typeof item.houvePendencia === 'boolean') return item.houvePendencia;
+  return classifyMotivos(item).length > 0;
+}
+function temElogio(item){
+  return !!item.houveElogio;
+}
+
 function render(){
   const q = document.getElementById('search').value.trim();
 
   const baseFiltered = DATA.filter(d=>baseMatches(d,q));
-  const filtered = baseFiltered.filter(d=> !activeCrit || d.crit === activeCrit);
+  let filtered = baseFiltered.filter(d=> !activeCrit || d.crit === activeCrit);
+
+  if (activeSubtab === 'reclamacoes') filtered = filtered.filter(temReclamacao);
+  else if (activeSubtab === 'pendencias') filtered = filtered.filter(temPendencia);
+  else if (activeSubtab === 'elogios') filtered = filtered.filter(temElogio);
+
+  document.getElementById('subtabCountTodos').textContent = baseFiltered.length;
+  document.getElementById('subtabCountReclamacoes').textContent = baseFiltered.filter(temReclamacao).length;
+  document.getElementById('subtabCountPendencias').textContent = baseFiltered.filter(temPendencia).length;
+  document.getElementById('subtabCountElogios').textContent = baseFiltered.filter(temElogio).length;
 
   buildKpis(baseFiltered);
   renderNotaChart(filtered);
