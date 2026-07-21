@@ -907,6 +907,7 @@
   </div>
 </div>
 
+
 <div id="pesquisaModalOverlay" class="users-modal" style="display:none;">
   <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
     <div class="users-head">
@@ -952,6 +953,11 @@
       <div class="nota-row" id="pqNotaRow">
       </div>
       <p class="nota-hint" id="pqNotaHint">Selecione uma nota</p>
+    </div>
+
+    <div class="pq-field">
+      <label class="pq-label">Nota 2 <span style="font-weight:400; text-transform:none;">(nota após resolução — se o síndico reavaliou, opcional)</span></label>
+      <input type="text" id="pqNotaPos" placeholder="ex: 9">
     </div>
 
     <div class="pq-row2">
@@ -1428,7 +1434,6 @@
       </table>
     </div>
   </div>
-
 
 </div>
 
@@ -6469,6 +6474,7 @@ function openPesquisaModal(item){
   }
 
   document.getElementById('pqMesReferencia').value = item ? getMes(item) : selectedMes;
+  document.getElementById('pqNotaPos').value = item ? (item.notaPosResolucao || '') : '';
   document.getElementById('pqData').value = item && item.dataPesquisa ? item.dataPesquisa : new Date().toISOString().slice(0,10);
 
   if (pqNotaSelecionada !== null && pqNotaSelecionada !== ''){
@@ -6591,6 +6597,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     elogioDescricao: document.getElementById('pqDescricaoElogio').value.trim(),
     comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
     responsavelPesquisa: document.getElementById('pqResponsavel').value,
+    notaPosResolucao: document.getElementById('pqNotaPos').value.trim(),
     motivoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada').value : '',
     observacaoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada').value.trim() : '',
     crit: pqEditingItem ? pqEditingItem.crit : 'ok',
@@ -6599,6 +6606,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const notaNum = parseFloat(dados.nota);
   dados.crit = notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok';
 
+  let itemSalvo;
   if (pqEditingItem){
     Object.assign(pqEditingItem, dados);
     pqEditingItem.humor = classifyHumor(pqEditingItem);
@@ -6606,6 +6614,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     persistOverrides(OVERRIDES);
     pushOverrideToSupabase(pqEditingItem.n, dados);
     syncPesquisaParaCadastro(pqEditingItem);
+    itemSalvo = pqEditingItem;
   } else {
     const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
     const matchExistente = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
@@ -6617,6 +6626,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
       catch(e){ console.error('Erro ao salvar nova pesquisa no Supabase:', e); }
     }
     syncPesquisaParaCadastro(item);
+    itemSalvo = item;
   }
 
   document.getElementById('pesquisaModalOverlay').style.display = 'none';
