@@ -371,8 +371,9 @@
   .exec-stat-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
 
   .mini-dash-row{
-    display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px;
+    display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px;
   }
+  @media (max-width:1100px){ .mini-dash-row{ grid-template-columns:repeat(3,1fr); } }
   @media (max-width:900px){ .mini-dash-row{ grid-template-columns:repeat(2,1fr); } }
   .mini-dash-chip{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-sm);
@@ -4495,7 +4496,8 @@ function renderMiniDash(baseFiltered){
 
   const chips = [
     { num: s.mediaCount ? s.media.toFixed(1) : '—', lbl: 'Nota média', color:'var(--accent)', action: null },
-    { num: `${s.pct}%`, lbl: 'Pesquisas realizadas', color:'var(--ok)', action: null },
+    { num: s.realizadas, lbl: `Realizadas (${s.pct}%)`, color:'var(--ok)', action: null },
+    { num: s.total - s.realizadas, lbl: 'Pendentes', color:'var(--pendente)', action: null },
     { num: counts.critico, lbl: 'Críticos', color:'var(--critico)', action: ()=>{ activeCrit='critico'; render(); } },
     { num: reclamacoes, lbl: 'Reclamações', color:'var(--critico)', action: ()=>{ activeSubtab='reclamacoes'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='reclamacoes')); render(); } },
     { num: elogios, lbl: 'Elogios', color:'var(--ok)', action: ()=>{ activeSubtab='elogios'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='elogios')); render(); } },
