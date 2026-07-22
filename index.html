@@ -367,13 +367,21 @@
   }
   .period-btn:hover{ color:var(--text); }
   .period-btn.active{ background:var(--accent); color:#fff; }
-  .exec-filial-select{
-    background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim);
-    font-family:inherit; font-size:12px; font-weight:600; padding:7px 10px; border-radius:7px;
-    cursor:pointer; margin-right:6px;
-  }
 
   .exec-stat-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+
+  .mini-dash-row{
+    display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px;
+  }
+  @media (max-width:900px){ .mini-dash-row{ grid-template-columns:repeat(2,1fr); } }
+  .mini-dash-chip{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:12px 14px; box-shadow:var(--shadow-panel); cursor:pointer;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .mini-dash-chip:hover{ border-color:var(--text-faint); transform:translateY(-2px); }
+  .mini-dash-chip .num{ font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:700; color:var(--mc); line-height:1; }
+  .mini-dash-chip .lbl{ margin-top:5px; font-size:10.5px; color:var(--text-faint); font-weight:600; letter-spacing:.01em; }
   @media (max-width:700px){ .exec-stat-row{ grid-template-columns:1fr; } }
   .exec-stat-card{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
@@ -1238,6 +1246,32 @@
 
     <div class="content-area">
 
+  <div class="toolbar" id="sharedFilterBar">
+    <select id="mesSelector" class="msf-btn" style="cursor:pointer;"></select>
+    <input class="search" id="search" type="text" placeholder="Buscar condomínio, síndico, palavra-chave...">
+    <div class="msf" id="filialFilterWrap">
+      <button type="button" class="msf-btn" id="filialFilterBtn">Filial: todas</button>
+      <div class="msf-panel" id="filialFilterPanel"></div>
+    </div>
+    <div class="msf" id="notaFilterWrap">
+      <button type="button" class="msf-btn" id="notaFilterBtn">Nota: todas</button>
+      <div class="msf-panel" id="notaFilterPanel"></div>
+    </div>
+    <div class="msf" id="statusFilterWrap">
+      <button type="button" class="msf-btn" id="statusFilterBtn">Status da pesquisa: todos</button>
+      <div class="msf-panel" id="statusFilterPanel"></div>
+    </div>
+    <div class="msf" id="setorFilterWrap">
+      <button type="button" class="msf-btn" id="setorFilterBtn">Setor: todos</button>
+      <div class="msf-panel" id="setorFilterPanel"></div>
+    </div>
+    <div class="msf" id="resolvidoFilterWrap">
+      <button type="button" class="msf-btn" id="resolvidoFilterBtn">Resolução: todos</button>
+      <div class="msf-panel" id="resolvidoFilterPanel"></div>
+    </div>
+    <button class="clearbtn" id="clearBtn">Limpar filtros</button>
+  </div>
+
   <div id="tabDashboard" class="tab-panel">
     <div class="dash-exec-header">
       <div>
@@ -1245,9 +1279,6 @@
         <p class="dash-exec-subtitle">Visão geral consolidada de satisfação — <span id="dashExecCondoCount">—</span> condomínios</p>
       </div>
       <div class="period-filter" id="periodFilter">
-        <select id="execFilialFilter" class="exec-filial-select">
-          <option value="">Todas as filiais</option>
-        </select>
         <button type="button" class="period-btn" data-periodo="7">7d</button>
         <button type="button" class="period-btn" data-periodo="30">30d</button>
         <button type="button" class="period-btn" data-periodo="90">90d</button>
@@ -1294,6 +1325,8 @@
 
   <div id="tabPesquisa" class="tab-panel" style="display:none;">
 
+  <div id="miniDashPesquisa" class="mini-dash-row"></div>
+
   <div class="subtab-nav" id="subtabNav">
     <button type="button" class="subtab-btn active" data-subtab="todos">Todos <span class="subtab-count" id="subtabCountTodos"></span></button>
     <button type="button" class="subtab-btn" data-subtab="reclamacoes">📣 Reclamações <span class="subtab-count" id="subtabCountReclamacoes"></span></button>
@@ -1301,30 +1334,7 @@
     <button type="button" class="subtab-btn" data-subtab="elogios">😊 Elogios <span class="subtab-count" id="subtabCountElogios"></span></button>
   </div>
 
-  <div class="toolbar">
-    <select id="mesSelector" class="msf-btn" style="cursor:pointer;"></select>
-    <input class="search" id="search" type="text" placeholder="Buscar condomínio, síndico, palavra-chave...">
-    <div class="msf" id="filialFilterWrap">
-      <button type="button" class="msf-btn" id="filialFilterBtn">Filial: todas</button>
-      <div class="msf-panel" id="filialFilterPanel"></div>
-    </div>
-    <div class="msf" id="notaFilterWrap">
-      <button type="button" class="msf-btn" id="notaFilterBtn">Nota: todas</button>
-      <div class="msf-panel" id="notaFilterPanel"></div>
-    </div>
-    <div class="msf" id="statusFilterWrap">
-      <button type="button" class="msf-btn" id="statusFilterBtn">Status da pesquisa: todos</button>
-      <div class="msf-panel" id="statusFilterPanel"></div>
-    </div>
-    <div class="msf" id="setorFilterWrap">
-      <button type="button" class="msf-btn" id="setorFilterBtn">Setor: todos</button>
-      <div class="msf-panel" id="setorFilterPanel"></div>
-    </div>
-    <div class="msf" id="resolvidoFilterWrap">
-      <button type="button" class="msf-btn" id="resolvidoFilterBtn">Resolução: todos</button>
-      <div class="msf-panel" id="resolvidoFilterPanel"></div>
-    </div>
-    <button class="clearbtn" id="clearBtn">Limpar filtros</button>
+  <div class="toolbar" id="actionBar">
     <button class="clearbtn" id="reportBtn">🖨 Relatório</button>
     <button class="clearbtn" id="newItemBtn" style="display:none;">+ Nova pesquisa</button>
     <button class="clearbtn" id="newRodadaBtn" style="display:none;">📅 Nova rodada mensal</button>
@@ -3852,11 +3862,20 @@ function renderNotaChart(data){
     row.style.cursor = 'pointer';
     row.onclick = ()=>{
       const idx = row.dataset.idx;
-      if (selectedNotaFaixas.includes(idx)) selectedNotaFaixas = selectedNotaFaixas.filter(v=>v!==idx);
+      const jaEstava = selectedNotaFaixas.includes(idx);
+      if (jaEstava) selectedNotaFaixas = selectedNotaFaixas.filter(v=>v!==idx);
       else selectedNotaFaixas = [...selectedNotaFaixas, idx];
       updateMultiFilterLabel('notaFilterBtn', selectedNotaFaixas, NOTA_FAIXAS.map((f,i)=>({value:String(i),label:f.label})), 'Nota');
       syncMultiFilterCheckboxes('notaFilterPanel', selectedNotaFaixas);
       render();
+      if (!jaEstava){
+        const pesquisaBtn = document.querySelector('.tab-btn[data-tab="pesquisa"]');
+        if (pesquisaBtn && !pesquisaBtn.classList.contains('active')) pesquisaBtn.click();
+        setTimeout(()=>{
+          const listHeader = document.getElementById('listHeader');
+          if (listHeader) listHeader.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 50);
+      }
     };
   });
 }
@@ -4023,12 +4042,6 @@ function populateMesSelector(){
 function populateFilterOptions(){
   populateMesSelector();
   const filiais = [...new Set(DATA.filter(d=>getMes(d)===selectedMes).map(d=>d.filial))].sort();
-  const execFilialSel = document.getElementById('execFilialFilter');
-  if (execFilialSel){
-    const atual = execFilialSel.value;
-    execFilialSel.innerHTML = '<option value="">Todas as filiais</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
-    if (filiais.includes(atual)) execFilialSel.value = atual;
-  }
   setupMultiFilter({
     btnId:'filialFilterBtn', panelId:'filialFilterPanel', wrapId:'filialFilterWrap',
     getSelected:()=>selectedFiliais, setSelected:(v)=>{selectedFiliais=v;},
@@ -4466,13 +4479,38 @@ document.querySelectorAll('.period-btn').forEach(btn=>{
     render();
   });
 });
-document.getElementById('execFilialFilter').addEventListener('change', (e)=>{
-  selectedFiliais = e.target.value ? [e.target.value] : [];
-  render();
-});
+
 
 function temElogio(item){
   return !!item.houveElogio;
+}
+
+function renderMiniDash(baseFiltered){
+  const el = document.getElementById('miniDashPesquisa');
+  if (!el) return;
+  const s = computeStats(baseFiltered);
+  const counts = computeCounts(baseFiltered);
+  const reclamacoes = baseFiltered.filter(temReclamacao).length;
+  const elogios = baseFiltered.filter(temElogio).length;
+
+  const chips = [
+    { num: s.mediaCount ? s.media.toFixed(1) : '—', lbl: 'Nota média', color:'var(--accent)', action: null },
+    { num: `${s.pct}%`, lbl: 'Pesquisas realizadas', color:'var(--ok)', action: null },
+    { num: counts.critico, lbl: 'Críticos', color:'var(--critico)', action: ()=>{ activeCrit='critico'; render(); } },
+    { num: reclamacoes, lbl: 'Reclamações', color:'var(--critico)', action: ()=>{ activeSubtab='reclamacoes'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='reclamacoes')); render(); } },
+    { num: elogios, lbl: 'Elogios', color:'var(--ok)', action: ()=>{ activeSubtab='elogios'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='elogios')); render(); } },
+  ];
+
+  el.innerHTML = chips.map((c,i) => `
+    <div class="mini-dash-chip" style="--mc:${c.color};" data-chip-i="${i}">
+      <div class="num">${c.num}</div>
+      <div class="lbl">${c.lbl}</div>
+    </div>
+  `).join('');
+  el.querySelectorAll('.mini-dash-chip').forEach((chip,i)=>{
+    if (chips[i].action) chip.onclick = chips[i].action;
+    else chip.style.cursor = 'default';
+  });
 }
 
 function render(){
@@ -4500,6 +4538,7 @@ function render(){
   renderMotivoChart(filtered);
   renderFilialChart(filtered);
   buildStats(filtered);
+  renderMiniDash(baseFiltered);
 
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyMsg');
@@ -6634,6 +6673,7 @@ function initTabs(){
       document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
       document.getElementById('tabRenovacao').style.display = tab === 'renovacao' ? 'block' : 'none';
       document.getElementById('tabChecklist').style.display = tab === 'checklist' ? 'block' : 'none';
+      document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
         cadastroLoaded = true;
