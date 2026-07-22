@@ -49,8 +49,8 @@
     --text-dim: #99a4bd;
     --text-faint: #5c6680;
 
-    --critico: #ef4444;
-    --critico-bg: rgba(239,68,68,0.10);
+    --critico: #ff4d5e;
+    --critico-bg: rgba(255,77,94,0.10);
     --atencao: #f59e0b;
     --atencao-bg: rgba(245,158,11,0.10);
     --moderado: #eab308;
@@ -314,7 +314,7 @@
 
   /* ---------- KPI ROW ---------- */
   .kpis{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
+    display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:16px;
     margin-top:18px; margin-bottom:18px;
   }
   .kpi{
@@ -331,6 +331,11 @@
   }
   .kpi:hover{ transform:translateY(-3px); border-color:var(--text-faint); box-shadow:0 16px 36px -14px rgba(0,0,0,.5); }
   .kpi.active{ background:var(--bg-panel-2); border-color:var(--kc); box-shadow:0 0 0 1px var(--kc), var(--shadow-panel); }
+  .kpi.kpi-critico{
+    border-color:rgba(255,77,94,0.35);
+    background:linear-gradient(135deg, rgba(255,77,94,0.09), var(--bg-panel) 60%);
+  }
+  .kpi.kpi-critico:hover{ border-color:rgba(255,77,94,0.6); }
   .kpi-icon{
     position:absolute; top:18px; right:18px; width:38px; height:38px; border-radius:12px;
     display:flex; align-items:center; justify-content:center; font-size:18px;
@@ -339,6 +344,62 @@
   .kpi .num{ font-family:"IBM Plex Mono",monospace; font-size:32px; font-weight:650; color:var(--kc); line-height:1; }
   .kpi .lbl{ margin-top:10px; font-size:12.5px; color:var(--text-dim); letter-spacing:.01em; font-weight:600; }
   .kpi .sub{ margin-top:4px; font-size:10.5px; color:var(--text-faint); }
+  .kpi-cta{
+    margin-top:12px; font-size:11.5px; font-weight:700; color:var(--kc);
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .kpi.kpi-critico:hover .kpi-cta{ text-decoration:underline; }
+
+  .dash-exec-header{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .dash-exec-title{ font-size:22px; font-weight:750; color:var(--text); margin:0 0 4px; letter-spacing:-0.01em; }
+  .dash-exec-subtitle{ font-size:12.5px; color:var(--accent); margin:0; font-weight:500; }
+  .period-filter{
+    display:inline-flex; gap:3px; background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:10px; padding:3px;
+  }
+  .period-btn{
+    background:none; border:none; color:var(--text-faint); font-family:inherit; font-size:12px;
+    font-weight:600; padding:7px 14px; border-radius:7px; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .period-btn:hover{ color:var(--text); }
+  .period-btn.active{ background:var(--accent); color:#fff; }
+  .exec-filial-select{
+    background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim);
+    font-family:inherit; font-size:12px; font-weight:600; padding:7px 10px; border-radius:7px;
+    cursor:pointer; margin-right:6px;
+  }
+
+  .exec-stat-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media (max-width:700px){ .exec-stat-row{ grid-template-columns:1fr; } }
+  .exec-stat-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    box-shadow:var(--shadow-panel);
+  }
+  .exec-stat-num{ font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:700; color:var(--text); line-height:1; }
+  .exec-stat-lbl{ font-size:12px; color:var(--text-dim); font-weight:600; margin-top:4px; }
+  .exec-stat-sub{ font-size:10.5px; color:var(--text-faint); margin-top:2px; }
+  .exec-stat-delta{ font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .exec-stat-delta.up{ color:var(--ok); }
+  .exec-stat-delta.down{ color:var(--critico); }
+  .exec-stat-delta.flat{ color:var(--text-faint); }
+
+  .exec-chart-caption{ font-size:11px; color:var(--text-faint); margin:10px 0 0; line-height:1.5; }
+  .exec-chart-link{ color:var(--accent); font-weight:600; text-decoration:none; cursor:pointer; }
+  .exec-chart-link:hover{ text-decoration:underline; }
+  .exec-trend-num{ font-family:"IBM Plex Mono",monospace; font-size:28px; font-weight:700; color:var(--text); }
+  .exec-trend-lbl{ font-size:11px; color:var(--text-faint); }
+  .exec-mini-list{ display:flex; flex-direction:column; gap:8px; }
+  .exec-mini-row{ display:flex; align-items:center; gap:10px; }
+  .exec-mini-label{ font-size:11.5px; color:var(--text-dim); width:76px; flex-shrink:0; }
+  .exec-mini-track{ flex:1; height:9px; background:var(--bg-panel-2); border-radius:5px; overflow:hidden; }
+  .exec-mini-fill{ height:100%; border-radius:5px; }
+  .exec-mini-pct{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text); width:34px; text-align:right; flex-shrink:0; }
+  .exec-mini-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:600; margin:0 0 8px; }
 
   /* ---------- FILTER BAR ---------- */
   .toolbar{
@@ -1178,17 +1239,23 @@
     <div class="content-area">
 
   <div id="tabDashboard" class="tab-panel">
-    <header>
+    <div class="dash-exec-header">
       <div>
-        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+        <h1 class="dash-exec-title">Dashboard Executivo</h1>
+        <p class="dash-exec-subtitle">Visão geral consolidada de satisfação — <span id="dashExecCondoCount">—</span> condomínios</p>
       </div>
-    </header>
-    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
-      Visão geral de todas as pesquisas de satisfação — indicadores e gráficos consolidados.
-      Para ver a lista de condomínios e registrar pesquisas, use a aba "Pesquisas".
-    </p>
+      <div class="period-filter" id="periodFilter">
+        <select id="execFilialFilter" class="exec-filial-select">
+          <option value="">Todas as filiais</option>
+        </select>
+        <button type="button" class="period-btn" data-periodo="7">7d</button>
+        <button type="button" class="period-btn" data-periodo="30">30d</button>
+        <button type="button" class="period-btn" data-periodo="90">90d</button>
+        <button type="button" class="period-btn active" data-periodo="all">Tudo</button>
+      </div>
+    </div>
 
-    <div class="stats-strip" id="statsStrip"></div>
+    <div class="exec-stat-row" id="statsStrip"></div>
 
     <div class="kpis" id="kpis"></div>
 
@@ -1198,26 +1265,24 @@
         <div id="notaChart"></div>
       </div>
       <div class="chart-panel">
-        <p class="chart-title">Status da pesquisa</p>
-        <div class="donut-wrap">
-          <div id="statusDonut"></div>
-          <div id="statusDonutLegend" class="donut-legend"></div>
-        </div>
+        <p class="chart-title">Tendência da nota média</p>
+        <div id="statusSummary"></div>
       </div>
     </div>
 
-    <div class="charts-grid charts-grid-3">
+    <div class="charts-grid charts-grid-2">
       <div class="chart-panel">
-        <p class="chart-title">% de reclamações por setor</p>
-        <div id="setorChart"></div>
-      </div>
-      <div class="chart-panel">
-        <p class="chart-title">% de reclamações por motivo</p>
+        <p class="chart-title">% de reclamações por motivo — Top causas</p>
         <div id="motivoChart"></div>
+        <p class="exec-chart-caption" id="motivoCaption"></p>
       </div>
       <div class="chart-panel">
-        <p class="chart-title">% de condomínios por filial</p>
+        <p class="chart-title">% de reclamações por setor · % por filial</p>
+        <p class="exec-mini-title" style="margin-top:0;">Setor</p>
+        <div id="setorChart"></div>
+        <p class="exec-mini-title" style="margin-top:16px;">Filial</p>
         <div id="filialChart"></div>
+        <p class="exec-chart-caption" id="setorFilialCaption"></p>
       </div>
     </div>
 
@@ -3578,17 +3643,47 @@ function computeStats(data){
 
 function buildStats(data){
   const s = computeStats(data);
+
+  // Compara com o mês anterior ao mês de referência selecionado (ou ao mês
+  // mais recente disponível, se nenhum estiver selecionado).
+  const mesesDisponiveis = [...new Set(DATA.map(d=>getMes(d)))].filter(Boolean).sort();
+  const mesAtual = selectedMes || mesesDisponiveis[mesesDisponiveis.length-1];
+  const idxAtual = mesesDisponiveis.indexOf(mesAtual);
+  const mesAnterior = idxAtual > 0 ? mesesDisponiveis[idxAtual-1] : null;
+  const sAnterior = mesAnterior ? computeStats(DATA.filter(d=>getMes(d)===mesAnterior)) : null;
+
+  function deltaHTML(atual, anterior, sufixo, casasDecimais){
+    if (anterior === null || anterior === undefined) return '';
+    const diff = atual - anterior;
+    if (Math.abs(diff) < (casasDecimais === 0 ? 1 : 0.05)) return `<span class="exec-stat-delta flat">— vs mês anterior</span>`;
+    const sinal = diff > 0 ? '▲' : '▼';
+    const cls = diff > 0 ? 'up' : 'down';
+    const val = Math.abs(diff).toFixed(casasDecimais);
+    return `<span class="exec-stat-delta ${cls}">${sinal} ${val}${sufixo} vs mês anterior</span>`;
+  }
+
   const el = document.getElementById('statsStrip');
   el.innerHTML = `
-    <div class="stat-box">
-      <div class="snum">${s.mediaCount ? s.media.toFixed(1) : '—'}</div>
-      <div class="slbl">Nota média (${s.mediaCount} pesquisas com nota)</div>
+    <div class="exec-stat-card">
+      <div>
+        <div class="exec-stat-num">${s.mediaCount ? s.media.toFixed(1) : '—'}</div>
+        <div class="exec-stat-lbl">Nota média</div>
+        <div class="exec-stat-sub">(${s.mediaCount} pesquisas com nota)</div>
+      </div>
+      ${sAnterior ? deltaHTML(s.media, sAnterior.media, '', 1) : ''}
     </div>
-    <div class="stat-box">
-      <div class="snum">${s.pct}%</div>
-      <div class="slbl">Pesquisas realizadas (${s.realizadas} de ${s.total} com nota)</div>
+    <div class="exec-stat-card">
+      <div>
+        <div class="exec-stat-num">${s.pct}%</div>
+        <div class="exec-stat-lbl">Pesquisas realizadas</div>
+        <div class="exec-stat-sub">(${s.realizadas} de ${s.total} com nota)</div>
+      </div>
+      ${sAnterior ? deltaHTML(s.pct, sAnterior.pct, 'pp', 0) : ''}
     </div>
   `;
+
+  const countEl = document.getElementById('dashExecCondoCount');
+  if (countEl) countEl.textContent = s.total;
 }
 
 let activeCrit = null;
@@ -3617,10 +3712,22 @@ function buildKpis(data){
   Object.keys(CRIT_LABELS).forEach(key=>{
     const c = CRIT_LABELS[key];
     const div = document.createElement('div');
-    div.className = 'kpi' + (activeCrit===key ? ' active':'');
+    div.className = 'kpi' + (activeCrit===key ? ' active':'') + (key === 'critico' ? ' kpi-critico' : '');
     div.style.setProperty('--kc', c.color);
-    div.innerHTML = `<div class="kpi-icon">${c.icon}</div><div class="num">${counts[key]}</div><div class="lbl">${c.label}</div><div class="sub">${c.sub}</div>`;
-    div.onclick = ()=>{ activeCrit = (activeCrit===key)? null : key; render(); };
+    const cta = key === 'critico' ? '<div class="kpi-cta">→ Ver condomínios agora</div>' : key === 'atencao' ? '<div class="kpi-cta">→ Revisar</div>' : '';
+    div.innerHTML = `<div class="kpi-icon">${c.icon}</div><div class="num">${counts[key]}</div><div class="lbl">${c.label}</div><div class="sub">${c.sub}</div>${cta}`;
+    div.onclick = ()=>{
+      activeCrit = (activeCrit===key) ? null : key;
+      render();
+      if (activeCrit === key){
+        const pesquisaBtn = document.querySelector('.tab-btn[data-tab="pesquisa"]');
+        if (pesquisaBtn) pesquisaBtn.click();
+        setTimeout(()=>{
+          const listHeader = document.getElementById('listHeader');
+          if (listHeader) listHeader.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 50);
+      }
+    };
     el.appendChild(div);
   });
 }
@@ -3630,7 +3737,7 @@ const NOTA_FAIXAS = [
   { label:'7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
   { label:'5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
   { label:'3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
-  { label:'0 – 2',     min:0,  max:2.999, color:'var(--critico)' },
+  { label:'0 – 2',     min:0,  max:2.999, color:'#a30d1f' },
   { label:'Sem nota',  min:null, max:null, color:'var(--pendente)' },
 ];
 function notaFaixaIndex(item){
@@ -3659,38 +3766,64 @@ const STATUS_DONUT_COLORS = {
 // ============================================================================
 function renderStatusDonut(data){
   data = data || DATA;
-  const counts = {};
-  data.forEach(d=>{ counts[d.statusPesquisa] = (counts[d.statusPesquisa]||0)+1; });
-  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const el = document.getElementById('statusSummary');
+  if (!el) return;
+
   const total = data.length;
-  const r = 46, cx = 60, cy = 60, stroke = 16, circumference = 2*Math.PI*r;
-  let offset = 0;
-  const segs = total ? entries.map(([label,n])=>{
-    const color = STATUS_DONUT_COLORS[label] || 'var(--text-faint)';
-    const dash = (n/total)*circumference;
-    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
-      stroke-dasharray="${dash} ${circumference-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
-    offset += dash;
-    return seg;
-  }).join('') : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>`;
-  const svg = `<svg width="120" height="120" viewBox="0 0 120 120">
-    ${segs}
-    <text x="60" y="56" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)" font-family="IBM Plex Mono, monospace">${total}</text>
-    <text x="60" y="72" text-anchor="middle" font-size="9" fill="var(--text-faint)">Total</text>
-  </svg>`;
-  const elDonut = document.getElementById('statusDonut');
-  const elLegend = document.getElementById('statusDonutLegend');
-  if (!elDonut || !elLegend) return;
-  elDonut.innerHTML = svg;
-  elLegend.innerHTML = entries.map(([label, n])=>{
-    const color = STATUS_DONUT_COLORS[label] || 'var(--text-faint)';
-    const pct = total ? Math.round(n/total*100) : 0;
-    return `<div class="donut-legend-row">
-      <span class="donut-legend-dot" style="background:${color}"></span>
-      <span class="donut-legend-label">${escapeHtml(label)}</span>
-      <span class="donut-legend-n">${n} (${pct}%)</span>
+  const concluidas = data.filter(d => d.statusPesquisa === 'Concluída').length;
+  const pctConcluidas = total ? Math.round(concluidas / total * 100) : 0;
+
+  // Tendência: nota média por mês de referência, na ordem cronológica.
+  const mesesMap = {};
+  DATA.forEach(d=>{
+    const n = parseFloat(String(d.nota).replace(',', '.'));
+    if (isNaN(n)) return;
+    const m = getMes(d);
+    if (!mesesMap[m]) mesesMap[m] = { soma:0, count:0 };
+    mesesMap[m].soma += n;
+    mesesMap[m].count++;
+  });
+  const mesesOrdenados = Object.keys(mesesMap).sort().slice(-8);
+  const pontos = mesesOrdenados.map(m => mesesMap[m].count ? (mesesMap[m].soma / mesesMap[m].count) : 0);
+  const notaAtual = pontos.length ? pontos[pontos.length-1] : (computeStats(data).media || 0);
+
+  const w = 260, h = 60, pad = 6;
+  let sparkSvg = '<p style="font-size:11px; color:var(--text-faint);">Sem histórico suficiente ainda.</p>';
+  let tendenciaTxt = '';
+  if (pontos.length >= 2){
+    const minV = Math.min(...pontos, 0), maxV = Math.max(...pontos, 10);
+    const range = (maxV - minV) || 1;
+    const stepX = (w - pad*2) / (pontos.length - 1);
+    const coords = pontos.map((v,i)=>{
+      const x = pad + i*stepX;
+      const y = h - pad - ((v-minV)/range)*(h - pad*2);
+      return [x,y];
+    });
+    const pathD = coords.map((c,i)=> (i===0?'M':'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+    const last = coords[coords.length-1];
+    sparkSvg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <path d="${pathD}" fill="none" stroke="var(--ok)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.5" fill="var(--ok)"/>
+    </svg>
+    <div style="display:flex; justify-content:space-between; font-size:9.5px; color:var(--text-faint); margin-top:2px;">
+      ${mesesOrdenados.map(m=>`<span>${mesLabelBR(m).split('/')[0].slice(0,3)}</span>`).join('')}
     </div>`;
-  }).join('');
+    const diffInicioFim = pontos[pontos.length-1] - pontos[0];
+    tendenciaTxt = diffInicioFim > 0.15
+      ? `Melhora consistente nos últimos ${pontos.length} meses`
+      : diffInicioFim < -0.15
+        ? `Queda nos últimos ${pontos.length} meses — vale investigar`
+        : `Estável nos últimos ${pontos.length} meses`;
+  }
+
+  el.innerHTML = `
+    <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:2px;">
+      <span class="exec-trend-num">${notaAtual.toFixed(1)}</span>
+      <span class="exec-trend-lbl">nota atual</span>
+    </div>
+    ${sparkSvg}
+    <p class="exec-chart-caption">${tendenciaTxt}${tendenciaTxt ? ' — ' : ''}status da pesquisa: ${concluidas}/${total} concluídas (${pctConcluidas}%)</p>
+  `;
 }
 
 function renderNotaChart(data){
@@ -3775,6 +3908,17 @@ function renderSetorChart(data){
     activeSetorBar = (activeSetorBar === label) ? null : label;
     render();
   }, activeSetorBar);
+
+  const capEl = document.getElementById('setorFilialCaption');
+  if (capEl){
+    const entries = Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]);
+    if (entries.length && dist.total){
+      const [topLabel] = entries[0];
+      capEl.innerHTML = `<b style="color:var(--text-dim);">${escapeHtml(topLabel)}</b> concentra a maioria das reclamações — cruze com o motivo ao lado para ação conjunta.`;
+    } else {
+      capEl.textContent = '';
+    }
+  }
 }
 
 function renderMotivoChart(data){
@@ -3785,6 +3929,25 @@ function renderMotivoChart(data){
     activeMotivoBar = (activeMotivoBar === label) ? null : label;
     render();
   }, activeMotivoBar);
+
+  const capEl = document.getElementById('motivoCaption');
+  if (capEl){
+    const entries = Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]);
+    if (entries.length && dist.total){
+      const [topLabel, topN] = entries[0];
+      const topPct = Math.round(topN/dist.total*100);
+      const restante = entries.length - 1;
+      capEl.innerHTML = `<b style="color:var(--text-dim);">${escapeHtml(topLabel)}</b> concentra ${topPct}% de todas as reclamações — priorize aqui primeiro.`
+        + (restante > 0 ? ` Demais ${restante} motivo(s) somam o restante.` : '')
+        + ` <span class="exec-chart-link" id="verMotivosCompletoBtn">→ Ver detalhamento completo (${entries.length} motivos)</span>`;
+      const linkBtn = document.getElementById('verMotivosCompletoBtn');
+      if (linkBtn) linkBtn.onclick = ()=>{
+        document.querySelector('.tab-btn[data-tab="pesquisa"]').click();
+      };
+    } else {
+      capEl.textContent = '';
+    }
+  }
 }
 
 function renderFilialChart(data){
@@ -3860,6 +4023,12 @@ function populateMesSelector(){
 function populateFilterOptions(){
   populateMesSelector();
   const filiais = [...new Set(DATA.filter(d=>getMes(d)===selectedMes).map(d=>d.filial))].sort();
+  const execFilialSel = document.getElementById('execFilialFilter');
+  if (execFilialSel){
+    const atual = execFilialSel.value;
+    execFilialSel.innerHTML = '<option value="">Todas as filiais</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    if (filiais.includes(atual)) execFilialSel.value = atual;
+  }
   setupMultiFilter({
     btnId:'filialFilterBtn', panelId:'filialFilterPanel', wrapId:'filialFilterWrap',
     getSelected:()=>selectedFiliais, setSelected:(v)=>{selectedFiliais=v;},
@@ -4276,6 +4445,32 @@ function temPendencia(item){
   if (typeof item.houvePendencia === 'boolean') return item.houvePendencia;
   return classifyMotivos(item).length > 0;
 }
+let activePeriodo = 'all';
+function hojeReferencia(){
+  // Usa a data mais recente encontrada nas pesquisas como "hoje" de referência,
+  // pra não depender do relógio real da máquina (os dados são de uma rodada fixa).
+  const datas = DATA.map(d=>d.dataPesquisa).filter(Boolean).sort();
+  return datas.length ? new Date(datas[datas.length-1]) : new Date();
+}
+function itemDentroPeriodo(item, dias, hoje){
+  if (!item.dataPesquisa) return false;
+  const d = new Date(item.dataPesquisa);
+  const limite = new Date(hoje);
+  limite.setDate(limite.getDate() - dias);
+  return d >= limite && d <= hoje;
+}
+document.querySelectorAll('.period-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    activePeriodo = btn.getAttribute('data-periodo');
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    render();
+  });
+});
+document.getElementById('execFilialFilter').addEventListener('change', (e)=>{
+  selectedFiliais = e.target.value ? [e.target.value] : [];
+  render();
+});
+
 function temElogio(item){
   return !!item.houveElogio;
 }
@@ -4283,7 +4478,10 @@ function temElogio(item){
 function render(){
   const q = document.getElementById('search').value.trim();
 
-  const baseFiltered = DATA.filter(d=>baseMatches(d,q));
+  const baseFiltered = DATA.filter(d=>baseMatches(d,q)).filter(d=>{
+    if (activePeriodo === 'all') return true;
+    return itemDentroPeriodo(d, parseInt(activePeriodo,10), hojeReferencia());
+  });
   let filtered = baseFiltered.filter(d=> !activeCrit || d.crit === activeCrit);
 
   if (activeSubtab === 'reclamacoes') filtered = filtered.filter(temReclamacao);
