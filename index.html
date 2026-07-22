@@ -659,6 +659,26 @@
   }
 
   /* ---------- MODAL "NOVA / EDITAR PESQUISA DE SATISFAÇÃO" ---------- */
+  .pq-card{
+    background:var(--bg-panel-2); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .pq-card-title{
+    font-size:13.5px; font-weight:700; color:var(--text); margin:0 0 14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .pq-card-num{
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:11.5px; font-weight:700;
+    font-family:"IBM Plex Mono",monospace; flex-shrink:0;
+  }
+  .pq-card-recuperacao{
+    border:2px solid var(--accent); background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, var(--bg-panel-2)), var(--bg-panel-2));
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .pq-card-recuperacao .pq-card-title{ color:var(--accent); }
+  .pq-required{ color:var(--critico); }
+
   .pq-section{
     background:var(--bg-panel-2); border:1px solid var(--line); border-radius:12px;
     padding:14px 16px; margin-bottom:14px;
@@ -855,7 +875,8 @@
         <option value="admin">Administrador</option>
       </select>
       <div style="grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; margin-top:2px;">
-        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="pesquisa" checked> Pesquisa de Satisfação</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="dashboard" checked> Dashboard Executivo</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="pesquisa" checked> Pesquisas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="cadastro" checked> Cadastro de Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="renovacao" checked> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="checklist" checked> Check List Condomínios</label>
@@ -883,7 +904,8 @@
         <option value="admin">Administrador</option>
       </select>
       <div style="grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; margin-top:2px;">
-        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="pesquisa"> Pesquisa de Satisfação</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="dashboard"> Dashboard Executivo</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="pesquisa"> Pesquisas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="cadastro"> Cadastro de Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="renovacao"> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="checklist"> Check List Condomínios</label>
@@ -907,7 +929,6 @@
   </div>
 </div>
 
-
 <div id="pesquisaModalOverlay" class="users-modal" style="display:none;">
   <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
     <div class="users-head">
@@ -923,84 +944,85 @@
       </div>
     </div>
 
-    <div class="pq-field">
-      <label class="pq-label">Condomínio *</label>
-      <input type="text" id="pqCondominio" list="pq-condominio-list" placeholder="Nome do condomínio">
-      <datalist id="pq-condominio-list"></datalist>
-    </div>
-
-    <div class="pq-info-line" id="pqInfoLine">
-      <span>Filial: <b id="pqInfoFilial">—</b></span>
-      <span>Síndico: <b id="pqInfoSindico">—</b></span>
-      <span>Última pesquisa: <b id="pqInfoUltimaData">—</b></span>
-      <span>Última nota: <b id="pqInfoUltimaNota">—</b></span>
-    </div>
-
-    <div class="pq-row2">
-      <div class="pq-field" style="margin-bottom:0;">
-        <label class="pq-label">Mês de referência</label>
-        <select id="pqMesReferencia"></select>
-      </div>
-      <div class="pq-field" style="margin-bottom:0;">
-        <label class="pq-label">Data</label>
-        <input type="date" id="pqData">
-      </div>
-    </div>
-
     <div id="pqCorpoNormal">
-    <div class="pq-section">
-      <span class="pq-label">Nota (0 = péssimo · 10 = excelente) *</span>
-      <div class="nota-row" id="pqNotaRow">
-      </div>
-      <p class="nota-hint" id="pqNotaHint">Selecione uma nota</p>
-    </div>
 
-    <div class="pq-field">
-      <label class="pq-label">Nota 2 <span style="font-weight:400; text-transform:none;">(nota após resolução — se o síndico reavaliou, opcional)</span></label>
-      <input type="text" id="pqNotaPos" placeholder="ex: 9">
-    </div>
-
-    <div class="pq-row2">
-      <div class="pq-section" style="margin-bottom:0;">
-        <span class="pq-label">⚠ Houve pendência?</span>
-        <div class="toggle-pair">
-          <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="nao">☑ Não</button>
-          <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="sim">⚠ Sim</button>
-        </div>
-      </div>
-      <div class="pq-section" style="margin-bottom:0;">
-        <span class="pq-label">📣 Houve reclamação?</span>
-        <div class="toggle-pair">
-          <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="nao">🤝 Não</button>
-          <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="sim">📣 Sim</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="pqPendenciaWrap" style="display:none;">
+    <div class="pq-card">
+      <div class="pq-card-title"><span class="pq-card-num">1</span>Pesquisa de Satisfação</div>
       <div class="pq-field">
-        <label class="pq-label">Descrição da pendência</label>
-        <textarea id="pqDescricaoPendencia" placeholder="Descreva a pendência relatada pelo síndico..."></textarea>
+        <label class="pq-label">Condomínio <span class="pq-required">*</span></label>
+        <input type="text" id="pqCondominio" list="pq-condominio-list" placeholder="Nome do condomínio">
+        <datalist id="pq-condominio-list"></datalist>
       </div>
       <div class="pq-row2">
         <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Retorno do setor</label>
-          <textarea id="pqRetornoPendencia" placeholder="Retorno dado pelo setor..."></textarea>
+          <label class="pq-label">Filial</label>
+          <input type="text" id="pqInfoFilial2" disabled style="opacity:.65;">
         </div>
         <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Status da tratativa</label>
-          <select id="pqStatusPendencia">
-            <option value="Pendente">Pendente</option>
-            <option value="Em andamento">Em andamento</option>
-            <option value="Resolvido">Resolvido</option>
-          </select>
+          <label class="pq-label">Síndico</label>
+          <input type="text" id="pqInfoSindico2" disabled style="opacity:.65;">
+        </div>
+      </div>
+      <div class="pq-row2">
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Data da Pesquisa 1 <span class="pq-required">*</span></label>
+          <input type="date" id="pqData">
+        </div>
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Mês de referência</label>
+          <select id="pqMesReferencia"></select>
+        </div>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Nota 1 (0 = péssimo · 10 = excelente) <span class="pq-required">*</span></label>
+        <div class="nota-row" id="pqNotaRow"></div>
+        <p class="nota-hint" id="pqNotaHint">Selecione uma nota</p>
+      </div>
+    </div>
+
+    <div class="pq-card">
+      <div class="pq-card-title"><span class="pq-card-num">2</span>Classificação da Pesquisa</div>
+      <div class="pq-row2" style="grid-template-columns:1fr 1fr 1fr;">
+        <div>
+          <span class="pq-label">⚠ Houve Pendência?</span>
+          <div class="toggle-pair">
+            <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="nao">☑ Não</button>
+            <button type="button" class="toggle-btn" data-group="pqPendencia" data-val="sim">⚠ Sim</button>
+          </div>
+        </div>
+        <div>
+          <span class="pq-label">📣 Houve Reclamação?</span>
+          <div class="toggle-pair">
+            <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="nao">🤝 Não</button>
+            <button type="button" class="toggle-btn" data-group="pqReclamacao" data-val="sim">📣 Sim</button>
+          </div>
+        </div>
+        <div>
+          <span class="pq-label">⭐ Houve Elogio?</span>
+          <div class="toggle-pair">
+            <button type="button" class="toggle-btn" data-group="pqElogio" data-val="nao">😐 Não</button>
+            <button type="button" class="toggle-btn" data-group="pqElogio" data-val="sim">😊 Sim</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="pqReclamacaoWrap" style="display:none;">
+    <div class="pq-card" id="pqCardPendencia" style="display:none;">
+      <div class="pq-card-title"><span class="pq-card-num">3</span>Pendência</div>
       <div class="pq-field">
-        <label class="pq-label">Motivo da reclamação</label>
+        <label class="pq-label">Descrição da Pendência <span class="pq-required">*</span></label>
+        <textarea id="pqDescricaoPendencia" placeholder="Descreva a pendência relatada pelo síndico..."></textarea>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Observações <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
+        <textarea id="pqObservacoesPendencia" placeholder="Observações adicionais..."></textarea>
+      </div>
+    </div>
+
+    <div class="pq-card" id="pqCardReclamacao" style="display:none;">
+      <div class="pq-card-title"><span class="pq-card-num">4</span>Reclamação</div>
+      <div class="pq-field">
+        <label class="pq-label">Motivo da Reclamação <span class="pq-required">*</span> <span style="font-weight:400; text-transform:none;">(pode marcar mais de um)</span></label>
         <div class="pq-checklist" id="pqMotivoChecklist"></div>
         <div id="pqMotivoOutroWrap" style="display:none; margin-top:8px;">
           <label class="pq-label" style="margin-bottom:6px;">Descreva o motivo</label>
@@ -1008,52 +1030,59 @@
         </div>
       </div>
       <div class="pq-field">
-        <label class="pq-label">Setor da reclamação</label>
+        <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
         <select id="pqSetorReclamacao"><option value="">Selecione...</option></select>
       </div>
       <div class="pq-field">
-        <label class="pq-label">Descrição da situação</label>
+        <label class="pq-label">Descrição da Situação <span class="pq-required">*</span></label>
         <textarea id="pqDescricaoSituacao" placeholder="Descreva o que o síndico relatou..."></textarea>
       </div>
-      <div class="pq-row2">
-        <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Retorno do setor</label>
-          <textarea id="pqRetornoSetor" placeholder="Retorno dado pelo setor..."></textarea>
-        </div>
-        <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Status da tratativa</label>
-          <select id="pqStatusTratativa">
-            <option value="Pendente">Pendente</option>
-            <option value="Em andamento">Em andamento</option>
-            <option value="Resolvido">Resolvido</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="pq-section">
-      <span class="pq-label">Houve elogio?</span>
-      <div class="toggle-pair">
-        <button type="button" class="toggle-btn" data-group="pqElogio" data-val="nao">😐 Não</button>
-        <button type="button" class="toggle-btn" data-group="pqElogio" data-val="sim">😊 Sim</button>
-      </div>
-    </div>
-
-    <div id="pqElogioWrap" style="display:none;">
       <div class="pq-field">
-        <label class="pq-label">Setor que recebeu o elogio</label>
+        <label class="pq-label">Retorno do Setor</label>
+        <textarea id="pqRetornoSetor" placeholder="Retorno dado pelo setor..."></textarea>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Status da Tratativa <span class="pq-required">*</span></label>
+        <select id="pqStatusTratativa">
+          <option value="Em andamento">Em andamento</option>
+          <option value="Aguardando Cliente">Aguardando Cliente</option>
+          <option value="Resolvido">Resolvido</option>
+          <option value="Improcedente">Improcedente</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pq-card" id="pqCardElogio" style="display:none;">
+      <div class="pq-card-title"><span class="pq-card-num">5</span>Elogio</div>
+      <div class="pq-field">
+        <label class="pq-label">Quem foi elogiado? <span class="pq-required">*</span></label>
         <select id="pqSetorElogio"><option value="">Selecione...</option></select>
       </div>
-      <div class="pq-field">
-        <label class="pq-label">Descrição do elogio</label>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Descrição do elogio <span class="pq-required">*</span></label>
         <textarea id="pqDescricaoElogio" placeholder="Descreva o elogio recebido..."></textarea>
       </div>
     </div>
 
-    <div class="pq-field">
-      <label class="pq-label">Comentário do síndico</label>
-      <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
+    <div class="pq-card pq-card-recuperacao" id="pqCardRecuperacao" style="display:none;">
+      <div class="pq-card-title">🔄 Pesquisa de Recuperação <span style="font-weight:400; text-transform:none; color:var(--text-faint); font-size:11px;">— novo contato após a tratativa</span></div>
+      <div id="pqRecuperacaoResumo" style="font-size:12px; color:var(--text-faint); background:var(--bg-panel-3); border-radius:9px; padding:8px 12px; margin-bottom:14px;"></div>
+      <div class="pq-row2">
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Data da Pesquisa 2 <span class="pq-required">*</span></label>
+          <input type="date" id="pqDataPesquisa2">
+        </div>
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Nota 2 <span class="pq-required">*</span></label>
+          <input type="text" id="pqNotaPos" placeholder="ex: 9">
+        </div>
+      </div>
+      <div class="pq-field" style="margin-bottom:0; margin-top:12px;">
+        <label class="pq-label">Comentário do Síndico <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
+        <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
+      </div>
     </div>
+
     </div>
 
     <div id="pqNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
@@ -1139,7 +1168,8 @@
         </div>
         <p class="sidebar-brand-sub">Portaria Remota</p>
       </div>
-      <button type="button" class="tab-btn active" data-tab="pesquisa"><span class="tab-icon">📋</span><span class="tab-label">Pesquisa de Satisfação</span></button>
+      <button type="button" class="tab-btn active" data-tab="dashboard"><span class="tab-icon">📊</span><span class="tab-label">Dashboard Executivo</span></button>
+      <button type="button" class="tab-btn" data-tab="pesquisa"><span class="tab-icon">📋</span><span class="tab-label">Pesquisas</span></button>
       <button type="button" class="tab-btn" data-tab="cadastro"><span class="tab-icon">🏢</span><span class="tab-label">Cadastro de Condomínios</span></button>
       <button type="button" class="tab-btn" data-tab="renovacao"><span class="tab-icon">🔄</span><span class="tab-label">Renovação de Contratos</span></button>
       <button type="button" class="tab-btn" data-tab="checklist"><span class="tab-icon">✅</span><span class="tab-label">Check List Condomínios</span></button>
@@ -1147,7 +1177,57 @@
 
     <div class="content-area">
 
-  <div id="tabPesquisa" class="tab-panel">
+  <div id="tabDashboard" class="tab-panel">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Visão geral de todas as pesquisas de satisfação — indicadores e gráficos consolidados.
+      Para ver a lista de condomínios e registrar pesquisas, use a aba "Pesquisas".
+    </p>
+
+    <div class="stats-strip" id="statsStrip"></div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="charts-grid charts-grid-2">
+      <div class="chart-panel">
+        <p class="chart-title">Distribuição de notas</p>
+        <div id="notaChart"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">Status da pesquisa</p>
+        <div class="donut-wrap">
+          <div id="statusDonut"></div>
+          <div id="statusDonutLegend" class="donut-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid charts-grid-3">
+      <div class="chart-panel">
+        <p class="chart-title">% de reclamações por setor</p>
+        <div id="setorChart"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">% de reclamações por motivo</p>
+        <div id="motivoChart"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">% de condomínios por filial</p>
+        <div id="filialChart"></div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Fonte: Análise de Pesquisa de Satisfação — Maranhão — Junho 2026</span>
+      <span>Painel gerado para apresentação · dados estáticos desta rodada</span>
+    </footer>
+  </div>
+
+  <div id="tabPesquisa" class="tab-panel" style="display:none;">
 
   <div class="subtab-nav" id="subtabNav">
     <button type="button" class="subtab-btn active" data-subtab="todos">Todos <span class="subtab-count" id="subtabCountTodos"></span></button>
@@ -1155,8 +1235,6 @@
     <button type="button" class="subtab-btn" data-subtab="pendencias">⚠️ Pendências <span class="subtab-count" id="subtabCountPendencias"></span></button>
     <button type="button" class="subtab-btn" data-subtab="elogios">😊 Elogios <span class="subtab-count" id="subtabCountElogios"></span></button>
   </div>
-
-  <div class="stats-strip" id="statsStrip"></div>
 
   <div class="toolbar">
     <select id="mesSelector" class="msf-btn" style="cursor:pointer;"></select>
@@ -1188,37 +1266,6 @@
     <button class="clearbtn" id="excelBtn">📊 Excel</button>
   </div>
 
-  <div class="kpis" id="kpis"></div>
-
-  <div class="charts-grid charts-grid-2">
-    <div class="chart-panel">
-      <p class="chart-title">Distribuição de notas</p>
-      <div id="notaChart"></div>
-    </div>
-    <div class="chart-panel">
-      <p class="chart-title">Status da pesquisa</p>
-      <div class="donut-wrap">
-        <div id="statusDonut"></div>
-        <div id="statusDonutLegend" class="donut-legend"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="charts-grid charts-grid-3">
-    <div class="chart-panel">
-      <p class="chart-title">% de reclamações por setor</p>
-      <div id="setorChart"></div>
-    </div>
-    <div class="chart-panel">
-      <p class="chart-title">% de reclamações por motivo</p>
-      <div id="motivoChart"></div>
-    </div>
-    <div class="chart-panel">
-      <p class="chart-title">% de condomínios por filial</p>
-      <div id="filialChart"></div>
-    </div>
-  </div>
-
   <div class="count-line" id="countLine" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
     <span id="countLineText"></span>
     <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
@@ -1244,11 +1291,6 @@
   <div class="kanban-board" id="kanbanBoard" style="display:none;"></div>
   <div class="empty" id="emptyMsg" style="display:none;">Nenhum condomínio encontrado com esses filtros.</div>
 
-  <footer>
-    <span>Fonte: Análise de Pesquisa de Satisfação — Maranhão — Junho 2026</span>
-    <span>Painel gerado para apresentação · dados estáticos desta rodada</span>
-  </footer>
-
   </div>
 
   <div id="tabCadastro" class="tab-panel" style="display:none;">
@@ -1266,6 +1308,7 @@
       <strong style="color:var(--text); font-size:13px;">⚠️ Contratos Vencidos</strong>
       <span id="renovVencidosCount" class="count-line" style="margin:0;"></span>
     </div>
+    <div class="stats-strip" id="renovVencidosPorFilial" style="margin-bottom:14px;"></div>
     <div class="toolbar" style="margin-bottom:14px;">
       <select class="filter-select" id="renovFilterFilial"><option value="">Filial: todas</option></select>
       <select class="filter-select" id="renovFilterResponsavel"><option value="">Responsável: todos</option></select>
@@ -1299,6 +1342,9 @@
       <strong style="color:var(--text); font-size:13px; flex:1;">📝 Negociações de Renovação</strong>
       <span id="renovNegociacoesCount" class="count-line" style="margin:0 12px 0 0;"></span>
       <button type="button" class="logout-btn" id="btnNovaNegociacao" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Negociação</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <input type="text" class="search" id="renovNegSearch" placeholder="Buscar negociação por nome do condomínio...">
     </div>
     <div class="checklist-table-wrap">
       <table class="checklist-table" id="renovNegociacoesTable">
@@ -1435,6 +1481,7 @@
     </div>
   </div>
 
+
 </div>
 
 <script>
@@ -1449,7 +1496,7 @@ const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['pesquisa','cadastro','renovacao','checklist'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -3217,6 +3264,8 @@ function extraRowToItem(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
+    dataPesquisa2: row.data_pesquisa_2,
   };
 }
 function itemToExtraRow(item){
@@ -3229,6 +3278,8 @@ function itemToExtraRow(item){
     elogio_setor: item.elogioSetor || null, elogio_descricao: item.elogioDescricao || null,
     comentario_sindico: item.comentarioSindico || null, responsavel_pesquisa: item.responsavelPesquisa || null,
     motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
+    pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
+    data_pesquisa_2: item.dataPesquisa2 || null,
     created_by: currentUsername || 'desconhecido',
   };
 }
@@ -3286,6 +3337,8 @@ function rowToUpdates(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
+    dataPesquisa2: row.data_pesquisa_2,
   };
 }
 function updatesToRow(itemN, updates){
@@ -3297,6 +3350,8 @@ function updatesToRow(itemN, updates){
     elogio_setor: updates.elogioSetor || null, elogio_descricao: updates.elogioDescricao || null,
     comentario_sindico: updates.comentarioSindico || null, responsavel_pesquisa: updates.responsavelPesquisa || null,
     motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
+    pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
+    data_pesquisa_2: updates.dataPesquisa2 || null,
     updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
   };
 }
@@ -3890,6 +3945,13 @@ function resolvedBadge(r){
   return `<span class="rbadge">—</span>`;
 }
 
+function nota2Display(item){
+  if (item.notaPosResolucao) return escapeHtml(item.notaPosResolucao);
+  const n1 = parseFloat(String(item.nota).replace(',', '.'));
+  if (!isNaN(n1) && n1 >= 9) return '<span title="Nota já era 9 ou 10 na 1ª pesquisa — sem necessidade de retorno">⭐</span>';
+  return '—';
+}
+
 function notaMedia(item){
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
   if (isNaN(n1)) return '—';
@@ -4280,7 +4342,7 @@ function render(){
         <div class="motivo">${escapeHtml(item.motivo || '—')}</div>
         <div class="nota">${notaMedia(item)} ${emojiParaNota(notaMedia(item))}<span class="nlabel">média</span></div>
         <div class="nota2col">${escapeHtml(item.nota)}</div>
-        <div class="nota2col">${item.notaPosResolucao ? escapeHtml(item.notaPosResolucao) : '—'}</div>
+        <div class="nota2col">${nota2Display(item)}</div>
         <div class="datacol">${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</div>
         <div class="tag">${c.label}</div>
         <div class="humorcol">${humorCell(item)}</div>
@@ -6002,6 +6064,7 @@ async function loadRenovacaoData(){
     fillNegCondoSelect();
     populateRenovFiltros();
     renderRenovVencidos();
+    renderRenovVencidosPorFilial();
     renderRenovNegociacoes();
     renovLoaded = true;
   }catch(e){
@@ -6050,13 +6113,33 @@ function getFilteredRenovVencidos(){
 function getFilteredRenovNegociacoes(){
   const fFilial = document.getElementById('renovFilterFilial').value;
   const fResp = document.getElementById('renovFilterResponsavel').value;
+  const q = (document.getElementById('renovNegSearch').value || '').trim().toLowerCase();
   return renovNegociacoes.filter(n=>{
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     const filial = condo ? condo.filial : null;
     if (fFilial && filial !== fFilial) return false;
     if (fResp && n.responsavel !== fResp) return false;
+    if (q && !(condo && condo.nome.toLowerCase().includes(q))) return false;
     return true;
   });
+}
+
+function renderRenovVencidosPorFilial(){
+  const el = document.getElementById('renovVencidosPorFilial');
+  if (!el) return;
+  const counts = {};
+  renovVencidos.forEach(c => { const f = c.filial || 'Sem filial'; counts[f] = (counts[f]||0) + 1; });
+  const filiais = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  if (!filiais.length){
+    el.innerHTML = '<div class="stat-box"><div class="snum">0</div><div class="slbl">Nenhum contrato vencido</div></div>';
+    return;
+  }
+  el.innerHTML = filiais.map(f => `
+    <div class="stat-box">
+      <div class="snum">${counts[f]}</div>
+      <div class="slbl">${escapeHtml(f)}</div>
+    </div>
+  `).join('');
 }
 
 function renderRenovVencidos(){
@@ -6092,6 +6175,7 @@ function renderRenovVencidos(){
     renderRenovNegociacoes();
   });
 });
+document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
 
 function negBadge(status){
   const map = {
@@ -6347,6 +6431,7 @@ function initTabs(){
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const tab = btn.dataset.tab;
+      document.getElementById('tabDashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
       document.getElementById('tabPesquisa').style.display = tab === 'pesquisa' ? 'block' : 'none';
       document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
       document.getElementById('tabRenovacao').style.display = tab === 'renovacao' ? 'block' : 'none';
@@ -6374,6 +6459,9 @@ const pqToggleState = {}; // { pqRealizada:'sim'|'nao', pqPendencia:..., pqRecla
 let pqNotaSelecionada = null;
 
 const PQ_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josy', 'Geovana - Aprendiz'];
+const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial','Outros'];
+const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Outro'];
+const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial','Outro'];
 
 function pqBuildNotaRow(){
   const row = document.getElementById('pqNotaRow');
@@ -6387,13 +6475,9 @@ function pqBuildNotaRow(){
       row.querySelectorAll('.nota-btn').forEach(b=>b.classList.remove('selected'));
       btn.classList.add('selected');
       document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`;
+      pqAtualizarVisibilidadeRecuperacao();
     });
   });
-}
-
-function pqUpdateReclamacaoWrapVisibility(){
-  document.getElementById('pqPendenciaWrap').style.display = pqToggleState.pqPendencia === 'sim' ? 'block' : 'none';
-  document.getElementById('pqReclamacaoWrap').style.display = pqToggleState.pqReclamacao === 'sim' ? 'block' : 'none';
 }
 
 function pqSetToggle(group, val){
@@ -6409,11 +6493,14 @@ function pqSetToggle(group, val){
       if (group === 'pqElogio') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
     }
   });
-  if (group === 'pqPendencia' || group === 'pqReclamacao'){
-    pqUpdateReclamacaoWrapVisibility();
+  if (group === 'pqPendencia'){
+    document.getElementById('pqCardPendencia').style.display = val === 'sim' ? 'block' : 'none';
+  }
+  if (group === 'pqReclamacao'){
+    document.getElementById('pqCardReclamacao').style.display = val === 'sim' ? 'block' : 'none';
   }
   if (group === 'pqElogio'){
-    document.getElementById('pqElogioWrap').style.display = val === 'sim' ? 'block' : 'none';
+    document.getElementById('pqCardElogio').style.display = val === 'sim' ? 'block' : 'none';
   }
   if (group === 'pqRealizada'){
     document.getElementById('pqNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
@@ -6427,15 +6514,15 @@ function pqPopulateDropdowns(){
   mesSel.innerHTML = mesesExistentes.map(m => `<option value="${m}">${mesLabelBR(m)}</option>`).join('');
 
   const setorReclamacao = document.getElementById('pqSetorReclamacao');
+  setorReclamacao.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
   const setorElogio = document.getElementById('pqSetorElogio');
-  const setorOpts = SETORES_CANONICOS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  setorReclamacao.innerHTML = '<option value="">Selecione...</option>' + setorOpts;
-  setorElogio.innerHTML = '<option value="">Selecione...</option>' + setorOpts;
+  setorElogio.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_ELOGIO.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 
   const respSel = document.getElementById('pqResponsavel');
   respSel.innerHTML = '<option value="">Selecione...</option>' + PQ_RESPONSAVEIS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
 
-  document.getElementById('pqMotivoChecklist').innerHTML = MOTIVOS_CANONICOS.map(m =>
+  document.getElementById('pqMotivoChecklist').innerHTML = PQ_MOTIVOS_RECLAMACAO.map(m =>
     `<label><input type="checkbox" class="pq-motivo-cb" value="${m}"><span>${m}</span></label>`
   ).join('');
   document.querySelectorAll('.pq-motivo-cb').forEach(cb=>{
@@ -6461,26 +6548,19 @@ function openPesquisaModal(item){
   document.getElementById('pqCondominio').value = item ? item.nome : '';
   document.getElementById('pqCondominio').disabled = !!item;
 
-  if (item){
-    document.getElementById('pqInfoFilial').textContent = item.filial || '—';
-    document.getElementById('pqInfoSindico').textContent = item.sindico || '—';
-    document.getElementById('pqInfoUltimaData').textContent = item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—';
-    document.getElementById('pqInfoUltimaNota').textContent = item.nota ?? '—';
-  } else {
-    document.getElementById('pqInfoFilial').textContent = '—';
-    document.getElementById('pqInfoSindico').textContent = '—';
-    document.getElementById('pqInfoUltimaData').textContent = '—';
-    document.getElementById('pqInfoUltimaNota').textContent = '—';
-  }
+  document.getElementById('pqInfoFilial2').value = item ? (item.filial || '') : '';
+  document.getElementById('pqInfoSindico2').value = item ? (item.sindico || '') : '';
 
   document.getElementById('pqMesReferencia').value = item ? getMes(item) : selectedMes;
   document.getElementById('pqNotaPos').value = item ? (item.notaPosResolucao || '') : '';
+  document.getElementById('pqDataPesquisa2').value = item ? (item.dataPesquisa2 || '') : '';
   document.getElementById('pqData').value = item && item.dataPesquisa ? item.dataPesquisa : new Date().toISOString().slice(0,10);
 
   if (pqNotaSelecionada !== null && pqNotaSelecionada !== ''){
     const btn = document.querySelector(`.nota-btn[data-nota="${pqNotaSelecionada}"]`);
     if (btn){ btn.classList.add('selected'); document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`; }
   }
+  pqAtualizarVisibilidadeRecuperacao();
 
   document.getElementById('pqMotivoNaoRealizada').value = item ? (item.motivoNaoRealizada || '') : '';
   document.getElementById('pqObservacaoNaoRealizada').value = item ? (item.observacaoNaoRealizada || '') : '';
@@ -6502,10 +6582,9 @@ function openPesquisaModal(item){
   document.getElementById('pqSetorReclamacao').value = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
   document.getElementById('pqDescricaoSituacao').value = item ? (item.pend || '') : '';
   document.getElementById('pqRetornoSetor').value = item ? (item.resolucao || '') : '';
-  document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || (item.resolvido === true ? 'Resolvido' : item.resolvido === false ? 'Em andamento' : 'Pendente')) : 'Pendente';
-  document.getElementById('pqDescricaoPendencia').value = item ? (item.pend || '') : '';
-  document.getElementById('pqRetornoPendencia').value = item ? (item.resolucao || '') : '';
-  document.getElementById('pqStatusPendencia').value = item ? (item.statusTratativa || (item.resolvido === true ? 'Resolvido' : item.resolvido === false ? 'Em andamento' : 'Pendente')) : 'Pendente';
+  document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || 'Em andamento') : 'Em andamento';
+  document.getElementById('pqDescricaoPendencia').value = item ? (item.pendenciaDescricao || '') : '';
+  document.getElementById('pqObservacoesPendencia').value = item ? (item.pendenciaObservacoes || '') : '';
 
   document.getElementById('pqSetorElogio').value = item ? (item.elogioSetor || '') : '';
   document.getElementById('pqDescricaoElogio').value = item ? (item.elogioDescricao || '') : '';
@@ -6515,21 +6594,22 @@ function openPesquisaModal(item){
   document.getElementById('pesquisaModalOverlay').style.display = 'flex';
 }
 
+function pqAtualizarVisibilidadeRecuperacao(){
+  const n = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
+  const mostrar = !isNaN(n) && n < 9;
+  document.getElementById('pqCardRecuperacao').style.display = mostrar ? 'block' : 'none';
+  if (mostrar){
+    const dataTxt = document.getElementById('pqData').value ? formatDateBR(document.getElementById('pqData').value) : '—';
+    document.getElementById('pqRecuperacaoResumo').innerHTML = `<b style="color:var(--text-dim);">Nota 1:</b> ${escapeHtml(pqNotaSelecionada)} &nbsp;·&nbsp; <b style="color:var(--text-dim);">Data da Pesquisa 1:</b> ${dataTxt}`;
+  }
+}
+
 document.getElementById('pqCondominio').addEventListener('input', ()=>{
   if (pqEditingItem) return; // ao editar, o nome já vem fixo
   const nome = document.getElementById('pqCondominio').value.trim();
   const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
-  if (match){
-    document.getElementById('pqInfoFilial').textContent = match.filial || '—';
-    document.getElementById('pqInfoSindico').textContent = match.sindico || '—';
-    document.getElementById('pqInfoUltimaData').textContent = match.dataPesquisa ? formatDateBR(match.dataPesquisa) : '—';
-    document.getElementById('pqInfoUltimaNota').textContent = match.nota ?? '—';
-  } else {
-    document.getElementById('pqInfoFilial').textContent = '—';
-    document.getElementById('pqInfoSindico').textContent = '—';
-    document.getElementById('pqInfoUltimaData').textContent = '—';
-    document.getElementById('pqInfoUltimaNota').textContent = '—';
-  }
+  document.getElementById('pqInfoFilial2').value = match ? (match.filial || '') : '';
+  document.getElementById('pqInfoSindico2').value = match ? (match.sindico || '') : '';
 });
 
 document.querySelectorAll('.toggle-btn').forEach(btn=>{
@@ -6552,51 +6632,101 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     errEl.style.display = 'block';
     return;
   }
-  if (pqToggleState.pqRealizada !== 'nao' && (pqNotaSelecionada === null || pqNotaSelecionada === '')){
-    errEl.textContent = 'Selecione uma nota de 0 a 10.';
-    errEl.style.display = 'block';
-    return;
+
+  const realizada = pqToggleState.pqRealizada !== 'nao';
+  const usaPendencia = pqToggleState.pqPendencia === 'sim';
+  const usaReclamacao = pqToggleState.pqReclamacao === 'sim';
+  const usaElogio = pqToggleState.pqElogio === 'sim';
+
+  if (realizada){
+    if (!document.getElementById('pqData').value){
+      errEl.textContent = 'Informe a Data da Pesquisa 1.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (pqNotaSelecionada === null || pqNotaSelecionada === ''){
+      errEl.textContent = 'Selecione a Nota 1 (0 a 10).';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (usaPendencia && !document.getElementById('pqDescricaoPendencia').value.trim()){
+      errEl.textContent = 'Descreva a Pendência.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (usaReclamacao){
+      const temMotivo = document.querySelectorAll('.pq-motivo-cb:checked').length > 0;
+      if (!temMotivo){
+        errEl.textContent = 'Marque pelo menos um Motivo da Reclamação.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!document.getElementById('pqSetorReclamacao').value){
+        errEl.textContent = 'Selecione o Setor Responsável pela reclamação.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!document.getElementById('pqDescricaoSituacao').value.trim()){
+        errEl.textContent = 'Descreva a Situação da reclamação.';
+        errEl.style.display = 'block';
+        return;
+      }
+    }
+    if (usaElogio){
+      if (!document.getElementById('pqSetorElogio').value){
+        errEl.textContent = 'Selecione quem foi elogiado.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!document.getElementById('pqDescricaoElogio').value.trim()){
+        errEl.textContent = 'Descreva o elogio.';
+        errEl.style.display = 'block';
+        return;
+      }
+    }
+    const notaNumValidacao = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
+    if (notaNumValidacao < 9){
+      if (!document.getElementById('pqDataPesquisa2').value){
+        errEl.textContent = 'Informe a Data da Pesquisa 2 (Pesquisa de Recuperação).';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!document.getElementById('pqNotaPos').value.trim()){
+        errEl.textContent = 'Informe a Nota 2 (Pesquisa de Recuperação).';
+        errEl.style.display = 'block';
+        return;
+      }
+    }
   }
 
   const motivoVals = [...document.querySelectorAll('.pq-motivo-cb:checked')].map(cb=>cb.value);
   const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
   const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
-  const usaReclamacao = pqToggleState.pqReclamacao === 'sim';
-  const usaPendencia = pqToggleState.pqPendencia === 'sim';
-  const statusTratativa = usaReclamacao
-    ? document.getElementById('pqStatusTratativa').value
-    : usaPendencia
-      ? document.getElementById('pqStatusPendencia').value
-      : 'Pendente';
-  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Pendente': null };
+  const statusTratativa = usaReclamacao ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
+  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
 
   const dados = {
     nota: pqNotaSelecionada,
     dataPesquisa: document.getElementById('pqData').value,
     mesReferencia: document.getElementById('pqMesReferencia').value,
     statusPesquisa: pqToggleState.pqRealizada === 'nao' ? 'Pendente' : 'Concluída',
-    houvePendencia: pqToggleState.pqPendencia === 'sim',
-    houveReclamacao: pqToggleState.pqReclamacao === 'sim',
-    houveElogio: pqToggleState.pqElogio === 'sim',
+    houvePendencia: usaPendencia,
+    houveReclamacao: usaReclamacao,
+    houveElogio: usaElogio,
+    pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
+    pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
     setor: usaReclamacao && document.getElementById('pqSetorReclamacao').value
       ? document.getElementById('pqSetorReclamacao').value : (pqEditingItem ? pqEditingItem.setor : '—'),
     motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
-    pend: usaReclamacao
-      ? document.getElementById('pqDescricaoSituacao').value.trim()
-      : usaPendencia
-        ? document.getElementById('pqDescricaoPendencia').value.trim()
-        : '',
-    resolucao: usaReclamacao
-      ? document.getElementById('pqRetornoSetor').value.trim()
-      : usaPendencia
-        ? document.getElementById('pqRetornoPendencia').value.trim()
-        : '',
+    pend: usaReclamacao ? document.getElementById('pqDescricaoSituacao').value.trim() : '',
+    resolucao: usaReclamacao ? document.getElementById('pqRetornoSetor').value.trim() : '',
     statusTratativa,
-    resolvido: resolvidoMap[statusTratativa],
-    elogioSetor: document.getElementById('pqSetorElogio').value,
-    elogioDescricao: document.getElementById('pqDescricaoElogio').value.trim(),
+    resolvido: statusTratativa ? resolvidoMap[statusTratativa] : null,
+    elogioSetor: usaElogio ? document.getElementById('pqSetorElogio').value : '',
+    elogioDescricao: usaElogio ? document.getElementById('pqDescricaoElogio').value.trim() : '',
     comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
     responsavelPesquisa: document.getElementById('pqResponsavel').value,
+    dataPesquisa2: document.getElementById('pqDataPesquisa2').value,
     notaPosResolucao: document.getElementById('pqNotaPos').value.trim(),
     motivoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada').value : '',
     observacaoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada').value.trim() : '',
@@ -6632,6 +6762,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   document.getElementById('pesquisaModalOverlay').style.display = 'none';
   populateFilterOptions();
   render();
+
 });
 
 initTabs();
