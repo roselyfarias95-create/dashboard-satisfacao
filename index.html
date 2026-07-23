@@ -410,6 +410,27 @@
   .exec-mini-pct{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text); width:34px; text-align:right; flex-shrink:0; }
   .exec-mini-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:600; margin:0 0 8px; }
 
+  .exec-comparativo-block{ margin-bottom:16px; }
+  .exec-comp-header{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:14px; margin-bottom:16px; }
+  .exec-comp-numbers{ display:flex; gap:22px; flex-wrap:wrap; }
+  .exec-comp-num .v{ font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:700; color:var(--text); line-height:1; }
+  .exec-comp-num .l{ font-size:10.5px; color:var(--text-faint); margin-top:4px; }
+  .exec-insight{
+    margin:14px 0 0; padding:10px 14px; background:var(--bg-panel-2); border-left:3px solid var(--accent);
+    border-radius:8px; font-size:12px; color:var(--text-dim); line-height:1.5;
+  }
+  .exec-filial-cards{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-bottom:6px; }
+  .exec-filial-card{
+    background:var(--bg-panel-2); border:1px solid var(--line); border-radius:12px; padding:13px 15px;
+  }
+  .exec-filial-card.critico{ border-color:rgba(255,77,94,0.5); background:color-mix(in srgb, var(--critico) 8%, var(--bg-panel-2)); }
+  .exec-filial-card .fname{ font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .exec-filial-card .fnota{ font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:700; }
+  .exec-filial-card .fmeta{ font-size:10.5px; color:var(--text-faint); margin-top:4px; line-height:1.5; }
+  .comp-rank-bar-wrap{ display:flex; align-items:center; gap:8px; }
+  .comp-rank-bar-track{ flex:1; background:var(--bg-panel-2); border-radius:4px; height:7px; overflow:hidden; min-width:60px; }
+  .comp-rank-bar-fill{ height:100%; border-radius:4px; }
+
   /* ---------- FILTER BAR ---------- */
   .toolbar{
     display:flex; gap:10px; align-items:center; margin-bottom:20px; flex-wrap:wrap;
@@ -1347,6 +1368,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <p class="chart-title">% de reclamações por motivo — Top causas</p>
         <div id="motivoChart"></div>
         <p class="exec-chart-caption" id="motivoCaption"></p>
+        <div id="motivoLegenda" style="margin-top:8px; border-top:1px solid var(--line); padding-top:8px;"></div>
       </div>
       <div class="chart-panel">
         <p class="chart-title">% de reclamações por setor · % por filial</p>
@@ -1356,6 +1378,37 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <div id="filialChart"></div>
         <p class="exec-chart-caption" id="setorFilialCaption"></p>
       </div>
+    </div>
+
+    <div class="chart-panel exec-comparativo-block">
+      <div class="exec-comp-header">
+        <p class="chart-title" style="margin:0;">Comparativo mensal de notas</p>
+        <div class="exec-comp-numbers" id="compMensalNumeros"></div>
+      </div>
+      <div id="compMensalLinha"></div>
+      <div id="compMensalEmpilhado" style="margin-top:18px;"></div>
+      <p class="exec-insight" id="compMensalInsight"></p>
+    </div>
+
+    <div class="chart-panel exec-comparativo-block">
+      <p class="chart-title">Comparativo entre filiais</p>
+      <div class="exec-filial-cards" id="compFilialCards"></div>
+      <div id="compFilialLinhas" style="margin-top:18px;"></div>
+      <div class="checklist-table-wrap" style="margin-top:16px;">
+        <table class="checklist-table" id="compFilialTabela">
+          <thead>
+            <tr>
+              <th>Filial</th>
+              <th>Nota média</th>
+              <th>Variação</th>
+              <th>% críticos</th>
+              <th>Nº condomínios</th>
+            </tr>
+          </thead>
+          <tbody id="compFilialTabelaBody"></tbody>
+        </table>
+      </div>
+      <p class="exec-insight" id="compFilialInsight"></p>
     </div>
 
     <footer>
@@ -1690,6 +1743,9 @@ function showApp(role, username, allowedTabs){
   pullExtraItemsFromSupabase();
   subscribeRealtime();
   subscribeExtraRealtime();
+  if (typeof loadHistorico === 'function'){
+    loadHistorico().then(()=>{ if (typeof render === 'function') render(); });
+  }
 }
 
 function initAuth(){
@@ -3250,6 +3306,46 @@ const DATA = [
  resolucao:"", mesReferencia:"2026-07"},
 ];
 
+// Declaradas aqui (bem cedo, antes do render() inicial mais abaixo) para
+// evitar erro de "acesso antes da inicialização" — as funções do Dashboard
+// Executivo (itensDoMes etc.) usam essas variáveis dentro do render().
+let historicoData = [];
+let historicoLoaded = false;
+
+const GRUPOS_MOTIVO = {
+  'Portões':'Equipamentos/Sistemas', 'Câmeras':'Equipamentos/Sistemas', 'Interfone':'Equipamentos/Sistemas',
+  'Controle de Acesso':'Equipamentos/Sistemas', 'Aplicativo':'Equipamentos/Sistemas',
+  'Atendimento da Central':'Central', 'Tempo de Atendimento da Central':'Central', 'Falta de Retorno da Central':'Central',
+  'Tempo de Atendimento Técnico':'Técnica', 'Pendência Técnica':'Técnica', 'Qualidade da Equipe Técnica':'Técnica', 'Falta de Retorno da Equipe Técnica':'Técnica',
+  'Falta de Retorno do Comercial':'Outros', 'Falta de Retorno da Coordenação/Gerência':'Outros', 'Comunicação':'Outros',
+  'Alarmes/Falsos Disparos':'Alarmes/Falsos Disparos',
+  'Comercial/Financeiro':'Comercial/Financeiro',
+  'Pesquisa não Respondida':'Pesquisa não Respondida',
+  'Outros':'Outros',
+};
+const GRUPOS_MOTIVO_LEGENDA = {
+  'Equipamentos/Sistemas':'Portões, Câmeras, Interfone, Controle de Acesso, Aplicativo',
+  'Central':'Atendimento, tempo de resposta e falta de retorno da Central',
+  'Técnica':'Pendência técnica, tempo de atendimento, qualidade e retorno da equipe técnica',
+  'Alarmes/Falsos Disparos':'Disparos recorrentes de alarme sem causa identificada',
+  'Comercial/Financeiro':'Orçamentos, aditivos, renovação e ajuste de mensalidade',
+  'Pesquisa não Respondida':'Síndico não atendeu / pesquisa pendente',
+  'Outros':'Falta de retorno do Comercial/Coordenação, comunicação e demais casos não classificáveis',
+};
+// Itens que caíam em "Outros" genérico mas têm um padrão claro identificável
+// no texto — reclassificados aqui em vez de ficarem escondidos em "Outros".
+const OUTROS_SUBMOTIVOS = {
+  501:'Alarmes/Falsos Disparos', 514:'Alarmes/Falsos Disparos', 551:'Alarmes/Falsos Disparos', 635:'Alarmes/Falsos Disparos',
+  513:'Comercial/Financeiro', 537:'Comercial/Financeiro', 538:'Comercial/Financeiro', 549:'Comercial/Financeiro', 669:'Comercial/Financeiro',
+};
+
+const META_NOTA = 8.0;
+const GRAVIDADE_COLORS = { critico:'#ff4d5e', atencao:'#ffb020', ok:'#2dd4a7' };
+const MESES_PT_PARA_NUM = {
+  'janeiro':'01','fevereiro':'02','marco':'03','março':'03','abril':'04','maio':'05','junho':'06',
+  'julho':'07','agosto':'08','setembro':'09','outubro':'10','novembro':'11','dezembro':'12',
+};
+
 // ============================================================================
 // CLASSIFICAÇÃO / CATEGORIZAÇÃO
 // Padronização de motivos (17 categorias fixas, pedido da Rosely em 05/07).
@@ -4020,23 +4116,34 @@ function renderSetorChart(data){
 
 function renderMotivoChart(data){
   data = data || DATA;
-  const dist = computeDistribution(data, classifyMotivos);
-  const itemsComData = data.filter(d => classifyMotivos(d).length > 0).length;
+  const dist = computeDistribution(data, classifyGrupoMotivo);
+  const itemsComData = data.filter(d => classifyGrupoMotivo(d).length > 0).length;
   renderPctChart('motivoChart', dist, itemsComData, null, (label)=>{
     activeMotivoBar = (activeMotivoBar === label) ? null : label;
     render();
   }, activeMotivoBar);
 
+  // Legenda explicando a composição de cada grupo
+  const legendEl = document.getElementById('motivoLegenda');
+  if (legendEl){
+    const gruposPresentes = [...new Set(Object.values(GRUPOS_MOTIVO))].filter(g => dist.counts[g]);
+    legendEl.innerHTML = Object.keys(dist.counts).sort((a,b)=>dist.counts[b]-dist.counts[a]).map(g =>
+      `<div style="font-size:10.5px; color:var(--text-faint); margin-top:4px;"><b style="color:var(--text-dim);">${escapeHtml(g)}:</b> ${escapeHtml(GRUPOS_MOTIVO_LEGENDA[g] || '')}</div>`
+    ).join('');
+  }
+
   const capEl = document.getElementById('motivoCaption');
   if (capEl){
     const entries = Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]);
+    // Conta quantos motivos "originais" (pré-agrupamento) existem, pra frase "de X para Y grupos"
+    const motivosOriginaisPresentes = new Set();
+    data.forEach(d => classifyMotivosDetalhado(d).forEach(m => motivosOriginaisPresentes.add(m)));
     if (entries.length && dist.total){
       const [topLabel, topN] = entries[0];
       const topPct = Math.round(topN/dist.total*100);
-      const restante = entries.length - 1;
-      capEl.innerHTML = `<b style="color:var(--text-dim);">${escapeHtml(topLabel)}</b> concentra ${topPct}% de todas as reclamações — priorize aqui primeiro.`
-        + (restante > 0 ? ` Demais ${restante} motivo(s) somam o restante.` : '')
-        + ` <span class="exec-chart-link" id="verMotivosCompletoBtn">→ Ver detalhamento completo (${entries.length} motivos)</span>`;
+      capEl.innerHTML = `<b style="color:var(--text-dim);">${escapeHtml(topLabel)}</b> concentra ${topPct}% de todas as reclamações — priorize aqui primeiro. `
+        + `Agrupamos ${motivosOriginaisPresentes.size} motivos em ${entries.length} grupos pra facilitar a leitura.`
+        + ` <span class="exec-chart-link" id="verMotivosCompletoBtn">→ Ver detalhamento completo (${motivosOriginaisPresentes.size} motivos)</span>`;
       const linkBtn = document.getElementById('verMotivosCompletoBtn');
       if (linkBtn) linkBtn.onclick = ()=>{
         document.querySelector('.tab-btn[data-tab="pesquisa"]').click();
@@ -4177,7 +4284,7 @@ function baseMatches(item, q){
     if (!want.includes(item.resolvido)) return false;
   }
   if (activeSetorBar && !(item.setor && item.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(activeSetorBar))) return false;
-  if (activeMotivoBar && !classifyMotivos(item).includes(activeMotivoBar)) return false;
+  if (activeMotivoBar && !classifyGrupoMotivo(item).includes(activeMotivoBar)) return false;
   if (q){
     const hay = (item.nome+' '+item.pend+' '+item.resolucao+' '+item.setor+' '+item.filial+' '+(item.motivo||'')).toLowerCase();
     if (!hay.includes(q.toLowerCase())) return false;
@@ -4617,6 +4724,8 @@ function render(){
   renderMotivoChart(filtered);
   renderFilialChart(filtered);
   buildStats(filtered);
+  if (typeof renderComparativoMensal === 'function') renderComparativoMensal();
+  if (typeof renderComparativoFiliais === 'function') renderComparativoFiliais();
   renderMiniDash(baseFiltered);
 
   const listEl = document.getElementById('list');
@@ -5150,7 +5259,7 @@ tbody tr:hover{background:var(--slate-soft);}
   width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-family:'Inter',sans-serif;
   font-size:14px; background:var(--slate-soft); color:var(--ink);
 }
-.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--teal); outline-offset:-1px; background:#fff;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--teal); outline-offset:-1px; background:#fff; color:#1a2333;}
 .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
 .seg{display:flex; gap:6px; flex-wrap:wrap;}
 .seg-opt{
@@ -5384,6 +5493,30 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <input type="text" id="fResponsavel" placeholder="Ex: Rose">
         </div>
       </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Nome do Síndico</label>
+          <input type="text" id="fNomeSindico" placeholder="Ex: Maria Silva">
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input type="text" id="fTelefone" placeholder="Ex: (85) 99999-9999">
+        </div>
+      </div>
+      <div class="field">
+        <label>Endereço do Condomínio</label>
+        <input type="text" id="fEndereco" placeholder="Ex: Rua Exemplo, 123 - Bairro - Cidade/UF">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Área</label>
+          <input type="text" id="fArea" placeholder="Ex: 1.200 m²">
+        </div>
+        <div class="field">
+          <label>Técnico Responsável</label>
+          <input type="text" id="fTecnicoResponsavel" placeholder="Ex: João Souza">
+        </div>
+      </div>
       <div class="field">
         <label>Status</label>
         <div class="seg" id="segStatus">
@@ -5537,7 +5670,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       mensalidade: row.mensalidade, unidades: row.qtd_unidades,
       possuiArmario: row.possui_armario, possuiGphone: row.possui_gphone, possuiFacial: row.possui_facial,
       acessoVeicular: row.acesso_veicular, sistema: row.sistema_guarita,
-      statusPedido: row.status_pedido, numeroPedido: row.numero_pedido, materiaisLevantamento: row.materiais_levantamento
+      statusPedido: row.status_pedido, numeroPedido: row.numero_pedido, materiaisLevantamento: row.materiais_levantamento,
+      nomeSindico: row.nome_sindico, telefone: row.telefone, endereco: row.endereco,
+      area: row.area, tecnicoResponsavel: row.tecnico_responsavel
     };
   }
   function condoToRow(c){
@@ -5550,6 +5685,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       possui_armario: c.possuiArmario || null, possui_gphone: c.possuiGphone || null, possui_facial: c.possuiFacial || null,
       acesso_veicular: c.acessoVeicular || null, sistema_guarita: c.sistema || null,
       status_pedido: c.statusPedido || null, numero_pedido: c.numeroPedido || null, materiais_levantamento: c.materiaisLevantamento || null,
+      nome_sindico: c.nomeSindico || null, telefone: c.telefone || null, endereco: c.endereco || null,
+      area: c.area || null, tecnico_responsavel: c.tecnicoResponsavel || null,
       updated_at: new Date().toISOString()
     };
   }
@@ -5907,6 +6044,11 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fNome").value = c ? c.nome : "";
     document.getElementById("fFilial").value = c ? c.filial : FILIAIS[0];
     document.getElementById("fResponsavel").value = c ? (c.responsavel||"") : "";
+    document.getElementById("fNomeSindico").value = c ? (c.nomeSindico||"") : "";
+    document.getElementById("fTelefone").value = c ? (c.telefone||"") : "";
+    document.getElementById("fEndereco").value = c ? (c.endereco||"") : "";
+    document.getElementById("fArea").value = c ? (c.area||"") : "";
+    document.getElementById("fTecnicoResponsavel").value = c ? (c.tecnicoResponsavel||"") : "";
     document.getElementById("fObs").value = c ? (c.obs||"") : "";
     document.getElementById("fContratoInicio").value = c ? (c.contratoInicio||"") : "";
     document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
@@ -5982,6 +6124,11 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       nome: nome,
       filial: document.getElementById("fFilial").value,
       responsavel: document.getElementById("fResponsavel").value.trim(),
+      nomeSindico: document.getElementById("fNomeSindico").value.trim(),
+      telefone: document.getElementById("fTelefone").value.trim(),
+      endereco: document.getElementById("fEndereco").value.trim(),
+      area: document.getElementById("fArea").value.trim(),
+      tecnicoResponsavel: document.getElementById("fTecnicoResponsavel").value.trim(),
       status: getSeg("segStatus") || "Ativo",
       sindico: getSeg("segSindico"),
       modalidade: getSeg("segModalidade"),
@@ -7090,8 +7237,6 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
 // ============================================================================
 const HISTORICO_SEED_MAIO_CEARA = [{"condominio": "CONDOMINIO EDIFICIO MARQUES SANTIAGO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO JARDIM BOTANICO II", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO NATERCIA RIOS", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL AIRTON BEZERRA", "nota": "5", "resultado": "Concluído"}, {"condominio": "ECOMAX INDUSTRIA E COMERCIO DE PRODUTOS PLASTICOS LTDA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ALIPIO BASTOS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO BAYSIDE", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SAN JULIANO", "nota": "7", "resultado": "Concluído"}, {"condominio": "VALENCIA RESIDENCE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JOSE VILAR", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MORADA DAS GAIVOTAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PALAIS ROYAL", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL FUNCHAL", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO COPENHAGUE", "nota": "10", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL RESERVA NATURA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LAJE DE PEDRA", "nota": "6", "resultado": "Concluído"}, {"condominio": "LINK LOGISTICS TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RAUL FONTENELLE DOUBLE SPACE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL SAN MICHAEL", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILA JARDINS", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO TURMALINA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO MARANATA II", "nota": "10", "resultado": "Concluído"}, {"condominio": "EDIFICIO LIRIDA MATOS", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO DOS ANJOS CORREIA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MARINO BEACH RESIDENCE", "nota": "7", "resultado": "Concluído"}, {"condominio": "AG4 CONSTRUTORA LTDA (GOMES 2)", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GUILHERME ROCHA", "nota": "", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GENTIL CARDOSO LINHARES", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO DAS AMERICAS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MAGNA VILLARIS I", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BENE VI", "nota": "8", "resultado": "Concluído"}, {"condominio": "HELBOR RESERVA DA PRACA", "nota": "5", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GRAHAM HILL", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VICTOR 01", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PORTAL DE SERRAMBI", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO ARMANDO SABOYA FILHO", "nota": "9", "resultado": "Concluído"}, {"condominio": "PORTO GUILHERME EMPREENDIMENTOS E PARTICIPACOES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MANDACARUS", "nota": "10", "resultado": "Concluído"}, {"condominio": "MARESIA - SAND BEACH INDUSTRIA DE CONFECCOES LTDA", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO SOBERANO III", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MONTREAL", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO CANAA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MELBOURNE PLACE", "nota": "", "resultado": "Concluído"}, {"condominio": "PATRAO PARTICIPACOES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PETIT TRIANON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL - COMERCIAL ELETRICA LTDA (ANTONIO SALES)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL - COMERCIAL ELETRICA LTDA (BEZERRA DE MENEZES)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO VILLA SOLARIUM", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL UIRAPURU", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RESIDENCIAL PLAZA VERONNESE", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO VISCONDE DE MAUA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO LUANA RESIDENCE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO NIMES", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO MIRON DIAS", "nota": "", "resultado": "Cancelou"}, {"condominio": "RESIDENCIAL NOSSA SENHORA DE GUADALUPE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PARANOA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO COSTA AZUL", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MAGNA VILLARIS II", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA PARADISO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL SABLES BLANCS", "nota": "8", "resultado": "Concluído"}, {"condominio": "GOMES I", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO MONTSERRAT", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VITORIA PARK", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LISBOA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BUGANVILIA BOULEVARD", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO PRIMAVERA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JEAN PAUL SARTRE", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO APART HOTEL FLAT RESIDENCIAL DUNNAS XXI", "nota": "9", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL MIGUEL MACHADO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO AREZZO", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO PANORAMA", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO AMERICA CONTINENTAL", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO MAISON NOVA METROPOLE", "nota": "3", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL PACO DE MESSEJANA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO ACORES", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL COMERCIAL ELETRICA LTDA (GUSTAVO SAMPAIO)", "nota": "8", "resultado": "Concluído"}, {"condominio": "BELECO AGROINDUSTRIA COMERCIO E TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "BELECO AGROINDUSTRIA COMERCIO E TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JOSE MARIA CARDOSO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL VILA VERANA", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL 3 ESTRELAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL ATHENAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO SOCORRO VILLAGE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO RESIDENCIAL SAN GERARDO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VARANDAS DO EUSEBIO", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO VILLAGE DEL MONTE III", "nota": "9", "resultado": "Concluído"}, {"condominio": "ISLA VERDE CONDOMINIUM", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EUSEBIO PARK", "nota": "6", "resultado": "Concluído"}, {"condominio": "EDIFICIO STILO", "nota": "7", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL SATURNO", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO BIENE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL LINHARES", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL VILAGGIO MONTE LIBANO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO CONCORD I", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LUXOR RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE LUMMA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO TM RESIDENCIAL 02", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO MORADA BRISA DO MAR", "nota": "0", "resultado": "Concluído"}, {"condominio": "MARIA ESTHER LOCACOES, PARTICIPACOES E SERVICOS LTDA", "nota": "0", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL OASI FELICE", "nota": "", "resultado": "Concluído"}, {"condominio": "CONDOMINIO AMILCA", "nota": "6", "resultado": "Concluído"}, {"condominio": "TV SOBRAL LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PARMA", "nota": "7", "resultado": "Concluído"}, {"condominio": "EDIFICIO MAROQUINHA REBELO", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO EMANUELA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO PAGANINI RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LE BETULLE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO SAN SEBASTIAN", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL GRAND CLASSIC", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MARECHAL RONDON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO TICIANA MENDES", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO JOAO MESQUITA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO PORTO SEGURO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LEBLON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ANAVILHANAS", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO QUEBEC RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO NAPOLI CITY I", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO GREEN VISION", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ITAPERI", "nota": "9", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL LEODEGARIO PINHO", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO DO EDIFICIO RESIDENCIAL BENE VII", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO ELIANE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GENESIS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LILIAN", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MADRI", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MONTVERNON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO BELLE VILLE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RESIDENCIAL FLORENCA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SARGITARIUS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SOLAR DOS VENTOS", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO VENEZA II", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LILIAN LEYNE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO NADJA AGUIAR", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PAUL RICHARD", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINÍO REAL PARK", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA BELLAGIO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO SAN MAGNUM", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MANUEL ISAAC PONTES", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL ALDEIA DOS VENTOS", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VIA LUMINI", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA PARADISO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE ALGARVE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO GRAND QUARTIER", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PORTA ROMANA RESIDENCE", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO SUN VILLE (Duplicado)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE ST MARCOS", "nota": "10", "resultado": "Concluído"}, {"condominio": "EDIFICIO CELSINA", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BRISAS DO EUSEBIO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAS DE ASSIS", "nota": "10", "resultado": "Concluído"}, {"condominio": "GRANLARA RESIDENCE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL RIVIERA DI CAPRI", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA DI FIORI", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JEAN PAUL SARTRE", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO ASTORIA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO ANDROS", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL JARDIM AMERICA", "nota": "9", "resultado": "Concluído"}, {"condominio": "VILLAGIO HARMONY RESIDENCES", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO FREI VICENTE SALVADOR", "nota": "8", "resultado": "Concluído"}, {"condominio": "MARAPONGA", "nota": "4", "resultado": "Concluído"}, {"condominio": "SANTANA DO PARNAIBA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CANTO BELLO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CRUZEIRO DO SUL", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO COIMBRA", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL ROSA MARIA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO CONJUNTO HABITACIONAL LUCIANO CARNEIRO", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CASCAIS DUNAS VILLAGE", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ARUA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO SUNVILLE RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "COND. PORTAL DE LION", "nota": "8", "resultado": "Concluído"}, {"condominio": "COND. PORTAL DO PASSARÉ (CE)", "nota": "8", "resultado": "Concluído"}];
 
-let historicoData = [];
-let historicoLoaded = false;
 
 async function seedHistoricoIfEmpty(){
   if (!sb) return;
@@ -7234,6 +7379,283 @@ document.getElementById('historicoPastaSaveBtn').addEventListener('click', async
     errEl.style.display = 'block';
   }
 });
+
+// ============================================================================
+// COMPARATIVO MENSAL DE NOTAS + COMPARATIVO ENTRE FILIAIS
+// Usa os meses reais que existem em DATA (mesReferencia) — hoje são só 2
+// (Jun/2026 e Jul/2026), mas o código já está pronto pra mostrar até 6 meses
+// conforme novas rodadas mensais forem criadas.
+// ============================================================================
+
+// ============================================================================
+// AGRUPAMENTO DE MOTIVOS (Dashboard Executivo)
+// Reduz os ~16 motivos granulares em grupos-mãe pra facilitar priorização.
+// ============================================================================
+// AGRUPAMENTO DE MOTIVOS (Dashboard Executivo)
+// Reduz os ~16 motivos granulares em grupos-mãe pra facilitar priorização.
+// Decisão: "Equipamentos/Sistemas" (Portões, Câmeras, Interfone, Controle de
+// Acesso, Aplicativo) fica SEPARADO de "Técnica" — são reclamações de
+// equipamento/hardware, não de atendimento da equipe técnica; juntar os dois
+// criaria um grupo de ~65% que esconderia a real distribuição.
+// (As constantes GRUPOS_MOTIVO, GRUPOS_MOTIVO_LEGENDA e OUTROS_SUBMOTIVOS
+// ficam declaradas bem mais cedo no arquivo, perto de DATA, pra evitar erro
+// de "acesso antes da inicialização" quando o render() inicial roda.)
+// ============================================================================
+function classifyMotivosDetalhado(item){
+  const base = classifyMotivos(item);
+  if (base.length === 1 && base[0] === 'Outros' && OUTROS_SUBMOTIVOS[item.n]){
+    return [OUTROS_SUBMOTIVOS[item.n]];
+  }
+  return base;
+}
+function classifyGrupoMotivo(item){
+  const detalhado = classifyMotivosDetalhado(item);
+  return [...new Set(detalhado.map(m => GRUPOS_MOTIVO[m] || 'Outros'))];
+}
+
+function notaNumerica(item){
+  const n = parseFloat(String(item.nota).replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+function historicoMesParaChave(mesNome){
+  const norm = (mesNome||'').trim().toLowerCase();
+  const num = MESES_PT_PARA_NUM[norm];
+  return num ? `2026-${num}` : null;
+}
+
+// Uma "pasta" do Histórico (ex: Maio/Ceará) só cobre UMA filial por vez — então
+// a nota do mês daquela filial vem só do histórico; as demais filiais não têm
+// dado nesse mês ainda (fica em branco no gráfico até alguém cadastrar a pasta
+// delas também).
+function itensDoMes(mesKey, filial){
+  const doVivo = DATA.filter(d => getMes(d) === mesKey && (!filial || d.filial === filial))
+    .map(d => ({ nota: notaNumerica(d) }));
+  const doHistorico = (historicoData||[]).filter(h => historicoMesParaChave(h.mes) === mesKey && (!filial || h.filial === filial))
+    .map(h => ({ nota: parseFloat(String(h.nota||'').replace(',','.')) }))
+    .map(h => ({ nota: isNaN(h.nota) ? null : h.nota }));
+  return [...doVivo, ...doHistorico];
+}
+
+function getUltimosMeses(n){
+  const doVivo = DATA.map(getMes);
+  const doHistorico = (historicoData||[]).map(h=>historicoMesParaChave(h.mes)).filter(Boolean);
+  return [...new Set([...doVivo, ...doHistorico])].sort().slice(-n);
+}
+
+function mediaNotaDoMes(mes, itensOverride){
+  const source = itensOverride || itensDoMes(mes);
+  const notas = source.map(d => {
+    if (typeof d.nota === 'number') return d.nota;
+    const n = parseFloat(String(d.nota).replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }).filter(n => n !== null);
+  return notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null;
+}
+
+function faixaGravidade(n){
+  if (n === null) return null;
+  if (n <= 6) return 'critico';
+  if (n <= 7.9) return 'atencao';
+  return 'ok';
+}
+
+function renderComparativoMensal(){
+  const meses = getUltimosMeses(6);
+  if (!meses.length) return;
+  const medias = meses.map(m => mediaNotaDoMes(m));
+  const notaAtual = medias[medias.length-1];
+  const notaAnterior = medias.length > 1 ? medias[medias.length-2] : null;
+  const variacao = (notaAtual !== null && notaAnterior !== null) ? notaAtual - notaAnterior : null;
+  const distMeta = notaAtual !== null ? notaAtual - META_NOTA : null;
+
+  // Cabeçalho — 3 números
+  const fmt = (v) => v === null ? '—' : v.toFixed(1);
+  const deltaHtml = variacao === null ? '<span style="color:var(--text-faint);">—</span>' :
+    `<span style="color:${variacao >= 0 ? 'var(--ok)' : 'var(--critico)'}">${variacao >= 0 ? '▲' : '▼'} ${Math.abs(variacao).toFixed(1)}</span>`;
+  const distHtml = distMeta === null ? '—' :
+    `<span style="color:${distMeta >= 0 ? 'var(--ok)' : 'var(--critico)'}">${distMeta >= 0 ? '+' : ''}${distMeta.toFixed(1)}</span>`;
+  document.getElementById('compMensalNumeros').innerHTML = `
+    <div class="exec-comp-num"><div class="v">${fmt(notaAtual)}</div><div class="l">Nota atual (${mesLabelBR(meses[meses.length-1])})</div></div>
+    <div class="exec-comp-num"><div class="v">${deltaHtml}</div><div class="l">vs. mês anterior</div></div>
+    <div class="exec-comp-num"><div class="v">${distHtml}</div><div class="l">distância até a meta (${META_NOTA.toFixed(1)})</div></div>
+  `;
+
+  // Gráfico de linha
+  const w = 700, h = 190, padL = 34, padR = 16, padT = 16, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const yMin = 0, yMax = 10;
+  const yToPx = (v) => padT + plotH - ((v - yMin)/(yMax - yMin))*plotH;
+  const xToPx = (i) => meses.length > 1 ? padL + (i/(meses.length-1))*plotW : padL + plotW/2;
+
+  let quedaIdx = -1, quedaValor = 0;
+  medias.forEach((v,i)=>{
+    if (i > 0 && v !== null && medias[i-1] !== null){
+      const diff = v - medias[i-1];
+      if (diff < -0.3 && diff < quedaValor){ quedaValor = diff; quedaIdx = i; }
+    }
+  });
+
+  const pontosValidos = medias.map((v,i)=> v===null ? null : [xToPx(i), yToPx(v)]).filter(Boolean);
+  const pathD = pontosValidos.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const metaY = yToPx(META_NOTA).toFixed(1);
+
+  const quedaMarker = quedaIdx > -1 ? `
+    <line x1="${xToPx(quedaIdx).toFixed(1)}" y1="${padT}" x2="${xToPx(quedaIdx).toFixed(1)}" y2="${h-padB}" stroke="var(--critico)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="${xToPx(quedaIdx).toFixed(1)}" y="${padT-4}" font-size="10" fill="var(--critico)" text-anchor="middle" font-weight="700">${escapeHtml(mesLabelBR(meses[quedaIdx]).split('/')[0])} ⚠ queda</text>
+  ` : '';
+
+  const linhaSvg = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+    <line x1="${padL}" y1="${metaY}" x2="${w-padR}" y2="${metaY}" stroke="var(--text-faint)" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="${w-padR}" y="${parseFloat(metaY)-5}" font-size="10" fill="var(--text-faint)" text-anchor="end">Meta ${META_NOTA.toFixed(1)}</text>
+    ${quedaMarker}
+    <path d="${pathD}" fill="none" stroke="#4f8cff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pontosValidos.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pontosValidos.length-1 ? 5.5 : 3}" fill="${i===pontosValidos.length-1 ? '#4f8cff' : 'var(--bg-panel)'}" stroke="#4f8cff" stroke-width="2"/>`).join('')}
+    ${meses.map((m,i)=>`<text x="${xToPx(i).toFixed(1)}" y="${h-6}" font-size="10" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('')}
+  </svg>`;
+  document.getElementById('compMensalLinha').innerHTML = linhaSvg;
+
+  // Gráfico de barras empilhadas — % por faixa de nota, por mês
+  const faixasOrdenadas = [
+    { label:'9–10', min:9, max:10, color:'var(--ok)' },
+    { label:'7–8',  min:7, max:8.999, color:'var(--moderado)' },
+    { label:'5–6',  min:5, max:6.999, color:'var(--atencao)' },
+    { label:'3–4',  min:3, max:4.999, color:'#ff4d5e' },
+    { label:'0–2',  min:0, max:2.999, color:'#a30d1f' },
+  ];
+  const barRows = meses.map(m=>{
+    const itens = itensDoMes(m);
+    const totalComNota = itens.filter(d=>d.nota!==null).length || 1;
+    const pcts = faixasOrdenadas.map(f=>{
+      const n = itens.filter(d=> d.nota!==null && d.nota>=f.min && d.nota<=f.max).length;
+      return (n/totalComNota*100);
+    });
+    return { mes:m, pcts };
+  });
+  document.getElementById('compMensalEmpilhado').innerHTML = `
+    <p class="exec-mini-title">% de condomínios por faixa de nota, por mês</p>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      ${barRows.map(row=>`
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="width:52px; font-size:11px; color:var(--text-faint); flex-shrink:0;">${escapeHtml(mesLabelBR(row.mes))}</span>
+          <div style="flex:1; display:flex; height:16px; border-radius:5px; overflow:hidden;">
+            ${row.pcts.map((p,i)=> p>0 ? `<div style="width:${p}%; background:${faixasOrdenadas[i].color};" title="${faixasOrdenadas[i].label}: ${p.toFixed(0)}%"></div>` : '').join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px;">
+      ${faixasOrdenadas.map(f=>`<span style="font-size:10.5px; color:var(--text-faint); display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:${f.color}; display:inline-block;"></span>${f.label}</span>`).join('')}
+    </div>
+  `;
+
+  // Insight automático
+  let insight = 'Ainda não há histórico suficiente (pelo menos 2 meses com nota) para gerar um insight comparativo.';
+  if (medias.length >= 2 && notaAtual !== null && notaAnterior !== null){
+    const idxAtual = meses.length - 1;
+    const idxAnterior = meses.length - 2;
+    const criticoAtual = barRows[idxAtual].pcts[3] + barRows[idxAtual].pcts[4];
+    const criticoAnterior = barRows[idxAnterior].pcts[3] + barRows[idxAnterior].pcts[4];
+    if (variacao !== null && variacao < -0.1){
+      insight = `A nota média caiu de ${notaAnterior.toFixed(1)} em ${mesLabelBR(meses[idxAnterior])} para ${notaAtual.toFixed(1)} em ${mesLabelBR(meses[idxAtual])}. Isso coincidiu com ${criticoAtual >= criticoAnterior ? 'um aumento' : 'uma redução'} de condomínios nas faixas críticas (0–4), de ${criticoAnterior.toFixed(0)}% para ${criticoAtual.toFixed(0)}%.`;
+    } else if (variacao !== null && variacao > 0.1){
+      insight = `A nota média subiu de ${notaAnterior.toFixed(1)} para ${notaAtual.toFixed(1)} entre ${mesLabelBR(meses[idxAnterior])} e ${mesLabelBR(meses[idxAtual])}, com as faixas críticas (0–4) variando de ${criticoAnterior.toFixed(0)}% para ${criticoAtual.toFixed(0)}%.`;
+    } else {
+      insight = `A nota média se manteve estável em torno de ${notaAtual.toFixed(1)} entre ${mesLabelBR(meses[idxAnterior])} e ${mesLabelBR(meses[idxAtual])}.`;
+    }
+  }
+  document.getElementById('compMensalInsight').textContent = '💡 ' + insight;
+}
+
+function renderComparativoFiliais(){
+  const meses = getUltimosMeses(6);
+  if (!meses.length) return;
+  const mesAtual = meses[meses.length-1];
+  const mesAnterior = meses.length > 1 ? meses[meses.length-2] : null;
+  const filiaisVivo = [...new Set(DATA.map(d=>d.filial))];
+  const filiaisHistorico = [...new Set((historicoData||[]).map(h=>h.filial))];
+  const filiais = [...new Set([...filiaisVivo, ...filiaisHistorico])].sort();
+  const totalCondosAtual = DATA.filter(d=>getMes(d)===mesAtual).length || 1;
+
+  const stats = filiais.map(f=>{
+    const itensAtual = itensDoMes(mesAtual, f);
+    const notaAtual = mediaNotaDoMes(mesAtual, itensAtual);
+    const notaAnterior = mesAnterior ? mediaNotaDoMes(mesAnterior, itensDoMes(mesAnterior, f)) : null;
+    const variacao = (notaAtual!==null && notaAnterior!==null) ? notaAtual - notaAnterior : null;
+    const countVivo = DATA.filter(d=>d.filial===f && getMes(d)===mesAtual).length;
+    const pctBase = (countVivo / totalCondosAtual) * 100;
+    const criticos = itensAtual.filter(d=> d.nota!==null && d.nota <= 6);
+    const pctCriticos = itensAtual.length ? (criticos.length/itensAtual.length*100) : 0;
+    return { filial:f, notaAtual, variacao, pctBase, count:countVivo, pctCriticos, critico: notaAtual!==null && notaAtual < 6.5 };
+  });
+
+  // Mini cards
+  const el = document.getElementById('compFilialCards');
+  el.innerHTML = stats.map(s=>{
+    const deltaHtml = s.variacao===null ? '—' : `<span style="color:${s.variacao>=0?'var(--ok)':'var(--critico)'}">${s.variacao>=0?'▲':'▼'} ${Math.abs(s.variacao).toFixed(1)}</span>`;
+    return `
+    <div class="exec-filial-card ${s.critico ? 'critico' : ''}">
+      <div class="fname">${escapeHtml(s.filial)}</div>
+      <div class="fnota" style="color:${s.notaAtual===null?'var(--text-faint)':s.notaAtual<6?'var(--critico)':s.notaAtual<8?'var(--atencao)':'var(--ok)'};">${s.notaAtual===null?'—':s.notaAtual.toFixed(1)}</div>
+      <div class="fmeta">${deltaHtml} vs. mês anterior<br>${s.pctBase.toFixed(0)}% da base · ${s.count} condomínio(s)</div>
+    </div>`;
+  }).join('');
+
+  // Gráfico de linhas múltiplas por filial
+  const paletaFiliais = ['#4f8cff', '#a78bfa', '#f5a623', '#2dd4a7', '#f472b6', '#60d1e0'];
+  const w = 700, h = 190, padL = 34, padR = 100, padT = 16, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const xToPx = (i) => meses.length > 1 ? padL + (i/(meses.length-1))*plotW : padL + plotW/2;
+  const yToPx = (v) => padT + plotH - ((v - 0)/10)*plotH;
+
+  const linhas = filiais.map((f,fi)=>{
+    const cor = paletaFiliais[fi % paletaFiliais.length];
+    const pontos = meses.map((m,i)=>{
+      const v = mediaNotaDoMes(m, itensDoMes(m, f));
+      return v===null ? null : [xToPx(i), yToPx(v)];
+    }).filter(Boolean);
+    const d = pontos.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    return { filial:f, cor, d, ultimoPonto: pontos[pontos.length-1] };
+  });
+
+  const svgLinhas = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+    ${linhas.map(l=>`<path d="${l.d}" fill="none" stroke="${l.cor}" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}
+    ${linhas.map(l=> l.ultimoPonto ? `<circle cx="${l.ultimoPonto[0].toFixed(1)}" cy="${l.ultimoPonto[1].toFixed(1)}" r="4" fill="${l.cor}"/>` : '').join('')}
+    ${meses.map((m,i)=>`<text x="${xToPx(i).toFixed(1)}" y="${h-6}" font-size="10" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('')}
+    ${linhas.map((l,i)=> l.ultimoPonto ? `<text x="${w-padR+10}" y="${(padT + 14 + i*15)}" font-size="10.5" fill="${l.cor}" font-weight="600">${escapeHtml(l.filial)}</text>` : '').join('')}
+  </svg>`;
+  document.getElementById('compFilialLinhas').innerHTML = svgLinhas;
+
+  // Tabela de ranking
+  const maxNota = Math.max(...stats.map(s=>s.notaAtual||0), 1);
+  const tbody = document.getElementById('compFilialTabelaBody');
+  tbody.innerHTML = [...stats].sort((a,b)=>(b.notaAtual||0)-(a.notaAtual||0)).map(s=>{
+    const deltaHtml = s.variacao===null ? '—' : `<span style="color:${s.variacao>=0?'var(--ok)':'var(--critico)'}; font-family:'IBM Plex Mono',monospace;">${s.variacao>=0?'▲':'▼'} ${Math.abs(s.variacao).toFixed(1)}</span>`;
+    const barColor = s.notaAtual===null?'var(--text-faint)':s.notaAtual<6?'var(--critico)':s.notaAtual<8?'var(--atencao)':'var(--ok)';
+    return `<tr>
+      <td class="ck-name">${escapeHtml(s.filial)}</td>
+      <td>
+        <div class="comp-rank-bar-wrap">
+          <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; width:28px;">${s.notaAtual===null?'—':s.notaAtual.toFixed(1)}</span>
+          <div class="comp-rank-bar-track"><div class="comp-rank-bar-fill" style="width:${s.notaAtual? (s.notaAtual/maxNota*100):0}%; background:${barColor};"></div></div>
+        </div>
+      </td>
+      <td>${deltaHtml}</td>
+      <td>${s.pctCriticos.toFixed(0)}%</td>
+      <td>${s.count}</td>
+    </tr>`;
+  }).join('');
+
+  // Insight automático — participação na base vs. participação nos críticos
+  let insight = 'Sem dados suficientes para comparar filiais ainda.';
+  const maiorDivergencia = [...stats].sort((a,b)=> (b.pctCriticos - b.pctBase) - (a.pctCriticos - a.pctBase))[0];
+  if (maiorDivergencia && maiorDivergencia.count > 0 && (maiorDivergencia.pctCriticos - maiorDivergencia.pctBase) > 3){
+    insight = `Filial ${maiorDivergencia.filial} representa ${maiorDivergencia.pctBase.toFixed(0)}% da base de condomínios, mas concentra ${maiorDivergencia.pctCriticos.toFixed(0)}% de casos críticos (nota ≤6) dentro da própria filial — desproporção que vale atenção.`;
+  } else if (maiorDivergencia){
+    insight = `A distribuição de casos críticos entre filiais está proporcional à participação de cada uma na base — nenhuma filial se destaca negativamente no momento.`;
+  }
+  document.getElementById('compFilialInsight').textContent = '💡 ' + insight;
+}
 
 initTabs();
 
