@@ -8254,10 +8254,11 @@ function renderVE(){
     btn.onclick = async ()=>{
       const id = btn.getAttribute('data-del-ve');
       const v = veData.find(v=>String(v.id)===id);
-      if (!confirm(`Excluir a visita de "${v ? v.condominio : ''}"?`)) return;
+      if (!confirm(`Excluir a visita de "${v ? v.condominio : ''}"? Ela não será recriada automaticamente depois.`)) return;
       try{
         const { error } = await sb.from('visitas_emergenciais').delete().eq('id', id);
         if (error) throw error;
+        if (v) await registrarVisitaIgnorada(v.condominio);
         loadVE();
       }catch(e){ alert('Erro ao excluir: ' + e.message); }
     };
