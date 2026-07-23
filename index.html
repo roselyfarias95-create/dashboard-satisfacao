@@ -690,6 +690,19 @@
   }
   .subtab-btn:not(.active) .subtab-count{ background:var(--bg-panel-2); color:var(--text-faint); }
 
+  .historico-folders-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
+  .historico-folder-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:18px 20px; cursor:pointer; box-shadow:var(--shadow-panel);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .historico-folder-card:hover{ transform:translateY(-2px); border-color:var(--text-faint); }
+  .historico-folder-icon{ font-size:26px; margin-bottom:8px; }
+  .historico-folder-title{ font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .historico-folder-meta{ font-size:11px; color:var(--text-faint); font-family:"IBM Plex Mono",monospace; }
+  .historico-folder-stats{ display:flex; gap:10px; margin-top:10px; font-size:11.5px; }
+  .historico-folder-stats b{ font-family:"IBM Plex Mono",monospace; }
+
   .view-toggle-btn{
     background:none; border:none; color:var(--text-faint); font-family:inherit; font-size:11.5px;
     font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer;
@@ -996,6 +1009,33 @@
     <p class="users-sub">O novo condomínio entra na lista e sincroniza pelo Supabase para todo mundo.</p>
     <div id="newItemFormWrap"></div>
     <p class="users-error" id="newItemError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="historicoPastaModalOverlay" class="users-modal" style="display:none;">
+  <div class="users-box" style="max-width:560px;">
+    <div class="users-head">
+      <h3>🗂 Nova Pasta de Histórico</h3>
+      <button type="button" class="logout-btn" id="historicoPastaModalClose">✕</button>
+    </div>
+    <p class="users-sub">Cole os dados da planilha (Condomínio, Nota, Resultado — separados por Tab, um por linha).</p>
+    <div class="users-form" style="margin-bottom:14px;">
+      <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Mês
+        <input type="text" id="historicoPastaMes" placeholder="Ex: Maio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+      </label>
+      <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
+        <input type="text" id="historicoPastaFilial" placeholder="Ex: Ceará" style="width:100%; margin-top:4px; box-sizing:border-box;">
+      </label>
+      <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Dados (colar da planilha)
+        <textarea id="historicoPastaDados" rows="8" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:'IBM Plex Mono',monospace; font-size:11.5px; resize:vertical;" placeholder="CONDOMINIO X	8	Concluído
+CONDOMINIO Y	9	Concluído"></textarea>
+      </label>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" class="logout-btn" id="historicoPastaCancelBtn">Cancelar</button>
+      <button type="button" class="login-btn" id="historicoPastaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Criar Pasta</button>
+    </div>
+    <p class="users-error" id="historicoPastaError" style="display:none;"></p>
   </div>
 </div>
 
@@ -1333,6 +1373,7 @@
     <button type="button" class="subtab-btn" data-subtab="reclamacoes">📣 Reclamações <span class="subtab-count" id="subtabCountReclamacoes"></span></button>
     <button type="button" class="subtab-btn" data-subtab="pendencias">⚠️ Pendências <span class="subtab-count" id="subtabCountPendencias"></span></button>
     <button type="button" class="subtab-btn" data-subtab="elogios">😊 Elogios <span class="subtab-count" id="subtabCountElogios"></span></button>
+    <button type="button" class="subtab-btn" data-subtab="historico">🗂 Histórico</button>
   </div>
 
   <div class="toolbar" id="actionBar">
@@ -1340,6 +1381,7 @@
     <button class="clearbtn" id="newItemBtn" style="display:none;">+ Nova pesquisa</button>
     <button class="clearbtn" id="newRodadaBtn" style="display:none;">📅 Nova rodada mensal</button>
     <button class="clearbtn" id="excelBtn">📊 Excel</button>
+    <button class="clearbtn" id="historicoNovaPastaBtn" style="display:none;">+ Nova Pasta</button>
   </div>
 
   <div class="count-line" id="countLine" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
@@ -1366,6 +1408,26 @@
   <div class="list" id="list"></div>
   <div class="kanban-board" id="kanbanBoard" style="display:none;"></div>
   <div class="empty" id="emptyMsg" style="display:none;">Nenhum condomínio encontrado com esses filtros.</div>
+
+  <div id="historicoView" style="display:none;">
+    <div id="historicoFolders"></div>
+    <div id="historicoDetail" style="display:none;">
+      <button type="button" id="historicoVoltarBtn" class="clearbtn" style="margin-bottom:14px;">← Voltar às pastas</button>
+      <div id="historicoDetailHeader" style="margin-bottom:14px;"></div>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="historicoTable">
+          <thead>
+            <tr>
+              <th class="ck-name">Condomínio</th>
+              <th style="text-align:center;">Nota</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody id="historicoTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   </div>
 
@@ -3703,9 +3765,24 @@ document.querySelectorAll('.subtab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     activeSubtab = btn.getAttribute('data-subtab');
     document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b === btn));
-    render();
+    toggleHistoricoView();
+    if (activeSubtab === 'historico'){
+      if (!historicoLoaded) loadHistorico();
+    } else {
+      render();
+    }
   });
 });
+function toggleHistoricoView(){
+  const isHistorico = activeSubtab === 'historico';
+  document.getElementById('historicoView').style.display = isHistorico ? 'block' : 'none';
+  document.getElementById('countLine').style.display = isHistorico ? 'none' : 'flex';
+  document.getElementById('listHeader').style.display = isHistorico ? 'none' : (currentView === 'list' ? '' : 'none');
+  document.getElementById('list').style.display = isHistorico ? 'none' : (currentView === 'list' ? '' : 'none');
+  document.getElementById('kanbanBoard').style.display = isHistorico ? 'none' : (currentView === 'kanban' ? 'flex' : 'none');
+  document.getElementById('emptyMsg').style.display = 'none';
+  document.getElementById('historicoNovaPastaBtn').style.display = (isHistorico && ['admin','editor'].includes(currentRole)) ? '' : 'none';
+}
 let selectedMes = null; // mês da rodada exibida — null até populateMesSelector() rodar
 let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
@@ -7003,6 +7080,159 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   populateFilterOptions();
   render();
 
+});
+
+// ============================================================================
+// HISTÓRICO — pastas de pesquisas mensais já finalizadas, por mês + filial.
+// Guardado na tabela `historico_pesquisas` do Supabase. Cada linha é um
+// condomínio dentro de uma pasta (mes + filial); não interfere com os dados
+// "ao vivo" da Pesquisa de Satisfação — é só um arquivo consultável.
+// ============================================================================
+const HISTORICO_SEED_MAIO_CEARA = [{"condominio": "CONDOMINIO EDIFICIO MARQUES SANTIAGO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO JARDIM BOTANICO II", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO NATERCIA RIOS", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL AIRTON BEZERRA", "nota": "5", "resultado": "Concluído"}, {"condominio": "ECOMAX INDUSTRIA E COMERCIO DE PRODUTOS PLASTICOS LTDA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ALIPIO BASTOS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO BAYSIDE", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SAN JULIANO", "nota": "7", "resultado": "Concluído"}, {"condominio": "VALENCIA RESIDENCE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JOSE VILAR", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MORADA DAS GAIVOTAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PALAIS ROYAL", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL FUNCHAL", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO COPENHAGUE", "nota": "10", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL RESERVA NATURA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LAJE DE PEDRA", "nota": "6", "resultado": "Concluído"}, {"condominio": "LINK LOGISTICS TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RAUL FONTENELLE DOUBLE SPACE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL SAN MICHAEL", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILA JARDINS", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO TURMALINA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO MARANATA II", "nota": "10", "resultado": "Concluído"}, {"condominio": "EDIFICIO LIRIDA MATOS", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO DOS ANJOS CORREIA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MARINO BEACH RESIDENCE", "nota": "7", "resultado": "Concluído"}, {"condominio": "AG4 CONSTRUTORA LTDA (GOMES 2)", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GUILHERME ROCHA", "nota": "", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GENTIL CARDOSO LINHARES", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO DAS AMERICAS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MAGNA VILLARIS I", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BENE VI", "nota": "8", "resultado": "Concluído"}, {"condominio": "HELBOR RESERVA DA PRACA", "nota": "5", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GRAHAM HILL", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VICTOR 01", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PORTAL DE SERRAMBI", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO ARMANDO SABOYA FILHO", "nota": "9", "resultado": "Concluído"}, {"condominio": "PORTO GUILHERME EMPREENDIMENTOS E PARTICIPACOES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MANDACARUS", "nota": "10", "resultado": "Concluído"}, {"condominio": "MARESIA - SAND BEACH INDUSTRIA DE CONFECCOES LTDA", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO SOBERANO III", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MONTREAL", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO CANAA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MELBOURNE PLACE", "nota": "", "resultado": "Concluído"}, {"condominio": "PATRAO PARTICIPACOES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PETIT TRIANON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL - COMERCIAL ELETRICA LTDA (ANTONIO SALES)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL - COMERCIAL ELETRICA LTDA (BEZERRA DE MENEZES)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO VILLA SOLARIUM", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL UIRAPURU", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RESIDENCIAL PLAZA VERONNESE", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO VISCONDE DE MAUA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO LUANA RESIDENCE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO NIMES", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO MIRON DIAS", "nota": "", "resultado": "Cancelou"}, {"condominio": "RESIDENCIAL NOSSA SENHORA DE GUADALUPE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PARANOA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO COSTA AZUL", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO MAGNA VILLARIS II", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA PARADISO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL SABLES BLANCS", "nota": "8", "resultado": "Concluído"}, {"condominio": "GOMES I", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO MONTSERRAT", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VITORIA PARK", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LISBOA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BUGANVILIA BOULEVARD", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO PRIMAVERA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JEAN PAUL SARTRE", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO APART HOTEL FLAT RESIDENCIAL DUNNAS XXI", "nota": "9", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL MIGUEL MACHADO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO AREZZO", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO PANORAMA", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO AMERICA CONTINENTAL", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO MAISON NOVA METROPOLE", "nota": "3", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL PACO DE MESSEJANA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO ACORES", "nota": "8", "resultado": "Concluído"}, {"condominio": "CARMEHIL COMERCIAL ELETRICA LTDA (GUSTAVO SAMPAIO)", "nota": "8", "resultado": "Concluído"}, {"condominio": "BELECO AGROINDUSTRIA COMERCIO E TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "BELECO AGROINDUSTRIA COMERCIO E TRANSPORTES LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JOSE MARIA CARDOSO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL VILA VERANA", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL 3 ESTRELAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL ATHENAS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO SOCORRO VILLAGE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO RESIDENCIAL SAN GERARDO", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VARANDAS DO EUSEBIO", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO VILLAGE DEL MONTE III", "nota": "9", "resultado": "Concluído"}, {"condominio": "ISLA VERDE CONDOMINIUM", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EUSEBIO PARK", "nota": "6", "resultado": "Concluído"}, {"condominio": "EDIFICIO STILO", "nota": "7", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL SATURNO", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO BIENE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL LINHARES", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL VILAGGIO MONTE LIBANO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO CONCORD I", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LUXOR RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE LUMMA", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO TM RESIDENCIAL 02", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO MORADA BRISA DO MAR", "nota": "0", "resultado": "Concluído"}, {"condominio": "MARIA ESTHER LOCACOES, PARTICIPACOES E SERVICOS LTDA", "nota": "0", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL OASI FELICE", "nota": "", "resultado": "Concluído"}, {"condominio": "CONDOMINIO AMILCA", "nota": "6", "resultado": "Concluído"}, {"condominio": "TV SOBRAL LTDA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO PARMA", "nota": "7", "resultado": "Concluído"}, {"condominio": "EDIFICIO MAROQUINHA REBELO", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO EMANUELA", "nota": "8", "resultado": "Concluído"}, {"condominio": "EDIFICIO PAGANINI RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LE BETULLE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO SAN SEBASTIAN", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL GRAND CLASSIC", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MARECHAL RONDON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO TICIANA MENDES", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO JOAO MESQUITA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO PORTO SEGURO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LEBLON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ANAVILHANAS", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO QUEBEC RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO NAPOLI CITY I", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO GREEN VISION", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ITAPERI", "nota": "9", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL LEODEGARIO PINHO", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO DO EDIFICIO RESIDENCIAL BENE VII", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO ELIANE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO GENESIS", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO LILIAN", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MADRI", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MONTVERNON", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO BELLE VILLE", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO RESIDENCIAL FLORENCA", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SARGITARIUS", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO SOLAR DOS VENTOS", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO EDIFÍCIO VENEZA II", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO LILIAN LEYNE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO NADJA AGUIAR", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PAUL RICHARD", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINÍO REAL PARK", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA BELLAGIO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO EDIFICIO SAN MAGNUM", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO MANUEL ISAAC PONTES", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL ALDEIA DOS VENTOS", "nota": "6", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VIA LUMINI", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA PARADISO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE ALGARVE", "nota": "10", "resultado": "Concluído"}, {"condominio": "CONDOMÍNIO GRAND QUARTIER", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO PORTA ROMANA RESIDENCE", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO SUN VILLE (Duplicado)", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLAGE ST MARCOS", "nota": "10", "resultado": "Concluído"}, {"condominio": "EDIFICIO CELSINA", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO BRISAS DO EUSEBIO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAS DE ASSIS", "nota": "10", "resultado": "Concluído"}, {"condominio": "GRANLARA RESIDENCE", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO RESIDENCIAL RIVIERA DI CAPRI", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO VILLA DI FIORI", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO JEAN PAUL SARTRE", "nota": "", "resultado": "Cancelou"}, {"condominio": "CONDOMINIO ASTORIA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO ANDROS", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL JARDIM AMERICA", "nota": "9", "resultado": "Concluído"}, {"condominio": "VILLAGIO HARMONY RESIDENCES", "nota": "0", "resultado": "Concluído"}, {"condominio": "CONDOMINIO EDIFICIO FREI VICENTE SALVADOR", "nota": "8", "resultado": "Concluído"}, {"condominio": "MARAPONGA", "nota": "4", "resultado": "Concluído"}, {"condominio": "SANTANA DO PARNAIBA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CANTO BELLO", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CRUZEIRO DO SUL", "nota": "9", "resultado": "Concluído"}, {"condominio": "EDIFICIO COIMBRA", "nota": "8", "resultado": "Concluído"}, {"condominio": "RESIDENCIAL ROSA MARIA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO DO CONJUNTO HABITACIONAL LUCIANO CARNEIRO", "nota": "9", "resultado": "Concluído"}, {"condominio": "CONDOMINIO CASCAIS DUNAS VILLAGE", "nota": "7", "resultado": "Concluído"}, {"condominio": "CONDOMINIO ARUA", "nota": "8", "resultado": "Concluído"}, {"condominio": "CONDOMINIO SUNVILLE RESIDENCE", "nota": "8", "resultado": "Concluído"}, {"condominio": "COND. PORTAL DE LION", "nota": "8", "resultado": "Concluído"}, {"condominio": "COND. PORTAL DO PASSARÉ (CE)", "nota": "8", "resultado": "Concluído"}];
+
+let historicoData = [];
+let historicoLoaded = false;
+
+async function seedHistoricoIfEmpty(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('historico_pesquisas').select('id').limit(1);
+    if (error) throw error;
+    if (data && data.length) return;
+    const rows = HISTORICO_SEED_MAIO_CEARA.map(r => ({
+      mes: 'Maio', filial: 'Ceará', condominio: r.condominio, nota: r.nota || null, resultado: r.resultado || null
+    }));
+    await sb.from('historico_pesquisas').insert(rows);
+  }catch(e){ console.error('Falha ao semear histórico:', e); }
+}
+
+async function loadHistorico(){
+  const el = document.getElementById('historicoFolders');
+  if (!sb){
+    el.innerHTML = '<p class="empty">Sem conexão com o Supabase — não é possível carregar o histórico agora.</p>';
+    return;
+  }
+  el.innerHTML = '<p class="empty">Carregando histórico...</p>';
+  try{
+    await seedHistoricoIfEmpty();
+    const { data, error } = await sb.from('historico_pesquisas').select('*').order('mes', { ascending:true });
+    if (error) throw error;
+    historicoData = data || [];
+    historicoLoaded = true;
+    renderHistoricoFolders();
+  }catch(e){
+    console.error(e);
+    el.innerHTML = `<p class="empty">Erro ao carregar histórico: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function historicoPastas(){
+  const map = {};
+  historicoData.forEach(r=>{
+    const key = r.mes + '|' + r.filial;
+    if (!map[key]) map[key] = { mes:r.mes, filial:r.filial, itens:[] };
+    map[key].itens.push(r);
+  });
+  return Object.values(map).sort((a,b)=> (a.mes+a.filial).localeCompare(b.mes+b.filial, 'pt-BR'));
+}
+
+function renderHistoricoFolders(){
+  const el = document.getElementById('historicoFolders');
+  const pastas = historicoPastas();
+  if (!pastas.length){
+    el.innerHTML = '<p class="empty">Nenhuma pasta de histórico ainda. Clique em "+ Nova Pasta" para arquivar a primeira rodada finalizada.</p>';
+    return;
+  }
+  el.innerHTML = '<div class="historico-folders-grid">' + pastas.map(p=>{
+    const notas = p.itens.map(r=>parseFloat(String(r.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
+    const concluidos = p.itens.filter(r=>r.resultado === 'Concluído').length;
+    const cancelados = p.itens.filter(r=>r.resultado === 'Cancelou').length;
+    return `
+      <div class="historico-folder-card" data-mes="${escapeHtml(p.mes)}" data-filial="${escapeHtml(p.filial)}">
+        <div class="historico-folder-icon">🗂</div>
+        <div class="historico-folder-title">${escapeHtml(p.mes)} · ${escapeHtml(p.filial)}</div>
+        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · nota média ${media}</div>
+        <div class="historico-folder-stats">
+          <span style="color:var(--ok);">✓ ${concluidos}</span>
+          <span style="color:var(--critico);">✗ ${cancelados}</span>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+
+  el.querySelectorAll('.historico-folder-card').forEach(card=>{
+    card.onclick = ()=> abrirHistoricoDetail(card.getAttribute('data-mes'), card.getAttribute('data-filial'));
+  });
+}
+
+function abrirHistoricoDetail(mes, filial){
+  const itens = historicoData.filter(r => r.mes === mes && r.filial === filial);
+  document.getElementById('historicoFolders').style.display = 'none';
+  document.getElementById('historicoDetail').style.display = 'block';
+  const notas = itens.map(r=>parseFloat(String(r.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
+  document.getElementById('historicoDetailHeader').innerHTML = `
+    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(mes)} · ${escapeHtml(filial)}</h3>
+    <p style="margin:0; font-size:12px; color:var(--text-faint);">${itens.length} condomínio(s) · nota média ${media}</p>
+  `;
+  document.getElementById('historicoTableBody').innerHTML = itens.map(r=>`
+    <tr>
+      <td class="ck-name">${escapeHtml(r.condominio)}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${r.nota ? escapeHtml(r.nota) : '—'}</td>
+      <td>${r.resultado === 'Concluído' ? '<span class="rbadge yes">Concluído</span>' : r.resultado === 'Cancelou' ? '<span class="rbadge no">Cancelou</span>' : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('historicoVoltarBtn').addEventListener('click', ()=>{
+  document.getElementById('historicoDetail').style.display = 'none';
+  document.getElementById('historicoFolders').style.display = 'block';
+});
+
+document.getElementById('historicoNovaPastaBtn').addEventListener('click', ()=>{
+  document.getElementById('historicoPastaMes').value = '';
+  document.getElementById('historicoPastaFilial').value = '';
+  document.getElementById('historicoPastaDados').value = '';
+  document.getElementById('historicoPastaError').style.display = 'none';
+  document.getElementById('historicoPastaModalOverlay').style.display = 'flex';
+});
+document.getElementById('historicoPastaModalClose').addEventListener('click', ()=>{
+  document.getElementById('historicoPastaModalOverlay').style.display = 'none';
+});
+document.getElementById('historicoPastaCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('historicoPastaModalOverlay').style.display = 'none';
+});
+document.getElementById('historicoPastaSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('historicoPastaError');
+  errEl.style.display = 'none';
+  const mes = document.getElementById('historicoPastaMes').value.trim();
+  const filial = document.getElementById('historicoPastaFilial').value.trim();
+  const raw = document.getElementById('historicoPastaDados').value;
+  if (!mes || !filial){
+    errEl.textContent = 'Informe o mês e a filial.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const linhas = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows = linhas.map(l=>{
+    const partes = l.split('\t');
+    return { mes, filial, condominio: (partes[0]||'').trim(), nota: (partes[1]||'').trim() || null, resultado: (partes[2]||'').trim() || null };
+  }).filter(r => r.condominio && r.condominio.toUpperCase() !== 'TOTAL DE CONDOMÍNIOS' && !r.condominio.toUpperCase().startsWith('CONDOMÍNIOS'));
+  if (!rows.length){
+    errEl.textContent = 'Cole pelo menos uma linha de dados (Condomínio, Nota, Resultado separados por Tab).';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = await sb.from('historico_pesquisas').insert(rows);
+    if (error) throw error;
+    document.getElementById('historicoPastaModalOverlay').style.display = 'none';
+    loadHistorico();
+  }catch(e){
+    errEl.textContent = 'Erro ao criar pasta: ' + e.message;
+    errEl.style.display = 'block';
+  }
 });
 
 initTabs();
