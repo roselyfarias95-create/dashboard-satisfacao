@@ -1736,6 +1736,16 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <option value="Em Andamento">Em Andamento</option>
         <option value="Concluído">Concluído</option>
       </select>
+      <select class="filter-select" id="veFilterSetor"><option value="">Setor: todos</option></select>
+      <select class="filter-select" id="veFilterRealizada">
+        <option value="">Realizada: todas</option>
+        <option value="SIM">Sim</option>
+        <option value="NÃO">Não</option>
+      </select>
+      <select class="filter-select" id="veFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <button type="button" class="clearbtn" id="btnSincronizarVE">🔄 Sincronizar com Pesquisa</button>
+      <button type="button" class="clearbtn" id="btnExportarVEExcel">📊 Exportar Excel</button>
+      <button type="button" class="clearbtn" id="btnExportarVEPDF">🖨️ Relatório PDF</button>
       <button type="button" class="logout-btn" id="btnNovaVisitaEmergencial" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Visita</button>
     </div>
     <span id="veCount" class="count-line"></span>
@@ -1906,6 +1916,9 @@ function showApp(role, username, allowedTabs){
   subscribeExtraRealtime();
   if (typeof loadHistorico === 'function'){
     loadHistorico().then(()=>{ if (typeof render === 'function') render(); });
+  }
+  if (typeof loadVE === 'function'){
+    loadVE().then(()=>{ if (typeof sincronizarVisitasComPesquisa === 'function') sincronizarVisitasComPesquisa(false); });
   }
 }
 
@@ -3472,6 +3485,8 @@ const DATA = [
 // Executivo (itensDoMes etc.) usam essas variáveis dentro do render().
 let historicoData = [];
 let historicoLoaded = false;
+let veData = [];
+let veLoaded = false;
 
 const GRUPOS_MOTIVO = {
   'Portões':'Equipamentos/Sistemas', 'Câmeras':'Equipamentos/Sistemas', 'Interfone':'Equipamentos/Sistemas',
@@ -7080,7 +7095,11 @@ function initTabs(){
       }
       if (tab === 'visitasEmergenciais'){
         renderVisitasEmergenciais();
-        if (!veLoaded) loadVE();
+        if (!veLoaded){
+          loadVE().then(()=> sincronizarVisitasComPesquisa(false));
+        } else {
+          sincronizarVisitasComPesquisa(false);
+        }
       }
     });
   });
@@ -7204,7 +7223,7 @@ function openPesquisaModal(item){
 
   document.getElementById('pqMotivoNaoRealizada').value = item ? (item.motivoNaoRealizada || '') : '';
   document.getElementById('pqObservacaoNaoRealizada').value = item ? (item.observacaoNaoRealizada || '') : '';
-  pqSetToggle('pqRealizada', item ? (item.statusPesquisa === 'Pendente' ? 'nao' : 'sim') : 'sim');
+  pqSetToggle('pqRealizada', item ? (pesquisaNaoRealizada(item) ? 'nao' : 'sim') : 'sim');
   pqSetToggle('pqPendencia', item && item.houvePendencia ? 'sim' : 'nao');
   pqSetToggle('pqReclamacao', item && item.houveReclamacao ? 'sim' : 'nao');
   pqSetToggle('pqElogio', item && item.houveElogio ? 'sim' : 'nao');
@@ -7456,6 +7475,8 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   document.getElementById('pesquisaModalOverlay').style.display = 'none';
   populateFilterOptions();
   render();
+
+  if (typeof autoCriarVisitaEmergencial === 'function') autoCriarVisitaEmergencial(itemSalvo);
 
 });
 
@@ -7893,11 +7914,13 @@ function renderComparativoFiliais(){
 // aqui é o campo de Status (Pendente/Em andamento/Resolvido), que é salvo
 // junto com o resto da pesquisa (mesmo mecanismo de OVERRIDES/condo_extra).
 // ============================================================================
+function pesquisaNaoRealizada(item){
+  return item.statusPesquisa === 'Pendente' || item.statusPesquisa === 'Síndico não atende';
+}
 function itemEhVisitaEmergencial(item){
   const n = parseFloat(String(item.nota).replace(',', '.'));
   const notaBaixa = !isNaN(n) && n < 9;
-  const naoRealizada = item.statusPesquisa === 'Pendente';
-  return notaBaixa || naoRealizada;
+  return notaBaixa || pesquisaNaoRealizada(item);
 }
 
 async function salvarStatusVisitaEmergencial(itemN, novoStatus){
@@ -7916,8 +7939,8 @@ async function salvarStatusVisitaEmergencial(itemN, novoStatus){
 
 function renderVisitasEmergenciais(){
   const itens = DATA.filter(itemEhVisitaEmergencial);
-  const totalRealizadas = DATA.filter(d => d.statusPesquisa !== 'Pendente').length;
-  const totalNaoRealizadas = DATA.filter(d => d.statusPesquisa === 'Pendente').length;
+  const totalRealizadas = DATA.filter(d => !pesquisaNaoRealizada(d)).length;
+  const totalNaoRealizadas = DATA.filter(pesquisaNaoRealizada).length;
   const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
 
   document.getElementById('visitasEmergenciaisStats').innerHTML = `
@@ -7932,8 +7955,8 @@ function renderStatsVisitasEmergenciaisDash(){
   const el = document.getElementById('statsVisitasEmergenciaisDash');
   if (!el) return;
   const itensEmergenciais = DATA.filter(itemEhVisitaEmergencial);
-  const totalRealizadas = DATA.filter(d => d.statusPesquisa !== 'Pendente').length;
-  const totalNaoRealizadas = DATA.filter(d => d.statusPesquisa === 'Pendente').length;
+  const totalRealizadas = DATA.filter(d => !pesquisaNaoRealizada(d)).length;
+  const totalNaoRealizadas = DATA.filter(pesquisaNaoRealizada).length;
   const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
   el.innerHTML = `
     <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas</div></div>
@@ -7948,18 +7971,17 @@ function renderStatsVisitasEmergenciaisDash(){
 // Tabela própria no Supabase (visitas_emergenciais) — totalmente editável,
 // com semente inicial a partir da planilha "VISITAS URGENTES" da Rosely.
 // ============================================================================
-const VE_SEED = [{"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Lírida", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Furto qualificado com subtração de três bicicletas nas dependências do condomínio, prejuízo estimado em R$17.000; síndico cobra apuração e reforço de segurança.", "retorno": "mandar documentos das bicicletas; negociar desconto nas mensalidades para pagar a bicicleta; trocar o facial da entrada para o Promax; verificar cerca; mandar as melhorias que foram passadas; modificar o anti-esmagamento do local; fazer o levantamento de câmeras para colocar I.A. nos muros; trocar central de monitoramento; automatizar o hall; levantamento da nova eclusa veicular subsolo; foi orientado durante a visita fazer um bicicletário; RETORNO 11/07, com a equipe técnica. Melhorar sistema de alarme, com a troca da central via web.", "tratativa": "Supervisor Iranilson realizou levantamento em 3 etapas: 1ª etapa enviada para vistoria; levantamento de CFTV (I.A. nas laterais, troca do MIP pela guarita, mudança de facials); aguardando instrução para obra da eclusa do subsolo para depois alterar fachada/hall e instalar controle de acesso; demais melhorias com o Pedro. Aguardando documentos das bicicletas para prosseguir.", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Paul Richard", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Faltando placas de identificação, mas somente poderá trocar quando mudarem a fachada. Moradora não estava recebendo ligações, orientado, retirado antispam.", "retorno": "", "tratativa": "Técnico Felipe já providenciou as placas de identificação para instalação.", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Condomínio Green Vision", "responsavel": "Angela", "setor": "Técnica", "diagnostico": "Falha grave nas baterias do sistema: condomínio ficou cerca de 5h sem energia e o portão veicular parou de funcionar; síndico teme repetição do problema.", "retorno": "Trocado bateria; identificado que a trava de segurança estava vulnerável, instalado trava; central de alarme sem bateria, recolocado; trocado placas informativas.", "tratativa": "", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Aldeia dos Ventos", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Problemas recorrentes no atendimento da Central por liberações indevidas; síndico está em tratativas de renovação de contrato.", "retorno": "ok", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-09", "condominio": "Condomínio Via Lumini", "responsavel": "Pedro / Maria Rosely", "setor": "Central", "diagnostico": "Síndica muito insatisfeita com a comunicação; moradores relatam dificuldade recorrente para liberação de visitantes, principalmente aos fins de semana.", "retorno": "Trocado placa da botoeira do portão A veicular pois a anterior estava quebrada; cerca elétrica desativada devido a plantas encostando, síndica informou à Ângela que moradores não querem podar; precisa passar graxa no portão veicular B devido está arrastando; informa que não está chegando atendimento da central, orientado antispam para colocarem nos aparelhos. Retorno técnico: refixado cremalheira do portão veicular B e normalizado.", "tratativa": "Pendência de atendimento para central; supervisão vai puxar todas as gravações da unidade 11 e acompanhar.", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Riviera di Capri", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Disparos recorrentes de alarmes perimetrais (sensores, barreiras e cerca elétrica) em sequência, incluindo registro de \"desarmado fora de horário\".", "retorno": "", "tratativa": "Tá pendente a poda das plantas por parte do condomínio.", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Montvernon", "responsavel": "Pedro Firmino", "setor": "Backoffice", "diagnostico": "Duas câmeras fora de funcionamento há cerca de um mês; instabilidade recorrente impede que moradores completem chamadas de interfonia com a Central.", "retorno": "Cerca, devido a reforma que fizeram, não conseguimos fazer reparo devido a novo telhado; últimas reclamações foram resolvidas, pendências. Aguardando retorno para visita presencial.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Porta Romana Residence", "responsavel": "Maria Rosely", "setor": "Sucesso do Cliente", "diagnostico": "A síndica repassou que a principal pendência refere-se ao aplicativo do condomínio, cuja funcionalidade de reserva de deck encontra-se inoperante. Informou que o problema foi reportado há aproximadamente um mês e recebeu retorno de que estava em manutenção, porém até o momento não houve solução definitiva.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Real Park", "responsavel": "", "setor": "Central", "diagnostico": "Reclamação antiga e recorrente sobre demora no atendimento da Central.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Leblon", "responsavel": "Pedro Firmino / Angela", "setor": "Técnica", "diagnostico": "Sistema de reconhecimento facial com travamentos frequentes; interfonamento exige digitação extra do número do apartamento; eletrodutos enferrujados precisando de manutenção.", "retorno": "Local precisa trocar as placas de identificação; revisão na cerca, muitas plantas encostando; necessário trocar toda infraestrutura, galvanizado enferrujado; escada da guarita comprometida.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Edifício Celsina", "responsavel": "", "setor": "Central", "diagnostico": "Interfone com falha direciona ligações para apartamentos errados; síndica também solicitou contato do setor financeiro para negociar desconto nas mensalidades.", "retorno": "Dar uma mensalidade grátis e renovar 36 meses.", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Sunville Residence", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Após diversas reclamações anteriores, todas as pendências já foram solucionadas, sem novas ocorrências no momento.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}];
-
-let veData = [];
-let veLoaded = false;
+const VE_SEED = [{"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Lírida", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Furto qualificado com subtração de três bicicletas nas dependências do condomínio, prejuízo estimado em R$17.000; síndico cobra apuração e reforço de segurança.", "retorno": "mandar documentos das bicicletas; negociar desconto nas mensalidades para pagar a bicicleta; trocar o facial da entrada para o Promax; verificar cerca; mandar as melhorias que foram passadas; modificar o anti-esmagamento de local; fazer o levantamento de câmeras para colocar I.A. nos muros; trocar central de monitoramento; automatizar o hall; levantamento da nova eclusa veicular subsolo; foi orientado durante a visita fazer um bicicletário. RETORNO 11/07, com a equipe técnica: melhorar sistema de alarme, com a troca da central via web. Pedro vai cobrar o síndico dia 22/07 o documento e vai dar duas mensalidades; preventiva e mudança das barreiras, demais melhorias com o Pedro.", "tratativa": "Supervisor Iranilson realizou levantamento em 3 etapas: técnico enviado para vistoria; levantamento de CFTV (I.A. nas laterais, troca do MIP pela guarita, mudança de facials); aguardando síndico iniciar obra da eclusa do subsolo para depois alterar fachada/hall e instalar controle de acesso. Aguardando documentos das bicicletas para prosseguir.", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Paul Richard", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Roubo após arrombamento do muro de acesso e da porta da zeladoria (invasor permaneceu cerca de 15 minutos no local); síndico sentiu falta de acompanhamento proativo da ocorrência.", "retorno": "Faltando placas de identificação, mas somente poderá trocar quando mudarem a fachada. Moradora não estava recebendo ligações, orientado, retirado antispam.", "tratativa": "Técnico Felipe já providenciou as placas de identificação para instalação.", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Condomínio Green Vision", "responsavel": "Angela", "setor": "Técnica", "diagnostico": "Falha grave nas baterias do sistema: condomínio ficou cerca de 5h sem energia e o portão veicular parou de funcionar; síndico teme repetição do problema.", "retorno": "Trocado bateria; identificado que a trava de segurança estava vulnerável, instalado trava; central de alarme sem bateria, recolocado; trocado placas informativas.", "tratativa": "", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Aldeia dos Ventos", "responsavel": "Maria Rosely", "setor": "Central / Qualidade", "diagnostico": "Problemas recorrentes no atendimento da Central por liberações indevidas; síndico está em tratativas de renovação de contrato.", "retorno": "ok", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-09", "condominio": "Condomínio Via Lumini", "responsavel": "Pedro / Maria Rosely", "setor": "Central", "diagnostico": "Síndica muito insatisfeita com a comunicação; moradores relatam dificuldade recorrente para liberação de visitantes, principalmente aos fins de semana.", "retorno": "Trocado placa da botoeira do portão A veicular pois a anterior estava quebrada; cerca elétrica desativada devido a plantas encostando, síndica informou à Ângela que moradores não querem podar; precisa passar graxa no portão veicular B devido está arrastando; informa que não está chegando atendimento da central, orientado antispam para colocarem nos aparelhos. Retorno técnico: refixado cremalheira do portão veicular B e normalizado.", "tratativa": "Pendência de atendimento para central; supervisão vai puxar todas as gravações da unidade 11 e acompanhar.", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Riviera di Capri", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Disparos recorrentes de alarmes perimetrais (sensores, barreiras e cerca elétrica) em sequência, incluindo registro de \"desarmado fora de horário\".", "retorno": "", "tratativa": "Tá pendente a poda das plantas por parte do condomínio.", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Montvernon", "responsavel": "Pedro Firmino", "setor": "Técnica / Backoffice", "diagnostico": "Duas câmeras fora de funcionamento há cerca de um mês; instabilidade recorrente impede que moradores completem chamadas de interfonia com a Central.", "retorno": "Cerca, devido a reforma que fizeram, não conseguimos fazer reparo devido a novo telhado; últimas reclamações foram resolvidas, pendências. Aguardando retorno para visita presencial.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Porta Romana Residence", "responsavel": "Maria Rosely", "setor": "Sucesso do Cliente", "diagnostico": "A síndica repassou que a principal pendência refere-se ao aplicativo do condomínio, cuja funcionalidade de reserva do deck encontra-se inoperante. Informou que o problema foi reportado há aproximadamente um mês e recebeu retorno de que estava em manutenção, porém até o momento não houve solução definitiva.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Real Park", "responsavel": "", "setor": "Central", "diagnostico": "Reclamação antiga e recorrente sobre demora no atendimento da Central.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Leblon", "responsavel": "Pedro Firmino / Angela", "setor": "Técnica", "diagnostico": "Sistema de reconhecimento facial com travamentos frequentes; interfonamento exige digitação extra do número do apartamento; eletrodutos enferrujados precisando de manutenção.", "retorno": "Local precisa trocar as placas de identificação; revisão na cerca, muitas plantas encostando; necessário trocar toda infraestrutura, galvanizado enferrujado; escada da guarita comprometida.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Edifício Celsina", "responsavel": "", "setor": "Central", "diagnostico": "Interfone com falha direciona ligações para apartamentos errados; síndica também solicitou contato do setor financeiro para negociar desconto nas mensalidades.", "retorno": "Dar uma mensalidade grátis e renovar 36 meses.", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Sunville Residence", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Após diversas reclamações anteriores, todas as pendências já foram solucionadas, sem novas ocorrências no momento.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Residencial Vilaggio Monte Líbano", "responsavel": "Maria Rosely", "setor": "Sucesso do Cliente", "diagnostico": "Interfone de entrada para contato com moradores (Pináculo) está fora de funcionamento há bastante tempo.", "retorno": "Rose ligar para explicar Gphone.", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Villa Paradiso", "responsavel": "Pedro / Maria Rosely", "setor": "Sucesso do Cliente", "diagnostico": "Durante o contato, o síndico repassou que há uma pendência, registrada desde a semana passada, relacionada ao novo sistema implantado no condomínio.", "retorno": "Verificamos as botoeiras e está ok; verificar com síndico poda; negociar armário inteligente pois condomínio tem um armário de gesso, que é fácil para retirar encomendas. OK", "tratativa": "Mantido contato com o síndico Sr. Delano, repassada a proposta de renovação do contrato com gratificação do armário; síndico informou que o armário que tem no local já atende as demandas.", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Condomínio Edifício Frei Vicente Salvador", "responsavel": "Angela", "setor": "Sucesso do Cliente", "diagnostico": "Dificuldade de alguns moradores para baixar e utilizar o aplicativo; falhas na comunicação dos interfones entre visitantes/entregadores e moradores, ocasionando retorno de entregas sem conclusão; solicitação de informações sobre renovação contratual (contrato vigente até fevereiro/2027 e negociação de Portaria Assistida em andamento).", "retorno": "Interfone OK, testes de atendimento normal, zelador informa que somente alguns não funcionam, mas moradores não estavam no local; acrescentar mais placas no muro.", "tratativa": "Verificados links, marcar visita para ir unidade por unidade; tempo de transbordo diminuiu de 30 segundos para 10 segundos.", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-14", "condominio": "Residencial Jardim América", "responsavel": "Maria Rosely", "setor": "Técnica", "diagnostico": "Pendências relacionadas ao cadastro de novos moradores, aplicativo e interfone; sugere realocação do interfone, pois a incidência direta de sol prejudica o reconhecimento facial, gerando reclamações recorrentes.", "retorno": "Necessário troca de placa de interfone, aguardando aprovação da diretoria Servis; técnico Felipe trocou outras placas (redondas); colocado G-phone; falta case de interfone, mas sem previsão.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-09", "condominio": "Condomínio Edifício Bayside", "responsavel": "Pedro / Maria Rosely", "setor": "Técnica / Central", "diagnostico": "Reclamação relacionada ao acompanhamento do portão veicular: em algumas ocasiões o portão permanece aberto e o evento não é comunicado pela central, gerando preocupação quanto ao monitoramento e à segurança do condomínio; situação vem sendo repassada à empresa há bom tempo.", "retorno": "Verificar cerca e atualizar o laudo do hall, pois a técnica efetuou os reparos e não constatou mais problema de estrutura; demora para identificar porta aberta, mas era o hall com problema estrutural.", "tratativa": "Os moradores estão segurando a porta do hall e ela fica perdendo o percurso, sendo mau uso do morador.", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "", "condominio": "Jose Maria Cardoso", "responsavel": "Angela", "setor": "Central / Técnica", "diagnostico": "Principal insatisfação relacionada à demora no atendimento da Central e à falta de retorno sobre as solicitações realizadas. Demora nos retornos da Central; aguarda há cerca de duas semanas retorno sobre as placas de informação; solicita relatórios trimestrais dos testes da cerca elétrica e demais equipamentos; dúvidas quanto ao funcionamento da cerca elétrica; câmeras com baixa qualidade de imagem e algumas sem visibilidade adequada; solicita maior atenção nas manutenções preventivas.", "retorno": "Liberar os acessos do ISIC; tirar o reajuste; instalação de torre com sirene com duas câmeras; trocar as câmeras por alta qualidade; 4 faciais troca por manutenção; fazer poda da cerca.", "tratativa": "Reajuste tirado, foram trocados os 4 faciais, trocadas 6 câmeras e a torre será instalada no dia 24/07.", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Edifício Stilo", "responsavel": "Maria Rosely", "setor": "Backoffice", "diagnostico": "Pendências relacionadas ao acesso às câmeras pelo aplicativo da empresa; anteriormente conseguia visualizar as imagens, mas há aproximadamente três meses não consegue mais realizar o acesso.", "retorno": "Realizada visita dia 16/07: mantido contato com o síndico, o mesmo informa que está tudo bem e que tem sido atendido rapidamente em suas demandas; síndico relatou que não teve mais problemas com o interfone de entrada; feita liberação do aplicativo síndico; síndico informou que a nota passará para 10.", "tratativa": "", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Petit Trianon", "responsavel": "Maria Rosely", "setor": "Não se aplica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Residencial Vila Verana", "responsavel": "Maria Rosely", "setor": "Técnica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "Colocar placas; colocar a antena; trocar facial; 5 câmeras; aditivar 36 meses; sirene; colocar protetor de motor cerca. Placas já foram colocadas.", "tratativa": "Pendente levantamento para renovação de contrato. Pablo informou que técnico iria hoje 20/07 no período da tarde.", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Villa Bellagio", "responsavel": "Pedro Firmino", "setor": "Não se aplica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Natércia Rios", "responsavel": "Pedro Firmino", "setor": "Central", "diagnostico": "Em relação ao atendimento da Central, considera o serviço bom, porém destacou que o tempo de espera é muito longo, causando insatisfação; relatou também não conseguir obter contato com a Central quando busca.", "retorno": "Demora de atendimento; feitos testes e atendimento foi ok.", "tratativa": "Interfone testado e funcionando normalmente; orientado verificar se a lentidão é da internet do próprio morador.", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio do Conjunto Habitacional Luciano Carneiro", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Dificuldade para contato com o Sr. Wesley; demandas são solucionadas normalmente quando acionadas diretamente pela Central.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "", "condominio": "Residencial Paço de Messejana", "responsavel": "Pedro Firmino", "setor": "T.I.", "diagnostico": "Oscilações recorrentes no sistema; interfones ficam temporariamente fora do ar em alguns momentos, embora estivessem funcionando normalmente no momento da pesquisa.", "retorno": "Cadastros e faciais atualizados e testados nas unidades 101A, 101C e 201A (normalizado); brilho do leitor facial aumentado (em acompanhamento); troca do equipamento facial pendente até chegada de peça.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Marques Santiago", "responsavel": "Pedro Firmino", "setor": "Não se aplica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "Síndico informou que não tem pendências.", "tratativa": "", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial 3 Estrelas", "responsavel": "Pedro Firmino", "setor": "Não se aplica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-14", "condominio": "Residencial Oasi Felice", "responsavel": "Maria Rosely", "setor": "Não se aplica", "diagnostico": "Sem pendências relevantes relatadas na pesquisa.", "retorno": "Sem reclamações; fazer poda na cerca.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Cond. Anjos Correia", "responsavel": "Pedro / Maria Rosely", "setor": "Técnica", "diagnostico": "Não estão ligando pro interfone do Anjos Correia; funcionária 202 facial não funciona.", "retorno": "Trocar placa de sinalizações muito desgastadas; fazer o levantamento das fiações do interfone; verificar se é possível colocar antena; instalar câmera no perímetro dos fundos para colocar I.A.; não tem cofre; interfones dos blocos acionando sozinhos; material para instalar a torre - OK; interfone de entrada e eclusa, quando no sol não funcionam; trava da lixeira interna está frouxa, dificultando o travamento; síndico reclamou que a guarita fica bagunçada; síndico informou que só pode vender controle para as unidades com autorização dele; síndico reclamou que não recebe os boletos para pagamento.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Cond. Grand Classic", "responsavel": "Maria Rosely", "setor": "", "diagnostico": "Realizado.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Cond. das Américas", "responsavel": "Maria Rosely", "setor": "", "diagnostico": "Realizado.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-11", "condominio": "Maraponga", "responsavel": "Pedro Firmino", "setor": "", "diagnostico": "", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Raul Fontenele", "responsavel": "Angela", "setor": "", "diagnostico": "Facial de entrada da tela sem funcionar, deverá ser trocado; demora de atendimento em todos os horários; cofre enferrujado; chamadas com ruídos.", "retorno": "No dia 22/07 foi trocada a mola de saída pedestre, o cofre e o facial de entrada.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Solar dos Ventos", "responsavel": "Angela", "setor": "", "diagnostico": "Reclamação devido a atendimento relacionado às ligações, mas foi orientado sobre problema TIM x Vivo e repassado novos números; possui poda para executar; mudar câmera externa de local; eletrodutos enferrujados e conduletes sem tampa; sem placa G-phone; reclama das imagens para carregar.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "", "condominio": "Emanuela", "responsavel": "Angela", "setor": "", "diagnostico": "Faciais funcionando; parte da tubulação enferrujada; caixa 102 x 102 solta.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Valencia", "responsavel": "Maria Rosely", "setor": "", "diagnostico": "", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "2026-07-17", "condominio": "Alipio Bastos", "responsavel": "Maria Rosely", "setor": "Técnica / Central", "diagnostico": "Reclamação de demora de atendimento; interfone da eclusa está com o touch sem funcionar.", "retorno": "Demora de atendimento; zelador disse que fica constantemente tendo que fazer liberações devido à demora; moradores não estão recebendo ligação.", "tratativa": "Passei em cada casa cadastrando vcard e realizando testes, casas 18 e 12; não tocou mesmo cadastrando o vcard e configurando o celular.", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "2026-07-16", "condominio": "Condomínio Melbourne", "responsavel": "Maria Rosely", "setor": "Técnica, Sucesso do Cliente, Backoffice, Central, Comercial", "diagnostico": "Múltiplas pendências acumuladas: envio de imagens solicitadas anteriormente; recadastramento da proprietária da unidade 301; ativação do Botão de Pânico e material informativo; acompanhamento técnico da poda da vegetação; câmeras inoperantes; possível falha no interfone do elevador; contato da Central com o zelador fora do horário estabelecido; demora no atendimento da Central e devolução de entregas sem conclusão do atendimento.", "retorno": "Imagens entregues em 17/07 (armazenadas em HD) - concluído; recadastramento realizado em 17/07 - concluído; Botão de Pânico ativado no aplicativo, falta instalar placas informativas; poda da vegetação em andamento; consultor Luís manterá contato sobre as câmeras; será feita visita técnica para o interfone do elevador; horário do zelador reforçado junto à Central; contato feito com moradora Sra. Janaína (1002), pendência concluída.", "tratativa": "1) Placas informativas do Botão de Pânico e Dupla Passagem (Sucesso do Cliente); 2) Acompanhamento técnico da poda da vegetação (Técnica); 3) Câmeras inoperantes - consultor Luís (Comercial); 4) Demora no interfone do elevador (Central); 5) Verificar quais câmeras já possuem I.A. e quais podem ser acrescentadas (Técnica e Backoffice).", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-16", "condominio": "Condomínio Dell Monte 3", "responsavel": "Maria Rosely", "setor": "Técnica/Central", "diagnostico": "Demora no primeiro atendimento; precisando de placas de sinalização da entrada (placa redonda com o nome Servis); facial não funciona quando está no sol; placa do Puxe está caída.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-17", "condominio": "Cond. Gentil Cardoso Linhares", "responsavel": "Josiane", "setor": "Técnica", "diagnostico": "Interfone localizado na entrada principal apresenta difícil visualização no período da tarde (14h-16h) devido à incidência direta da luz solar; síndico solicitou proteção (anteparo). Diversos moradores relataram não estar recebendo as chamadas da Central; identificada instabilidade no serviço, apresentada alternativa de uso do VCard.", "retorno": "Dado retorno ao síndico de que foi aberta ordem de serviço para técnico ir ao local verificar a posição do interfone para redução da exposição ao sol; sem reclamações do síndico sobre as ligações após testes com o VCard.", "tratativa": "Reposicionamento do interfone pelo técnico para maior visibilidade durante o uso.", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "SECOPI", "data": "", "condominio": "Empresa Bio Nature", "responsavel": "", "setor": "", "diagnostico": "Aguardando agendamento pois fica distante.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Monte Líbano", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Durante a visita foi conversado com o conselheiro do condomínio Jussiê, o zelador e morador, e não foram registradas reclamações. Sr. Jussiê atribuiu nota 10 à qualidade dos serviços.", "retorno": "Melhoria seguida pela equipe: cadastrar I.A. na câmera 11.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Jardim América", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o Antônio (supervisor), que relatou sobre a demora no atendimento por parte da central no interfone. Atribuiu nota 9.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Rio da Prata", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o senhor Luiz (supervisor), que relatou sobre a demora no atendimento da central por meio do interfone. Atribuiu nota 9.", "retorno": "Pendências observadas: troca da placa informativa, troca da botoeira de saída pedestre e tag para o supervisor.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. David de Carvalho", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o senhor Carlos (zelador), que relatou sobre a demora no atendimento da central e instabilidade no aplicativo de acesso. Atribuiu nota 8.", "retorno": "Melhoria identificada: troca de placa informativa.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Canaã", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Durante a visita foi conversado com o Sr. Jeberson (zelador), que relatou que há cerca de quatro meses o condomínio enfrentava frequentes travamentos no portão veicular, mas o problema não voltou a ocorrer recentemente. Os travamentos eram decorrentes do empenamento da estrutura do portão (problema estrutural); foi elaborado e encaminhado laudo técnico à síndica na época. Atribuiu nota 8.", "retorno": "Pendências observadas: trocar placa da Secopi.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Emanoel Veloso", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com a supervisora Bruna, que informou sobre a demora no atendimento da central. Atribuiu nota 8. Solicitações: aditivo para instalação das antenas veiculares, câmeras nas coberturas e remanejamento das câmeras.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-08", "condominio": "Cond. Moinho dos Ventos", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o síndico Ícaro, que informou sobre a demora no atendimento da central. Atribuiu nota 8.", "retorno": "Pendências observadas: trocar placa da Secopi.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Aconchego", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Durante a visita foi conversado com o Sr. José Júnior (porteiro), que não relatou reclamações, apenas observou que muitos moradores não utilizam tag. Atribuiu nota 10.", "retorno": "Melhorias sugeridas: entrar em contato com os moradores para atualização dos dados e incentivar o uso da tag.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Royal Ville", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o Sr. Edilson, que informou que quando o serviço de coleta de lixo chega, a portaria demora para atender o interfone. Atribuiu nota 8.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Villa do Conde", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o zelador Neto, que informou demora no atendimento da central por meio do interfone, principalmente no horário do almoço (por volta das 12h). Em razão dessa demora, o zelador acaba assumindo o recebimento das encomendas, caracterizando desvio de função; entregadores deixam encomendas soltas na eclusa, aumentando risco de extravio.", "retorno": "Observação da equipe: interfone da eclusa com ruído e trocar placa informativa.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Kennedy", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Durante a visita foi conversado com o síndico, que informou sobre a demora no atendimento da central por meio do interfone. Solicitou testarem a cerca. Atribuiu nota 9.", "retorno": "Observação da equipe: trocar placa da Secopi; manutenção das câmeras que estão com qualidade ruim; síndico solicitou instalação de mais uma câmera no corredor do portão veicular.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Agenda 1", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Durante a visita foi conversado com o Sr. Francisco (síndico), que relatou instabilidade no aplicativo e solicitou análise de comodato das câmeras do condomínio. Atribuiu nota 9.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-09", "condominio": "Cond. Berlim Lisboa", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Durante a visita foi conversado com o Sr. Raimundo (supervisor), que relatou instabilidade no aplicativo e citou uma tentativa de sinistro na lixeira do condomínio. Atribuiu nota 8.", "retorno": "Observação da equipe: trocar placa da Secopi.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Solar de Fátima", "responsavel": "Ana Paula", "setor": "Técnica", "diagnostico": "Em contato com o síndico, o mesmo informou não haver reclamações em relação aos serviços prestados. Houve um período com problema recorrente nas câmeras, mas a equipe técnica sempre compareceu prontamente. Solicitou substituição da câmera voltada para a calçada por modelo de melhor qualidade. Avaliou os serviços com nota 10.", "retorno": "Solicitado ao monitoramento aumentar a qualidade da câmera da calçada.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Lyon", "responsavel": "Ana Paula", "setor": "Não se aplica", "diagnostico": "Conversado com Átila (porteiro): sem reclamações; sempre que solicitam atendimento, são prontamente atendidos de forma ágil e eficiente. Atribuiu nota 10 à qualidade dos serviços.", "retorno": "", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Extand", "responsavel": "Ana Paula", "setor": "Técnico", "diagnostico": "Conversado com Heliosa (gerente): a única reclamação é que, quando o interfone da entrada é acionado, a chamada não está sendo direcionada para o celular da recepção. Atribuiu nota 8.", "retorno": "Feito ajuste pelo setor técnico.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Polo Sul", "responsavel": "Ana Paula", "setor": "Técnico", "diagnostico": "Síndico relatou insatisfação com o tempo de atendimento da central e com o serviço prestado pela seguradora; vigilante frequentemente chega sem informações sobre a ocorrência. Solicitou que a seguradora seja acionada só em problemas no portão; se precisasse notar o serviço da seguradora, daria nota 1. Atribuiu nota 7 à qualidade geral. Também mencionou preocupação com recondicionamento de equipamentos e solicitou revisão preventiva da cerca elétrica; elogiou a equipe da Secopi.", "retorno": "Observação da equipe: trocar placas informativas.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Noé Fortes", "responsavel": "Ana Paula", "setor": "Técnico", "diagnostico": "Síndica relatou dificuldade dos entregadores para chamar as unidades pelo interfone; insatisfação com a qualidade das imagens das câmeras (placas de veículos não nítidas); alguns moradores precisam descer do veículo para o facial reconhecer; instalação de antenas aprovada em assembleia mas síndica não deseja assinar aditivo; demora no carregamento de imagens no aplicativo. Atribuiu nota 7.", "retorno": "Aumentada a qualidade das imagens das câmeras no aplicativo em período de testes, mas houve reclamações de demora no carregamento, motivo pelo qual a qualidade foi reduzida novamente; instalado aplicativo da Intelbras no celular da síndica como alternativa; aumentado o alcance do reconhecimento facial do portão veicular; testes com Backoffice indicam que a lentidão pode estar relacionada à conexão de internet da síndica.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Rio Lima", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Síndica informa demora no atendimento da central por meio do interfone e travamento constante no portão veicular. Atribuiu nota 9.", "retorno": "Reforçado à síndica que o guia superior do portão apresenta desgaste e necessita substituição, possível causa dos travamentos; síndica pretende providenciar a substituição na semana seguinte.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Casa Blanca", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Alan (zelador): demora no atendimento da central por meio do interfone e muitos moradores não têm a biometria facial cadastrada. Atribuiu nota 10.", "retorno": "Realizar a troca da botoeira de saída.", "tratativa": "Feita troca da botoeira.", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. La Madelene", "responsavel": "Ana Paula", "setor": "Técnica", "diagnostico": "Robert (supervisor): anteriormente havia diversas reclamações relacionadas às botoeiras e ao frequente desajuste das molas hidráulicas; condomínio está em processo de ampliação do contrato com a Secopi, incluindo substituição das molas hidráulicas por motores de giro. Entusiasmados com armário inteligente e antenas veiculares. Atribuiu nota 9.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Millenium", "responsavel": "Ana Paula", "setor": "Central", "diagnostico": "Demora no atendimento da Central por meio do interfone e problemas recorrentes no funcionamento da eclusa.", "retorno": "Pendências observadas: substituição das placas informativas. Problema na eclusa era decorrente do sistema de intertravamento; após substituição do equipamento, funcionamento normalizado.", "tratativa": "", "status": "Concluído"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Jardim do Horto", "responsavel": "Ana Paula", "setor": "Central/ Técnica", "diagnostico": "Demora no atendimento da Central por meio do interfone; alguns controles remotos precisam ser acionados diversas vezes para abrir o portão veicular.", "retorno": "Pendências observadas: substituição da placa informativa.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Vila Rica", "responsavel": "Ana Paula", "setor": "Técnica", "diagnostico": "Síndico avalia propostas de outras empresas devido a recorrentes quedas do sistema, com instabilidades em dias consecutivos; demora no atendimento da Central pelo interfone; imagens das câmeras demoram a carregar no aplicativo; melhorias solicitadas há cerca de um ano (câmeras no teto dos blocos e elevadores) só foram executadas recentemente. Assembleia deliberativa marcada para decidir permanência da Secopi; nível de insatisfação elevado, mas Secopi terá oportunidade de se explicar.", "retorno": "", "tratativa": "", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "SECOPI", "data": "2026-07-17", "condominio": "Cond. Ana Rosa", "responsavel": "Ana Paula", "setor": "Técnica", "diagnostico": "Sempre que ocorre problema, um técnico é enviado prontamente; quando não resolvido no mesmo dia, disponibilizam um vigilante. Contato feito por telefone (síndico ausente); sem novas reclamações sobre atendimento da central. Principal reclamação: controles de acesso veicular precisam ser acionados diversas vezes. Solicitado orçamento para instalação de armário inteligente. Atribuiu nota 8.", "retorno": "Aberto atendimento técnico para verificação e correção do problema dos controles de acesso.", "tratativa": "", "status": "Em Andamento"}];
 
 async function seedVEIfEmpty(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('visitas_emergenciais').select('id').limit(1);
+    const { data, error } = await sb.from('visitas_emergenciais').select('condominio');
     if (error) throw error;
-    if (data && data.length) return;
-    const rows = VE_SEED.map(v => ({
+    const existentes = new Set((data || []).map(r => (r.condominio || '').trim().toLowerCase()));
+    const novos = VE_SEED.filter(v => !existentes.has((v.condominio || '').trim().toLowerCase()));
+    if (!novos.length) return;
+    const rows = novos.map(v => ({
       realizada: v.realizada, filial: v.filial, data_visita: v.data || null, condominio: v.condominio,
       responsavel: v.responsavel || null, setor: v.setor || null, diagnostico: v.diagnostico || null,
       retorno: v.retorno || null, tratativa: v.tratativa || null, status: v.status
@@ -7994,6 +8016,18 @@ function vePopulateFiltros(){
   const filiais = [...new Set(veData.map(v=>v.filial))].filter(Boolean).sort();
   sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
   if (filiais.includes(atual)) sel.value = atual;
+
+  const selSetor = document.getElementById('veFilterSetor');
+  const atualSetor = selSetor.value;
+  const setores = [...new Set(veData.flatMap(v => (v.setor||'').split(/[,/]/).map(s=>s.trim())))].filter(Boolean).sort();
+  selSetor.innerHTML = '<option value="">Setor: todos</option>' + setores.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if (setores.includes(atualSetor)) selSetor.value = atualSetor;
+
+  const selResp = document.getElementById('veFilterResponsavel');
+  const atualResp = selResp.value;
+  const responsaveis = [...new Set(veData.flatMap(v => (v.responsavel||'').split('/').map(s=>s.trim())))].filter(Boolean).sort();
+  selResp.innerHTML = '<option value="">Responsável: todos</option>' + responsaveis.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  if (responsaveis.includes(atualResp)) selResp.value = atualResp;
 }
 
 function veStatusClass(status){
@@ -8006,12 +8040,100 @@ function getFilteredVE(){
   const q = (document.getElementById('veSearch').value || '').trim().toLowerCase();
   const fFilial = document.getElementById('veFilterFilial').value;
   const fStatus = document.getElementById('veFilterStatus').value;
+  const fSetor = document.getElementById('veFilterSetor').value;
+  const fRealizada = document.getElementById('veFilterRealizada').value;
+  const fResponsavel = document.getElementById('veFilterResponsavel').value;
   return veData.filter(v=>{
     if (q && !((v.condominio||'').toLowerCase().includes(q) || (v.responsavel||'').toLowerCase().includes(q) || (v.diagnostico||'').toLowerCase().includes(q))) return false;
     if (fFilial && v.filial !== fFilial) return false;
     if (fStatus && v.status !== fStatus) return false;
+    if (fSetor && !(v.setor||'').split(/[,/]/).map(s=>s.trim()).includes(fSetor)) return false;
+    if (fRealizada && v.realizada !== fRealizada) return false;
+    if (fResponsavel && !(v.responsavel||'').split('/').map(s=>s.trim()).includes(fResponsavel)) return false;
     return true;
   });
+}
+
+function exportarVisitasExcel(){
+  const filtered = getFilteredVE();
+  if (!filtered.length){ alert('Nenhuma visita para exportar com esses filtros.'); return; }
+  const linhas = filtered.map(v => ({
+    'Visita Realizada': v.realizada === 'SIM' ? 'Sim' : 'Não',
+    'Filial': v.filial || '',
+    'Data da Visita': v.data_visita ? formatDateBR(v.data_visita) : '',
+    'Condomínio': v.condominio || '',
+    'Responsável pela Visita': v.responsavel || '',
+    'Setor Responsável': v.setor || '',
+    'Diagnóstico / Pendências Identificadas': v.diagnostico || '',
+    'Retorno da Visita': v.retorno || '',
+    'Tratativa do Setor Responsável': v.tratativa || '',
+    'Status da Tratativa': v.status || '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  ws['!cols'] = [
+    {wch:14},{wch:10},{wch:14},{wch:32},{wch:20},{wch:16},{wch:50},{wch:50},{wch:50},{wch:16}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Visitas Emergenciais');
+  const dataStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `visitas_emergenciais_${dataStr}.xlsx`);
+}
+
+function gerarRelatorioVisitasPDF(){
+  const filtered = getFilteredVE();
+  if (!filtered.length){ alert('Nenhuma visita para gerar relatório com esses filtros.'); return; }
+  const emitido = new Date().toLocaleString('pt-BR');
+  const linha = (label, val) => val ? `<div class="rep-row"><span class="rep-lbl">${escapeHtml(label)}</span><span class="rep-val">${escapeHtml(val).replace(/\n/g,'<br>')}</span></div>` : '';
+  const cards = filtered.map(v => `
+    <div class="visita-card">
+      <div class="visita-card-head">
+        <div>
+          <div class="visita-card-nome">${escapeHtml(v.condominio)}</div>
+          <div class="visita-card-meta">${escapeHtml(v.filial||'—')} ${v.data_visita ? '· ' + formatDateBR(v.data_visita) : ''} ${v.responsavel ? '· ' + escapeHtml(v.responsavel) : ''}</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="status-badge">${escapeHtml(v.status||'—')}</span>
+          <div class="visita-card-meta">Realizada: ${v.realizada === 'SIM' ? 'Sim' : 'Não'}</div>
+        </div>
+      </div>
+      ${linha('Setor Responsável', v.setor)}
+      ${linha('Diagnóstico / Pendências', v.diagnostico)}
+      ${linha('Retorno da Visita', v.retorno)}
+      ${linha('Tratativa do Setor Responsável', v.tratativa)}
+    </div>
+  `).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Visitas Emergenciais</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:960px; margin:0 auto;}
+    h1{font-size:22px; margin:4px 0 0;}
+    .top{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #1a2333; padding-bottom:14px; margin-bottom:18px;}
+    .brand{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#6b7280;}
+    .meta{font-size:12px; color:#6b7280; margin-top:4px;}
+    .visita-card{border:1px solid #d1d5db; border-radius:8px; padding:14px 16px; margin-bottom:14px; page-break-inside:avoid;}
+    .visita-card-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;}
+    .visita-card-nome{font-size:14px; font-weight:700;}
+    .visita-card-meta{font-size:11px; color:#6b7280; margin-top:2px;}
+    .status-badge{font-weight:700; font-size:12px; color:#b45309;}
+    .rep-row{display:flex; gap:10px; padding:4px 0; font-size:12px; border-top:1px solid #f0f1f3;}
+    .rep-lbl{min-width:200px; font-weight:600; color:#374151;}
+    .rep-val{flex:1; white-space:pre-line;}
+    @media print{ body{padding:12px;} .visita-card{page-break-inside:avoid;} }
+  </style></head><body>
+    <div class="top">
+      <div>
+        <div class="brand">SERVIS — Sucesso do Cliente</div>
+        <h1>Relatório de Visitas Emergenciais</h1>
+        <div class="meta">${filtered.length} visita(s) — filtros aplicados no momento da geração</div>
+      </div>
+      <div class="meta">Emitido em: ${emitido}</div>
+    </div>
+    ${cards}
+    <p style="margin-top:24px; font-size:11px; color:#9ca3af;">SERVIS — Sucesso do Cliente · Relatório gerado em ${emitido}</p>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
 }
 
 function truncarTexto(txt, n){
@@ -8040,11 +8162,26 @@ function renderVE(){
       <td title="${escapeHtml(v.retorno||'')}">${escapeHtml(truncarTexto(v.retorno, 90))}</td>
       <td title="${escapeHtml(v.tratativa||'')}">${escapeHtml(truncarTexto(v.tratativa, 90))}</td>
       <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${escapeHtml(v.status)}</span></td>
-      <td><button type="button" class="renov-action-btn" data-edit-ve="${v.id}">Editar</button></td>
+      <td>
+        <button type="button" class="renov-action-btn" data-edit-ve="${v.id}">Editar</button>
+        <button type="button" class="renov-action-btn" data-del-ve="${v.id}" style="color:var(--critico);">Excluir</button>
+      </td>
     </tr>`;
   }).join('');
   body.querySelectorAll('[data-edit-ve]').forEach(btn=>{
     btn.onclick = ()=> openVEModal(veData.find(v=>String(v.id)===btn.getAttribute('data-edit-ve')));
+  });
+  body.querySelectorAll('[data-del-ve]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.getAttribute('data-del-ve');
+      const v = veData.find(v=>String(v.id)===id);
+      if (!confirm(`Excluir a visita de "${v ? v.condominio : ''}"?`)) return;
+      try{
+        const { error } = await sb.from('visitas_emergenciais').delete().eq('id', id);
+        if (error) throw error;
+        loadVE();
+      }catch(e){ alert('Erro ao excluir: ' + e.message); }
+    };
   });
 }
 
@@ -8076,6 +8213,12 @@ function initVECrudUI(){
     if (!sb){ alert('Sem conexão com o servidor — não é possível criar novas visitas agora.'); return; }
     openVEModal(null);
   });
+  document.getElementById('btnSincronizarVE').addEventListener('click', ()=>{
+    if (!sb){ alert('Sem conexão com o servidor.'); return; }
+    sincronizarVisitasComPesquisa(true);
+  });
+  document.getElementById('btnExportarVEExcel').addEventListener('click', exportarVisitasExcel);
+  document.getElementById('btnExportarVEPDF').addEventListener('click', gerarRelatorioVisitasPDF);
   document.getElementById('veModalClose').addEventListener('click', ()=>{
     document.getElementById('veModalOverlay').style.display = 'none';
   });
@@ -8133,12 +8276,87 @@ function initVECrudUI(){
       loadVE();
     }catch(e){ alert('Erro ao excluir: ' + e.message); }
   });
-  ['veSearch','veFilterFilial','veFilterStatus'].forEach(id=>{
+  ['veSearch','veFilterFilial','veFilterStatus','veFilterSetor','veFilterRealizada','veFilterResponsavel'].forEach(id=>{
     document.getElementById(id).addEventListener('input', renderVE);
     document.getElementById(id).addEventListener('change', renderVE);
   });
 }
 initVECrudUI();
+
+// ============================================================================
+// LIGAÇÃO AUTOMÁTICA: Pesquisa (nota < 9 ou não realizada) → Visitas Emergenciais
+// Sempre que uma pesquisa é salva nessas condições, cria uma visita emergencial
+// pendente (se ainda não existir uma para aquele condomínio) — sem duplicar
+// nem sobrescrever visitas já em andamento/editadas manualmente.
+// ============================================================================
+async function sincronizarVisitasComPesquisa(mostrarAlerta){
+  if (!sb) return;
+  const candidatos = DATA.filter(itemEhVisitaEmergencial);
+  const existentes = new Set(veData.map(v => (v.condominio || '').trim().toLowerCase()));
+  const faltando = candidatos.filter(item => !existentes.has((item.nome || '').trim().toLowerCase()));
+  if (!faltando.length){
+    if (mostrarAlerta) alert('Tudo sincronizado — nenhum condomínio novo pra adicionar.');
+    return;
+  }
+  const rows = faltando.map(item => {
+    const diagnostico = pesquisaNaoRealizada(item)
+      ? (item.motivoNaoRealizada || (item.statusPesquisa === 'Síndico não atende' ? 'Síndico não atende' : 'Pesquisa não realizada'))
+      : (item.pendenciaDescricao || item.pend || item.motivo || `Nota da pesquisa: ${item.nota}`);
+    return {
+      realizada: 'NÃO',
+      filial: item.filial || null,
+      data_visita: null,
+      condominio: item.nome,
+      responsavel: item.responsavelPesquisa || null,
+      setor: item.setorPendencia || item.setor || item.elogioSetor || null,
+      diagnostico,
+      retorno: null,
+      tratativa: null,
+      status: 'Visita Agendada',
+    };
+  });
+  try{
+    const { error } = await sb.from('visitas_emergenciais').insert(rows);
+    if (error) throw error;
+    await loadVE();
+    if (mostrarAlerta) alert(`${rows.length} condomínio(s) novo(s) adicionado(s) à lista de visitas.`);
+  }catch(e){
+    console.error('Erro ao sincronizar visitas com a pesquisa:', e);
+    if (mostrarAlerta) alert('Erro ao sincronizar: ' + e.message);
+  }
+}
+
+async function autoCriarVisitaEmergencial(item){
+  if (!item || !sb) return;
+  if (!itemEhVisitaEmergencial(item)) return;
+
+  const nomeAlvo = (item.nome || '').trim().toLowerCase();
+  const jaExiste = veData.some(v => (v.condominio || '').trim().toLowerCase() === nomeAlvo);
+  if (jaExiste) return; // já tem visita registrada pra esse condomínio — não duplica nem sobrescreve
+
+  const diagnostico = pesquisaNaoRealizada(item)
+    ? (item.motivoNaoRealizada || (item.statusPesquisa === 'Síndico não atende' ? 'Síndico não atende' : 'Pesquisa não realizada'))
+    : (item.pendenciaDescricao || item.pend || item.motivo || `Nota da pesquisa: ${item.nota}`);
+  const setor = item.setorPendencia || item.setor || item.elogioSetor || null;
+
+  const payload = {
+    realizada: 'NÃO',
+    filial: item.filial || null,
+    data_visita: null,
+    condominio: item.nome,
+    responsavel: item.responsavelPesquisa || null,
+    setor,
+    diagnostico,
+    retorno: null,
+    tratativa: null,
+    status: 'Visita Agendada',
+  };
+  try{
+    const { error } = await sb.from('visitas_emergenciais').insert(payload);
+    if (error) throw error;
+    loadVE(); // recarrega pra já refletir na aba, se estiver aberta
+  }catch(e){ console.error('Falha ao criar visita emergencial automática:', e); }
+}
 
 initTabs();
 
