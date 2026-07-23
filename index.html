@@ -3492,6 +3492,7 @@ const DATA = [
 let historicoData = [];
 let historicoLoaded = false;
 let veData = [];
+let veIgnoradas = new Set();
 let veLoaded = false;
 
 const GRUPOS_MOTIVO = {
@@ -5749,7 +5750,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         <div class="field-row">
           <div class="field">
             <label>Mensalidade do Condomínio (R$)</label>
-            <input type="number" step="0.01" min="0" id="fMensalidade" placeholder="Ex: 450.00">
+            <input type="text" id="fMensalidade" placeholder="Ex: 4.610,55">
           </div>
           <div class="field">
             <label>Quantidade de Unidades</label>
@@ -6049,6 +6050,17 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     if(v === null || v === undefined || v === "") return '<span class="tag">—</span>';
     return Number(v).toLocaleString("pt-BR");
   }
+  function parseMoedaBR(str){
+    if (!str) return null;
+    // aceita tanto "4.610,55" (formato BR) quanto "4610.55" (formato solto)
+    const limpo = String(str).trim().replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(limpo);
+    return isNaN(n) ? null : n;
+  }
+  function formatarMoedaParaInput(v){
+    if (v === null || v === undefined || v === '') return '';
+    return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
   function mesLabel(mes){
     if(!mes) return "";
     var parts = mes.split("-");
@@ -6256,7 +6268,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fObs").value = c ? (c.obs||"") : "";
     document.getElementById("fContratoInicio").value = c ? (c.contratoInicio||"") : "";
     document.getElementById("fContratoFim").value = c ? (c.contratoFim||"") : "";
-    document.getElementById("fMensalidade").value = c ? (c.mensalidade||"") : "";
+    document.getElementById("fMensalidade").value = c ? formatarMoedaParaInput(c.mensalidade) : "";
     document.getElementById("fUnidades").value = c ? (c.unidades||"") : "";
     document.getElementById("fStatusPedido").value = c ? (c.statusPedido||"") : "";
     document.getElementById("fNumeroPedido").value = c ? (c.numeroPedido||"") : "";
@@ -6343,7 +6355,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       contratoInicio: document.getElementById("fContratoInicio").value,
       contratoFim: document.getElementById("fContratoFim").value,
       possuiAditivo: getSeg("segAditivo"),
-      mensalidade: document.getElementById("fMensalidade").value ? parseFloat(document.getElementById("fMensalidade").value) : null,
+      mensalidade: document.getElementById("fMensalidade").value ? parseMoedaBR(document.getElementById("fMensalidade").value) : null,
       unidades: document.getElementById("fUnidades").value ? parseInt(document.getElementById("fUnidades").value, 10) : null,
       possuiArmario: getSeg("segArmario"),
       possuiGphone: getSeg("segGphone"),
@@ -8017,7 +8029,10 @@ async function seedVEIfEmpty(){
     const { data, error } = await sb.from('visitas_emergenciais').select('condominio');
     if (error) throw error;
     const existentes = new Set((data || []).map(r => (r.condominio || '').trim().toLowerCase()));
-    const novos = VE_SEED.filter(v => !existentes.has((v.condominio || '').trim().toLowerCase()));
+    const novos = VE_SEED.filter(v => {
+      const chave = (v.condominio || '').trim().toLowerCase();
+      return !existentes.has(chave) && !veIgnoradas.has(chave);
+    });
     if (!novos.length) return;
     const rows = novos.map(v => ({
       realizada: v.realizada, filial: v.filial, data_visita: v.data || null, condominio: v.condominio,
@@ -8028,6 +8043,23 @@ async function seedVEIfEmpty(){
   }catch(e){ console.error('Falha ao semear visitas emergenciais:', e); }
 }
 
+async function carregarVisitasIgnoradas(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('visitas_emergenciais_ignoradas').select('condominio');
+    if (error) throw error;
+    veIgnoradas = new Set((data || []).map(r => (r.condominio || '').trim().toLowerCase()));
+  }catch(e){ console.error('Falha ao carregar lista de visitas ignoradas (a tabela pode não existir ainda):', e); }
+}
+
+async function registrarVisitaIgnorada(nome){
+  if (!sb || !nome) return;
+  try{
+    await sb.from('visitas_emergenciais_ignoradas').upsert({ condominio: nome });
+    veIgnoradas.add(nome.trim().toLowerCase());
+  }catch(e){ console.error('Falha ao registrar visita ignorada (a tabela pode não existir ainda):', e); }
+}
+
 async function loadVE(){
   const body = document.getElementById('veBody');
   if (!sb){
@@ -8035,6 +8067,7 @@ async function loadVE(){
     return;
   }
   try{
+    await carregarVisitasIgnoradas();
     await seedVEIfEmpty();
     const { data, error } = await sb.from('visitas_emergenciais').select('*').order('condominio', { ascending:true });
     if (error) throw error;
@@ -8314,10 +8347,11 @@ function initVECrudUI(){
     const id = document.getElementById('veId').value;
     if (!id) return;
     const nome = document.getElementById('veCondominio').value;
-    if (!confirm(`Excluir a visita de "${nome}"?`)) return;
+    if (!confirm(`Excluir a visita de "${nome}"? Ela não será recriada automaticamente depois.`)) return;
     try{
       const { error } = await sb.from('visitas_emergenciais').delete().eq('id', id);
       if (error) throw error;
+      await registrarVisitaIgnorada(nome);
       document.getElementById('veModalOverlay').style.display = 'none';
       loadVE();
     }catch(e){ alert('Erro ao excluir: ' + e.message); }
@@ -8349,7 +8383,10 @@ async function sincronizarVisitasComPesquisa(mostrarAlerta){
   if (!sb) return;
   const candidatos = DATA.filter(itemEhVisitaEmergencial);
   const existentes = new Set(veData.map(v => (v.condominio || '').trim().toLowerCase()));
-  const faltando = candidatos.filter(item => !existentes.has((item.nome || '').trim().toLowerCase()));
+  const faltando = candidatos.filter(item => {
+    const chave = (item.nome || '').trim().toLowerCase();
+    return !existentes.has(chave) && !veIgnoradas.has(chave);
+  });
   if (!faltando.length){
     if (mostrarAlerta) alert('Tudo sincronizado — nenhum condomínio novo pra adicionar.');
     return;
@@ -8389,6 +8426,7 @@ async function autoCriarVisitaEmergencial(item){
   const nomeAlvo = (item.nome || '').trim().toLowerCase();
   const jaExiste = veData.some(v => (v.condominio || '').trim().toLowerCase() === nomeAlvo);
   if (jaExiste) return; // já tem visita registrada pra esse condomínio — não duplica nem sobrescreve
+  if (veIgnoradas.has(nomeAlvo)) return; // usuário excluiu essa visita de propósito — não recriar
 
   const diagnostico = pesquisaNaoRealizada(item)
     ? (item.motivoNaoRealizada || (item.statusPesquisa === 'Síndico não atende' ? 'Síndico não atende' : 'Pesquisa não realizada'))
