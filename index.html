@@ -1757,6 +1757,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <th>Filial</th>
             <th>Data da Visita</th>
             <th class="ck-name">Condomínio</th>
+            <th>Nota</th>
             <th>Responsável</th>
             <th>Setor</th>
             <th>Diagnóstico / Pendências</th>
@@ -1767,7 +1768,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           </tr>
         </thead>
         <tbody id="veBody">
-          <tr><td colspan="11" class="empty">Carregando visitas...</td></tr>
+          <tr><td colspan="12" class="empty">Carregando visitas...</td></tr>
         </tbody>
       </table>
     </div>
@@ -7917,6 +7918,21 @@ function renderComparativoFiliais(){
 function pesquisaNaoRealizada(item){
   return item.statusPesquisa === 'Pendente' || item.statusPesquisa === 'Síndico não atende';
 }
+function notaPesquisaParaCondoVE(nomeCondo){
+  const alvo = normalizeNomeCondo(nomeCondo);
+  if (!alvo) return null;
+  let match = DATA.find(d => normalizeNomeCondo(d.nome) === alvo);
+  if (!match){
+    match = DATA.find(d => {
+      const rn = normalizeNomeCondo(d.nome);
+      return rn.length > 4 && alvo.length > 4 && (rn.includes(alvo) || alvo.includes(rn));
+    });
+  }
+  if (!match) return null;
+  const n = parseFloat(String(match.nota).replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
 function itemEhVisitaEmergencial(item){
   const n = parseFloat(String(item.nota).replace(',', '.'));
   const notaBaixa = !isNaN(n) && n < 9;
@@ -7993,7 +8009,7 @@ async function seedVEIfEmpty(){
 async function loadVE(){
   const body = document.getElementById('veBody');
   if (!sb){
-    body.innerHTML = '<tr><td colspan="11" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    body.innerHTML = '<tr><td colspan="12" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
     return;
   }
   try{
@@ -8006,7 +8022,7 @@ async function loadVE(){
     renderVE();
   }catch(e){
     console.error(e);
-    body.innerHTML = `<tr><td colspan="11" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="12" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -8062,6 +8078,7 @@ function exportarVisitasExcel(){
     'Filial': v.filial || '',
     'Data da Visita': v.data_visita ? formatDateBR(v.data_visita) : '',
     'Condomínio': v.condominio || '',
+    'Nota': notaPesquisaParaCondoVE(v.condominio) ?? '',
     'Responsável pela Visita': v.responsavel || '',
     'Setor Responsável': v.setor || '',
     'Diagnóstico / Pendências Identificadas': v.diagnostico || '',
@@ -8071,7 +8088,7 @@ function exportarVisitasExcel(){
   }));
   const ws = XLSX.utils.json_to_sheet(linhas);
   ws['!cols'] = [
-    {wch:14},{wch:10},{wch:14},{wch:32},{wch:20},{wch:16},{wch:50},{wch:50},{wch:50},{wch:16}
+    {wch:14},{wch:10},{wch:14},{wch:32},{wch:8},{wch:20},{wch:16},{wch:50},{wch:50},{wch:50},{wch:16}
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Visitas Emergenciais');
@@ -8084,12 +8101,14 @@ function gerarRelatorioVisitasPDF(){
   if (!filtered.length){ alert('Nenhuma visita para gerar relatório com esses filtros.'); return; }
   const emitido = new Date().toLocaleString('pt-BR');
   const linha = (label, val) => val ? `<div class="rep-row"><span class="rep-lbl">${escapeHtml(label)}</span><span class="rep-val">${escapeHtml(val).replace(/\n/g,'<br>')}</span></div>` : '';
-  const cards = filtered.map(v => `
+  const cards = filtered.map(v => {
+    const nota = notaPesquisaParaCondoVE(v.condominio);
+    return `
     <div class="visita-card">
       <div class="visita-card-head">
         <div>
           <div class="visita-card-nome">${escapeHtml(v.condominio)}</div>
-          <div class="visita-card-meta">${escapeHtml(v.filial||'—')} ${v.data_visita ? '· ' + formatDateBR(v.data_visita) : ''} ${v.responsavel ? '· ' + escapeHtml(v.responsavel) : ''}</div>
+          <div class="visita-card-meta">${escapeHtml(v.filial||'—')} ${v.data_visita ? '· ' + formatDateBR(v.data_visita) : ''} ${v.responsavel ? '· ' + escapeHtml(v.responsavel) : ''} ${nota!==null ? '· Nota: ' + escapeHtml(nota) : ''}</div>
         </div>
         <div style="text-align:right;">
           <span class="status-badge">${escapeHtml(v.status||'—')}</span>
@@ -8101,7 +8120,8 @@ function gerarRelatorioVisitasPDF(){
       ${linha('Retorno da Visita', v.retorno)}
       ${linha('Tratativa do Setor Responsável', v.tratativa)}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Visitas Emergenciais</title>
@@ -8146,16 +8166,18 @@ function renderVE(){
   const filtered = getFilteredVE();
   document.getElementById('veCount').textContent = `${filtered.length} de ${veData.length} visita(s)`;
   if (!filtered.length){
-    body.innerHTML = '<tr><td colspan="11" class="empty">Nenhuma visita encontrada.</td></tr>';
+    body.innerHTML = '<tr><td colspan="12" class="empty">Nenhuma visita encontrada.</td></tr>';
     return;
   }
   body.innerHTML = filtered.map(v=>{
     const cor = veStatusClass(v.status).cor;
+    const nota = notaPesquisaParaCondoVE(v.condominio);
     return `<tr>
       <td>${v.realizada === 'SIM' ? '<span class="rbadge yes">Sim</span>' : '<span class="rbadge no">Não</span>'}</td>
       <td>${escapeHtml(v.filial||'—')}</td>
       <td>${v.data_visita ? formatDateBR(v.data_visita) : '—'}</td>
       <td class="ck-name">${escapeHtml(v.condominio)}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace; font-weight:700; color:${nota!==null && nota<9 ? 'var(--critico)':'var(--ok)'};">${nota!==null ? escapeHtml(nota) : '—'}</td>
       <td>${escapeHtml(v.responsavel||'—')}</td>
       <td>${escapeHtml(v.setor||'—')}</td>
       <td title="${escapeHtml(v.diagnostico||'')}">${escapeHtml(truncarTexto(v.diagnostico, 90))}</td>
