@@ -984,6 +984,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="cadastro" checked> Cadastro de Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="renovacao" checked> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="checklist" checked> Check List Condomínios</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="visitasEmergenciais" checked> Visitas Emergenciais</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1013,6 +1014,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="cadastro"> Cadastro de Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="renovacao"> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="checklist"> Check List Condomínios</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="visitasEmergenciais"> Visitas Emergenciais</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1144,6 +1146,21 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label class="pq-label">Descrição da Pendência <span class="pq-required">*</span></label>
         <textarea id="pqDescricaoPendencia" placeholder="Descreva a pendência relatada pelo síndico..."></textarea>
       </div>
+      <div class="pq-field">
+        <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
+        <select id="pqSetorPendencia">
+          <option value="">Selecione...</option>
+          <option value="Técnica">Técnica</option>
+          <option value="Central">Central</option>
+          <option value="T.I.">T.I.</option>
+          <option value="Backoffice">Backoffice</option>
+          <option value="Sucesso do Cliente">Sucesso do Cliente</option>
+          <option value="Comercial">Comercial</option>
+          <option value="Financeiro">Financeiro</option>
+          <option value="Outros">Outros</option>
+        </select>
+        <input type="text" id="pqSetorPendenciaOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
+      </div>
       <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Observações <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
         <textarea id="pqObservacoesPendencia" placeholder="Observações adicionais..."></textarea>
@@ -1163,6 +1180,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="pq-field">
         <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
         <select id="pqSetorReclamacao"><option value="">Selecione...</option></select>
+        <input type="text" id="pqSetorReclamacaoOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
       </div>
       <div class="pq-field">
         <label class="pq-label">Descrição da Situação <span class="pq-required">*</span></label>
@@ -1218,7 +1236,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
 
     <div id="pqNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
       <div class="pq-field">
-        <label class="pq-label" style="color:var(--critico);">Motivo da não realização</label>
+        <label class="pq-label" style="color:var(--critico);">Motivo da não realização <span class="pq-required">*</span></label>
         <select id="pqMotivoNaoRealizada">
           <option value="">Selecione...</option>
           <option value="Síndico não atendeu">Síndico não atendeu</option>
@@ -1231,6 +1249,25 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Observação</label>
         <textarea id="pqObservacaoNaoRealizada" placeholder="Detalhes..."></textarea>
+      </div>
+      <div class="pq-field" style="margin-top:12px; margin-bottom:0;">
+        <span class="pq-label">A pesquisa foi remarcada/realizada posteriormente?</span>
+        <div class="toggle-pair">
+          <button type="button" class="toggle-btn" data-group="pqRemarcada" data-val="nao">☑ Não</button>
+          <button type="button" class="toggle-btn" data-group="pqRemarcada" data-val="sim">📅 Sim</button>
+        </div>
+      </div>
+      <div id="pqRemarcadaWrap" style="display:none; margin-top:12px;">
+        <div class="pq-row2">
+          <div class="pq-field" style="margin-bottom:0;">
+            <label class="pq-label">Data da nova pesquisa</label>
+            <input type="date" id="pqDataRemarcada">
+          </div>
+          <div class="pq-field" style="margin-bottom:0;">
+            <label class="pq-label">Retorno da visita</label>
+            <textarea id="pqRetornoVisitaRemarcada" placeholder="O que foi conversado/observado..."></textarea>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1304,6 +1341,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="cadastro"><span class="tab-icon">🏢</span><span class="tab-label">Cadastro de Condomínios</span></button>
       <button type="button" class="tab-btn" data-tab="renovacao"><span class="tab-icon">🔄</span><span class="tab-label">Renovação de Contratos</span></button>
       <button type="button" class="tab-btn" data-tab="checklist"><span class="tab-icon">✅</span><span class="tab-label">Check List Condomínios</span></button>
+      <button type="button" class="tab-btn" data-tab="visitasEmergenciais"><span class="tab-icon">🚨</span><span class="tab-label">Visitas Emergenciais</span></button>
     </nav>
 
     <div class="content-area">
@@ -1351,6 +1389,11 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="exec-stat-row" id="statsStrip"></div>
 
     <div class="kpis" id="kpis"></div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">Pesquisas e visitas emergenciais</p>
+      <div class="stats-strip" id="statsVisitasEmergenciaisDash"></div>
+    </div>
 
     <div class="charts-grid charts-grid-2">
       <div class="chart-panel">
@@ -1672,6 +1715,124 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
   </div>
 
+  <div id="tabVisitasEmergenciais" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Resumo abaixo é calculado a partir da Pesquisa de Satisfação (nota &lt; 9 ou pesquisa não realizada).
+      O registro de visitas logo abaixo é totalmente editável — adicione, edite ou exclua qualquer linha.
+    </p>
+    <div class="stats-strip" id="visitasEmergenciaisStats"></div>
+
+    <div class="toolbar" style="margin:16px 0;">
+      <input type="text" id="veSearch" class="search" placeholder="Buscar condomínio, responsável, diagnóstico...">
+      <select class="filter-select" id="veFilterFilial"><option value="">Filial: todas</option></select>
+      <select class="filter-select" id="veFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Visita Agendada">Visita Agendada</option>
+        <option value="Em Andamento">Em Andamento</option>
+        <option value="Concluído">Concluído</option>
+      </select>
+      <button type="button" class="logout-btn" id="btnNovaVisitaEmergencial" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Visita</button>
+    </div>
+    <span id="veCount" class="count-line"></span>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="veTable">
+        <thead>
+          <tr>
+            <th>Realizada</th>
+            <th>Filial</th>
+            <th>Data da Visita</th>
+            <th class="ck-name">Condomínio</th>
+            <th>Responsável</th>
+            <th>Setor</th>
+            <th>Diagnóstico / Pendências</th>
+            <th>Retorno da Visita</th>
+            <th>Tratativa</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="veBody">
+          <tr><td colspan="11" class="empty">Carregando visitas...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="users-modal" id="veModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="veModalTitle">Nova Visita</h3>
+        <button type="button" class="logout-btn" id="veModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="veId">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Visita Realizada?
+          <select id="veRealizada" style="width:100%; margin-top:4px;">
+            <option value="SIM">Sim</option>
+            <option value="NÃO">Não</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
+          <select id="veFilial" style="width:100%; margin-top:4px;">
+            <option value="CEARA">CEARÁ</option>
+            <option value="MARANHAO">MARANHÃO</option>
+            <option value="MANAUS">MANAUS</option>
+            <option value="SECOPI">SECOPI</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data da Visita
+          <input type="date" id="veData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="veCondominio" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável pela Visita
+          <input type="text" id="veResponsavel" placeholder="Ex: Pedro Firmino" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Setor Responsável
+          <select id="veSetor" style="width:100%; margin-top:4px;">
+            <option value="Técnica">Técnica</option>
+            <option value="Central">Central</option>
+            <option value="T.I.">T.I.</option>
+            <option value="Backoffice">Backoffice</option>
+            <option value="Sucesso do Cliente">Sucesso do Cliente</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Financeiro">Financeiro</option>
+            <option value="Outros">Outros</option>
+          </select>
+          <input type="text" id="veSetorOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px; width:100%; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Diagnóstico / Pendências Identificadas
+          <textarea id="veDiagnostico" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="O que foi identificado..."></textarea>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Retorno da Visita
+          <textarea id="veRetorno" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="O que foi feito/observado..."></textarea>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Tratativa do Setor Responsável
+          <textarea id="veTratativa" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Encaminhamento dado pelo setor..."></textarea>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Status da Tratativa
+          <select id="veStatus" style="width:100%; margin-top:4px;">
+            <option value="Visita Agendada">Visita Agendada</option>
+            <option value="Em Andamento">Em Andamento</option>
+            <option value="Concluído">Concluído</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="veDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="veCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="veSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Visita</button>
+      </div>
+      <p class="users-error" id="veError" style="display:none;"></p>
+    </div>
+  </div>
+
 
 </div>
 
@@ -1687,7 +1848,7 @@ const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -3499,7 +3660,8 @@ function extraRowToItem(row){
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
-    dataPesquisa2: row.data_pesquisa_2,
+    dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
+    pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
   };
 }
 function itemToExtraRow(item){
@@ -3513,7 +3675,8 @@ function itemToExtraRow(item){
     comentario_sindico: item.comentarioSindico || null, responsavel_pesquisa: item.responsavelPesquisa || null,
     motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
     pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
-    data_pesquisa_2: item.dataPesquisa2 || null,
+    data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
+    pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
     created_by: currentUsername || 'desconhecido',
   };
 }
@@ -3572,7 +3735,9 @@ function rowToUpdates(row){
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
-    dataPesquisa2: row.data_pesquisa_2,
+    dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
+    pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
+    statusVisitaEmergencial: row.status_visita_emergencial,
   };
 }
 function updatesToRow(itemN, updates){
@@ -3585,7 +3750,8 @@ function updatesToRow(itemN, updates){
     comentario_sindico: updates.comentarioSindico || null, responsavel_pesquisa: updates.responsavelPesquisa || null,
     motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
     pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
-    data_pesquisa_2: updates.dataPesquisa2 || null,
+    data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
+    pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
     updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
   };
 }
@@ -4725,6 +4891,7 @@ function render(){
   renderFilialChart(filtered);
   buildStats(filtered);
   if (typeof renderComparativoMensal === 'function') renderComparativoMensal();
+  if (typeof renderStatsVisitasEmergenciaisDash === 'function') renderStatsVisitasEmergenciaisDash();
   if (typeof renderComparativoFiliais === 'function') renderComparativoFiliais();
   renderMiniDash(baseFiltered);
 
@@ -6899,6 +7066,7 @@ function initTabs(){
       document.getElementById('tabCadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
       document.getElementById('tabRenovacao').style.display = tab === 'renovacao' ? 'block' : 'none';
       document.getElementById('tabChecklist').style.display = tab === 'checklist' ? 'block' : 'none';
+      document.getElementById('tabVisitasEmergenciais').style.display = tab === 'visitasEmergenciais' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
@@ -6909,6 +7077,10 @@ function initTabs(){
       }
       if (tab === 'checklist' && !checklistLoaded){
         loadChecklistData();
+      }
+      if (tab === 'visitasEmergenciais'){
+        renderVisitasEmergenciais();
+        if (!veLoaded) loadVE();
       }
     });
   });
@@ -6924,7 +7096,7 @@ let pqNotaSelecionada = null;
 
 const PQ_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josy', 'Geovana - Aprendiz'];
 const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial','Outros'];
-const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Outro'];
+const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','T.I.','Backoffice','Sucesso do Cliente','Comercial','Financeiro','Outros'];
 const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial','Outro'];
 
 function pqBuildNotaRow(){
@@ -6955,6 +7127,7 @@ function pqSetToggle(group, val){
       if (group === 'pqPendencia') btn.classList.add(val === 'sim' ? 'warn' : 'pos');
       if (group === 'pqReclamacao') btn.classList.add(val === 'sim' ? 'neg' : 'pos');
       if (group === 'pqElogio') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
+      if (group === 'pqRemarcada') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
     }
   });
   if (group === 'pqPendencia'){
@@ -6965,6 +7138,9 @@ function pqSetToggle(group, val){
   }
   if (group === 'pqElogio'){
     document.getElementById('pqCardElogio').style.display = val === 'sim' ? 'block' : 'none';
+  }
+  if (group === 'pqRemarcada'){
+    document.getElementById('pqRemarcadaWrap').style.display = val === 'sim' ? 'block' : 'none';
   }
   if (group === 'pqRealizada'){
     document.getElementById('pqNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
@@ -7043,12 +7219,29 @@ function openPesquisaModal(item){
   document.getElementById('pqMotivoOutro').value = outroTxt.replace(/^outros\s*:?\s*/i,'');
   document.getElementById('pqMotivoOutroWrap').style.display = outroTxt ? 'block' : 'none';
 
-  document.getElementById('pqSetorReclamacao').value = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
+  {
+    const setorRecValor = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
+    const ehPadraoRec = PQ_SETORES_RESPONSAVEL.includes(setorRecValor);
+    document.getElementById('pqSetorReclamacao').value = ehPadraoRec ? setorRecValor : (setorRecValor ? 'Outros' : '');
+    document.getElementById('pqSetorReclamacaoOutro').value = ehPadraoRec ? '' : setorRecValor;
+    document.getElementById('pqSetorReclamacaoOutro').style.display = (!ehPadraoRec && setorRecValor) ? 'block' : 'none';
+  }
   document.getElementById('pqDescricaoSituacao').value = item ? (item.pend || '') : '';
   document.getElementById('pqRetornoSetor').value = item ? (item.resolucao || '') : '';
   document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || 'Em andamento') : 'Em andamento';
   document.getElementById('pqDescricaoPendencia').value = item ? (item.pendenciaDescricao || '') : '';
   document.getElementById('pqObservacoesPendencia').value = item ? (item.pendenciaObservacoes || '') : '';
+  {
+    const setorPendValor = item ? (item.setorPendencia || '') : '';
+    const ehPadraoPend = PQ_SETORES_RESPONSAVEL.includes(setorPendValor);
+    document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : (setorPendValor ? 'Outros' : '');
+    document.getElementById('pqSetorPendenciaOutro').value = ehPadraoPend ? '' : setorPendValor;
+    document.getElementById('pqSetorPendenciaOutro').style.display = (!ehPadraoPend && setorPendValor) ? 'block' : 'none';
+  }
+
+  document.getElementById('pqDataRemarcada').value = item ? (item.dataRemarcada || '') : '';
+  document.getElementById('pqRetornoVisitaRemarcada').value = item ? (item.retornoVisitaRemarcada || '') : '';
+  pqSetToggle('pqRemarcada', item && item.pesquisaRemarcada ? 'sim' : 'nao');
 
   document.getElementById('pqSetorElogio').value = item ? (item.elogioSetor || '') : '';
   document.getElementById('pqDescricaoElogio').value = item ? (item.elogioDescricao || '') : '';
@@ -7067,6 +7260,13 @@ function pqAtualizarVisibilidadeRecuperacao(){
     document.getElementById('pqRecuperacaoResumo').innerHTML = `<b style="color:var(--text-dim);">Nota 1:</b> ${escapeHtml(pqNotaSelecionada)} &nbsp;·&nbsp; <b style="color:var(--text-dim);">Data da Pesquisa 1:</b> ${dataTxt}`;
   }
 }
+
+document.getElementById('pqSetorReclamacao').addEventListener('change', (e)=>{
+  document.getElementById('pqSetorReclamacaoOutro').style.display = e.target.value === 'Outros' ? 'block' : 'none';
+});
+document.getElementById('pqSetorPendencia').addEventListener('change', (e)=>{
+  document.getElementById('pqSetorPendenciaOutro').style.display = e.target.value === 'Outros' ? 'block' : 'none';
+});
 
 document.getElementById('pqCondominio').addEventListener('input', ()=>{
   if (pqEditingItem) return; // ao editar, o nome já vem fixo
@@ -7101,6 +7301,20 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const usaPendencia = pqToggleState.pqPendencia === 'sim';
   const usaReclamacao = pqToggleState.pqReclamacao === 'sim';
   const usaElogio = pqToggleState.pqElogio === 'sim';
+  const remarcada = pqToggleState.pqRemarcada === 'sim';
+
+  if (!realizada){
+    if (!document.getElementById('pqMotivoNaoRealizada').value){
+      errEl.textContent = 'Selecione o Motivo da não realização.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (remarcada && !document.getElementById('pqDataRemarcada').value){
+      errEl.textContent = 'Informe a Data da nova pesquisa.';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
 
   if (realizada){
     if (!document.getElementById('pqData').value){
@@ -7115,6 +7329,11 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     }
     if (usaPendencia && !document.getElementById('pqDescricaoPendencia').value.trim()){
       errEl.textContent = 'Descreva a Pendência.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (usaPendencia && !document.getElementById('pqSetorPendencia').value){
+      errEl.textContent = 'Selecione o Setor Responsável pela pendência.';
       errEl.style.display = 'block';
       return;
     }
@@ -7179,8 +7398,16 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     houveElogio: usaElogio,
     pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
     pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
+    setorPendencia: usaPendencia
+      ? (document.getElementById('pqSetorPendencia').value === 'Outros'
+          ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || 'Outros')
+          : document.getElementById('pqSetorPendencia').value)
+      : '',
     setor: usaReclamacao && document.getElementById('pqSetorReclamacao').value
-      ? document.getElementById('pqSetorReclamacao').value : (pqEditingItem ? pqEditingItem.setor : '—'),
+      ? (document.getElementById('pqSetorReclamacao').value === 'Outros'
+          ? (document.getElementById('pqSetorReclamacaoOutro').value.trim() || 'Outros')
+          : document.getElementById('pqSetorReclamacao').value)
+      : (pqEditingItem ? pqEditingItem.setor : '—'),
     motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
     pend: usaReclamacao ? document.getElementById('pqDescricaoSituacao').value.trim() : '',
     resolucao: usaReclamacao ? document.getElementById('pqRetornoSetor').value.trim() : '',
@@ -7194,6 +7421,9 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     notaPosResolucao: document.getElementById('pqNotaPos').value.trim(),
     motivoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada').value : '',
     observacaoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada').value.trim() : '',
+    pesquisaRemarcada: !realizada && remarcada,
+    dataRemarcada: (!realizada && remarcada) ? document.getElementById('pqDataRemarcada').value : '',
+    retornoVisitaRemarcada: (!realizada && remarcada) ? document.getElementById('pqRetornoVisitaRemarcada').value.trim() : '',
     crit: pqEditingItem ? pqEditingItem.crit : 'ok',
   };
   // Recalcula criticidade a partir da nova nota, igual ao resto do app
@@ -7656,6 +7886,259 @@ function renderComparativoFiliais(){
   }
   document.getElementById('compFilialInsight').textContent = '💡 ' + insight;
 }
+
+// ============================================================================
+// VISITAS EMERGENCIAIS — visão derivada, sem tabela própria: pega ao vivo os
+// itens de DATA com Nota 1 < 9 ou pesquisa "Não Realizada". O único dado novo
+// aqui é o campo de Status (Pendente/Em andamento/Resolvido), que é salvo
+// junto com o resto da pesquisa (mesmo mecanismo de OVERRIDES/condo_extra).
+// ============================================================================
+function itemEhVisitaEmergencial(item){
+  const n = parseFloat(String(item.nota).replace(',', '.'));
+  const notaBaixa = !isNaN(n) && n < 9;
+  const naoRealizada = item.statusPesquisa === 'Pendente';
+  return notaBaixa || naoRealizada;
+}
+
+async function salvarStatusVisitaEmergencial(itemN, novoStatus){
+  const item = DATA.find(d => d.n === itemN);
+  if (!item) return;
+  item.statusVisitaEmergencial = novoStatus;
+  const updates = { statusVisitaEmergencial: novoStatus };
+  OVERRIDES[itemN] = Object.assign({}, OVERRIDES[itemN], updates);
+  persistOverrides(OVERRIDES);
+  if (sb){
+    try{
+      await sb.from('condo_overrides').update({ status_visita_emergencial: novoStatus, updated_at: new Date().toISOString() }).eq('item_n', itemN);
+    }catch(e){ console.error('Erro ao salvar status da visita emergencial:', e); }
+  }
+}
+
+function renderVisitasEmergenciais(){
+  const itens = DATA.filter(itemEhVisitaEmergencial);
+  const totalRealizadas = DATA.filter(d => d.statusPesquisa !== 'Pendente').length;
+  const totalNaoRealizadas = DATA.filter(d => d.statusPesquisa === 'Pendente').length;
+  const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+
+  document.getElementById('visitasEmergenciaisStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${itens.length}</div><div class="slbl">Total de visitas emergenciais</div></div>
+  `;
+}
+
+function renderStatsVisitasEmergenciaisDash(){
+  const el = document.getElementById('statsVisitasEmergenciaisDash');
+  if (!el) return;
+  const itensEmergenciais = DATA.filter(itemEhVisitaEmergencial);
+  const totalRealizadas = DATA.filter(d => d.statusPesquisa !== 'Pendente').length;
+  const totalNaoRealizadas = DATA.filter(d => d.statusPesquisa === 'Pendente').length;
+  const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+  el.innerHTML = `
+    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${itensEmergenciais.length}</div><div class="slbl">Total de visitas emergenciais</div></div>
+  `;
+}
+
+// ============================================================================
+// REGISTRO DE VISITAS EMERGENCIAIS (editável)
+// Tabela própria no Supabase (visitas_emergenciais) — totalmente editável,
+// com semente inicial a partir da planilha "VISITAS URGENTES" da Rosely.
+// ============================================================================
+const VE_SEED = [{"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Lírida", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Furto qualificado com subtração de três bicicletas nas dependências do condomínio, prejuízo estimado em R$17.000; síndico cobra apuração e reforço de segurança.", "retorno": "mandar documentos das bicicletas; negociar desconto nas mensalidades para pagar a bicicleta; trocar o facial da entrada para o Promax; verificar cerca; mandar as melhorias que foram passadas; modificar o anti-esmagamento do local; fazer o levantamento de câmeras para colocar I.A. nos muros; trocar central de monitoramento; automatizar o hall; levantamento da nova eclusa veicular subsolo; foi orientado durante a visita fazer um bicicletário; RETORNO 11/07, com a equipe técnica. Melhorar sistema de alarme, com a troca da central via web.", "tratativa": "Supervisor Iranilson realizou levantamento em 3 etapas: 1ª etapa enviada para vistoria; levantamento de CFTV (I.A. nas laterais, troca do MIP pela guarita, mudança de facials); aguardando instrução para obra da eclusa do subsolo para depois alterar fachada/hall e instalar controle de acesso; demais melhorias com o Pedro. Aguardando documentos das bicicletas para prosseguir.", "status": "Em Andamento"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Paul Richard", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Faltando placas de identificação, mas somente poderá trocar quando mudarem a fachada. Moradora não estava recebendo ligações, orientado, retirado antispam.", "retorno": "", "tratativa": "Técnico Felipe já providenciou as placas de identificação para instalação.", "status": "Concluído"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-10", "condominio": "Condomínio Green Vision", "responsavel": "Angela", "setor": "Técnica", "diagnostico": "Falha grave nas baterias do sistema: condomínio ficou cerca de 5h sem energia e o portão veicular parou de funcionar; síndico teme repetição do problema.", "retorno": "Trocado bateria; identificado que a trava de segurança estava vulnerável, instalado trava; central de alarme sem bateria, recolocado; trocado placas informativas.", "tratativa": "", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Aldeia dos Ventos", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Problemas recorrentes no atendimento da Central por liberações indevidas; síndico está em tratativas de renovação de contrato.", "retorno": "ok", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-09", "condominio": "Condomínio Via Lumini", "responsavel": "Pedro / Maria Rosely", "setor": "Central", "diagnostico": "Síndica muito insatisfeita com a comunicação; moradores relatam dificuldade recorrente para liberação de visitantes, principalmente aos fins de semana.", "retorno": "Trocado placa da botoeira do portão A veicular pois a anterior estava quebrada; cerca elétrica desativada devido a plantas encostando, síndica informou à Ângela que moradores não querem podar; precisa passar graxa no portão veicular B devido está arrastando; informa que não está chegando atendimento da central, orientado antispam para colocarem nos aparelhos. Retorno técnico: refixado cremalheira do portão veicular B e normalizado.", "tratativa": "Pendência de atendimento para central; supervisão vai puxar todas as gravações da unidade 11 e acompanhar.", "status": "Concluído"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Residencial Riviera di Capri", "responsavel": "Pedro Firmino", "setor": "Técnica", "diagnostico": "Disparos recorrentes de alarmes perimetrais (sensores, barreiras e cerca elétrica) em sequência, incluindo registro de \"desarmado fora de horário\".", "retorno": "", "tratativa": "Tá pendente a poda das plantas por parte do condomínio.", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Montvernon", "responsavel": "Pedro Firmino", "setor": "Backoffice", "diagnostico": "Duas câmeras fora de funcionamento há cerca de um mês; instabilidade recorrente impede que moradores completem chamadas de interfonia com a Central.", "retorno": "Cerca, devido a reforma que fizeram, não conseguimos fazer reparo devido a novo telhado; últimas reclamações foram resolvidas, pendências. Aguardando retorno para visita presencial.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Porta Romana Residence", "responsavel": "Maria Rosely", "setor": "Sucesso do Cliente", "diagnostico": "A síndica repassou que a principal pendência refere-se ao aplicativo do condomínio, cuja funcionalidade de reserva de deck encontra-se inoperante. Informou que o problema foi reportado há aproximadamente um mês e recebeu retorno de que estava em manutenção, porém até o momento não houve solução definitiva.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Real Park", "responsavel": "", "setor": "Central", "diagnostico": "Reclamação antiga e recorrente sobre demora no atendimento da Central.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "SIM", "filial": "CEARA", "data": "2026-07-08", "condominio": "Condomínio Edifício Leblon", "responsavel": "Pedro Firmino / Angela", "setor": "Técnica", "diagnostico": "Sistema de reconhecimento facial com travamentos frequentes; interfonamento exige digitação extra do número do apartamento; eletrodutos enferrujados precisando de manutenção.", "retorno": "Local precisa trocar as placas de identificação; revisão na cerca, muitas plantas encostando; necessário trocar toda infraestrutura, galvanizado enferrujado; escada da guarita comprometida.", "tratativa": "", "status": "Em Andamento"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Edifício Celsina", "responsavel": "", "setor": "Central", "diagnostico": "Interfone com falha direciona ligações para apartamentos errados; síndica também solicitou contato do setor financeiro para negociar desconto nas mensalidades.", "retorno": "Dar uma mensalidade grátis e renovar 36 meses.", "tratativa": "", "status": "Visita Agendada"}, {"realizada": "NÃO", "filial": "CEARA", "data": "", "condominio": "Condomínio Sunville Residence", "responsavel": "Maria Rosely", "setor": "Central", "diagnostico": "Após diversas reclamações anteriores, todas as pendências já foram solucionadas, sem novas ocorrências no momento.", "retorno": "", "tratativa": "", "status": "Visita Agendada"}];
+
+let veData = [];
+let veLoaded = false;
+
+async function seedVEIfEmpty(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('visitas_emergenciais').select('id').limit(1);
+    if (error) throw error;
+    if (data && data.length) return;
+    const rows = VE_SEED.map(v => ({
+      realizada: v.realizada, filial: v.filial, data_visita: v.data || null, condominio: v.condominio,
+      responsavel: v.responsavel || null, setor: v.setor || null, diagnostico: v.diagnostico || null,
+      retorno: v.retorno || null, tratativa: v.tratativa || null, status: v.status
+    }));
+    await sb.from('visitas_emergenciais').insert(rows);
+  }catch(e){ console.error('Falha ao semear visitas emergenciais:', e); }
+}
+
+async function loadVE(){
+  const body = document.getElementById('veBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="11" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    await seedVEIfEmpty();
+    const { data, error } = await sb.from('visitas_emergenciais').select('*').order('condominio', { ascending:true });
+    if (error) throw error;
+    veData = data || [];
+    veLoaded = true;
+    vePopulateFiltros();
+    renderVE();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="11" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function vePopulateFiltros(){
+  const sel = document.getElementById('veFilterFilial');
+  const atual = sel.value;
+  const filiais = [...new Set(veData.map(v=>v.filial))].filter(Boolean).sort();
+  sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  if (filiais.includes(atual)) sel.value = atual;
+}
+
+function veStatusClass(status){
+  if (status === 'Concluído') return { cor:'var(--ok)' };
+  if (status === 'Em Andamento') return { cor:'var(--atencao)' };
+  return { cor:'var(--pendente)' };
+}
+
+function getFilteredVE(){
+  const q = (document.getElementById('veSearch').value || '').trim().toLowerCase();
+  const fFilial = document.getElementById('veFilterFilial').value;
+  const fStatus = document.getElementById('veFilterStatus').value;
+  return veData.filter(v=>{
+    if (q && !((v.condominio||'').toLowerCase().includes(q) || (v.responsavel||'').toLowerCase().includes(q) || (v.diagnostico||'').toLowerCase().includes(q))) return false;
+    if (fFilial && v.filial !== fFilial) return false;
+    if (fStatus && v.status !== fStatus) return false;
+    return true;
+  });
+}
+
+function truncarTexto(txt, n){
+  if (!txt) return '—';
+  return txt.length > n ? txt.slice(0, n) + '…' : txt;
+}
+
+function renderVE(){
+  const body = document.getElementById('veBody');
+  const filtered = getFilteredVE();
+  document.getElementById('veCount').textContent = `${filtered.length} de ${veData.length} visita(s)`;
+  if (!filtered.length){
+    body.innerHTML = '<tr><td colspan="11" class="empty">Nenhuma visita encontrada.</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(v=>{
+    const cor = veStatusClass(v.status).cor;
+    return `<tr>
+      <td>${v.realizada === 'SIM' ? '<span class="rbadge yes">Sim</span>' : '<span class="rbadge no">Não</span>'}</td>
+      <td>${escapeHtml(v.filial||'—')}</td>
+      <td>${v.data_visita ? formatDateBR(v.data_visita) : '—'}</td>
+      <td class="ck-name">${escapeHtml(v.condominio)}</td>
+      <td>${escapeHtml(v.responsavel||'—')}</td>
+      <td>${escapeHtml(v.setor||'—')}</td>
+      <td title="${escapeHtml(v.diagnostico||'')}">${escapeHtml(truncarTexto(v.diagnostico, 90))}</td>
+      <td title="${escapeHtml(v.retorno||'')}">${escapeHtml(truncarTexto(v.retorno, 90))}</td>
+      <td title="${escapeHtml(v.tratativa||'')}">${escapeHtml(truncarTexto(v.tratativa, 90))}</td>
+      <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${escapeHtml(v.status)}</span></td>
+      <td><button type="button" class="renov-action-btn" data-edit-ve="${v.id}">Editar</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('[data-edit-ve]').forEach(btn=>{
+    btn.onclick = ()=> openVEModal(veData.find(v=>String(v.id)===btn.getAttribute('data-edit-ve')));
+  });
+}
+
+function openVEModal(v){
+  document.getElementById('veError').style.display = 'none';
+  document.getElementById('veModalTitle').textContent = v ? 'Editar Visita' : 'Nova Visita';
+  document.getElementById('veId').value = v ? v.id : '';
+  document.getElementById('veRealizada').value = v ? (v.realizada || 'SIM') : 'SIM';
+  document.getElementById('veFilial').value = v ? (v.filial || 'CEARA') : 'CEARA';
+  document.getElementById('veData').value = v ? (v.data_visita || '') : '';
+  document.getElementById('veCondominio').value = v ? (v.condominio || '') : '';
+  document.getElementById('veResponsavel').value = v ? (v.responsavel || '') : '';
+  const setoresPadrao = ['Técnica','Central','T.I.','Backoffice','Sucesso do Cliente','Comercial','Financeiro'];
+  const setorVal = v ? (v.setor || '') : '';
+  const ehPadrao = setoresPadrao.includes(setorVal);
+  document.getElementById('veSetor').value = ehPadrao ? setorVal : (setorVal ? 'Outros' : 'Técnica');
+  document.getElementById('veSetorOutro').value = ehPadrao ? '' : setorVal;
+  document.getElementById('veSetorOutro').style.display = (!ehPadrao && setorVal) ? 'block' : 'none';
+  document.getElementById('veDiagnostico').value = v ? (v.diagnostico || '') : '';
+  document.getElementById('veRetorno').value = v ? (v.retorno || '') : '';
+  document.getElementById('veTratativa').value = v ? (v.tratativa || '') : '';
+  document.getElementById('veStatus').value = v ? (v.status || 'Visita Agendada') : 'Visita Agendada';
+  document.getElementById('veDeleteBtn').style.display = v ? '' : 'none';
+  document.getElementById('veModalOverlay').style.display = 'flex';
+}
+
+function initVECrudUI(){
+  document.getElementById('btnNovaVisitaEmergencial').addEventListener('click', ()=>{
+    if (!sb){ alert('Sem conexão com o servidor — não é possível criar novas visitas agora.'); return; }
+    openVEModal(null);
+  });
+  document.getElementById('veModalClose').addEventListener('click', ()=>{
+    document.getElementById('veModalOverlay').style.display = 'none';
+  });
+  document.getElementById('veCancelBtn').addEventListener('click', ()=>{
+    document.getElementById('veModalOverlay').style.display = 'none';
+  });
+  document.getElementById('veSetor').addEventListener('change', (e)=>{
+    document.getElementById('veSetorOutro').style.display = e.target.value === 'Outros' ? 'block' : 'none';
+  });
+  document.getElementById('veSaveBtn').addEventListener('click', async ()=>{
+    const errEl = document.getElementById('veError');
+    errEl.style.display = 'none';
+    const id = document.getElementById('veId').value;
+    const condominio = document.getElementById('veCondominio').value.trim();
+    if (!condominio){
+      errEl.textContent = 'Informe o nome do condomínio.';
+      errEl.style.display = 'block';
+      return;
+    }
+    const setorSelecionado = document.getElementById('veSetor').value;
+    const payload = {
+      realizada: document.getElementById('veRealizada').value,
+      filial: document.getElementById('veFilial').value,
+      data_visita: document.getElementById('veData').value || null,
+      condominio,
+      responsavel: document.getElementById('veResponsavel').value.trim() || null,
+      setor: setorSelecionado === 'Outros' ? (document.getElementById('veSetorOutro').value.trim() || 'Outros') : setorSelecionado,
+      diagnostico: document.getElementById('veDiagnostico').value.trim() || null,
+      retorno: document.getElementById('veRetorno').value.trim() || null,
+      tratativa: document.getElementById('veTratativa').value.trim() || null,
+      status: document.getElementById('veStatus').value,
+    };
+    if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+    try{
+      const { error } = id
+        ? await sb.from('visitas_emergenciais').update(payload).eq('id', id)
+        : await sb.from('visitas_emergenciais').insert(payload);
+      if (error) throw error;
+      document.getElementById('veModalOverlay').style.display = 'none';
+      loadVE();
+    }catch(e){
+      errEl.textContent = 'Erro ao salvar visita: ' + e.message;
+      errEl.style.display = 'block';
+    }
+  });
+  document.getElementById('veDeleteBtn').addEventListener('click', async ()=>{
+    const id = document.getElementById('veId').value;
+    if (!id) return;
+    const nome = document.getElementById('veCondominio').value;
+    if (!confirm(`Excluir a visita de "${nome}"?`)) return;
+    try{
+      const { error } = await sb.from('visitas_emergenciais').delete().eq('id', id);
+      if (error) throw error;
+      document.getElementById('veModalOverlay').style.display = 'none';
+      loadVE();
+    }catch(e){ alert('Erro ao excluir: ' + e.message); }
+  });
+  ['veSearch','veFilterFilial','veFilterStatus'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', renderVE);
+    document.getElementById(id).addEventListener('change', renderVE);
+  });
+}
+initVECrudUI();
 
 initTabs();
 
