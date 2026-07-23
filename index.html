@@ -1150,14 +1150,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
         <select id="pqSetorPendencia">
           <option value="">Selecione...</option>
-          <option value="Técnica">Técnica</option>
-          <option value="Central">Central</option>
-          <option value="T.I.">T.I.</option>
-          <option value="Backoffice">Backoffice</option>
-          <option value="Sucesso do Cliente">Sucesso do Cliente</option>
-          <option value="Comercial">Comercial</option>
+          <option value="Síndico">Síndico</option>
+          <option value="Zeladoria">Zeladoria</option>
+          <option value="Portaria">Portaria</option>
           <option value="Financeiro">Financeiro</option>
-          <option value="Outros">Outros</option>
+          <option value="Manutenção">Manutenção</option>
+          <option value="Administração">Administração</option>
+          <option value="Outro">Outro</option>
         </select>
         <input type="text" id="pqSetorPendenciaOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
       </div>
@@ -1368,6 +1367,10 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="msf" id="resolvidoFilterWrap">
       <button type="button" class="msf-btn" id="resolvidoFilterBtn">Resolução: todos</button>
       <div class="msf-panel" id="resolvidoFilterPanel"></div>
+    </div>
+    <div class="msf" id="pendenciaFilterWrap">
+      <button type="button" class="msf-btn" id="pendenciaFilterBtn">Diagnóstico/Pendência: todos</button>
+      <div class="msf-panel" id="pendenciaFilterPanel"></div>
     </div>
     <button class="clearbtn" id="clearBtn">Limpar filtros</button>
   </div>
@@ -1743,6 +1746,8 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <option value="NÃO">Não</option>
       </select>
       <select class="filter-select" id="veFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <input type="text" id="veFilterDiagnostico" class="search" style="flex:1; min-width:180px;" placeholder="Filtrar por diagnóstico/pendência...">
+      <button type="button" class="clearbtn" id="btnLimparFiltrosVE">Limpar filtros</button>
       <button type="button" class="clearbtn" id="btnSincronizarVE">🔄 Sincronizar com Pesquisa</button>
       <button type="button" class="clearbtn" id="btnExportarVEExcel">📊 Exportar Excel</button>
       <button type="button" class="clearbtn" id="btnExportarVEPDF">🖨️ Relatório PDF</button>
@@ -4066,6 +4071,7 @@ let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
 let selectedSetores = [];
 let selectedResolvidos = []; // valores: 'true' | 'false' | 'null'
+let selectedPendencias = []; // valores: 'true' | 'false' — tem diagnóstico/pendência registrado ou não
 let selectedNotaFaixas = []; // índices de NOTA_FAIXAS selecionados (como string)
 let activeSetorBar = null;  // clique no gráfico de setor
 let activeMotivoBar = null; // clique no gráfico de motivo
@@ -4450,6 +4456,13 @@ function populateFilterOptions(){
     getSelected:()=>selectedResolvidos, setSelected:(v)=>{selectedResolvidos=v;},
     options: resolvidoOptions, prefixLabel:'Resolução',
   });
+
+  setupMultiFilter({
+    btnId:'pendenciaFilterBtn', panelId:'pendenciaFilterPanel', wrapId:'pendenciaFilterWrap',
+    getSelected:()=>selectedPendencias, setSelected:(v)=>{selectedPendencias=v;},
+    options: [{value:'true', label:'Com diagnóstico/pendência'}, {value:'false', label:'Sem diagnóstico/pendência'}],
+    prefixLabel:'Diagnóstico/Pendência',
+  });
 }
 
 function baseMatches(item, q){
@@ -4464,6 +4477,13 @@ function baseMatches(item, q){
   if (selectedResolvidos.length){
     const want = selectedResolvidos.map(v => v === 'true' ? true : (v === 'false' ? false : null));
     if (!want.includes(item.resolvido)) return false;
+  }
+  if (selectedPendencias.length){
+    const want = selectedPendencias.includes('true');
+    const wantNao = selectedPendencias.includes('false');
+    const tem = temPendencia(item);
+    if (want && !wantNao && !tem) return false;
+    if (wantNao && !want && tem) return false;
   }
   if (activeSetorBar && !(item.setor && item.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(activeSetorBar))) return false;
   if (activeMotivoBar && !classifyGrupoMotivo(item).includes(activeMotivoBar)) return false;
@@ -4733,7 +4753,7 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
       progEl.textContent = `Salvando... ${Math.min(i+chunkSize, rows.length)} de ${rows.length}`;
     }
     selectedMes = novoMes;
-    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = [];
+    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedPendencias = [];
     activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
     populateFilterOptions();
     render();
@@ -5104,7 +5124,7 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('mesSelector').addEventListener('change', (e)=>{
   selectedMes = e.target.value;
   document.getElementById('refMes').textContent = mesLabelBR(selectedMes);
-  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = [];
+  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedPendencias = [];
   activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
   populateFilterOptions();
   render();
@@ -5116,6 +5136,7 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
   selectedStatuses = [];
   selectedSetores = [];
   selectedResolvidos = [];
+  selectedPendencias = [];
   activeCrit = null;
   activeSetorBar = null;
   activeMotivoBar = null;
@@ -7116,7 +7137,8 @@ let pqNotaSelecionada = null;
 
 const PQ_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josy', 'Geovana - Aprendiz'];
 const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial','Outros'];
-const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','T.I.','Backoffice','Sucesso do Cliente','Comercial','Financeiro','Outros'];
+const PQ_SETORES_PENDENCIA = ['Síndico','Zeladoria','Portaria','Financeiro','Manutenção','Administração','Outro'];
+const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Outro'];
 const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial','Outro'];
 
 function pqBuildNotaRow(){
@@ -7242,7 +7264,7 @@ function openPesquisaModal(item){
   {
     const setorRecValor = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
     const ehPadraoRec = PQ_SETORES_RESPONSAVEL.includes(setorRecValor);
-    document.getElementById('pqSetorReclamacao').value = ehPadraoRec ? setorRecValor : (setorRecValor ? 'Outros' : '');
+    document.getElementById('pqSetorReclamacao').value = ehPadraoRec ? setorRecValor : (setorRecValor ? 'Outro' : '');
     document.getElementById('pqSetorReclamacaoOutro').value = ehPadraoRec ? '' : setorRecValor;
     document.getElementById('pqSetorReclamacaoOutro').style.display = (!ehPadraoRec && setorRecValor) ? 'block' : 'none';
   }
@@ -7253,8 +7275,8 @@ function openPesquisaModal(item){
   document.getElementById('pqObservacoesPendencia').value = item ? (item.pendenciaObservacoes || '') : '';
   {
     const setorPendValor = item ? (item.setorPendencia || '') : '';
-    const ehPadraoPend = PQ_SETORES_RESPONSAVEL.includes(setorPendValor);
-    document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : (setorPendValor ? 'Outros' : '');
+    const ehPadraoPend = PQ_SETORES_PENDENCIA.includes(setorPendValor);
+    document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : (setorPendValor ? 'Outro' : '');
     document.getElementById('pqSetorPendenciaOutro').value = ehPadraoPend ? '' : setorPendValor;
     document.getElementById('pqSetorPendenciaOutro').style.display = (!ehPadraoPend && setorPendValor) ? 'block' : 'none';
   }
@@ -7282,10 +7304,10 @@ function pqAtualizarVisibilidadeRecuperacao(){
 }
 
 document.getElementById('pqSetorReclamacao').addEventListener('change', (e)=>{
-  document.getElementById('pqSetorReclamacaoOutro').style.display = e.target.value === 'Outros' ? 'block' : 'none';
+  document.getElementById('pqSetorReclamacaoOutro').style.display = e.target.value === 'Outro' ? 'block' : 'none';
 });
 document.getElementById('pqSetorPendencia').addEventListener('change', (e)=>{
-  document.getElementById('pqSetorPendenciaOutro').style.display = e.target.value === 'Outros' ? 'block' : 'none';
+  document.getElementById('pqSetorPendenciaOutro').style.display = e.target.value === 'Outro' ? 'block' : 'none';
 });
 
 document.getElementById('pqCondominio').addEventListener('input', ()=>{
@@ -7419,13 +7441,13 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
     pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
     setorPendencia: usaPendencia
-      ? (document.getElementById('pqSetorPendencia').value === 'Outros'
-          ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || 'Outros')
+      ? (document.getElementById('pqSetorPendencia').value === 'Outro'
+          ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || 'Outro')
           : document.getElementById('pqSetorPendencia').value)
       : '',
     setor: usaReclamacao && document.getElementById('pqSetorReclamacao').value
-      ? (document.getElementById('pqSetorReclamacao').value === 'Outros'
-          ? (document.getElementById('pqSetorReclamacaoOutro').value.trim() || 'Outros')
+      ? (document.getElementById('pqSetorReclamacao').value === 'Outro'
+          ? (document.getElementById('pqSetorReclamacaoOutro').value.trim() || 'Outro')
           : document.getElementById('pqSetorReclamacao').value)
       : (pqEditingItem ? pqEditingItem.setor : '—'),
     motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
@@ -8059,6 +8081,7 @@ function getFilteredVE(){
   const fSetor = document.getElementById('veFilterSetor').value;
   const fRealizada = document.getElementById('veFilterRealizada').value;
   const fResponsavel = document.getElementById('veFilterResponsavel').value;
+  const fDiagnostico = (document.getElementById('veFilterDiagnostico').value || '').trim().toLowerCase();
   return veData.filter(v=>{
     if (q && !((v.condominio||'').toLowerCase().includes(q) || (v.responsavel||'').toLowerCase().includes(q) || (v.diagnostico||'').toLowerCase().includes(q))) return false;
     if (fFilial && v.filial !== fFilial) return false;
@@ -8066,6 +8089,7 @@ function getFilteredVE(){
     if (fSetor && !(v.setor||'').split(/[,/]/).map(s=>s.trim()).includes(fSetor)) return false;
     if (fRealizada && v.realizada !== fRealizada) return false;
     if (fResponsavel && !(v.responsavel||'').split('/').map(s=>s.trim()).includes(fResponsavel)) return false;
+    if (fDiagnostico && !(v.diagnostico||'').toLowerCase().includes(fDiagnostico)) return false;
     return true;
   });
 }
@@ -8298,9 +8322,19 @@ function initVECrudUI(){
       loadVE();
     }catch(e){ alert('Erro ao excluir: ' + e.message); }
   });
-  ['veSearch','veFilterFilial','veFilterStatus','veFilterSetor','veFilterRealizada','veFilterResponsavel'].forEach(id=>{
+  ['veSearch','veFilterFilial','veFilterStatus','veFilterSetor','veFilterRealizada','veFilterResponsavel','veFilterDiagnostico'].forEach(id=>{
     document.getElementById(id).addEventListener('input', renderVE);
     document.getElementById(id).addEventListener('change', renderVE);
+  });
+  document.getElementById('btnLimparFiltrosVE').addEventListener('click', ()=>{
+    document.getElementById('veSearch').value = '';
+    document.getElementById('veFilterFilial').value = '';
+    document.getElementById('veFilterStatus').value = '';
+    document.getElementById('veFilterSetor').value = '';
+    document.getElementById('veFilterRealizada').value = '';
+    document.getElementById('veFilterResponsavel').value = '';
+    document.getElementById('veFilterDiagnostico').value = '';
+    renderVE();
   });
 }
 initVECrudUI();
