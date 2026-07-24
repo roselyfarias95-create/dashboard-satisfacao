@@ -1541,6 +1541,11 @@ CONDOMINIO Y	9	Concluído"></textarea>
       </div>
     </header>
 
+    <div class="toolbar" style="margin-bottom:16px;">
+      <button type="button" class="clearbtn" id="btnExportarRenovExcel">📊 Exportar Excel</button>
+      <button type="button" class="clearbtn" id="btnExportarRenovPDF">🖨️ Relatório PDF</button>
+    </div>
+
     <div class="checklist-toolbar">
       <strong style="color:var(--text); font-size:13px;">⚠️ Contratos Vencidos</strong>
       <span id="renovVencidosCount" class="count-line" style="margin:0;"></span>
@@ -6855,6 +6860,107 @@ function renderRenovVencidos(){
   });
 });
 document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
+
+function exportarRenovacaoExcel(){
+  const vencidos = getFilteredRenovVencidos();
+  const negociacoes = getFilteredRenovNegociacoes();
+  if (!vencidos.length && !negociacoes.length){ alert('Nenhum dado para exportar com esses filtros.'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  const linhasVencidos = vencidos.map(c => ({
+    'Condomínio': c.nome, 'Filial': c.filial || '', 'Responsável': c.responsavel || '',
+    'Fim do Contrato': fmtDataBRRenov(c.contrato_fim), 'Dias Vencido': diasVencido(c.contrato_fim),
+    'Mensalidade': c.mensalidade || '', 'Unidades': c.qtd_unidades || '',
+    'Armário': c.possui_armario || '', 'Gphone': c.possui_gphone || '', 'Facial': c.possui_facial || '',
+    'Acesso Veicular': c.acesso_veicular || '', 'Sistema': c.sistema_guarita || '',
+  }));
+  if (linhasVencidos.length){
+    const wsV = XLSX.utils.json_to_sheet(linhasVencidos);
+    wsV['!cols'] = [{wch:32},{wch:12},{wch:16},{wch:14},{wch:12},{wch:12},{wch:10},{wch:9},{wch:9},{wch:9},{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, wsV, 'Contratos Vencidos');
+  }
+
+  const linhasNeg = negociacoes.map(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    return {
+      'Condomínio': n.condo_nome || '', 'Filial': (condo && condo.filial) || '',
+      'Data Negociação': fmtDataBRRenov(n.data_negociacao), 'Responsável': n.responsavel || '',
+      'Status': n.status || '', 'Nova Data Proposta': n.nova_data ? fmtDataBRRenov(n.nova_data) : '',
+      'Observações': n.obs || '',
+    };
+  });
+  if (linhasNeg.length){
+    const wsN = XLSX.utils.json_to_sheet(linhasNeg);
+    wsN['!cols'] = [{wch:32},{wch:12},{wch:14},{wch:16},{wch:34},{wch:16},{wch:50}];
+    XLSX.utils.book_append_sheet(wb, wsN, 'Negociações');
+  }
+
+  const dataStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `renovacao_contratos_${dataStr}.xlsx`);
+}
+
+function gerarRelatorioRenovacaoPDF(){
+  const vencidos = getFilteredRenovVencidos();
+  const negociacoes = getFilteredRenovNegociacoes();
+  if (!vencidos.length && !negociacoes.length){ alert('Nenhum dado para gerar relatório com esses filtros.'); return; }
+  const emitido = new Date().toLocaleString('pt-BR');
+
+  const tabelaVencidos = vencidos.length ? `
+    <table class="rep-table">
+      <thead><tr><th>Condomínio</th><th>Filial</th><th>Responsável</th><th>Fim do Contrato</th><th>Dias Vencido</th></tr></thead>
+      <tbody>
+        ${vencidos.map(c => `<tr>
+          <td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.filial||'')}</td><td>${escapeHtml(c.responsavel||'')}</td>
+          <td>${fmtDataBRRenov(c.contrato_fim)}</td><td>${diasVencido(c.contrato_fim)} dia(s)</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p style="font-size:12px; color:#6b7280;">Nenhum contrato vencido com esses filtros.</p>';
+
+  const tabelaNeg = negociacoes.length ? `
+    <table class="rep-table">
+      <thead><tr><th>Condomínio</th><th>Data</th><th>Responsável</th><th>Status</th><th>Nova Data</th><th>Observações</th></tr></thead>
+      <tbody>
+        ${negociacoes.map(n => `<tr>
+          <td>${escapeHtml(n.condo_nome||'')}</td><td>${fmtDataBRRenov(n.data_negociacao)}</td><td>${escapeHtml(n.responsavel||'')}</td>
+          <td>${escapeHtml(n.status||'')}</td><td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td><td>${escapeHtml(n.obs||'')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p style="font-size:12px; color:#6b7280;">Nenhuma negociação registrada com esses filtros.</p>';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Renovação de Contratos</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:1000px; margin:0 auto;}
+    h1{font-size:22px; margin:4px 0 0;}
+    h2{font-size:14px; margin:26px 0 10px; border-bottom:1px solid #d1d5db; padding-bottom:6px;}
+    .top{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #1a2333; padding-bottom:14px; margin-bottom:8px;}
+    .brand{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#6b7280;}
+    .meta{font-size:12px; color:#6b7280; margin-top:4px;}
+    .rep-table{width:100%; border-collapse:collapse; font-size:11.5px;}
+    .rep-table th{background:#f3f4f6; text-align:left; padding:6px 8px; border-bottom:2px solid #d1d5db;}
+    .rep-table td{padding:6px 8px; border-bottom:1px solid #f0f1f3; vertical-align:top;}
+    @media print{ body{padding:12px;} tr{page-break-inside:avoid;} }
+  </style></head><body>
+    <div class="top">
+      <div>
+        <div class="brand">SERVIS — Sucesso do Cliente</div>
+        <h1>Relatório de Renovação de Contratos</h1>
+      </div>
+      <div class="meta">Emitido em: ${emitido}</div>
+    </div>
+    <h2>⚠️ Contratos Vencidos (${vencidos.length})</h2>
+    ${tabelaVencidos}
+    <h2>📝 Negociações de Renovação (${negociacoes.length})</h2>
+    ${tabelaNeg}
+    <p style="margin-top:24px; font-size:11px; color:#9ca3af;">SERVIS — Sucesso do Cliente · Relatório gerado em ${emitido}</p>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
+}
+
+document.getElementById('btnExportarRenovExcel').addEventListener('click', exportarRenovacaoExcel);
+document.getElementById('btnExportarRenovPDF').addEventListener('click', gerarRelatorioRenovacaoPDF);
 
 function negBadge(status){
   const map = {
