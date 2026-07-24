@@ -278,6 +278,10 @@
   }
   .tab-btn.active .tab-icon{ background:var(--accent-soft); }
   .tab-label{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tab-badge{
+    background:var(--critico); color:#fff; font-size:10px; font-weight:700;
+    border-radius:20px; padding:1px 7px; flex-shrink:0; font-family:"IBM Plex Mono",monospace;
+  }
   .content-area{ flex:1; min-width:0; }
   .tab-panel{ display:block; }
   #cadastroFrame{ width:100%; min-height:82vh; border:0; border-radius:var(--radius-md); background:#F4F6F8; }
@@ -985,6 +989,8 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="renovacao" checked> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="checklist" checked> Check List Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="visitasEmergenciais" checked> Visitas Emergenciais</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="relatorioDiario" checked> Relatório I.A.</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="lembretes" checked> Lembretes</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1015,6 +1021,8 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="renovacao"> Renovação de Contratos</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="checklist"> Check List Condomínios</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="visitasEmergenciais"> Visitas Emergenciais</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="relatorioDiario"> Relatório I.A.</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="lembretes"> Lembretes</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1341,6 +1349,8 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="renovacao"><span class="tab-icon">🔄</span><span class="tab-label">Renovação de Contratos</span></button>
       <button type="button" class="tab-btn" data-tab="checklist"><span class="tab-icon">✅</span><span class="tab-label">Check List Condomínios</span></button>
       <button type="button" class="tab-btn" data-tab="visitasEmergenciais"><span class="tab-icon">🚨</span><span class="tab-label">Visitas Emergenciais</span></button>
+      <button type="button" class="tab-btn" data-tab="relatorioDiario"><span class="tab-icon">🧠</span><span class="tab-label">Relatório I.A.</span></button>
+      <button type="button" class="tab-btn" data-tab="lembretes"><span class="tab-icon">🔔</span><span class="tab-label">Lembretes</span><span class="tab-badge" id="lembretesBadge" style="display:none;"></span></button>
     </nav>
 
     <div class="content-area">
@@ -1784,6 +1794,147 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
   </div>
 
+  <div id="tabRelatorioDiario" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Análise automática das Pesquisas de Satisfação — consolida notas, insatisfeitos, setores, evolução e
+      prioridades numa leitura executiva, sem precisar colar em nenhuma IA externa.
+    </p>
+
+    <div class="toolbar" style="margin-bottom:16px;">
+      <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+        <button type="button" class="view-toggle-btn active" data-periodo-rd="dia">Diário</button>
+        <button type="button" class="view-toggle-btn" data-periodo-rd="semana">Semanal</button>
+        <button type="button" class="view-toggle-btn" data-periodo-rd="mes">Mensal</button>
+      </span>
+      <input type="date" id="rdData" class="search" style="max-width:170px;">
+      <input type="date" id="rdDataSemana" class="search" style="max-width:170px; display:none;">
+      <input type="month" id="rdMes" class="search" style="max-width:170px; display:none;">
+      <button type="button" class="login-btn" id="btnGerarRelatorioRd" style="width:auto; margin-top:0; padding:11px 18px;">✦ Gerar relatório</button>
+    </div>
+
+    <div class="stats-strip" id="rdResumoStats"></div>
+
+    <div class="chart-panel" style="margin:16px 0;">
+      <p class="chart-title">✦ Resumo Executivo <span id="rdPeriodoLabel" style="text-transform:none; letter-spacing:0; color:var(--text-faint); font-weight:500;"></span></p>
+      <div id="rdResumoExecutivo" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px; border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
+      <p class="chart-title" style="color:var(--accent);">🎯 Prioridades — Em quais condomínios trabalhar agora</p>
+      <div id="rdPrioridades" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <div class="charts-grid charts-grid-2">
+      <div class="chart-panel">
+        <p class="chart-title">📈 Evolução vs. período anterior</p>
+        <div id="rdEvolucao" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">Setor com mais ocorrências entre insatisfeitos</p>
+        <div id="rdTopSetorInsatisfeitos" style="font-size:13px; color:var(--text-dim);"></div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">📣 Novas Avaliações Negativas — clientes insatisfeitos no período</p>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="rdTabelaNegativas">
+          <thead>
+            <tr><th class="ck-name">Condomínio</th><th>Filial</th><th>Nota</th><th>Ressalvas</th><th>Setor</th><th>Ação tomada</th></tr>
+          </thead>
+          <tbody id="rdTabelaNegativasBody"><tr><td colspan="6" class="empty">Clique em "Gerar relatório" pra começar.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">🚨 Visitas Emergenciais em Aberto</p>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="rdTabelaVe">
+          <thead>
+            <tr><th class="ck-name">Condomínio</th><th>Filial</th><th>Setor</th><th>Status</th></tr>
+          </thead>
+          <tbody id="rdTabelaVeBody"><tr><td colspan="4" class="empty">—</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-bottom:16px;">
+      <button type="button" class="login-btn" id="btnSalvarRelatorioDiario" style="width:auto; margin-top:0; padding:10px 20px;">💾 Salvar Relatório</button>
+      <button type="button" class="clearbtn" id="btnExportarRelatorioPDF">🖨️ Exportar PDF</button>
+    </div>
+    <p class="users-error" id="rdError" style="display:none;"></p>
+
+    <div class="chart-panel">
+      <p class="chart-title">Histórico de Relatórios</p>
+      <div id="rdHistoricoLista" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+
+  <div id="tabLembretes" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+      </div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Lembretes de acompanhamento — recontatos, follow-ups, prazos combinados com síndicos.
+    </p>
+    <div class="stats-strip" id="lembretesStats"></div>
+    <div class="toolbar" style="margin:16px 0;">
+      <input type="text" id="lembreteSearch" class="search" placeholder="Buscar lembrete ou condomínio...">
+      <select class="filter-select" id="lembreteFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Concluído">Concluído</option>
+      </select>
+      <button type="button" class="logout-btn" id="btnNovoLembrete" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Lembrete</button>
+    </div>
+    <span id="lembreteCount" class="count-line"></span>
+    <div id="lembretesLista" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+
+  <div class="users-modal" id="lembreteModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:480px;">
+      <div class="users-head">
+        <h3 id="lembreteModalTitle">Novo Lembrete</h3>
+        <button type="button" class="logout-btn" id="lembreteModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="lembreteId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Título
+          <input type="text" id="lembreteTitulo" placeholder="Ex: Ligar de volta pro síndico" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio (opcional)
+          <input type="text" id="lembreteCondominio" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data de Vencimento
+          <input type="date" id="lembreteData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
+          <select id="lembreteStatus" style="width:100%; margin-top:4px;">
+            <option value="Pendente">Pendente</option>
+            <option value="Concluído">Concluído</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observação
+          <textarea id="lembreteObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Detalhes do lembrete..."></textarea>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="lembreteDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="lembreteCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="lembreteSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Lembrete</button>
+      </div>
+      <p class="users-error" id="lembreteError" style="display:none;"></p>
+    </div>
+  </div>
+
   <div class="users-modal" id="veModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
       <div class="users-head">
@@ -1869,7 +2020,7 @@ const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -1931,6 +2082,7 @@ function showApp(role, username, allowedTabs){
   if (typeof loadVE === 'function'){
     loadVE().then(()=>{ if (typeof sincronizarVisitasComPesquisa === 'function') sincronizarVisitasComPesquisa(false); });
   }
+  if (typeof loadLembretes === 'function') loadLembretes();
 }
 
 function initAuth(){
@@ -7227,6 +7379,8 @@ function initTabs(){
       document.getElementById('tabRenovacao').style.display = tab === 'renovacao' ? 'block' : 'none';
       document.getElementById('tabChecklist').style.display = tab === 'checklist' ? 'block' : 'none';
       document.getElementById('tabVisitasEmergenciais').style.display = tab === 'visitasEmergenciais' ? 'block' : 'none';
+      document.getElementById('tabRelatorioDiario').style.display = tab === 'relatorioDiario' ? 'block' : 'none';
+      document.getElementById('tabLembretes').style.display = tab === 'lembretes' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
@@ -7245,6 +7399,13 @@ function initTabs(){
         } else {
           sincronizarVisitasComPesquisa(false);
         }
+      }
+      if (tab === 'relatorioDiario'){
+        if (typeof prepararRelatorioDiario === 'function') prepararRelatorioDiario();
+        if (typeof loadRelatoriosDiarios === 'function') loadRelatoriosDiarios();
+      }
+      if (tab === 'lembretes'){
+        if (typeof loadLembretes === 'function') loadLembretes();
       }
     });
   });
@@ -8563,6 +8724,530 @@ async function autoCriarVisitaEmergencial(item){
     loadVE(); // recarrega pra já refletir na aba, se estiver aberta
   }catch(e){ console.error('Falha ao criar visita emergencial automática:', e); }
 }
+
+// ============================================================================
+// RELATÓRIO I.A. — Diário / Semanal / Mensal
+// Análise automática (template + números reais) das Pesquisas de Satisfação
+// no período escolhido — sem depender de nenhuma IA externa. O texto executivo
+// e o ranking de prioridades são montados por regras, preenchendo os números
+// certos a cada geração.
+// ============================================================================
+let relatoriosDiarios = [];
+let rdUltimoResumo = null;
+let rdUltimoTextoExecutivo = '';
+let rdPeriodoAtivo = 'dia'; // 'dia' | 'semana' | 'mes'
+
+function hojeISO(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function setorPrincipal(item){
+  return item.setorPendencia || item.setor || item.elogioSetor || null;
+}
+
+function addDiasISO(dataISO, dias){
+  const d = new Date(dataISO + 'T00:00:00');
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0,10);
+}
+
+function inicioSemanaISO(dataISO){
+  const d = new Date(dataISO + 'T00:00:00');
+  const diaSemana = d.getDay(); // 0=domingo
+  const offset = diaSemana === 0 ? -6 : 1 - diaSemana; // volta pra segunda-feira
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0,10);
+}
+
+function calcularIntervaloPeriodo(){
+  if (rdPeriodoAtivo === 'dia'){
+    const d = document.getElementById('rdData').value || hojeISO();
+    return { inicio: d, fim: d, label: `Dia ${formatDateBR(d)}` };
+  }
+  if (rdPeriodoAtivo === 'semana'){
+    const ref = document.getElementById('rdDataSemana').value || hojeISO();
+    const inicio = inicioSemanaISO(ref);
+    const fim = addDiasISO(inicio, 6);
+    return { inicio, fim, label: `Semana de ${formatDateBR(inicio)} a ${formatDateBR(fim)}` };
+  }
+  // mes
+  const mesVal = document.getElementById('rdMes').value || hojeISO().slice(0,7);
+  const inicio = mesVal + '-01';
+  const [ano, mes] = mesVal.split('-').map(Number);
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const fim = mesVal + '-' + String(ultimoDia).padStart(2,'0');
+  return { inicio, fim, label: `Mês ${mesLabelBR(mesVal)}` };
+}
+
+function duracaoEmDias(inicio, fim){
+  return Math.round((new Date(fim+'T00:00:00') - new Date(inicio+'T00:00:00')) / 86400000) + 1;
+}
+
+function compilarAnaliseDoPeriodo(inicio, fim){
+  const pesquisasPeriodo = DATA.filter(d => d.dataPesquisa && d.dataPesquisa >= inicio && d.dataPesquisa <= fim);
+  const notas = pesquisasPeriodo.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
+  const insatisfeitos = pesquisasPeriodo.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 8; });
+  const naoRealizadas = pesquisasPeriodo.filter(pesquisaNaoRealizada);
+  const reclamacoes = pesquisasPeriodo.filter(d => d.houveReclamacao);
+  const elogios = pesquisasPeriodo.filter(d => d.houveElogio);
+
+  const contagemSetorInsatisfeitos = {};
+  insatisfeitos.forEach(d => { const s = setorPrincipal(d); if (s) contagemSetorInsatisfeitos[s] = (contagemSetorInsatisfeitos[s]||0)+1; });
+  const topSetorInsatisfeitos = Object.entries(contagemSetorInsatisfeitos).sort((a,b)=>b[1]-a[1])[0] || null;
+
+  const contagemFilial = {};
+  pesquisasPeriodo.forEach(d => { if (d.filial) contagemFilial[d.filial] = (contagemFilial[d.filial]||0)+1; });
+  const topFilial = Object.entries(contagemFilial).sort((a,b)=>b[1]-a[1])[0] || null;
+
+  const veAbertas = (veData||[]).filter(v => v.status !== 'Concluído');
+
+  return { inicio, fim, pesquisasPeriodo, media, insatisfeitos, naoRealizadas, reclamacoes, elogios, topSetorInsatisfeitos, topFilial, veAbertas };
+}
+
+function montarResumoExecutivo(r, label){
+  const total = r.pesquisasPeriodo.length;
+  if (!total){
+    return `Nenhuma pesquisa de satisfação foi registrada no período (${label}).`;
+  }
+  const partes = [];
+  partes.push(`Foram avaliados <b>${total}</b> condomínio(s) no período (${label})${r.media !== null ? `, com nota média de <b>${r.media.toFixed(1)}</b>` : ''}.`);
+  if (r.insatisfeitos.length){
+    partes.push(`<b>${r.insatisfeitos.length}</b> condomínio(s) ficaram insatisfeitos (nota abaixo de 8)${r.topSetorInsatisfeitos ? `, concentrados principalmente no setor <b>${escapeHtml(r.topSetorInsatisfeitos[0])}</b> (${r.topSetorInsatisfeitos[1]} ocorrência(s))` : ''}.`);
+  } else {
+    partes.push(`Nenhum condomínio ficou insatisfeito no período — todas as notas ficaram em 8 ou acima.`);
+  }
+  if (r.naoRealizadas.length){
+    partes.push(`<b>${r.naoRealizadas.length}</b> pesquisa(s) não foram realizadas.`);
+  }
+  if (r.reclamacoes.length || r.elogios.length){
+    partes.push(`Foram registradas <b>${r.reclamacoes.length}</b> reclamação(ões) e <b>${r.elogios.length}</b> elogio(s).`);
+  }
+  if (r.topFilial){
+    partes.push(`A filial com maior atividade foi <b>${escapeHtml(r.topFilial[0])}</b>, com ${r.topFilial[1]} registro(s).`);
+  }
+  if (r.veAbertas.length){
+    partes.push(`Atualmente há <b>${r.veAbertas.length}</b> visita(s) emergencial(is) em aberto aguardando tratativa.`);
+  }
+  return partes.join(' ');
+}
+
+function montarTextoResumoSimples(r, label){
+  return montarResumoExecutivo(r, label).replace(/<b>/g,'').replace(/<\/b>/g,'');
+}
+
+// ---------- Prioridades: onde focar agora ----------
+// Combina vários sinais num único placar por condomínio: nota atual baixa,
+// visita emergencial em aberto, contrato vencido, reclamação sem retorno.
+function calcularPrioridades(){
+  const pontuacao = {}; // nome -> { pontos, motivos:[], filial }
+
+  function add(nome, filial, pontos, motivo){
+    const chave = (nome||'').trim().toLowerCase();
+    if (!chave) return;
+    if (!pontuacao[chave]) pontuacao[chave] = { nome, filial, pontos:0, motivos:[] };
+    pontuacao[chave].pontos += pontos;
+    pontuacao[chave].motivos.push(motivo);
+  }
+
+  DATA.forEach(d=>{
+    const n = parseFloat(String(d.nota).replace(',','.'));
+    if (!isNaN(n) && n < 6) add(d.nome, d.filial, 3, `Nota crítica (${d.nota})`);
+    else if (!isNaN(n) && n < 8) add(d.nome, d.filial, 2, `Nota de atenção (${d.nota})`);
+    if (pesquisaNaoRealizada(d)) add(d.nome, d.filial, 2, 'Pesquisa não realizada');
+    if (d.houveReclamacao && d.statusTratativa && d.statusTratativa !== 'Resolvido') add(d.nome, d.filial, 1, 'Reclamação sem resolução');
+  });
+
+  (veData||[]).forEach(v=>{
+    if (v.status !== 'Concluído') add(v.condominio, v.filial, v.status === 'Visita Agendada' ? 2 : 1, `Visita emergencial: ${v.status}`);
+  });
+
+  if (typeof renovVencidos !== 'undefined'){
+    renovVencidos.forEach(c => add(c.nome, c.filial, 2, 'Contrato vencido'));
+  }
+
+  return Object.values(pontuacao).sort((a,b)=>b.pontos-a.pontos).slice(0,10);
+}
+
+function renderPrioridades(){
+  const lista = calcularPrioridades();
+  const el = document.getElementById('rdPrioridades');
+  if (!lista.length){
+    el.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Nenhum condomínio com sinais de alerta no momento. 🎉</p>';
+    return;
+  }
+  el.innerHTML = lista.map((c,i) => `
+    <div style="display:flex; align-items:center; gap:12px; background:var(--bg-panel-2); border-radius:9px; padding:10px 14px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--accent); width:20px;">${i+1}º</span>
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:700; color:var(--text);">${escapeHtml(c.nome)} <span style="font-weight:500; color:var(--text-faint); font-size:11px;">${c.filial ? '· ' + escapeHtml(c.filial) : ''}</span></div>
+        <div style="font-size:11px; color:var(--text-faint); margin-top:2px;">${c.motivos.map(escapeHtml).join(' · ')}</div>
+      </div>
+      <span class="tag" style="color:var(--critico); border:1px solid var(--critico); background:transparent; flex-shrink:0;">${c.pontos} pt(s)</span>
+    </div>
+  `).join('');
+}
+
+// ---------- Evolução vs. período anterior ----------
+function renderEvolucao(r, inicio, fim){
+  const dias = duracaoEmDias(inicio, fim);
+  const inicioAnterior = addDiasISO(inicio, -dias);
+  const fimAnterior = addDiasISO(inicio, -1);
+  const rAnterior = compilarAnaliseDoPeriodo(inicioAnterior, fimAnterior);
+
+  const el = document.getElementById('rdEvolucao');
+  if (!rAnterior.pesquisasPeriodo.length){
+    el.innerHTML = `<span style="color:var(--text-faint);">Sem dados do período anterior (${formatDateBR(inicioAnterior)} a ${formatDateBR(fimAnterior)}) pra comparar ainda.</span>`;
+    return;
+  }
+  const deltaMedia = (r.media !== null && rAnterior.media !== null) ? (r.media - rAnterior.media) : null;
+  const deltaInsatisfeitos = r.insatisfeitos.length - rAnterior.insatisfeitos.length;
+  el.innerHTML = `
+    <div>Nota média: <b style="color:var(--text);">${r.media !== null ? r.media.toFixed(1) : '—'}</b>
+      ${deltaMedia !== null ? `<span style="color:${deltaMedia>=0?'var(--ok)':'var(--critico)'};">(${deltaMedia>=0?'▲':'▼'} ${Math.abs(deltaMedia).toFixed(1)} vs. período anterior)</span>` : ''}
+    </div>
+    <div style="margin-top:6px;">Insatisfeitos: <b style="color:var(--text);">${r.insatisfeitos.length}</b>
+      <span style="color:${deltaInsatisfeitos<=0?'var(--ok)':'var(--critico)'};">(${deltaInsatisfeitos>=0?'▲':'▼'} ${Math.abs(deltaInsatisfeitos)} vs. período anterior)</span>
+    </div>
+    <div style="margin-top:6px; font-size:11.5px; color:var(--text-faint);">Período anterior: ${formatDateBR(inicioAnterior)} a ${formatDateBR(fimAnterior)}</div>
+  `;
+}
+
+function gerarRelatorioDiario(){
+  const { inicio, fim, label } = calcularIntervaloPeriodo();
+  const r = compilarAnaliseDoPeriodo(inicio, fim);
+  rdUltimoResumo = { ...r, label, periodo: rdPeriodoAtivo };
+  rdUltimoTextoExecutivo = montarTextoResumoSimples(r, label);
+
+  document.getElementById('rdPeriodoLabel').textContent = '— ' + label;
+
+  document.getElementById('rdResumoStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${r.pesquisasPeriodo.length}</div><div class="slbl">Condomínios avaliados</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${r.media !== null ? r.media.toFixed(1) : '—'}</div><div class="slbl">Nota média</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${r.insatisfeitos.length}</div><div class="slbl">Insatisfeitos</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${r.veAbertas.length}</div><div class="slbl">Pendências em aberto</div></div>
+  `;
+
+  document.getElementById('rdResumoExecutivo').innerHTML = montarResumoExecutivo(r, label);
+
+  renderPrioridades();
+  renderEvolucao(r, inicio, fim);
+
+  document.getElementById('rdTopSetorInsatisfeitos').innerHTML = r.topSetorInsatisfeitos
+    ? `<b style="color:var(--text);">${escapeHtml(r.topSetorInsatisfeitos[0])}</b><br><span style="color:var(--text-faint); font-size:11.5px;">${r.topSetorInsatisfeitos[1]} ocorrência(s) entre os insatisfeitos do período.</span>`
+    : '<span style="color:var(--text-faint);">Sem ocorrências no período.</span>';
+
+  const bodyNeg = document.getElementById('rdTabelaNegativasBody');
+  if (!r.insatisfeitos.length){
+    bodyNeg.innerHTML = '<tr><td colspan="6" class="empty">Nenhum cliente insatisfeito nesse período. 🎉</td></tr>';
+  } else {
+    bodyNeg.innerHTML = r.insatisfeitos.map(d => `
+      <tr>
+        <td class="ck-name">${escapeHtml(d.nome)}</td>
+        <td>${escapeHtml(d.filial||'—')}</td>
+        <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${escapeHtml(d.nota)}</td>
+        <td style="max-width:320px;">${escapeHtml(d.pendenciaDescricao || d.pend || '—')}</td>
+        <td>${escapeHtml(setorPrincipal(d) || '—')}</td>
+        <td style="max-width:260px;">${escapeHtml(d.resolucao || '—')}</td>
+      </tr>
+    `).join('');
+  }
+
+  const bodyVe = document.getElementById('rdTabelaVeBody');
+  if (!r.veAbertas.length){
+    bodyVe.innerHTML = '<tr><td colspan="4" class="empty">Nenhuma visita emergencial em aberto. 🎉</td></tr>';
+  } else {
+    bodyVe.innerHTML = r.veAbertas.map(v => `
+      <tr>
+        <td class="ck-name">${escapeHtml(v.condominio)}</td>
+        <td>${escapeHtml(v.filial||'—')}</td>
+        <td>${escapeHtml(v.setor||'—')}</td>
+        <td><span class="tag" style="color:${veStatusClass(v.status).cor}; border:1px solid ${veStatusClass(v.status).cor}; background:transparent;">${escapeHtml(v.status||'—')}</span></td>
+      </tr>
+    `).join('');
+  }
+}
+
+document.querySelectorAll('[data-periodo-rd]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    rdPeriodoAtivo = btn.getAttribute('data-periodo-rd');
+    document.querySelectorAll('[data-periodo-rd]').forEach(b=>b.classList.toggle('active', b===btn));
+    document.getElementById('rdData').style.display = rdPeriodoAtivo === 'dia' ? '' : 'none';
+    document.getElementById('rdDataSemana').style.display = rdPeriodoAtivo === 'semana' ? '' : 'none';
+    document.getElementById('rdMes').style.display = rdPeriodoAtivo === 'mes' ? '' : 'none';
+    gerarRelatorioDiario();
+  });
+});
+
+document.getElementById('btnGerarRelatorioRd').addEventListener('click', gerarRelatorioDiario);
+
+function prepararRelatorioDiario(){
+  document.getElementById('rdData').value = hojeISO();
+  document.getElementById('rdDataSemana').value = hojeISO();
+  document.getElementById('rdMes').value = hojeISO().slice(0,7);
+  gerarRelatorioDiario();
+}
+
+async function loadRelatoriosDiarios(){
+  const el = document.getElementById('rdHistoricoLista');
+  if (!sb){
+    el.innerHTML = '<p class="empty">Sem conexão com o Supabase — histórico indisponível agora.</p>';
+    return;
+  }
+  el.innerHTML = '<p class="empty">Carregando histórico...</p>';
+  try{
+    const { data, error } = await sb.from('relatorios_diarios').select('*').order('data', { ascending:false });
+    if (error) throw error;
+    relatoriosDiarios = data || [];
+    renderHistoricoRelatorios();
+  }catch(e){
+    el.innerHTML = `<p class="empty">Erro ao carregar histórico: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function renderHistoricoRelatorios(){
+  const el = document.getElementById('rdHistoricoLista');
+  if (!relatoriosDiarios.length){
+    el.innerHTML = '<p class="empty">Nenhum relatório salvo ainda.</p>';
+    return;
+  }
+  el.innerHTML = relatoriosDiarios.map(r => `
+    <div class="setor-email-card" style="cursor:pointer;" data-ver-relatorio="${r.id}">
+      <div class="setor-email-card-head">
+        <span class="setor-email-card-title">${formatDateBR(r.data)}</span>
+        <span class="setor-email-card-count">salvo por ${escapeHtml(r.criado_por||'—')}</span>
+      </div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:0; white-space:pre-wrap;">${escapeHtml((r.resumo_dados||'').slice(0,220))}${(r.resumo_dados||'').length>220?'…':''}</p>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-ver-relatorio]').forEach(card=>{
+    card.onclick = ()=>{
+      const rep = relatoriosDiarios.find(r => String(r.id) === card.getAttribute('data-ver-relatorio'));
+      if (!rep) return;
+      document.getElementById('rdData').value = rep.data;
+      rdPeriodoAtivo = 'dia';
+      document.querySelectorAll('[data-periodo-rd]').forEach(b=>b.classList.toggle('active', b.getAttribute('data-periodo-rd')==='dia'));
+      document.getElementById('rdData').style.display = '';
+      document.getElementById('rdDataSemana').style.display = 'none';
+      document.getElementById('rdMes').style.display = 'none';
+      gerarRelatorioDiario();
+    };
+  });
+}
+
+document.getElementById('btnSalvarRelatorioDiario').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('rdError');
+  errEl.style.display = 'none';
+  if (!rdUltimoResumo){
+    errEl.textContent = 'Clique em "Gerar relatório" antes de salvar.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const payload = {
+      data: rdUltimoResumo.inicio,
+      resumo_dados: rdUltimoTextoExecutivo,
+      texto_ia: null,
+      criado_por: currentUsername || 'desconhecido',
+    };
+    const { error } = await sb.from('relatorios_diarios').upsert(payload, { onConflict: 'data' });
+    if (error) throw error;
+    loadRelatoriosDiarios();
+    alert('Relatório salvo com sucesso!');
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('btnExportarRelatorioPDF').addEventListener('click', ()=>{
+  if (!rdUltimoResumo){ alert('Clique em "Gerar relatório" antes de exportar.'); return; }
+  const r = rdUltimoResumo;
+  const emitido = new Date().toLocaleString('pt-BR');
+  const linhasNeg = r.insatisfeitos.map(d => `<tr>
+    <td>${escapeHtml(d.nome)}</td><td>${escapeHtml(d.filial||'')}</td><td>${escapeHtml(d.nota)}</td>
+    <td>${escapeHtml(d.pendenciaDescricao || d.pend || '')}</td><td>${escapeHtml(setorPrincipal(d)||'')}</td>
+  </tr>`).join('');
+  const prioridades = calcularPrioridades();
+  const linhasPrio = prioridades.map((c,i) => `<tr><td>${i+1}º</td><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.filial||'')}</td><td>${c.pontos}</td><td>${escapeHtml(c.motivos.join(' · '))}</td></tr>`).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório I.A. — ${r.label}</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:900px; margin:0 auto;}
+    h1{font-size:22px; margin:4px 0 0;}
+    h2{font-size:14px; margin:24px 0 8px;}
+    .brand{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#6b7280;}
+    .meta{font-size:12px; color:#6b7280; margin-top:4px;}
+    p.resumo{font-size:13px; line-height:1.7;}
+    table{width:100%; border-collapse:collapse; font-size:11.5px;}
+    th{background:#f3f4f6; text-align:left; padding:6px 8px; border-bottom:2px solid #d1d5db;}
+    td{padding:6px 8px; border-bottom:1px solid #f0f1f3;}
+    @media print{ body{padding:12px;} }
+  </style></head><body>
+    <div class="brand">SERVIS — Sucesso do Cliente</div>
+    <h1>Relatório I.A. — ${r.label}</h1>
+    <div class="meta">Emitido em: ${emitido}</div>
+    <h2>Resumo Executivo</h2>
+    <p class="resumo">${montarResumoExecutivo(r, r.label)}</p>
+    <h2>Prioridades — Onde trabalhar agora</h2>
+    <table><thead><tr><th>#</th><th>Condomínio</th><th>Filial</th><th>Pontos</th><th>Motivos</th></tr></thead><tbody>${linhasPrio || '<tr><td colspan="5">Nenhum</td></tr>'}</tbody></table>
+    <h2>Novas Avaliações Negativas (${r.insatisfeitos.length})</h2>
+    <table><thead><tr><th>Condomínio</th><th>Filial</th><th>Nota</th><th>Ressalvas</th><th>Setor</th></tr></thead><tbody>${linhasNeg || '<tr><td colspan="5">Nenhuma</td></tr>'}</tbody></table>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
+});
+
+// ============================================================================
+// LEMBRETES
+// Lista simples de follow-ups/recontatos, com contador de pendentes/vencidos
+// no menu lateral (igual o "Lembretes 12" que a Rosely usa em outro sistema).
+// ============================================================================
+let lembretesData = [];
+
+async function loadLembretes(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('lembretes').select('*').order('data_vencimento', { ascending:true });
+    if (error) throw error;
+    lembretesData = data || [];
+    atualizarBadgeLembretes();
+    if (document.getElementById('tabLembretes').style.display !== 'none') renderLembretes();
+  }catch(e){ console.error('Falha ao carregar lembretes (a tabela pode não existir ainda):', e); }
+}
+
+function lembreteVencido(l){
+  return l.status !== 'Concluído' && l.data_vencimento && l.data_vencimento < hojeISO();
+}
+
+function atualizarBadgeLembretes(){
+  const badge = document.getElementById('lembretesBadge');
+  const pendentes = lembretesData.filter(l => l.status !== 'Concluído').length;
+  if (pendentes > 0){
+    badge.textContent = pendentes;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function getFilteredLembretes(){
+  const q = (document.getElementById('lembreteSearch').value || '').trim().toLowerCase();
+  const fStatus = document.getElementById('lembreteFilterStatus').value;
+  return lembretesData.filter(l=>{
+    if (q && !((l.titulo||'').toLowerCase().includes(q) || (l.condominio||'').toLowerCase().includes(q))) return false;
+    if (fStatus && l.status !== fStatus) return false;
+    return true;
+  });
+}
+
+function renderLembretes(){
+  const filtered = getFilteredLembretes();
+  const pendentes = lembretesData.filter(l => l.status !== 'Concluído');
+  const vencidos = lembretesData.filter(lembreteVencido);
+  document.getElementById('lembretesStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${lembretesData.length}</div><div class="slbl">Total de lembretes</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${pendentes.length}</div><div class="slbl">Pendentes</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${vencidos.length}</div><div class="slbl">Vencidos</div></div>
+  `;
+  document.getElementById('lembreteCount').textContent = `${filtered.length} de ${lembretesData.length} lembrete(s)`;
+
+  const el = document.getElementById('lembretesLista');
+  if (!filtered.length){
+    el.innerHTML = '<p class="empty">Nenhum lembrete encontrado.</p>';
+    return;
+  }
+  el.innerHTML = filtered.map(l => {
+    const vencido = lembreteVencido(l);
+    const cor = l.status === 'Concluído' ? 'var(--ok)' : (vencido ? 'var(--critico)' : 'var(--pendente)');
+    return `
+    <div class="setor-email-card" style="cursor:pointer; border-left:3px solid ${cor};" data-editar-lembrete="${l.id}">
+      <div class="setor-email-card-head">
+        <span class="setor-email-card-title">${escapeHtml(l.titulo)}</span>
+        <span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${l.status === 'Concluído' ? 'Concluído' : (vencido ? 'Vencido' : 'Pendente')}</span>
+      </div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:0;">
+        ${l.condominio ? escapeHtml(l.condominio) + ' · ' : ''}${l.data_vencimento ? 'Vence em ' + formatDateBR(l.data_vencimento) : 'Sem data'}
+      </p>
+      ${l.observacao ? `<p style="font-size:11.5px; color:var(--text-dim); margin:6px 0 0;">${escapeHtml(l.observacao)}</p>` : ''}
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-editar-lembrete]').forEach(card=>{
+    card.onclick = ()=> abrirLembreteModal(lembretesData.find(l => String(l.id) === card.getAttribute('data-editar-lembrete')));
+  });
+}
+
+function abrirLembreteModal(l){
+  document.getElementById('lembreteError').style.display = 'none';
+  document.getElementById('lembreteModalTitle').textContent = l ? 'Editar Lembrete' : 'Novo Lembrete';
+  document.getElementById('lembreteId').value = l ? l.id : '';
+  document.getElementById('lembreteTitulo').value = l ? (l.titulo || '') : '';
+  document.getElementById('lembreteCondominio').value = l ? (l.condominio || '') : '';
+  document.getElementById('lembreteData').value = l ? (l.data_vencimento || '') : hojeISO();
+  document.getElementById('lembreteStatus').value = l ? (l.status || 'Pendente') : 'Pendente';
+  document.getElementById('lembreteObs').value = l ? (l.observacao || '') : '';
+  document.getElementById('lembreteDeleteBtn').style.display = l ? '' : 'none';
+  document.getElementById('lembreteModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('btnNovoLembrete').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar lembretes agora.'); return; }
+  abrirLembreteModal(null);
+});
+document.getElementById('lembreteModalClose').addEventListener('click', ()=>{
+  document.getElementById('lembreteModalOverlay').style.display = 'none';
+});
+document.getElementById('lembreteCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('lembreteModalOverlay').style.display = 'none';
+});
+document.getElementById('lembreteSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('lembreteError');
+  errEl.style.display = 'none';
+  const id = document.getElementById('lembreteId').value;
+  const titulo = document.getElementById('lembreteTitulo').value.trim();
+  if (!titulo){
+    errEl.textContent = 'Informe o título do lembrete.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const payload = {
+    titulo,
+    condominio: document.getElementById('lembreteCondominio').value.trim() || null,
+    data_vencimento: document.getElementById('lembreteData').value || null,
+    status: document.getElementById('lembreteStatus').value,
+    observacao: document.getElementById('lembreteObs').value.trim() || null,
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = id
+      ? await sb.from('lembretes').update(payload).eq('id', id)
+      : await sb.from('lembretes').insert(payload);
+    if (error) throw error;
+    document.getElementById('lembreteModalOverlay').style.display = 'none';
+    loadLembretes().then(renderLembretes);
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar lembrete: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+document.getElementById('lembreteDeleteBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('lembreteId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse lembrete?')) return;
+  try{
+    const { error } = await sb.from('lembretes').delete().eq('id', id);
+    if (error) throw error;
+    document.getElementById('lembreteModalOverlay').style.display = 'none';
+    loadLembretes().then(renderLembretes);
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+['lembreteSearch','lembreteFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderLembretes);
+  document.getElementById(id).addEventListener('change', renderLembretes);
+});
 
 initTabs();
 
