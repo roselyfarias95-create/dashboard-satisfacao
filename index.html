@@ -5627,6 +5627,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <option value="MIP 1000">MIP 1000</option>
       <option value="Módulo Guarita">Módulo Guarita</option>
     </select>
+    <button class="btn btn-ghost" id="btnMensalidadesSuspeitas" style="border-color:rgba(245,158,11,0.5); color:#f59e0b;">
+      ⚠️ Mensalidades Suspeitas
+    </button>
     <button class="btn btn-ghost" id="btnExport">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
       Exportar CSV
@@ -5911,7 +5914,12 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   function loadData(){
     var raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
-      try{ return JSON.parse(raw); }catch(e){ /* fall through to seed */ }
+      try{
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        // dados salvos localmente vieram vazios (ex: queda de conexão anterior) —
+        // não faz sentido "lembrar" de uma lista vazia, melhor recarregar do zero.
+      }catch(e){ /* fall through to seed */ }
     }
     var seed = JSON.parse(document.getElementById("seedData").textContent);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
@@ -6097,6 +6105,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     });
   }
 
+  var modoMensalidadeSuspeita = false;
+
   function getFiltered(){
     var q = document.getElementById("searchInput").value.trim().toLowerCase();
     var fFilial = document.getElementById("filterFilial").value;
@@ -6111,6 +6121,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var sindicoSelectedNaoDefinido = document.getElementById("filterSindico").selectedIndex === 3;
 
     return state.data.filter(function(c){
+      if(modoMensalidadeSuspeita && !(c.mensalidade != null && c.mensalidade > 0 && c.mensalidade < 50)) return false;
       if(q && !(c.nome.toLowerCase().indexOf(q)>-1 || (c.responsavel||"").toLowerCase().indexOf(q)>-1)) return false;
       if(fFilial && c.filial !== fFilial) return false;
       if(fStatus && c.status !== fStatus) return false;
@@ -6148,7 +6159,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         '<td>'+badgeStatus(c.status)+'</td>'+
         '<td>'+tagSindico(c.sindico)+'</td>'+
         '<td>'+tagModalidade(c.modalidade)+'</td>'+
-        '<td>'+fmtMoeda(c.mensalidade)+'</td>'+
+        '<td>'+(modoMensalidadeSuspeita && c.mensalidade != null && c.mensalidade > 0 && c.mensalidade < 50
+          ? '<div style="display:flex; gap:4px; align-items:center;"><input type="text" class="inline-mensalidade-input" data-id="'+c.id+'" value="'+formatarMoedaParaInput(c.mensalidade)+'" placeholder="Ex: 450,00" style="width:100px; padding:5px 7px; border-radius:6px; border:1px solid #ef4444; font-size:12px;"><button class="icon-btn" data-save-mensalidade="'+c.id+'" title="Salvar" style="color:#22c55e;">✓</button></div>'
+          : (c.mensalidade != null && c.mensalidade > 0 && c.mensalidade < 50 ? '<span style="color:#ef4444; font-weight:700;">'+fmtMoeda(c.mensalidade)+' ⚠️</span>' : fmtMoeda(c.mensalidade)))+'</td>'+
         '<td>'+fmtUnidades(c.unidades)+'</td>'+
         '<td>'+tagSimNao(c.possuiArmario)+'</td>'+
         '<td>'+tagSimNao(c.possuiGphone)+'</td>'+
@@ -6406,6 +6419,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   document.getElementById("tableBody").addEventListener("click", function(e){
     var editBtn = e.target.closest("[data-edit]");
     var delBtn = e.target.closest("[data-del]");
+    var saveMensBtn = e.target.closest("[data-save-mensalidade]");
     if(editBtn){ openModal(Number(editBtn.getAttribute("data-edit"))); }
     if(delBtn){
       var id = Number(delBtn.getAttribute("data-del"));
@@ -6417,6 +6431,22 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         showToast("Condomínio excluído.", true);
       }
     }
+    if(saveMensBtn){
+      var mid = Number(saveMensBtn.getAttribute("data-save-mensalidade"));
+      var input = document.querySelector('.inline-mensalidade-input[data-id="'+mid+'"]');
+      var novoValor = parseMoedaBR(input.value);
+      if (novoValor === null || novoValor <= 0){
+        showToast("Digite um valor válido de mensalidade.", true);
+        return;
+      }
+      var condo = state.data.find(function(c){ return c.id === mid; });
+      if (!condo) return;
+      condo.mensalidade = novoValor;
+      saveData();
+      pushUpsert(condo);
+      renderAll();
+      showToast("Mensalidade de \"" + condo.nome + "\" atualizada.", false);
+    }
   });
 
   // ---------- filters ----------
@@ -6426,6 +6456,23 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema"].forEach(function(id){
     document.getElementById(id).addEventListener("input", renderTable);
     document.getElementById(id).addEventListener("change", renderTable);
+  });
+
+  document.getElementById("btnMensalidadesSuspeitas").addEventListener("click", function(){
+    modoMensalidadeSuspeita = !modoMensalidadeSuspeita;
+    var btn = document.getElementById("btnMensalidadesSuspeitas");
+    if (modoMensalidadeSuspeita){
+      btn.style.background = "#f59e0b";
+      btn.style.color = "#1a2333";
+      btn.style.borderColor = "#f59e0b";
+      btn.textContent = "✕ Sair do modo Mensalidades Suspeitas";
+    } else {
+      btn.style.background = "";
+      btn.style.color = "#f59e0b";
+      btn.style.borderColor = "rgba(245,158,11,0.5)";
+      btn.textContent = "⚠️ Mensalidades Suspeitas";
+    }
+    renderTable();
   });
 
   // ==========================================================================
