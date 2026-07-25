@@ -1416,6 +1416,12 @@ CONDOMINIO Y	9	Concluído"></textarea>
       </div>
     </div>
 
+    <div class="subtab-nav" id="dashSubtabNav">
+      <button type="button" class="subtab-btn active" data-dash-subtab="geral">📊 Visão Geral</button>
+      <button type="button" class="subtab-btn" data-dash-subtab="comparativo">📈 Comparativo & Evolução</button>
+    </div>
+
+    <div id="dashViewGeral">
     <div class="exec-stat-row" id="statsStrip"></div>
 
     <div class="kpis" id="kpis"></div>
@@ -1482,6 +1488,37 @@ CONDOMINIO Y	9	Concluído"></textarea>
         </table>
       </div>
       <p class="exec-insight" id="compFilialInsight"></p>
+    </div>
+    </div>
+
+    <div id="dashViewComparativo" style="display:none;">
+      <div class="charts-grid" style="grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:16px;">
+        <div class="chart-panel">
+          <p class="chart-title">📋 Pesquisa de Satisfação</p>
+          <div id="dashCompPesquisa"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">🔄 Renovação de Contratos</p>
+          <div id="dashCompRenovacao"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">🚨 Visitas Emergenciais</p>
+          <div id="dashCompVisitas"></div>
+        </div>
+      </div>
+
+      <div class="chart-panel" style="margin-bottom:16px; border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
+        <p class="chart-title" style="color:var(--accent);">🧠 Análise I.A. — Impacto das Visitas Emergenciais</p>
+        <div id="dashAnaliseImpactoVisitas" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+        <div class="checklist-table-wrap" style="margin-top:14px;">
+          <table class="checklist-table" id="dashImpactoTabela">
+            <thead>
+              <tr><th class="ck-name">Condomínio</th><th>Status da Visita</th><th>Nota Antes</th><th>Nota Depois</th><th>Evolução</th><th>Renovou?</th></tr>
+            </thead>
+            <tbody id="dashImpactoTabelaBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <footer>
@@ -9825,6 +9862,110 @@ document.getElementById('lembreteDeleteBtn').addEventListener('click', async ()=
   document.getElementById(id).addEventListener('input', renderLembretes);
   document.getElementById(id).addEventListener('change', renderLembretes);
 });
+
+// ============================================================================
+// DASHBOARD EXECUTIVO — sub-aba "Comparativo & Evolução"
+// Cruza Pesquisa, Renovação e Visitas Emergenciais, e faz uma análise
+// automática (template + números reais) do impacto das visitas na nota e
+// nas renovações — sem depender de IA externa.
+// ============================================================================
+document.querySelectorAll('[data-dash-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-dash-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-dash-subtab');
+    document.getElementById('dashViewGeral').style.display = alvo === 'geral' ? 'block' : 'none';
+    document.getElementById('dashViewComparativo').style.display = alvo === 'comparativo' ? 'block' : 'none';
+    if (alvo === 'comparativo') renderDashComparativo();
+  });
+});
+
+function renderDashComparativo(){
+  // ---------- Pesquisa ----------
+  const meses = getUltimosMeses(2);
+  const mesAtual = meses[meses.length-1];
+  const mesAnterior = meses.length > 1 ? meses[meses.length-2] : null;
+  const mediaAtual = mesAtual ? mediaNotaDoMes(mesAtual) : null;
+  const mediaAnterior = mesAnterior ? mediaNotaDoMes(mesAnterior) : null;
+  const deltaMedia = (mediaAtual !== null && mediaAnterior !== null) ? mediaAtual - mediaAnterior : null;
+  const totalInsatisfeitos = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 8; }).length;
+
+  document.getElementById('dashCompPesquisa').innerHTML = `
+    <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v">${mediaAtual !== null ? mediaAtual.toFixed(1) : '—'}</div><div class="l">Nota média atual ${deltaMedia !== null ? `<span style="color:${deltaMedia>=0?'var(--ok)':'var(--critico)'};">(${deltaMedia>=0?'▲':'▼'} ${Math.abs(deltaMedia).toFixed(1)})</span>` : ''}</div></div>
+    <div class="exec-comp-num"><div class="v" style="color:var(--critico);">${totalInsatisfeitos}</div><div class="l">Condomínios insatisfeitos (nota &lt; 8)</div></div>
+  `;
+
+  // ---------- Renovação ----------
+  const totalVencidos = (typeof renovVencidos !== 'undefined') ? renovVencidos.length : 0;
+  const totalEmNegociacao = (typeof renovNegociacoes !== 'undefined') ? renovNegociacoes.filter(negociacaoEmAndamento).length : 0;
+  const totalRenovados = (typeof renovNegociacoes !== 'undefined') ? renovNegociacoes.filter(n=>n.status==='Renovado').length : 0;
+  document.getElementById('dashCompRenovacao').innerHTML = `
+    <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v" style="color:var(--critico);">${totalVencidos}</div><div class="l">Contratos vencidos sem negociação</div></div>
+    <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v" style="color:var(--atencao);">${totalEmNegociacao}</div><div class="l">Em negociação</div></div>
+    <div class="exec-comp-num"><div class="v" style="color:var(--ok);">${totalRenovados}</div><div class="l">Renovados</div></div>
+  `;
+
+  // ---------- Visitas Emergenciais ----------
+  const totalVeAbertas = veData.filter(v => v.status !== 'Concluído').length;
+  const totalVeConcluidas = veData.filter(v => v.status === 'Concluído').length;
+  document.getElementById('dashCompVisitas').innerHTML = `
+    <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v" style="color:var(--atencao);">${totalVeAbertas}</div><div class="l">Em aberto</div></div>
+    <div class="exec-comp-num"><div class="v" style="color:var(--ok);">${totalVeConcluidas}</div><div class="l">Concluídas</div></div>
+  `;
+
+  renderAnaliseImpactoVisitas();
+}
+
+function renderAnaliseImpactoVisitas(){
+  const linhas = [];
+  veData.forEach(v=>{
+    const nomeAlvo = normalizeNomeCondo(v.condominio);
+    const item = DATA.find(d => normalizeNomeCondo(d.nome) === nomeAlvo);
+    if (!item) return;
+    const notaAntes = parseFloat(String(item.nota).replace(',','.'));
+    const notaDepois = item.notaPosResolucao ? parseFloat(String(item.notaPosResolucao).replace(',','.')) : null;
+    const renovou = (typeof renovNegociacoes !== 'undefined') && renovNegociacoes.some(n => n.status === 'Renovado' && normalizeNomeCondo(n.condo_nome||'') === nomeAlvo);
+    linhas.push({ condominio: v.condominio, statusVisita: v.status, notaAntes: isNaN(notaAntes) ? null : notaAntes, notaDepois, renovou });
+  });
+
+  const comAmbasNotas = linhas.filter(l => l.notaAntes !== null && l.notaDepois !== null);
+  const melhoraram = comAmbasNotas.filter(l => l.notaDepois > l.notaAntes);
+  const pioraramOuIgual = comAmbasNotas.filter(l => l.notaDepois <= l.notaAntes);
+  const mediaEvolucao = comAmbasNotas.length ? (comAmbasNotas.reduce((s,l)=>s + (l.notaDepois - l.notaAntes), 0) / comAmbasNotas.length) : null;
+  const renovaram = linhas.filter(l => l.renovou);
+
+  const elTexto = document.getElementById('dashAnaliseImpactoVisitas');
+  if (!linhas.length){
+    elTexto.innerHTML = 'Ainda não há visitas emergenciais vinculadas a pesquisas pra analisar.';
+  } else {
+    const partes = [];
+    partes.push(`Foram analisadas <b>${linhas.length}</b> visita(s) emergencial(is) vinculada(s) a condomínios com pesquisa registrada.`);
+    if (comAmbasNotas.length){
+      partes.push(`Dessas, <b>${comAmbasNotas.length}</b> já têm uma segunda pesquisa (Nota 2) pra comparar: <b style="color:var(--ok);">${melhoraram.length}</b> melhoraram a nota após a visita, e <b style="color:var(--critico);">${pioraramOuIgual.length}</b> mantiveram ou pioraram${mediaEvolucao !== null ? `, com evolução média de <b>${mediaEvolucao >= 0 ? '+' : ''}${mediaEvolucao.toFixed(1)}</b> ponto(s)` : ''}.`);
+    } else {
+      partes.push(`Nenhuma delas ainda tem uma segunda pesquisa registrada pra medir evolução de nota.`);
+    }
+    partes.push(`<b>${renovaram.length}</b> condomínio(s) com visita emergencial também tiveram contrato <b style="color:var(--ok);">renovado</b>.`);
+    elTexto.innerHTML = partes.join(' ');
+  }
+
+  const body = document.getElementById('dashImpactoTabelaBody');
+  if (!linhas.length){
+    body.innerHTML = '<tr><td colspan="6" class="empty">Nenhum dado ainda.</td></tr>';
+    return;
+  }
+  body.innerHTML = linhas.map(l => {
+    const evolucao = (l.notaAntes !== null && l.notaDepois !== null) ? (l.notaDepois - l.notaAntes) : null;
+    const corEvolucao = evolucao === null ? 'var(--text-faint)' : evolucao > 0 ? 'var(--ok)' : evolucao < 0 ? 'var(--critico)' : 'var(--text-faint)';
+    return `<tr>
+      <td class="ck-name">${escapeHtml(l.condominio)}</td>
+      <td>${escapeHtml(l.statusVisita||'—')}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${l.notaAntes !== null ? l.notaAntes : '—'}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${l.notaDepois !== null ? l.notaDepois : '—'}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace; color:${corEvolucao};">${evolucao !== null ? (evolucao>=0?'▲ +':'▼ ')+evolucao.toFixed(1) : '—'}</td>
+      <td>${l.renovou ? '<span class="tag" style="color:var(--ok); border:1px solid var(--ok); background:transparent;">Sim</span>' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
 
 initTabs();
 
