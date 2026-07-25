@@ -715,6 +715,23 @@
   }
   .subtab-btn:not(.active) .subtab-count{ background:var(--bg-panel-2); color:var(--text-faint); }
 
+  .mini-cal-header{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:10px; }
+  .mini-cal-mes{ font-size:13.5px; font-weight:700; color:var(--text); min-width:150px; text-align:center; text-transform:capitalize; }
+  .mini-cal-legenda{ display:flex; gap:16px; justify-content:center; font-size:11px; color:var(--text-faint); margin-bottom:12px; }
+  .mini-cal-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+  .mini-cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; }
+  .mini-cal-dow{ text-align:center; font-size:10px; color:var(--text-faint); font-weight:700; text-transform:uppercase; padding-bottom:4px; }
+  .mini-cal-day{
+    min-height:58px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:5px 6px; cursor:pointer; transition:border-color .15s ease;
+  }
+  .mini-cal-day:hover{ border-color:var(--text-faint); }
+  .mini-cal-day.hoje{ border-color:var(--accent); }
+  .mini-cal-day.selecionado{ background:var(--bg-panel-3); border-color:var(--accent); }
+  .mini-cal-day.vazio{ background:transparent; border:none; cursor:default; }
+  .mini-cal-day-num{ font-size:11px; color:var(--text-dim); font-family:"IBM Plex Mono",monospace; }
+  .mini-cal-day-dots{ display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+  .mini-cal-day-dots .mini-cal-dot{ margin:0; }
   .historico-folders-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:14px; }
   .historico-folder-card{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius-md);
@@ -1551,6 +1568,14 @@ CONDOMINIO Y	9	Concluído"></textarea>
       </div>
     </header>
 
+    <div class="subtab-nav" id="renovSubtabNav">
+      <button type="button" class="subtab-btn active" data-renov-subtab="vencidos">⚠️ Vencidos</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
+    </div>
+
+    <div id="renovViewVencidos">
     <div class="toolbar" style="margin-bottom:16px;">
       <button type="button" class="clearbtn" id="btnExportarRenovExcel">📊 Exportar Excel</button>
       <button type="button" class="clearbtn" id="btnExportarRenovPDF">🖨️ Relatório PDF</button>
@@ -1589,9 +1614,11 @@ CONDOMINIO Y	9	Concluído"></textarea>
         </tbody>
       </table>
     </div>
+    </div>
 
+    <div id="renovViewNegociacao" style="display:none;">
     <div class="checklist-toolbar">
-      <strong style="color:var(--text); font-size:13px; flex:1;">📝 Negociações de Renovação</strong>
+      <strong style="color:var(--text); font-size:13px; flex:1;">🤝 Negociações em Andamento</strong>
       <span id="renovNegociacoesCount" class="count-line" style="margin:0 12px 0 0;"></span>
       <button type="button" class="logout-btn" id="btnNovaNegociacao" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Negociação</button>
     </div>
@@ -1616,6 +1643,135 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <tr><td colspan="8" class="empty">Nenhuma negociação registrada.</td></tr>
         </tbody>
       </table>
+    </div>
+    </div>
+
+    <div id="renovViewRenovados" style="display:none;">
+      <div class="checklist-toolbar">
+        <strong style="color:var(--text); font-size:13px; flex:1;">✅ Contratos Renovados</strong>
+        <span id="renovRenovadosCount" class="count-line" style="margin:0;"></span>
+      </div>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="renovRenovadosTable">
+          <thead>
+            <tr>
+              <th class="ck-name">Condomínio</th>
+              <th>Filial</th>
+              <th>Data Negociação</th>
+              <th>Responsável</th>
+              <th>Nova Data de Vencimento</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="renovRenovadosBody">
+            <tr><td colspan="6" class="empty">Nenhum contrato renovado ainda.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="renovViewCronograma" style="display:none;">
+      <div class="checklist-toolbar">
+        <strong style="color:var(--text); font-size:13px; flex:1;">🛠️ Cronograma Técnico — Ampliações</strong>
+        <span id="cronogramaCount" class="count-line" style="margin:0 12px 0 0;"></span>
+        <button type="button" class="clearbtn" id="btnExportarCronogramaExcel">📊 Excel</button>
+        <button type="button" class="clearbtn" id="btnExportarCronogramaPDF">🖨️ PDF</button>
+        <button type="button" class="logout-btn" id="btnNovoCronograma" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Cronograma</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-faint); margin:8px 0 14px;">Marque aqui o dia do levantamento técnico, o início e a conclusão da ampliação de cada condomínio.</p>
+
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <div class="mini-cal-header">
+          <button type="button" class="clearbtn" id="cronogramaCalPrev">◀</button>
+          <span id="cronogramaCalMesLabel" class="mini-cal-mes"></span>
+          <button type="button" class="clearbtn" id="cronogramaCalNext">▶</button>
+        </div>
+        <div class="mini-cal-legenda">
+          <span><span class="mini-cal-dot" style="background:var(--accent);"></span> Levantamento</span>
+          <span><span class="mini-cal-dot" style="background:var(--atencao);"></span> Início Ampliação</span>
+          <span><span class="mini-cal-dot" style="background:var(--ok);"></span> Conclusão</span>
+        </div>
+        <div class="mini-cal-grid" id="cronogramaCalGrid"></div>
+        <div id="cronogramaCalDiaSelecionado" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="cronogramaSearch" placeholder="Buscar por condomínio...">
+        <select class="filter-select" id="cronogramaFilterStatus">
+          <option value="">Status: todos</option>
+          <option value="Aguardando levantamento">Aguardando levantamento</option>
+          <option value="Levantamento realizado">Levantamento realizado</option>
+          <option value="Ampliação em andamento">Ampliação em andamento</option>
+          <option value="Concluída">Concluída</option>
+        </select>
+      </div>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="cronogramaTable">
+          <thead>
+            <tr>
+              <th class="ck-name">Condomínio</th>
+              <th>Filial</th>
+              <th>Data Levantamento</th>
+              <th>Data Início Ampliação</th>
+              <th>Data Conclusão</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="cronogramaBody">
+            <tr><td colspan="7" class="empty">Carregando cronogramas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="cronogramaModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:520px;">
+      <div class="users-head">
+        <h3 id="cronogramaModalTitle">Novo Cronograma de Ampliação</h3>
+        <button type="button" class="logout-btn" id="cronogramaModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="cronogramaId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="cronogramaCondominio" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
+          <select id="cronogramaFilial" style="width:100%; margin-top:4px;">
+            <option value="Ceará">Ceará</option>
+            <option value="Maranhão">Maranhão</option>
+            <option value="Amazonas">Amazonas</option>
+            <option value="SECOPI">SECOPI</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data do Levantamento Técnico
+          <input type="date" id="cronogramaDataLevantamento" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data de Início da Ampliação
+          <input type="date" id="cronogramaDataInicio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data de Conclusão da Obra
+          <input type="date" id="cronogramaDataConclusao" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
+          <select id="cronogramaStatus" style="width:100%; margin-top:4px;">
+            <option value="Aguardando levantamento">Aguardando levantamento</option>
+            <option value="Levantamento realizado">Levantamento realizado</option>
+            <option value="Ampliação em andamento">Ampliação em andamento</option>
+            <option value="Concluída">Concluída</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
+          <textarea id="cronogramaObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Detalhes do que será instalado, pendências, etc."></textarea>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="cronogramaDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="cronogramaCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="cronogramaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Cronograma</button>
+      </div>
+      <p class="users-error" id="cronogramaError" style="display:none;"></p>
     </div>
   </div>
 
@@ -1744,6 +1900,22 @@ CONDOMINIO Y	9	Concluído"></textarea>
       O registro de visitas logo abaixo é totalmente editável — adicione, edite ou exclua qualquer linha.
     </p>
     <div class="stats-strip" id="visitasEmergenciaisStats"></div>
+
+    <div class="chart-panel" style="margin:16px 0;">
+      <p class="chart-title">📅 Calendário de Visitas</p>
+      <div class="mini-cal-header">
+        <button type="button" class="clearbtn" id="veCalPrev">◀</button>
+        <span id="veCalMesLabel" class="mini-cal-mes"></span>
+        <button type="button" class="clearbtn" id="veCalNext">▶</button>
+      </div>
+      <div class="mini-cal-legenda">
+        <span><span class="mini-cal-dot" style="background:var(--pendente);"></span> Visita Agendada</span>
+        <span><span class="mini-cal-dot" style="background:var(--atencao);"></span> Em Andamento</span>
+        <span><span class="mini-cal-dot" style="background:var(--ok);"></span> Concluído</span>
+      </div>
+      <div class="mini-cal-grid" id="veCalGrid"></div>
+      <div id="veCalDiaSelecionado" style="margin-top:12px;"></div>
+    </div>
 
     <div class="toolbar" style="margin:16px 0;">
       <input type="text" id="veSearch" class="search" placeholder="Buscar condomínio, responsável, diagnóstico...">
@@ -6979,10 +7151,17 @@ function populateRenovFiltros(){
   fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel).concat(renovNegociacoes.map(n => n.responsavel))));
 }
 
+const NEG_STATUS_FINALIZADOS = ['Renovado', 'Não renovado', 'Cancelado'];
+function negociacaoEmAndamento(n){
+  return !NEG_STATUS_FINALIZADOS.includes(n.status);
+}
+
 function getFilteredRenovVencidos(){
   const fFilial = document.getElementById('renovFilterFilial').value;
   const fResp = document.getElementById('renovFilterResponsavel').value;
+  const condosComNegociacao = new Set(renovNegociacoes.filter(negociacaoEmAndamento).map(n => String(n.condo_id)));
   return renovVencidos.filter(c=>{
+    if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
     if (fFilial && c.filial !== fFilial) return false;
     if (fResp && c.responsavel !== fResp) return false;
     return true;
@@ -6994,6 +7173,7 @@ function getFilteredRenovNegociacoes(){
   const fResp = document.getElementById('renovFilterResponsavel').value;
   const q = (document.getElementById('renovNegSearch').value || '').trim().toLowerCase();
   return renovNegociacoes.filter(n=>{
+    if (!negociacaoEmAndamento(n)) return false;
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     const filial = condo ? condo.filial : null;
     if (fFilial && filial !== fFilial) return false;
@@ -7203,6 +7383,364 @@ function renderRenovNegociacoes(){
     </tr>`;
   }).join('');
 }
+
+// ---------- Sub-abas da Renovação: Vencidos/Negociações | Renovados | Cronograma Técnico ----------
+document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-renov-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-renov-subtab');
+    document.getElementById('renovViewVencidos').style.display = alvo === 'vencidos' ? 'block' : 'none';
+    document.getElementById('renovViewNegociacao').style.display = alvo === 'negociacao' ? 'block' : 'none';
+    document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
+    document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
+    if (alvo === 'negociacao') renderRenovNegociacoes();
+    if (alvo === 'renovados') renderRenovRenovados();
+    if (alvo === 'cronograma'){
+      if (!cronogramaLoaded) loadCronograma(); else renderCalendarioCronograma();
+    }
+  });
+});
+
+function renderRenovRenovados(){
+  const body = document.getElementById('renovRenovadosBody');
+  const renovados = renovNegociacoes.filter(n => n.status === 'Renovado');
+  document.getElementById('renovRenovadosCount').textContent = `${renovados.length} contrato(s) renovado(s)`;
+  if (!renovados.length){
+    body.innerHTML = '<tr><td colspan="6" class="empty">Nenhum contrato renovado ainda.</td></tr>';
+    return;
+  }
+  body.innerHTML = renovados.map(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    return `<tr>
+      <td class="ck-name">${n.condo_nome || ''}</td>
+      <td>${escapeHtml((condo && condo.filial) || '—')}</td>
+      <td>${fmtDataBRRenov(n.data_negociacao)}</td>
+      <td>${n.responsavel || ''}</td>
+      <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
+      <td style="text-align:left; max-width:260px; white-space:normal;">${n.obs || ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---------- Cronograma Técnico (Ampliação) ----------
+let cronogramaData = [];
+let cronogramaLoaded = false;
+
+async function loadCronograma(){
+  const body = document.getElementById('cronogramaBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="7" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('cronograma_tecnico').select('*').order('condominio', { ascending:true });
+    if (error) throw error;
+    cronogramaData = data || [];
+    cronogramaLoaded = true;
+    renderCronograma();
+    renderCalendarioCronograma();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="7" class="empty">Erro ao carregar cronogramas: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function getFilteredCronograma(){
+  const q = (document.getElementById('cronogramaSearch').value || '').trim().toLowerCase();
+  const fStatus = document.getElementById('cronogramaFilterStatus').value;
+  return cronogramaData.filter(c=>{
+    if (q && !(c.condominio||'').toLowerCase().includes(q)) return false;
+    if (fStatus && c.status !== fStatus) return false;
+    return true;
+  });
+}
+
+function cronogramaStatusCor(status){
+  if (status === 'Concluída') return 'var(--ok)';
+  if (status === 'Ampliação em andamento') return 'var(--atencao)';
+  if (status === 'Levantamento realizado') return 'var(--accent)';
+  return 'var(--pendente)';
+}
+
+function renderCronograma(){
+  const filtered = getFilteredCronograma();
+  document.getElementById('cronogramaCount').textContent = `${filtered.length} de ${cronogramaData.length} cronograma(s)`;
+  const body = document.getElementById('cronogramaBody');
+  if (!filtered.length){
+    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhum cronograma cadastrado ainda.</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(c => {
+    const cor = cronogramaStatusCor(c.status);
+    return `<tr>
+      <td class="ck-name">${escapeHtml(c.condominio)}</td>
+      <td>${escapeHtml(c.filial||'—')}</td>
+      <td>${c.data_levantamento ? fmtDataBRRenov(c.data_levantamento) : '—'}</td>
+      <td>${c.data_inicio_ampliacao ? fmtDataBRRenov(c.data_inicio_ampliacao) : '—'}</td>
+      <td>${c.data_conclusao ? fmtDataBRRenov(c.data_conclusao) : '—'}</td>
+      <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${escapeHtml(c.status||'—')}</span></td>
+      <td><button type="button" class="renov-action-btn" data-edit-cronograma="${c.id}">Editar</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('[data-edit-cronograma]').forEach(btn=>{
+    btn.onclick = ()=> abrirCronogramaModal(cronogramaData.find(c => String(c.id) === btn.getAttribute('data-edit-cronograma')));
+  });
+}
+
+function abrirCronogramaModal(c){
+  document.getElementById('cronogramaError').style.display = 'none';
+  document.getElementById('cronogramaModalTitle').textContent = c ? 'Editar Cronograma' : 'Novo Cronograma de Ampliação';
+  document.getElementById('cronogramaId').value = c ? c.id : '';
+  document.getElementById('cronogramaCondominio').value = c ? (c.condominio || '') : '';
+  document.getElementById('cronogramaFilial').value = c ? (c.filial || 'Ceará') : 'Ceará';
+  document.getElementById('cronogramaDataLevantamento').value = c ? (c.data_levantamento || '') : '';
+  document.getElementById('cronogramaDataInicio').value = c ? (c.data_inicio_ampliacao || '') : '';
+  document.getElementById('cronogramaDataConclusao').value = c ? (c.data_conclusao || '') : '';
+  document.getElementById('cronogramaStatus').value = c ? (c.status || 'Aguardando levantamento') : 'Aguardando levantamento';
+  document.getElementById('cronogramaObs').value = c ? (c.observacoes || '') : '';
+  document.getElementById('cronogramaDeleteBtn').style.display = c ? '' : 'none';
+  document.getElementById('cronogramaModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('btnNovoCronograma').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar cronogramas agora.'); return; }
+  abrirCronogramaModal(null);
+});
+document.getElementById('cronogramaModalClose').addEventListener('click', ()=>{
+  document.getElementById('cronogramaModalOverlay').style.display = 'none';
+});
+document.getElementById('cronogramaCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('cronogramaModalOverlay').style.display = 'none';
+});
+document.getElementById('cronogramaSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('cronogramaError');
+  errEl.style.display = 'none';
+  const id = document.getElementById('cronogramaId').value;
+  const condominio = document.getElementById('cronogramaCondominio').value.trim();
+  if (!condominio){
+    errEl.textContent = 'Informe o nome do condomínio.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const payload = {
+    condominio,
+    filial: document.getElementById('cronogramaFilial').value,
+    data_levantamento: document.getElementById('cronogramaDataLevantamento').value || null,
+    data_inicio_ampliacao: document.getElementById('cronogramaDataInicio').value || null,
+    data_conclusao: document.getElementById('cronogramaDataConclusao').value || null,
+    status: document.getElementById('cronogramaStatus').value,
+    observacoes: document.getElementById('cronogramaObs').value.trim() || null,
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = id
+      ? await sb.from('cronograma_tecnico').update(payload).eq('id', id)
+      : await sb.from('cronograma_tecnico').insert(payload);
+    if (error) throw error;
+    document.getElementById('cronogramaModalOverlay').style.display = 'none';
+    loadCronograma();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar cronograma: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+document.getElementById('cronogramaDeleteBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('cronogramaId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse cronograma?')) return;
+  try{
+    const { error } = await sb.from('cronograma_tecnico').delete().eq('id', id);
+    if (error) throw error;
+    document.getElementById('cronogramaModalOverlay').style.display = 'none';
+    loadCronograma();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+['cronogramaSearch','cronogramaFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderCronograma);
+  document.getElementById(id).addEventListener('change', renderCronograma);
+});
+
+// ============================================================================
+// MINI CALENDÁRIO (reutilizável) — usado no Cronograma Técnico e nas Visitas
+// Emergenciais, pra visualizar tudo que já está marcado num mês e evitar
+// marcar duas coisas pro mesmo horário sem perceber.
+// ============================================================================
+function construirEventosDoMes(eventos, ano, mes){
+  const porDia = {};
+  eventos.forEach(e=>{
+    if (!e.data) return;
+    const d = new Date(e.data + 'T00:00:00');
+    if (d.getFullYear() === ano && d.getMonth() === mes){
+      const dia = d.getDate();
+      if (!porDia[dia]) porDia[dia] = [];
+      porDia[dia].push(e);
+    }
+  });
+  return porDia;
+}
+
+function renderMiniCal(gridId, mesLabelId, ano, mes, eventosPorDia, diaSelecionado, onClickDia){
+  const labelEl = document.getElementById(mesLabelId);
+  if (labelEl) labelEl.textContent = new Date(ano, mes, 1).toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  const hoje = new Date();
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="mini-cal-dow">${d}</div>`).join('');
+  for (let i=0;i<primeiroDiaSemana;i++) html += '<div class="mini-cal-day vazio"></div>';
+  for (let dia=1; dia<=totalDias; dia++){
+    const ehHoje = hoje.getFullYear()===ano && hoje.getMonth()===mes && hoje.getDate()===dia;
+    const ehSelecionado = diaSelecionado === dia;
+    const eventosDoDia = eventosPorDia[dia] || [];
+    html += `<div class="mini-cal-day ${ehHoje?'hoje':''} ${ehSelecionado?'selecionado':''}" data-dia-cal="${dia}">
+      <div class="mini-cal-day-num">${dia}</div>
+      <div class="mini-cal-day-dots">${eventosDoDia.slice(0,5).map(e=>`<span class="mini-cal-dot" style="background:${e.cor};"></span>`).join('')}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('[data-dia-cal]').forEach(el=>{
+    el.onclick = ()=> onClickDia(parseInt(el.getAttribute('data-dia-cal'),10));
+  });
+}
+
+function mostrarEventosDoDia(containerId, eventosDoDia, ano, mes, dia){
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const dataLabel = new Date(ano, mes, dia).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  if (!eventosDoDia.length){
+    el.innerHTML = `<p style="font-size:12px; color:var(--text-faint);">Nada agendado em ${dataLabel}.</p>`;
+    return;
+  }
+  const alerta = eventosDoDia.length > 1 ? `<p style="font-size:11.5px; color:var(--atencao); margin-bottom:6px;">⚠ ${eventosDoDia.length} coisas marcadas nesse dia — confira os horários combinados.</p>` : '';
+  el.innerHTML = `<p style="font-size:12px; color:var(--text-dim); font-weight:700; margin-bottom:8px;">${dataLabel}</p>${alerta}` +
+    eventosDoDia.map(e=>`<div style="display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:6px;"><span class="mini-cal-dot" style="background:${e.cor};"></span><b>${escapeHtml(e.condominio)}</b> — ${escapeHtml(e.tipo)}${e.extra ? ' · ' + escapeHtml(e.extra) : ''}</div>`).join('');
+}
+
+let cronogramaCalAno, cronogramaCalMes, cronogramaCalDiaSel = null;
+(function inicializarCronogramaCal(){
+  const hoje = new Date();
+  cronogramaCalAno = hoje.getFullYear();
+  cronogramaCalMes = hoje.getMonth();
+})();
+
+function renderCalendarioCronograma(){
+  const eventos = [];
+  cronogramaData.forEach(c=>{
+    if (c.data_levantamento) eventos.push({ data:c.data_levantamento, cor:'var(--accent)', tipo:'Levantamento técnico', condominio:c.condominio });
+    if (c.data_inicio_ampliacao) eventos.push({ data:c.data_inicio_ampliacao, cor:'var(--atencao)', tipo:'Início da ampliação', condominio:c.condominio });
+    if (c.data_conclusao) eventos.push({ data:c.data_conclusao, cor:'var(--ok)', tipo:'Conclusão da obra', condominio:c.condominio });
+  });
+  const porDia = construirEventosDoMes(eventos, cronogramaCalAno, cronogramaCalMes);
+  renderMiniCal('cronogramaCalGrid', 'cronogramaCalMesLabel', cronogramaCalAno, cronogramaCalMes, porDia, cronogramaCalDiaSel, (dia)=>{
+    cronogramaCalDiaSel = dia;
+    renderCalendarioCronograma();
+  });
+  if (cronogramaCalDiaSel){
+    mostrarEventosDoDia('cronogramaCalDiaSelecionado', porDia[cronogramaCalDiaSel] || [], cronogramaCalAno, cronogramaCalMes, cronogramaCalDiaSel);
+  }
+}
+
+document.getElementById('cronogramaCalPrev').addEventListener('click', ()=>{
+  cronogramaCalMes--; if (cronogramaCalMes < 0){ cronogramaCalMes = 11; cronogramaCalAno--; }
+  cronogramaCalDiaSel = null;
+  renderCalendarioCronograma();
+});
+document.getElementById('cronogramaCalNext').addEventListener('click', ()=>{
+  cronogramaCalMes++; if (cronogramaCalMes > 11){ cronogramaCalMes = 0; cronogramaCalAno++; }
+  cronogramaCalDiaSel = null;
+  renderCalendarioCronograma();
+});
+
+function exportarCronogramaExcel(){
+  const filtered = getFilteredCronograma();
+  if (!filtered.length){ alert('Nenhum cronograma para exportar com esses filtros.'); return; }
+  const linhas = filtered.map(c => ({
+    'Condomínio': c.condominio, 'Filial': c.filial || '',
+    'Data Levantamento': c.data_levantamento ? fmtDataBRRenov(c.data_levantamento) : '',
+    'Data Início Ampliação': c.data_inicio_ampliacao ? fmtDataBRRenov(c.data_inicio_ampliacao) : '',
+    'Data Conclusão': c.data_conclusao ? fmtDataBRRenov(c.data_conclusao) : '',
+    'Status': c.status || '', 'Observações': c.observacoes || '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  ws['!cols'] = [{wch:32},{wch:12},{wch:16},{wch:18},{wch:14},{wch:16},{wch:44}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cronograma Técnico');
+  XLSX.writeFile(wb, `cronograma_tecnico_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function gerarRelatorioCronogramaPDF(){
+  const filtered = getFilteredCronograma();
+  if (!filtered.length){ alert('Nenhum cronograma para gerar relatório com esses filtros.'); return; }
+  const emitido = new Date().toLocaleString('pt-BR');
+  const linhas = filtered.map(c => `<tr>
+    <td>${escapeHtml(c.condominio)}</td><td>${escapeHtml(c.filial||'')}</td>
+    <td>${c.data_levantamento ? fmtDataBRRenov(c.data_levantamento) : '—'}</td>
+    <td>${c.data_inicio_ampliacao ? fmtDataBRRenov(c.data_inicio_ampliacao) : '—'}</td>
+    <td>${c.data_conclusao ? fmtDataBRRenov(c.data_conclusao) : '—'}</td>
+    <td>${escapeHtml(c.status||'')}</td>
+  </tr>`).join('');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cronograma Técnico</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:960px; margin:0 auto;}
+    h1{font-size:22px; margin:4px 0 0;}
+    .brand{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#6b7280;}
+    .meta{font-size:12px; color:#6b7280; margin-top:4px;}
+    table{width:100%; border-collapse:collapse; font-size:11.5px;}
+    th{background:#f3f4f6; text-align:left; padding:6px 8px; border-bottom:2px solid #d1d5db;}
+    td{padding:6px 8px; border-bottom:1px solid #f0f1f3;}
+    @media print{ body{padding:12px;} }
+  </style></head><body>
+    <div class="brand">SERVIS — Sucesso do Cliente</div>
+    <h1>Cronograma Técnico — Ampliações</h1>
+    <div class="meta">Emitido em: ${emitido}</div>
+    <table><thead><tr><th>Condomínio</th><th>Filial</th><th>Levantamento</th><th>Início Ampliação</th><th>Conclusão</th><th>Status</th></tr></thead><tbody>${linhas}</tbody></table>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
+}
+
+document.getElementById('btnExportarCronogramaExcel').addEventListener('click', exportarCronogramaExcel);
+document.getElementById('btnExportarCronogramaPDF').addEventListener('click', gerarRelatorioCronogramaPDF);
+
+let veCalAno, veCalMes, veCalDiaSel = null;
+(function inicializarVECal(){
+  const hoje = new Date();
+  veCalAno = hoje.getFullYear();
+  veCalMes = hoje.getMonth();
+})();
+
+function veCorStatus(status){
+  if (status === 'Concluído') return 'var(--ok)';
+  if (status === 'Em Andamento') return 'var(--atencao)';
+  return 'var(--pendente)';
+}
+
+function renderCalendarioVE(){
+  const eventos = veData
+    .filter(v => v.data_visita)
+    .map(v => ({ data: v.data_visita, cor: veCorStatus(v.status), tipo: v.status || 'Visita', condominio: v.condominio, extra: v.setor || '' }));
+  const porDia = construirEventosDoMes(eventos, veCalAno, veCalMes);
+  renderMiniCal('veCalGrid', 'veCalMesLabel', veCalAno, veCalMes, porDia, veCalDiaSel, (dia)=>{
+    veCalDiaSel = dia;
+    renderCalendarioVE();
+  });
+  if (veCalDiaSel){
+    mostrarEventosDoDia('veCalDiaSelecionado', porDia[veCalDiaSel] || [], veCalAno, veCalMes, veCalDiaSel);
+  }
+}
+
+document.getElementById('veCalPrev').addEventListener('click', ()=>{
+  veCalMes--; if (veCalMes < 0){ veCalMes = 11; veCalAno--; }
+  veCalDiaSel = null;
+  renderCalendarioVE();
+});
+document.getElementById('veCalNext').addEventListener('click', ()=>{
+  veCalMes++; if (veCalMes > 11){ veCalMes = 0; veCalAno++; }
+  veCalDiaSel = null;
+  renderCalendarioVE();
+});
 
 function fillNegCondoSelect(){
   renderNegCondoDropdown(renovAllCondos);
@@ -8385,6 +8923,7 @@ async function loadVE(){
     veLoaded = true;
     vePopulateFiltros();
     renderVE();
+    if (typeof renderCalendarioVE === 'function') renderCalendarioVE();
   }catch(e){
     console.error(e);
     body.innerHTML = `<tr><td colspan="12" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
