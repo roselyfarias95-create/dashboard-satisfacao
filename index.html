@@ -3904,6 +3904,12 @@ const DATA = [
  resolucao:"", mesReferencia:"2026-07"},
 ];
 
+// Exposta explicitamente em window.DATA — variáveis "const" no nível mais alto
+// do script NÃO ficam disponíveis em window.DATA automaticamente (só dentro
+// deste script). Sem essa linha, a aba Cadastro > Cancelados não consegue
+// enxergar os dados da Pesquisa através de window.parent.DATA.
+window.DATA = DATA;
+
 // Declaradas aqui (bem cedo, antes do render() inicial mais abaixo) para
 // evitar erro de "acesso antes da inicialização" — as funções do Dashboard
 // Executivo (itensDoMes etc.) usam essas variáveis dentro do render().
