@@ -1008,6 +1008,9 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="visitasEmergenciais" checked> Visitas Emergenciais</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="relatorioDiario" checked> Relatório I.A.</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="lembretes" checked> Lembretes</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="fluxoAtendimento" checked> Fluxo de Atendimento</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="adocaoDigital" checked> Adoção Digital</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="incidentes" checked> Incidentes</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1040,6 +1043,9 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="visitasEmergenciais"> Visitas Emergenciais</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="relatorioDiario"> Relatório I.A.</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="lembretes"> Lembretes</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="fluxoAtendimento"> Fluxo de Atendimento</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="adocaoDigital"> Adoção Digital</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="incidentes"> Incidentes</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1368,6 +1374,9 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="visitasEmergenciais"><span class="tab-icon">🚨</span><span class="tab-label">Visitas Emergenciais</span></button>
       <button type="button" class="tab-btn" data-tab="relatorioDiario"><span class="tab-icon">🧠</span><span class="tab-label">Relatório I.A.</span></button>
       <button type="button" class="tab-btn" data-tab="lembretes"><span class="tab-icon">🔔</span><span class="tab-label">Lembretes</span><span class="tab-badge" id="lembretesBadge" style="display:none;"></span></button>
+      <button type="button" class="tab-btn" data-tab="fluxoAtendimento"><span class="tab-icon">📞</span><span class="tab-label">Fluxo de Atendimento</span></button>
+      <button type="button" class="tab-btn" data-tab="adocaoDigital"><span class="tab-icon">📲</span><span class="tab-label">Adoção Digital</span></button>
+      <button type="button" class="tab-btn" data-tab="incidentes"><span class="tab-icon">🛑</span><span class="tab-label">Incidentes</span></button>
     </nav>
 
     <div class="content-area">
@@ -2160,6 +2169,362 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div id="lembretesLista" style="display:flex; flex-direction:column; gap:8px;"></div>
   </div>
 
+  <!-- ==================== FLUXO DE ATENDIMENTO ==================== -->
+  <div id="tabFluxoAtendimento" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Indicadores operacionais de atendimento por condomínio e mês.
+    </p>
+    <div class="stats-strip" id="faStats"></div>
+    <div class="chart-panel" style="margin:16px 0;">
+      <p class="chart-title">Preenchimento do mês</p>
+      <div style="background:var(--bg-panel-2); border-radius:6px; height:10px; overflow:hidden;"><div id="faProgressoBar" style="height:100%; width:0%; background:var(--ok); transition:width .3s ease;"></div></div>
+      <p style="font-size:11px; color:var(--text-faint); margin-top:6px;" id="faProgressoTexto"></p>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <input type="text" class="search" id="faSearch" placeholder="Buscar condomínio...">
+      <select class="filter-select" id="faFilterFilial"><option value="">Filial: todas</option></select>
+      <input type="month" class="search" id="faFilterMes" style="max-width:160px;">
+      <select class="filter-select" id="faFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Preenchido">Preenchido</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Fora da Meta">Fora da Meta</option>
+      </select>
+      <button type="button" class="clearbtn" id="btnNovaRodadaFluxo">🔄 Nova Rodada do Mês</button>
+      <button type="button" class="logout-btn" id="btnNovoFluxoAtendimento" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
+    </div>
+    <span id="faCount" class="count-line"></span>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="faTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th><th>Filial</th><th>Mês</th><th>Atendimentos</th>
+            <th>Porta Aberta</th><th>Porta Violada</th><th>TMA</th><th>Status</th><th>Responsável</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="faBody"><tr><td colspan="10" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="users-modal" id="faModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="faModalTitle">Novo Registro — Fluxo de Atendimento</h3>
+        <button type="button" class="logout-btn" id="faModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="faId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="faCondominio" list="fa-condo-list" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <datalist id="fa-condo-list"></datalist>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="faFilial" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Mês de Referência
+          <input type="month" id="faMes" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Atendimentos no Mês
+          <input type="number" id="faAtendimentos" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">TMA (segundos)
+          <input type="number" id="faTma" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Faciais Cadastrados
+          <input type="number" id="faFaciais" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">% Facial
+          <input type="number" id="faPctFacial" min="0" max="100" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Apps Cadastrados
+          <input type="number" id="faApps" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">% App Digital
+          <input type="number" id="faPctApp" min="0" max="100" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Eventos de Porta Aberta no Mês
+          <input type="number" id="faPortaAberta" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Eventos de Porta Violada no Mês
+          <input type="number" id="faPortaViolada" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+          <select id="faResponsavel" style="width:100%; margin-top:4px;">
+            <option value="Rosely - Analista de Qualidade">Rosely - Analista de Qualidade</option>
+            <option value="Josy - Assistente de Qualidade">Josy - Assistente de Qualidade</option>
+            <option value="Geovana - Jovem Aprendiz">Geovana - Jovem Aprendiz</option>
+            <option value="Equipe CS">Equipe CS</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observação
+          <textarea id="faObservacao" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="faDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="faCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="faSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="faError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- ==================== ADOÇÃO DIGITAL ==================== -->
+  <div id="tabAdocaoDigital" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Adesão de cada condomínio às ferramentas digitais (facial, app, I.A., armário inteligente, GPhone).
+    </p>
+    <div class="stats-strip" id="adStats"></div>
+    <div class="toolbar" style="margin:16px 0;">
+      <input type="text" class="search" id="adSearch" placeholder="Buscar condomínio...">
+      <select class="filter-select" id="adFilterFilial"><option value="">Filial: todas</option></select>
+      <input type="month" class="search" id="adFilterMes" style="max-width:160px;">
+      <select class="filter-select" id="adFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Saudável">Saudável</option>
+        <option value="Atenção">Atenção</option>
+        <option value="Crítico">Crítico</option>
+        <option value="Pendente">Pendente</option>
+      </select>
+      <button type="button" class="logout-btn" id="btnNovoAdocaoDigital" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
+    </div>
+    <span id="adCount" class="count-line"></span>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="adTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th><th>Filial</th><th>Mês</th><th>% Facial</th><th>% App</th>
+            <th>I.A.</th><th>Armário</th><th>GPhone</th><th>Status/Score</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="adBody"><tr><td colspan="10" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="users-modal" id="adModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:580px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="adModalTitle">Novo Registro — Adoção Digital</h3>
+        <button type="button" class="logout-btn" id="adModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="adId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="adCondominio" list="ad-condo-list" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <datalist id="ad-condo-list"></datalist>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="adFilial" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Mês de Referência
+          <input type="month" id="adMes" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Unidades <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="adUnidades" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Moradores
+          <input type="number" id="adMoradores" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <p class="pq-label" style="margin-bottom:8px;">📷 Reconhecimento Facial</p>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Faciais Cadastrados
+          <input type="number" id="adFaciais" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">% Adesão Facial <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="adPctFacial" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">📱 Aplicativo</p>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Apps Cadastrados
+          <input type="number" id="adApps" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">% Adesão App <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="adPctApp" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">🤖 I.A. de Atendimento</p>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui I.A.?
+          <select id="adPossuiIA" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">I.A. Ativa?
+          <select id="adIAAtiva" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Atendimentos via I.A. no Mês
+          <input type="number" id="adAtendimentosIA" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Total de Atendimentos do Mês
+          <input type="number" id="adTotalAtendimentos" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">📦 Armário Inteligente</p>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui Armário?
+          <select id="adPossuiArmario" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Quantidade de Armários
+          <input type="number" id="adQtdArmarios" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Status do Armário
+          <input type="text" id="adStatusArmario" placeholder="Ex: Não possui, Instalado..." style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">📞 GPhone / Interfone Digital</p>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui GPhone?
+          <select id="adPossuiGphone" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status do GPhone
+          <input type="text" id="adStatusGphone" placeholder="Ex: Não possui, Instalado..." style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="adDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="adCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="adSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="adError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- ==================== INCIDENTES ==================== -->
+  <div id="tabIncidentes" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Registro de ocorrências de segurança e operacionais por condomínio.
+    </p>
+    <div class="stats-strip" id="incStats"></div>
+    <div class="toolbar" style="margin:16px 0;">
+      <input type="text" class="search" id="incSearch" placeholder="Buscar condomínio ou tipo...">
+      <select class="filter-select" id="incFilterGravidade">
+        <option value="">Gravidade: todas</option>
+        <option value="Alta">Alta</option>
+        <option value="Média">Média</option>
+        <option value="Baixa">Baixa</option>
+      </select>
+      <select class="filter-select" id="incFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Em análise">Em análise</option>
+        <option value="Em tratativa">Em tratativa</option>
+        <option value="Resolvido">Resolvido</option>
+        <option value="Aguardando">Aguardando</option>
+      </select>
+      <button type="button" class="logout-btn" id="btnNovoIncidente" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Incidente</button>
+    </div>
+    <span id="incCount" class="count-line"></span>
+    <div class="checklist-table-wrap">
+      <table class="checklist-table" id="incTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th><th>Tipo</th><th>Gravidade</th><th>Status</th>
+            <th>Responsável</th><th>Data</th><th>Descrição</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="incBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="users-modal" id="incModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="incModalTitle">Novo Incidente</h3>
+        <button type="button" class="logout-btn" id="incModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="incId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="incCondominio" list="inc-condo-list" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <datalist id="inc-condo-list"></datalist>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial <span style="font-weight:400; text-transform:none;">(auto)</span>
+          <input type="text" id="incFilial" disabled style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tipo de Incidente
+          <select id="incTipo" style="width:100%; margin-top:4px;">
+            <option value="Acesso indevido">Acesso indevido</option>
+            <option value="Falha de equipamento">Falha de equipamento</option>
+            <option value="Vandalismo">Vandalismo</option>
+            <option value="Incêndio">Incêndio</option>
+            <option value="Invasão">Invasão</option>
+            <option value="Furto/Roubo">Furto/Roubo</option>
+            <option value="Interferência">Interferência</option>
+            <option value="Falha de sistema">Falha de sistema</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data/Hora do Ocorrido
+          <input type="datetime-local" id="incDataHora" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Gravidade
+          <select id="incGravidade" style="width:100%; margin-top:4px;">
+            <option value="Alta">Alta</option>
+            <option value="Média">Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Descrição do Ocorrido <span class="pq-required">*</span>
+          <textarea id="incDescricao" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Setor Responsável
+          <select id="incSetor" style="width:100%; margin-top:4px;">
+            <option value="Central">Central</option>
+            <option value="Técnica">Técnica</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Financeiro">Financeiro</option>
+            <option value="TI">TI</option>
+            <option value="Sucesso do Cliente">Sucesso do Cliente</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
+          <select id="incStatus" style="width:100%; margin-top:4px;">
+            <option value="Em análise">Em análise</option>
+            <option value="Em tratativa">Em tratativa</option>
+            <option value="Resolvido">Resolvido</option>
+            <option value="Aguardando">Aguardando</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Tratativa / Medidas Adotadas
+          <textarea id="incTratativa" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+          <select id="incResponsavel" style="width:100%; margin-top:4px;">
+            <option value="Rosely - Analista de Qualidade">Rosely - Analista de Qualidade</option>
+            <option value="Josy - Assistente de Qualidade">Josy - Assistente de Qualidade</option>
+            <option value="Geovana - Jovem Aprendiz">Geovana - Jovem Aprendiz</option>
+            <option value="Equipe CS">Equipe CS</option>
+            <option value="Técnica">Técnica</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="incDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="incCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="incSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="incError" style="display:none;"></p>
+    </div>
+  </div>
+
   <div class="users-modal" id="lembreteModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:480px;">
       <div class="users-head">
@@ -2281,7 +2646,7 @@ const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -6760,7 +7125,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       if (!isNaN(nota) && nota < 6) motivos.push("nota crítica (" + pesquisa.nota + ")");
       else if (!isNaN(nota) && nota < 8) motivos.push("nota de atenção (" + pesquisa.nota + ")");
       if (pesquisa.houveReclamacao && pesquisa.statusTratativa && pesquisa.statusTratativa !== "Resolvido") motivos.push("reclamação sem resolução");
-      if (pesquisa.statusPesquisa === "Pendente" || pesquisa.statusPesquisa === "Síndico não atende") motivos.push("pesquisa não realizada");
       if (motivos.length) riscos.push({ nome: c.nome, filial: c.filial, motivos: motivos, nota: pesquisa.nota });
     });
 
@@ -8238,6 +8602,9 @@ function initTabs(){
       document.getElementById('tabVisitasEmergenciais').style.display = tab === 'visitasEmergenciais' ? 'block' : 'none';
       document.getElementById('tabRelatorioDiario').style.display = tab === 'relatorioDiario' ? 'block' : 'none';
       document.getElementById('tabLembretes').style.display = tab === 'lembretes' ? 'block' : 'none';
+      document.getElementById('tabFluxoAtendimento').style.display = tab === 'fluxoAtendimento' ? 'block' : 'none';
+      document.getElementById('tabAdocaoDigital').style.display = tab === 'adocaoDigital' ? 'block' : 'none';
+      document.getElementById('tabIncidentes').style.display = tab === 'incidentes' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
@@ -8263,6 +8630,15 @@ function initTabs(){
       }
       if (tab === 'lembretes'){
         if (typeof loadLembretes === 'function') loadLembretes();
+      }
+      if (tab === 'fluxoAtendimento'){
+        if (typeof loadFluxoAtendimento === 'function') loadFluxoAtendimento();
+      }
+      if (tab === 'adocaoDigital'){
+        if (typeof loadAdocaoDigital === 'function') loadAdocaoDigital();
+      }
+      if (tab === 'incidentes'){
+        if (typeof loadIncidentes === 'function') loadIncidentes();
       }
     });
   });
@@ -10311,6 +10687,666 @@ function renderVeMiniDash(){
     </div>
   `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Sem dados de setor.</p>';
 }
+
+// ============================================================================
+// FLUXO DE ATENDIMENTO
+// Indicadores operacionais de atendimento por condomínio e mês.
+// ============================================================================
+let faData = [];
+let faLoaded = false;
+
+function corTMA(tma){
+  if (tma === null || tma === undefined) return 'var(--text-faint)';
+  if (tma <= 300) return 'var(--ok)';
+  if (tma <= 600) return 'var(--atencao)';
+  return 'var(--critico)';
+}
+function corPortaViolada(n){
+  if (n === null || n === undefined) return 'var(--text-faint)';
+  if (n > 10) return 'var(--critico)';
+  if (n >= 6) return 'var(--atencao)';
+  return 'var(--ok)';
+}
+function corPortaAberta(n){
+  if (n === null || n === undefined) return 'var(--text-faint)';
+  if (n > 50) return 'var(--critico)';
+  if (n >= 21) return 'var(--atencao)';
+  return 'var(--ok)';
+}
+function faStatus(registro){
+  if (!registro) return 'Pendente';
+  if (registro.atendimentos === null || registro.atendimentos === undefined) return 'Pendente';
+  if (registro.tma !== null && registro.tma !== undefined && registro.tma > 300) return 'Fora da Meta';
+  return 'Preenchido';
+}
+
+async function loadFluxoAtendimento(){
+  const body = document.getElementById('faBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="10" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false });
+    if (error) throw error;
+    faData = data || [];
+    faLoaded = true;
+    faPopularFiltros();
+    renderFluxoAtendimento();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="10" class="empty">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function faPopularFiltros(){
+  const sel = document.getElementById('faFilterFilial');
+  const atual = sel.value;
+  const filiais = [...new Set(faData.map(f=>f.filial))].filter(Boolean).sort();
+  sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  if (filiais.includes(atual)) sel.value = atual;
+  document.getElementById('fa-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function getFilteredFluxoAtendimento(){
+  const q = (document.getElementById('faSearch').value || '').trim().toLowerCase();
+  const fFilial = document.getElementById('faFilterFilial').value;
+  const fMes = document.getElementById('faFilterMes').value;
+  const fStatus = document.getElementById('faFilterStatus').value;
+  return faData.filter(f=>{
+    if (q && !(f.condominio||'').toLowerCase().includes(q)) return false;
+    if (fFilial && f.filial !== fFilial) return false;
+    if (fMes && f.mes_referencia !== fMes) return false;
+    if (fStatus && faStatus(f) !== fStatus) return false;
+    return true;
+  });
+}
+
+function renderFluxoAtendimento(){
+  const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && faData[0].mes_referencia) || '';
+  const totalCondos = [...new Set(DATA.map(d=>d.nome))].length;
+  const doMes = faData.filter(f=>f.mes_referencia === mesAtual);
+  const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
+  const pendentes = Math.max(0, totalCondos - preenchidos);
+  const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 300).length;
+  const tmas = doMes.map(f=>f.tma).filter(n=>n !== null && n !== undefined);
+  const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
+  const pctPreenchido = totalCondos ? Math.round(preenchidos/totalCondos*100) : 0;
+
+  document.getElementById('faStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${preenchidos}</div><div class="slbl">Preenchidos (${pctPreenchido}%)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--pendente);">${pendentes}</div><div class="slbl">Pendentes</div></div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio !== null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${foraDaMeta}</div><div class="slbl">Fora da meta</div></div>
+  `;
+  const corBarra = pctPreenchido >= 80 ? 'var(--ok)' : pctPreenchido >= 50 ? 'var(--atencao)' : 'var(--critico)';
+  document.getElementById('faProgressoBar').style.width = pctPreenchido + '%';
+  document.getElementById('faProgressoBar').style.background = corBarra;
+  document.getElementById('faProgressoTexto').textContent = `${preenchidos} de ${totalCondos} condomínios com registro no mês ${mesAtual ? mesLabelBR(mesAtual) : 'selecionado'} (${pctPreenchido}%)`;
+
+  const filtered = getFilteredFluxoAtendimento();
+  document.getElementById('faCount').textContent = `${filtered.length} de ${faData.length} registro(s)`;
+  const tbody = document.getElementById('faBody');
+  if (!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Nenhum registro encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(f=>{
+    const status = faStatus(f);
+    const corStatus = status === 'Fora da Meta' ? 'var(--critico)' : 'var(--ok)';
+    return `<tr>
+      <td class="ck-name">${escapeHtml(f.condominio)}</td>
+      <td>${escapeHtml(f.filial||'—')}</td>
+      <td>${mesLabelBR(f.mes_referencia)}</td>
+      <td style="text-align:center;">${f.atendimentos ?? '—'}</td>
+      <td style="text-align:center; color:${corPortaAberta(f.porta_aberta)};">${f.porta_aberta ?? '—'}</td>
+      <td style="text-align:center; color:${corPortaViolada(f.porta_violada)};">${f.porta_violada ?? '—'}</td>
+      <td style="text-align:center; color:${corTMA(f.tma)};">${f.tma ?? '—'}${f.tma!==null&&f.tma!==undefined?'s':''}</td>
+      <td><span class="tag" style="color:${corStatus}; border:1px solid ${corStatus}; background:transparent;">${status}</span></td>
+      <td>${escapeHtml(f.responsavel||'—')}</td>
+      <td><button type="button" class="renov-action-btn" data-edit-fa="${f.id}">Editar</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('[data-edit-fa]').forEach(btn=>{
+    btn.onclick = ()=> abrirFluxoAtendimentoModal(faData.find(f=>String(f.id)===btn.getAttribute('data-edit-fa')));
+  });
+}
+
+function abrirFluxoAtendimentoModal(f){
+  document.getElementById('faError').style.display = 'none';
+  document.getElementById('faModalTitle').textContent = f ? 'Editar Registro — Fluxo de Atendimento' : 'Novo Registro — Fluxo de Atendimento';
+  document.getElementById('faId').value = f ? f.id : '';
+  document.getElementById('faCondominio').value = f ? (f.condominio || '') : '';
+  document.getElementById('faCondominio').disabled = !!f;
+  document.getElementById('faFilial').value = f ? (f.filial || '') : '';
+  document.getElementById('faMes').value = f ? (f.mes_referencia || '') : hojeISO().slice(0,7);
+  document.getElementById('faAtendimentos').value = f ? (f.atendimentos ?? '') : '';
+  document.getElementById('faTma').value = f ? (f.tma ?? '') : '';
+  document.getElementById('faFaciais').value = f ? (f.faciais_cadastrados ?? '') : '';
+  document.getElementById('faPctFacial').value = f ? (f.pct_facial ?? '') : '';
+  document.getElementById('faApps').value = f ? (f.apps_cadastrados ?? '') : '';
+  document.getElementById('faPctApp').value = f ? (f.pct_app ?? '') : '';
+  document.getElementById('faPortaAberta').value = f ? (f.porta_aberta ?? '') : '';
+  document.getElementById('faPortaViolada').value = f ? (f.porta_violada ?? '') : '';
+  document.getElementById('faResponsavel').value = f ? (f.responsavel || 'Rosely - Analista de Qualidade') : 'Rosely - Analista de Qualidade';
+  document.getElementById('faObservacao').value = f ? (f.observacao || '') : '';
+  document.getElementById('faDeleteBtn').style.display = f ? '' : 'none';
+  document.getElementById('faModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('faCondominio').addEventListener('input', ()=>{
+  const nome = document.getElementById('faCondominio').value.trim();
+  const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+  document.getElementById('faFilial').value = match ? (match.filial || '') : '';
+});
+
+async function criarNovaRodadaFluxo(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
+  if (!confirm(`Criar registros pendentes de Fluxo de Atendimento para todos os condomínios ativos no mês ${mesLabelBR(mes)}?`)) return;
+  const condosAtivos = [...new Map(DATA.map(d=>[d.nome.toLowerCase(), d])).values()];
+  const jaExistentes = new Set(faData.filter(f=>f.mes_referencia===mes).map(f=>(f.condominio||'').toLowerCase()));
+  const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.toLowerCase()));
+  if (!faltando.length){ alert('Todos os condomínios já têm registro nesse mês.'); return; }
+  const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes }));
+  try{
+    const { error } = await sb.from('fluxo_atendimento').insert(rows);
+    if (error) throw error;
+    document.getElementById('faFilterMes').value = mes;
+    await loadFluxoAtendimento();
+    alert(`${rows.length} condomínio(s) adicionado(s) como pendente(s) para ${mesLabelBR(mes)}.`);
+  }catch(e){ alert('Erro ao criar rodada: ' + e.message); }
+}
+document.getElementById('btnNovaRodadaFluxo').addEventListener('click', criarNovaRodadaFluxo);
+
+document.getElementById('btnNovoFluxoAtendimento').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar registros agora.'); return; }
+  abrirFluxoAtendimentoModal(null);
+});
+document.getElementById('faModalClose').addEventListener('click', ()=>{ document.getElementById('faModalOverlay').style.display = 'none'; });
+document.getElementById('faCancelBtn').addEventListener('click', ()=>{ document.getElementById('faModalOverlay').style.display = 'none'; });
+document.getElementById('faSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('faError');
+  errEl.style.display = 'none';
+  const id = document.getElementById('faId').value;
+  const condominio = document.getElementById('faCondominio').value.trim();
+  const mes = document.getElementById('faMes').value;
+  if (!condominio || !mes){
+    errEl.textContent = 'Informe o condomínio e o mês de referência.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const numOuNull = (v) => v === '' ? null : Number(v);
+  const payload = {
+    condominio,
+    filial: document.getElementById('faFilial').value || null,
+    mes_referencia: mes,
+    atendimentos: numOuNull(document.getElementById('faAtendimentos').value),
+    tma: numOuNull(document.getElementById('faTma').value),
+    faciais_cadastrados: numOuNull(document.getElementById('faFaciais').value),
+    pct_facial: numOuNull(document.getElementById('faPctFacial').value),
+    apps_cadastrados: numOuNull(document.getElementById('faApps').value),
+    pct_app: numOuNull(document.getElementById('faPctApp').value),
+    porta_aberta: numOuNull(document.getElementById('faPortaAberta').value),
+    porta_violada: numOuNull(document.getElementById('faPortaViolada').value),
+    responsavel: document.getElementById('faResponsavel').value,
+    observacao: document.getElementById('faObservacao').value.trim() || null,
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = id
+      ? await sb.from('fluxo_atendimento').update(payload).eq('id', id)
+      : await sb.from('fluxo_atendimento').insert(payload);
+    if (error) throw error;
+    document.getElementById('faModalOverlay').style.display = 'none';
+    loadFluxoAtendimento();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+document.getElementById('faDeleteBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('faId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse registro?')) return;
+  try{
+    const { error } = await sb.from('fluxo_atendimento').delete().eq('id', id);
+    if (error) throw error;
+    document.getElementById('faModalOverlay').style.display = 'none';
+    loadFluxoAtendimento();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+['faSearch','faFilterFilial','faFilterMes','faFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderFluxoAtendimento);
+  document.getElementById(id).addEventListener('change', renderFluxoAtendimento);
+});
+
+// ============================================================================
+// ADOÇÃO DIGITAL
+// Mede a adesão de cada condomínio às ferramentas digitais, com um score de
+// saúde digital de 0 a 4 pontos.
+// ============================================================================
+let adData = [];
+let adLoaded = false;
+
+function calcScoreDigital(r){
+  let pontos = 0;
+  if ((r.pct_facial||0) >= 70) pontos++;
+  if ((r.pct_app||0) >= 70) pontos++;
+  if (r.possui_ia === 'Sim') pontos++;
+  if (r.possui_armario === 'Sim' || r.possui_gphone === 'Sim') pontos++;
+  return pontos;
+}
+function adRegistroPendente(r){
+  return (r.moradores === null || r.moradores === undefined) && (r.faciais_cadastrados === null || r.faciais_cadastrados === undefined) && (r.apps_cadastrados === null || r.apps_cadastrados === undefined);
+}
+function classificarSaude(pontos, registro){
+  if (registro && adRegistroPendente(registro)) return 'Pendente';
+  const pct = pontos/4*100;
+  if (pct >= 70) return 'Saudável';
+  if (pct >= 30) return 'Atenção';
+  return 'Crítico';
+}
+function corSaude(status){
+  if (status === 'Saudável') return 'var(--ok)';
+  if (status === 'Atenção') return 'var(--atencao)';
+  if (status === 'Pendente') return 'var(--pendente)';
+  return 'var(--critico)';
+}
+
+async function seedAdocaoDigitalSeVazio(){
+  if (!sb) return;
+  try{
+    const condosAtivos = [...new Map(DATA.map(d=>[d.nome.toLowerCase(), d])).values()];
+    const jaExistentes = new Set(adData.map(a=>(a.condominio||'').toLowerCase()));
+    const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.toLowerCase()));
+    if (!faltando.length) return;
+    const mes = hojeISO().slice(0,7);
+    const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes, possui_ia: 'Não', ia_ativa: 'Não', possui_armario: 'Não', possui_gphone: 'Não' }));
+    await sb.from('adocao_digital').insert(rows);
+  }catch(e){ console.error('Falha ao trazer condomínios pra Adoção Digital:', e); }
+}
+
+async function loadAdocaoDigital(){
+  const body = document.getElementById('adBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="10" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    let { data, error } = await sb.from('adocao_digital').select('*').order('mes_referencia', { ascending:false });
+    if (error) throw error;
+    adData = data || [];
+    await seedAdocaoDigitalSeVazio();
+    if (adData.length < [...new Set(DATA.map(d=>d.nome))].length){
+      const r2 = await sb.from('adocao_digital').select('*').order('mes_referencia', { ascending:false });
+      if (!r2.error) adData = r2.data || [];
+    }
+    adLoaded = true;
+    adPopularFiltros();
+    renderAdocaoDigital();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="10" class="empty">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function adPopularFiltros(){
+  const sel = document.getElementById('adFilterFilial');
+  const atual = sel.value;
+  const filiais = [...new Set(adData.map(a=>a.filial))].filter(Boolean).sort();
+  sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  if (filiais.includes(atual)) sel.value = atual;
+  document.getElementById('ad-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function getFilteredAdocaoDigital(){
+  const q = (document.getElementById('adSearch').value || '').trim().toLowerCase();
+  const fFilial = document.getElementById('adFilterFilial').value;
+  const fMes = document.getElementById('adFilterMes').value;
+  const fStatus = document.getElementById('adFilterStatus').value;
+  return adData.filter(a=>{
+    if (q && !(a.condominio||'').toLowerCase().includes(q)) return false;
+    if (fFilial && a.filial !== fFilial) return false;
+    if (fMes && a.mes_referencia !== fMes) return false;
+    if (fStatus && classificarSaude(calcScoreDigital(a), a) !== fStatus) return false;
+    return true;
+  });
+}
+
+function renderAdocaoDigital(){
+  const filtered = getFilteredAdocaoDigital();
+  const totalCondos = [...new Set(DATA.map(d=>d.nome))].length;
+  const comApp = adData.filter(a => (a.apps_cadastrados||0) > 0).length;
+  const comGphone = adData.filter(a => a.possui_gphone === 'Sim').length;
+  const comArmario = adData.filter(a => a.possui_armario === 'Sim').length;
+  const comFacial = adData.filter(a => (a.faciais_cadastrados||0) > 0).length;
+  const totalFaces = adData.reduce((s,a)=>s+(a.faciais_cadastrados||0), 0);
+  const pct = (n) => totalCondos ? Math.round(n/totalCondos*100) : 0;
+
+  document.getElementById('adStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${comApp} (${pct(comApp)}%)</div><div class="slbl">📱 Aplicativo</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${comGphone} (${pct(comGphone)}%)</div><div class="slbl">📞 GPhone</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${comArmario} (${pct(comArmario)}%)</div><div class="slbl">📦 Armário Inteligente</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${comFacial} (${pct(comFacial)}%)</div><div class="slbl">📷 Facial · ${totalFaces} face(s)</div></div>
+  `;
+
+  document.getElementById('adCount').textContent = `${filtered.length} de ${adData.length} registro(s)`;
+  const tbody = document.getElementById('adBody');
+  if (!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Nenhum registro encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(a=>{
+    const score = calcScoreDigital(a);
+    const status = classificarSaude(score, a);
+    const cor = corSaude(status);
+    return `<tr>
+      <td class="ck-name">${escapeHtml(a.condominio)}</td>
+      <td>${escapeHtml(a.filial||'—')}</td>
+      <td>${mesLabelBR(a.mes_referencia)}</td>
+      <td style="text-align:center;">${a.pct_facial ?? '—'}${a.pct_facial!=null?'%':''}</td>
+      <td style="text-align:center;">${a.pct_app ?? '—'}${a.pct_app!=null?'%':''}</td>
+      <td style="text-align:center;">${a.possui_ia === 'Sim' ? '✅' : '—'}</td>
+      <td style="text-align:center;">${a.possui_armario === 'Sim' ? '✅' : '—'}</td>
+      <td style="text-align:center;">${a.possui_gphone === 'Sim' ? '✅' : '—'}</td>
+      <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${status} (${score}/4)</span></td>
+      <td><button type="button" class="renov-action-btn" data-edit-ad="${a.id}">Editar</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('[data-edit-ad]').forEach(btn=>{
+    btn.onclick = ()=> abrirAdocaoDigitalModal(adData.find(a=>String(a.id)===btn.getAttribute('data-edit-ad')));
+  });
+}
+
+function adRecalcularPercentuais(){
+  const moradores = parseFloat(document.getElementById('adMoradores').value) || 0;
+  const faciais = parseFloat(document.getElementById('adFaciais').value) || 0;
+  const apps = parseFloat(document.getElementById('adApps').value) || 0;
+  document.getElementById('adPctFacial').value = moradores > 0 ? (faciais/moradores*100).toFixed(1) + '%' : '—';
+  document.getElementById('adPctApp').value = moradores > 0 ? (apps/moradores*100).toFixed(1) + '%' : '—';
+}
+['adMoradores','adFaciais','adApps'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', adRecalcularPercentuais);
+});
+
+function abrirAdocaoDigitalModal(a){
+  document.getElementById('adError').style.display = 'none';
+  document.getElementById('adModalTitle').textContent = a ? 'Editar Registro — Adoção Digital' : 'Novo Registro — Adoção Digital';
+  document.getElementById('adId').value = a ? a.id : '';
+  document.getElementById('adCondominio').value = a ? (a.condominio || '') : '';
+  document.getElementById('adCondominio').disabled = !!a;
+  document.getElementById('adFilial').value = a ? (a.filial || '') : '';
+  document.getElementById('adMes').value = a ? (a.mes_referencia || '') : hojeISO().slice(0,7);
+  document.getElementById('adUnidades').value = a ? (a.unidades ?? '') : '';
+  document.getElementById('adMoradores').value = a ? (a.moradores ?? '') : '';
+  document.getElementById('adFaciais').value = a ? (a.faciais_cadastrados ?? '') : '';
+  document.getElementById('adApps').value = a ? (a.apps_cadastrados ?? '') : '';
+  document.getElementById('adPossuiIA').value = a ? (a.possui_ia || 'Não') : 'Não';
+  document.getElementById('adIAAtiva').value = a ? (a.ia_ativa || 'Não') : 'Não';
+  document.getElementById('adAtendimentosIA').value = a ? (a.atendimentos_ia ?? '') : '';
+  document.getElementById('adTotalAtendimentos').value = a ? (a.total_atendimentos ?? '') : '';
+  document.getElementById('adPossuiArmario').value = a ? (a.possui_armario || 'Não') : 'Não';
+  document.getElementById('adQtdArmarios').value = a ? (a.qtd_armarios ?? '') : '';
+  document.getElementById('adStatusArmario').value = a ? (a.status_armario || '') : '';
+  document.getElementById('adPossuiGphone').value = a ? (a.possui_gphone || 'Não') : 'Não';
+  document.getElementById('adStatusGphone').value = a ? (a.status_gphone || '') : '';
+  adRecalcularPercentuais();
+  if (a && a.pct_facial != null) document.getElementById('adPctFacial').value = a.pct_facial + '%';
+  if (a && a.pct_app != null) document.getElementById('adPctApp').value = a.pct_app + '%';
+  document.getElementById('adDeleteBtn').style.display = a ? '' : 'none';
+  document.getElementById('adModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('adCondominio').addEventListener('input', ()=>{
+  const nome = document.getElementById('adCondominio').value.trim();
+  const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+  document.getElementById('adFilial').value = match ? (match.filial || '') : '';
+});
+
+document.getElementById('btnNovoAdocaoDigital').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar registros agora.'); return; }
+  abrirAdocaoDigitalModal(null);
+});
+document.getElementById('adModalClose').addEventListener('click', ()=>{ document.getElementById('adModalOverlay').style.display = 'none'; });
+document.getElementById('adCancelBtn').addEventListener('click', ()=>{ document.getElementById('adModalOverlay').style.display = 'none'; });
+document.getElementById('adSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('adError');
+  errEl.style.display = 'none';
+  const id = document.getElementById('adId').value;
+  const condominio = document.getElementById('adCondominio').value.trim();
+  const mes = document.getElementById('adMes').value;
+  if (!condominio || !mes){
+    errEl.textContent = 'Informe o condomínio e o mês de referência.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const numOuNull = (v) => v === '' ? null : Number(v);
+  const moradores = numOuNull(document.getElementById('adMoradores').value);
+  const faciais = numOuNull(document.getElementById('adFaciais').value);
+  const apps = numOuNull(document.getElementById('adApps').value);
+  const totalAt = numOuNull(document.getElementById('adTotalAtendimentos').value);
+  const atIA = numOuNull(document.getElementById('adAtendimentosIA').value);
+  const payload = {
+    condominio,
+    filial: document.getElementById('adFilial').value || null,
+    mes_referencia: mes,
+    unidades: numOuNull(document.getElementById('adUnidades').value),
+    moradores,
+    faciais_cadastrados: faciais,
+    pct_facial: (moradores && faciais !== null) ? Math.round(faciais/moradores*1000)/10 : null,
+    apps_cadastrados: apps,
+    pct_app: (moradores && apps !== null) ? Math.round(apps/moradores*1000)/10 : null,
+    possui_ia: document.getElementById('adPossuiIA').value,
+    ia_ativa: document.getElementById('adIAAtiva').value,
+    atendimentos_ia: atIA,
+    total_atendimentos: totalAt,
+    pct_atendimentos_ia: (totalAt && atIA !== null) ? Math.round(atIA/totalAt*1000)/10 : null,
+    possui_armario: document.getElementById('adPossuiArmario').value,
+    qtd_armarios: numOuNull(document.getElementById('adQtdArmarios').value),
+    status_armario: document.getElementById('adStatusArmario').value.trim() || null,
+    possui_gphone: document.getElementById('adPossuiGphone').value,
+    status_gphone: document.getElementById('adStatusGphone').value.trim() || null,
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = id
+      ? await sb.from('adocao_digital').update(payload).eq('id', id)
+      : await sb.from('adocao_digital').insert(payload);
+    if (error) throw error;
+    document.getElementById('adModalOverlay').style.display = 'none';
+    loadAdocaoDigital();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+document.getElementById('adDeleteBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('adId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse registro?')) return;
+  try{
+    const { error } = await sb.from('adocao_digital').delete().eq('id', id);
+    if (error) throw error;
+    document.getElementById('adModalOverlay').style.display = 'none';
+    loadAdocaoDigital();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+['adSearch','adFilterFilial','adFilterMes','adFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderAdocaoDigital);
+  document.getElementById(id).addEventListener('change', renderAdocaoDigital);
+});
+
+// ============================================================================
+// INCIDENTES
+// Log de ocorrências de segurança/operacionais por condomínio.
+// ============================================================================
+let incData = [];
+let incLoaded = false;
+
+function corGravidade(g){
+  if (g === 'Alta') return 'var(--critico)';
+  if (g === 'Média') return 'var(--atencao)';
+  return 'var(--ok)';
+}
+function corStatusIncidente(s){
+  if (s === 'Resolvido') return 'var(--ok)';
+  if (s === 'Em tratativa') return 'var(--atencao)';
+  return 'var(--critico)';
+}
+
+async function loadIncidentes(){
+  const body = document.getElementById('incBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="8" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('incidentes').select('*').order('data_hora', { ascending:false });
+    if (error) throw error;
+    incData = data || [];
+    incLoaded = true;
+    document.getElementById('inc-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+    renderIncidentes();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="8" class="empty">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function getFilteredIncidentes(){
+  const q = (document.getElementById('incSearch').value || '').trim().toLowerCase();
+  const fGravidade = document.getElementById('incFilterGravidade').value;
+  const fStatus = document.getElementById('incFilterStatus').value;
+  return incData.filter(i=>{
+    if (q && !((i.condominio||'').toLowerCase().includes(q) || (i.tipo||'').toLowerCase().includes(q))) return false;
+    if (fGravidade && i.gravidade !== fGravidade) return false;
+    if (fStatus && i.status !== fStatus) return false;
+    return true;
+  });
+}
+
+function renderIncidentes(){
+  const altaGravidade = incData.filter(i=>i.gravidade === 'Alta').length;
+  const emTratamento = incData.filter(i=>i.status === 'Em tratativa' || i.status === 'Em análise').length;
+  const resolvidos = incData.filter(i=>i.status === 'Resolvido').length;
+
+  document.getElementById('incStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${incData.length}</div><div class="slbl">Total de incidentes</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${altaGravidade}</div><div class="slbl">Alta gravidade</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${emTratamento}</div><div class="slbl">Em tratamento</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${resolvidos}</div><div class="slbl">Resolvidos</div></div>
+  `;
+
+  const filtered = getFilteredIncidentes();
+  document.getElementById('incCount').textContent = `${filtered.length} de ${incData.length} incidente(s)`;
+  const tbody = document.getElementById('incBody');
+  if (!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum incidente encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(i=>{
+    const corG = corGravidade(i.gravidade);
+    const corS = corStatusIncidente(i.status);
+    return `<tr>
+      <td class="ck-name">${escapeHtml(i.condominio)}</td>
+      <td>${escapeHtml(i.tipo||'—')}</td>
+      <td><span class="tag" style="color:${corG}; border:1px solid ${corG}; background:transparent;">${escapeHtml(i.gravidade||'—')}</span></td>
+      <td><span class="tag" style="color:${corS}; border:1px solid ${corS}; background:transparent;">${escapeHtml(i.status||'—')}</span></td>
+      <td>${escapeHtml(i.responsavel||'—')}</td>
+      <td>${i.data_hora ? new Date(i.data_hora).toLocaleString('pt-BR') : '—'}</td>
+      <td style="max-width:260px;">${escapeHtml((i.descricao||'').slice(0,80))}${(i.descricao||'').length>80?'…':''}</td>
+      <td><button type="button" class="renov-action-btn" data-edit-inc="${i.id}">Editar</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('[data-edit-inc]').forEach(btn=>{
+    btn.onclick = ()=> abrirIncidenteModal(incData.find(i=>String(i.id)===btn.getAttribute('data-edit-inc')));
+  });
+}
+
+function abrirIncidenteModal(i){
+  document.getElementById('incError').style.display = 'none';
+  document.getElementById('incModalTitle').textContent = i ? 'Editar Incidente' : 'Novo Incidente';
+  document.getElementById('incId').value = i ? i.id : '';
+  document.getElementById('incCondominio').value = i ? (i.condominio || '') : '';
+  document.getElementById('incFilial').value = i ? (i.filial || '') : '';
+  document.getElementById('incTipo').value = i ? (i.tipo || 'Acesso indevido') : 'Acesso indevido';
+  document.getElementById('incDataHora').value = i ? (i.data_hora ? i.data_hora.slice(0,16) : '') : new Date().toISOString().slice(0,16);
+  document.getElementById('incGravidade').value = i ? (i.gravidade || 'Média') : 'Média';
+  document.getElementById('incDescricao').value = i ? (i.descricao || '') : '';
+  document.getElementById('incSetor').value = i ? (i.setor || 'Central') : 'Central';
+  document.getElementById('incTratativa').value = i ? (i.tratativa || '') : '';
+  document.getElementById('incStatus').value = i ? (i.status || 'Em análise') : 'Em análise';
+  document.getElementById('incResponsavel').value = i ? (i.responsavel || 'Rosely - Analista de Qualidade') : 'Rosely - Analista de Qualidade';
+  document.getElementById('incDeleteBtn').style.display = i ? '' : 'none';
+  document.getElementById('incModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('incCondominio').addEventListener('input', ()=>{
+  const nome = document.getElementById('incCondominio').value.trim();
+  const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+  document.getElementById('incFilial').value = match ? (match.filial || '') : '';
+});
+
+document.getElementById('btnNovoIncidente').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar incidentes agora.'); return; }
+  abrirIncidenteModal(null);
+});
+document.getElementById('incModalClose').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
+document.getElementById('incCancelBtn').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
+document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('incError');
+  errEl.style.display = 'none';
+  const id = document.getElementById('incId').value;
+  const condominio = document.getElementById('incCondominio').value.trim();
+  const descricao = document.getElementById('incDescricao').value.trim();
+  if (!condominio || !descricao){
+    errEl.textContent = 'Informe o condomínio e a descrição do ocorrido.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const payload = {
+    condominio,
+    filial: document.getElementById('incFilial').value || null,
+    tipo: document.getElementById('incTipo').value,
+    data_hora: document.getElementById('incDataHora').value || null,
+    gravidade: document.getElementById('incGravidade').value,
+    descricao,
+    setor: document.getElementById('incSetor').value,
+    tratativa: document.getElementById('incTratativa').value.trim() || null,
+    status: document.getElementById('incStatus').value,
+    responsavel: document.getElementById('incResponsavel').value,
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = id
+      ? await sb.from('incidentes').update(payload).eq('id', id)
+      : await sb.from('incidentes').insert(payload);
+    if (error) throw error;
+    document.getElementById('incModalOverlay').style.display = 'none';
+    loadIncidentes();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+document.getElementById('incDeleteBtn').addEventListener('click', async ()=>{
+  const id = document.getElementById('incId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse incidente?')) return;
+  try{
+    const { error } = await sb.from('incidentes').delete().eq('id', id);
+    if (error) throw error;
+    document.getElementById('incModalOverlay').style.display = 'none';
+    loadIncidentes();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+['incSearch','incFilterGravidade','incFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderIncidentes);
+  document.getElementById(id).addEventListener('change', renderIncidentes);
+});
 
 initTabs();
 
