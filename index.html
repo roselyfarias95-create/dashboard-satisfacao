@@ -5108,14 +5108,52 @@ function render(){
     const bodyContent = item._editing ? editFormHTML(item) : `
         <div class="body-inner">
           <div>
-            <p class="blk-title">Pendências / Reclamações</p>
+            <p class="blk-title">Pesquisa 1</p>
+            <div class="meta-row">
+              <span class="pill">Nota 1: <b style="color:var(--text);">${escapeHtml(item.nota ?? '—')}</b></span>
+              <span class="pill">Data: ${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</span>
+              <span class="pill">Status: ${escapeHtml(item.statusPesquisa || '—')}</span>
+            </div>
+            ${pesquisaNaoRealizada(item) ? `
+              <p class="blk-title" style="margin-top:14px; color:var(--critico);">Não Realizada</p>
+              <p class="blk-text">${item.motivoNaoRealizada ? 'Motivo: ' + escapeHtml(item.motivoNaoRealizada) : 'Motivo não informado.'}</p>
+              ${item.observacaoNaoRealizada ? `<p class="blk-text">${escapeHtml(item.observacaoNaoRealizada)}</p>` : ''}
+              ${item.pesquisaRemarcada ? `<div class="meta-row"><span class="pill">Remarcada para: ${item.dataRemarcada ? formatDateBR(item.dataRemarcada) : '—'}</span></div>${item.retornoVisitaRemarcada ? `<p class="blk-text">${escapeHtml(item.retornoVisitaRemarcada)}</p>` : ''}` : `<p class="blk-text" style="color:var(--text-faint);">Ainda não foi remarcada.</p>`}
+            ` : ''}
+            <p class="blk-title" style="margin-top:14px;">Classificação</p>
+            <div class="meta-row">
+              <span class="pill ${item.houvePendencia ? 'resolved-no' : ''}">Pendência: ${item.houvePendencia ? 'Sim' : 'Não'}</span>
+              <span class="pill ${item.houveReclamacao ? 'resolved-no' : ''}">Reclamação: ${item.houveReclamacao ? 'Sim' : 'Não'}</span>
+              <span class="pill ${item.houveElogio ? 'resolved-yes' : ''}">Elogio: ${item.houveElogio ? 'Sim' : 'Não'}</span>
+            </div>
+            <p class="blk-title" style="margin-top:14px;">Pendências / Reclamações</p>
             <p class="blk-text">${escapeHtml(item.pend)}</p>
+            ${item.motivo && item.motivo !== '—' ? `<div class="meta-row"><span class="pill">Motivo: ${escapeHtml(item.motivo)}</span></div>` : ''}
+            ${item.setorPendencia ? `<div class="meta-row"><span class="pill">Setor (Pendência): ${escapeHtml(item.setorPendencia)}</span></div>` : ''}
+            ${item.setor && item.setor !== '—' && !item.setorPendencia ? `<div class="meta-row"><span class="pill">Setor: ${escapeHtml(item.setor)}</span></div>` : ''}
             ${item.update ? `<div class="alert-update">⚠ ${escapeHtml(item.update)}</div>` : ''}
           </div>
           <div>
             <p class="blk-title">Encaminhamento</p>
             <div class="meta-row">${resolvedPill(item.resolvido)}${OVERRIDES[item.n] ? '<span class="edited-tag">editado manualmente</span>' : ''}</div>
             <p class="blk-text">${item.resolucao ? escapeHtml(item.resolucao) : 'Sem detalhamento de resolução registrado.'}</p>
+            ${item.notaPosResolucao ? `
+              <p class="blk-title" style="margin-top:14px;">Pesquisa de Recuperação (Nota 2)</p>
+              <div class="meta-row">
+                <span class="pill">Nota 2: <b style="color:var(--text);">${escapeHtml(item.notaPosResolucao)}</b></span>
+                ${item.dataPesquisa2 ? `<span class="pill">Data: ${formatDateBR(item.dataPesquisa2)}</span>` : ''}
+              </div>
+            ` : ''}
+            ${item.houveElogio ? `
+              <p class="blk-title" style="margin-top:14px; color:var(--ok);">Elogio</p>
+              ${item.elogioSetor ? `<div class="meta-row"><span class="pill">Setor elogiado: ${escapeHtml(item.elogioSetor)}</span></div>` : ''}
+              <p class="blk-text">${item.elogioDescricao ? escapeHtml(item.elogioDescricao) : 'Sem descrição registrada.'}</p>
+            ` : ''}
+            ${item.comentarioSindico ? `
+              <p class="blk-title" style="margin-top:14px;">Comentário do Síndico</p>
+              <p class="blk-text">${escapeHtml(item.comentarioSindico)}</p>
+            ` : ''}
+            ${item.responsavelPesquisa ? `<div class="meta-row" style="margin-top:14px;"><span class="pill">Responsável pela pesquisa: ${escapeHtml(item.responsavelPesquisa)}</span></div>` : ''}
           </div>
         </div>
         ${['admin','editor'].includes(currentRole) ? `<div class="body-actions"><button type="button" class="edit-btn">✎ Editar</button></div>` : ''}
