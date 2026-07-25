@@ -1537,6 +1537,21 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <button type="button" class="subtab-btn" data-subtab="pendencias">⚠️ Pendências <span class="subtab-count" id="subtabCountPendencias"></span></button>
     <button type="button" class="subtab-btn" data-subtab="elogios">😊 Elogios <span class="subtab-count" id="subtabCountElogios"></span></button>
     <button type="button" class="subtab-btn" data-subtab="historico">🗂 Histórico</button>
+    <button type="button" class="subtab-btn" data-subtab="minidash">📊 Mini Dashboard</button>
+  </div>
+
+  <div id="pesquisaMiniDash" style="display:none;">
+    <div class="stats-strip" id="pqMiniDashStats"></div>
+    <div class="charts-grid charts-grid-2" style="margin-top:16px;">
+      <div class="chart-panel">
+        <p class="chart-title">Distribuição de notas</p>
+        <div id="pqMiniDashNotas"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">Top motivos de reclamação</p>
+        <div id="pqMiniDashMotivos"></div>
+      </div>
+    </div>
   </div>
 
   <div class="toolbar" id="actionBar">
@@ -1610,6 +1625,21 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
+    </div>
+
+    <div id="renovViewMiniDash" style="display:none;">
+      <div class="stats-strip" id="renovMiniDashStats"></div>
+      <div class="charts-grid charts-grid-2" style="margin-top:16px;">
+        <div class="chart-panel">
+          <p class="chart-title">Negociações por Status</p>
+          <div id="renovMiniDashStatus"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">Vencidos por Filial</p>
+          <div id="renovMiniDashFilial"></div>
+        </div>
+      </div>
     </div>
 
     <div id="renovViewVencidos">
@@ -1936,6 +1966,27 @@ CONDOMINIO Y	9	Concluído"></textarea>
       Resumo abaixo é calculado a partir da Pesquisa de Satisfação (nota &lt; 9 ou pesquisa não realizada).
       O registro de visitas logo abaixo é totalmente editável — adicione, edite ou exclua qualquer linha.
     </p>
+
+    <div class="subtab-nav" id="veSubtabNav">
+      <button type="button" class="subtab-btn active" data-ve-subtab="lista">📋 Lista de Visitas</button>
+      <button type="button" class="subtab-btn" data-ve-subtab="minidash">📊 Mini Dashboard</button>
+    </div>
+
+    <div id="veViewMiniDash" style="display:none;">
+      <div class="stats-strip" id="veMiniDashStats"></div>
+      <div class="charts-grid charts-grid-2" style="margin-top:16px;">
+        <div class="chart-panel">
+          <p class="chart-title">Por Status</p>
+          <div id="veMiniDashStatus"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">Por Setor</p>
+          <div id="veMiniDashSetor"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="veViewLista">
     <div class="stats-strip" id="visitasEmergenciaisStats"></div>
 
     <div class="chart-panel" style="margin:16px 0;">
@@ -2000,6 +2051,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <tr><td colspan="12" class="empty">Carregando visitas...</td></tr>
         </tbody>
       </table>
+    </div>
     </div>
   </div>
 
@@ -4425,13 +4477,16 @@ document.querySelectorAll('.subtab-btn').forEach(btn=>{
 });
 function toggleHistoricoView(){
   const isHistorico = activeSubtab === 'historico';
+  const isMiniDash = activeSubtab === 'minidash';
   document.getElementById('historicoView').style.display = isHistorico ? 'block' : 'none';
-  document.getElementById('countLine').style.display = isHistorico ? 'none' : 'flex';
-  document.getElementById('listHeader').style.display = isHistorico ? 'none' : (currentView === 'list' ? '' : 'none');
-  document.getElementById('list').style.display = isHistorico ? 'none' : (currentView === 'list' ? '' : 'none');
-  document.getElementById('kanbanBoard').style.display = isHistorico ? 'none' : (currentView === 'kanban' ? 'flex' : 'none');
+  document.getElementById('pesquisaMiniDash').style.display = isMiniDash ? 'block' : 'none';
+  document.getElementById('countLine').style.display = (isHistorico || isMiniDash) ? 'none' : 'flex';
+  document.getElementById('listHeader').style.display = (isHistorico || isMiniDash) ? 'none' : (currentView === 'list' ? '' : 'none');
+  document.getElementById('list').style.display = (isHistorico || isMiniDash) ? 'none' : (currentView === 'list' ? '' : 'none');
+  document.getElementById('kanbanBoard').style.display = (isHistorico || isMiniDash) ? 'none' : (currentView === 'kanban' ? 'flex' : 'none');
   document.getElementById('emptyMsg').style.display = 'none';
   document.getElementById('historicoNovaPastaBtn').style.display = (isHistorico && ['admin','editor'].includes(currentRole)) ? '' : 'none';
+  if (isMiniDash) renderPesquisaMiniDash();
 }
 let selectedMes = null; // mês da rodada exibida — null até populateMesSelector() rodar
 let selectedStatuses = [];  // multi-select: vazio = todos
@@ -5295,6 +5350,7 @@ function render(){
   buildStats(filtered);
   if (typeof renderComparativoMensal === 'function') renderComparativoMensal();
   if (typeof renderStatsVisitasEmergenciaisDash === 'function') renderStatsVisitasEmergenciaisDash();
+  if (activeSubtab === 'minidash' && typeof renderPesquisaMiniDash === 'function') renderPesquisaMiniDash();
   if (typeof renderComparativoFiliais === 'function') renderComparativoFiliais();
   renderMiniDash(baseFiltered);
 
@@ -5976,6 +6032,34 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     </div>
   </div>
 
+  <div style="display:flex; gap:8px; margin:18px 0;">
+    <button type="button" class="btn btn-ghost" id="btnViewAtivos" style="background:var(--navy); color:#fff;">Condomínios Ativos</button>
+    <button type="button" class="btn btn-ghost" id="btnViewCancelados">❌ Condomínios Cancelados</button>
+  </div>
+
+  <div id="viewCancelados" style="display:none;">
+    <div class="summary-grid" id="canceladosSummaryGrid" style="margin-bottom:18px;"></div>
+    <div class="panel" style="margin-bottom:18px; border-left:3px solid #ef4444;">
+      <h3>🧠 Leitura Inteligente — Passíveis de Cancelamento</h3>
+      <p style="font-size:12.5px; color:#6b7280; margin:6px 0 12px;">Cruza com a Pesquisa de Satisfação (nota baixa, insatisfação) pra identificar condomínios ativos com sinal de risco.</p>
+      <div id="canceladosRisco"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Condomínio</th><th>Filial</th><th>Data da Solicitação</th><th>Motivo do Cancelamento</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="canceladosTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="canceladosEmptyState" style="display:none;">
+        <p>Nenhum condomínio cancelado registrado.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewAtivos">
   <div class="toolbar">
     <div class="search-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -6071,6 +6155,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <div>Nenhum condomínio encontrado com esses filtros.</div>
     </div>
   </div>
+  </div>
 
   <footer class="note">Dados salvos automaticamente neste navegador (localStorage) · 286 condomínios importados da planilha de controle</footer>
 </div>
@@ -6131,6 +6216,16 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         <div class="seg" id="segStatus">
           <div class="seg-opt" data-val="Ativo">Ativo</div>
           <div class="seg-opt" data-val="Inativo">Inativo</div>
+        </div>
+      </div>
+      <div class="field-row" id="camposCancelamento" style="display:none;">
+        <div class="field">
+          <label>Data da Solicitação de Cancelamento</label>
+          <input type="date" id="fDataCancelamento">
+        </div>
+        <div class="field">
+          <label>Motivo do Cancelamento</label>
+          <input type="text" id="fMotivoCancelamento" placeholder="Ex: Insatisfação com atendimento, mudança de empresa...">
         </div>
       </div>
       <div class="field">
@@ -6281,7 +6376,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       acessoVeicular: row.acesso_veicular, sistema: row.sistema_guarita,
       statusPedido: row.status_pedido, numeroPedido: row.numero_pedido, materiaisLevantamento: row.materiais_levantamento,
       nomeSindico: row.nome_sindico, telefone: row.telefone, endereco: row.endereco,
-      area: row.area, tecnicoResponsavel: row.tecnico_responsavel
+      area: row.area, tecnicoResponsavel: row.tecnico_responsavel,
+      dataCancelamento: row.data_cancelamento, motivoCancelamento: row.motivo_cancelamento
     };
   }
   function condoToRow(c){
@@ -6296,6 +6392,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       status_pedido: c.statusPedido || null, numero_pedido: c.numeroPedido || null, materiais_levantamento: c.materiaisLevantamento || null,
       nome_sindico: c.nomeSindico || null, telefone: c.telefone || null, endereco: c.endereco || null,
       area: c.area || null, tecnico_responsavel: c.tecnicoResponsavel || null,
+      data_cancelamento: c.dataCancelamento || null, motivo_cancelamento: c.motivoCancelamento || null,
       updated_at: new Date().toISOString()
     };
   }
@@ -6571,7 +6668,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   // RESUMO / KPIs E GRÁFICOS DE DISTRIBUIÇÃO DO CADASTRO
   // ==========================================================================
   function renderSummary(){
-    var total = state.data.length;
+    var total = state.data.filter(function(c){return c.status !== "Inativo";}).length;
     var ativos = state.data.filter(function(c){return c.status==="Ativo";}).length;
     var inativos = state.data.filter(function(c){return c.status==="Inativo";}).length;
     var pendentes = state.data.filter(function(c){return !c.sindico || !c.modalidade;}).length;
@@ -6600,6 +6697,98 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   function iconAlert(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4m0 4h.01M10.3 3.9L2.5 17a1.5 1.5 0 001.3 2.2h16.4a1.5 1.5 0 001.3-2.2L13.7 3.9a1.5 1.5 0 00-2.4 0z"/></svg>';}
   function iconStar(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17l-6.1 3.5 1.5-6.8-5.2-4.7 6.9-.7z"/></svg>';}
   function iconClock(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';}
+
+  // ==========================================================================
+  // CONDOMÍNIOS CANCELADOS
+  // ==========================================================================
+  function normalizeNomeLocal(s){
+    return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+
+  function renderCancelados(){
+    var cancelados = state.data.filter(function(c){return c.status === "Inativo";});
+    document.getElementById("canceladosSummaryGrid").innerHTML = [
+      statCard(cancelados.length, "Total de Cancelados", "red", iconX()),
+    ].join("");
+
+    var tbody = document.getElementById("canceladosTableBody");
+    var empty = document.getElementById("canceladosEmptyState");
+    if (!cancelados.length){
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+    } else {
+      empty.style.display = "none";
+      tbody.innerHTML = cancelados.map(function(c){
+        return '<tr>'+
+          '<td><b>'+c.nome+'</b></td>'+
+          '<td>'+(c.filial||'—')+'</td>'+
+          '<td>'+(c.dataCancelamento ? new Date(c.dataCancelamento+"T00:00:00").toLocaleDateString("pt-BR") : '—')+'</td>'+
+          '<td>'+(c.motivoCancelamento || '<span class="tag">Não informado</span>')+'</td>'+
+          '<td><button class="icon-btn" data-edit="'+c.id+'" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button></td>'+
+        '</tr>';
+      }).join("");
+      tbody.querySelectorAll("[data-edit]").forEach(function(btn){
+        btn.addEventListener("click", function(){ openModal(Number(btn.getAttribute("data-edit"))); });
+      });
+    }
+
+    renderRiscoCancelamento();
+  }
+
+  function renderRiscoCancelamento(){
+    var el = document.getElementById("canceladosRisco");
+    var pesquisaData;
+    try{ pesquisaData = window.parent.DATA; }catch(e){ pesquisaData = null; }
+    if (!pesquisaData || !Array.isArray(pesquisaData)){
+      el.innerHTML = '<p style="font-size:12px; color:#6b7280;">Não foi possível acessar os dados da Pesquisa de Satisfação agora (abra o dashboard normalmente, fora de um arquivo isolado).</p>';
+      return;
+    }
+    var ativos = state.data.filter(function(c){return c.status !== "Inativo";});
+    var riscos = [];
+    ativos.forEach(function(c){
+      var alvo = normalizeNomeLocal(c.nome);
+      var pesquisa = pesquisaData.find(function(d){ return normalizeNomeLocal(d.nome) === alvo; });
+      if (!pesquisa) return;
+      var nota = parseFloat(String(pesquisa.nota).replace(",", "."));
+      var motivos = [];
+      if (!isNaN(nota) && nota < 6) motivos.push("nota crítica (" + pesquisa.nota + ")");
+      else if (!isNaN(nota) && nota < 8) motivos.push("nota de atenção (" + pesquisa.nota + ")");
+      if (pesquisa.houveReclamacao && pesquisa.statusTratativa && pesquisa.statusTratativa !== "Resolvido") motivos.push("reclamação sem resolução");
+      if (pesquisa.statusPesquisa === "Pendente" || pesquisa.statusPesquisa === "Síndico não atende") motivos.push("pesquisa não realizada");
+      if (motivos.length) riscos.push({ nome: c.nome, filial: c.filial, motivos: motivos, nota: pesquisa.nota });
+    });
+
+    if (!riscos.length){
+      el.innerHTML = '<p style="font-size:12.5px; color:#16a34a;">Nenhum condomínio ativo com sinal de risco no momento. 🎉</p>';
+      return;
+    }
+    riscos.sort(function(a,b){ return b.motivos.length - a.motivos.length; });
+    el.innerHTML = riscos.slice(0,15).map(function(r){
+      return '<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0f1f3;">'+
+        '<div style="flex:1;"><b style="font-size:13px;">'+r.nome+'</b> <span style="color:#6b7280; font-size:11px;">'+ (r.filial||'') +'</span>'+
+        '<div style="font-size:11px; color:#6b7280; margin-top:2px;">'+r.motivos.join(' · ')+'</div></div>'+
+        '<span style="font-family:monospace; font-weight:700; color:#ef4444;">'+r.nota+'</span>'+
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById("btnViewAtivos").addEventListener("click", function(){
+    document.getElementById("viewAtivos").style.display = "block";
+    document.getElementById("viewCancelados").style.display = "none";
+    document.getElementById("btnViewAtivos").style.background = "var(--navy)";
+    document.getElementById("btnViewAtivos").style.color = "#fff";
+    document.getElementById("btnViewCancelados").style.background = "";
+    document.getElementById("btnViewCancelados").style.color = "";
+  });
+  document.getElementById("btnViewCancelados").addEventListener("click", function(){
+    document.getElementById("viewAtivos").style.display = "none";
+    document.getElementById("viewCancelados").style.display = "block";
+    document.getElementById("btnViewCancelados").style.background = "#ef4444";
+    document.getElementById("btnViewCancelados").style.color = "#fff";
+    document.getElementById("btnViewAtivos").style.background = "";
+    document.getElementById("btnViewAtivos").style.color = "";
+    renderCancelados();
+  });
 
   function renderBreakdowns(){
     var total = state.data.length || 1;
@@ -6683,6 +6872,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById("fNumeroPedido").value = c ? (c.numeroPedido||"") : "";
     document.getElementById("fMateriaisLevantamento").value = c ? (c.materiaisLevantamento||"") : "";
     setSeg("segStatus", c ? c.status : "Ativo");
+    document.getElementById("fDataCancelamento").value = c ? (c.dataCancelamento || "") : "";
+    document.getElementById("fMotivoCancelamento").value = c ? (c.motivoCancelamento || "") : "";
+    document.getElementById("camposCancelamento").style.display = (c && c.status === "Inativo") ? "grid" : "none";
     setSeg("segSindico", c ? (c.sindico||"") : "");
     setSeg("segModalidade", c ? (c.modalidade||"") : "");
     setSeg("segAditivo", c ? (c.possuiAditivo||"") : "");
@@ -6722,6 +6914,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       var opt = e.target.closest(".seg-opt");
       if(!opt) return;
       setSeg(gid, opt.getAttribute("data-val"));
+      if (gid === "segStatus"){
+        document.getElementById("camposCancelamento").style.display = opt.getAttribute("data-val") === "Inativo" ? "grid" : "none";
+      }
     });
   });
 
@@ -6755,6 +6950,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       area: document.getElementById("fArea").value.trim(),
       tecnicoResponsavel: document.getElementById("fTecnicoResponsavel").value.trim(),
       status: getSeg("segStatus") || "Ativo",
+      dataCancelamento: getSeg("segStatus") === "Inativo" ? (document.getElementById("fDataCancelamento").value || null) : null,
+      motivoCancelamento: getSeg("segStatus") === "Inativo" ? (document.getElementById("fMotivoCancelamento").value.trim() || null) : null,
       sindico: getSeg("segSindico"),
       modalidade: getSeg("segModalidade"),
       obs: document.getElementById("fObs").value.trim(),
@@ -7430,13 +7627,54 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.getElementById('renovViewNegociacao').style.display = alvo === 'negociacao' ? 'block' : 'none';
     document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
+    document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     if (alvo === 'negociacao') renderRenovNegociacoes();
     if (alvo === 'renovados') renderRenovRenovados();
+    if (alvo === 'minidash') renderRenovMiniDash();
     if (alvo === 'cronograma'){
       if (!cronogramaLoaded) loadCronograma(); else renderCalendarioCronograma();
     }
   });
 });
+
+function renderRenovMiniDash(){
+  const vencidos = renovVencidos.length;
+  const emNegociacao = renovNegociacoes.filter(negociacaoEmAndamento).length;
+  const renovados = renovNegociacoes.filter(n=>n.status==='Renovado').length;
+  const naoRenovados = renovNegociacoes.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
+
+  document.getElementById('renovMiniDashStats').innerHTML = `
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${vencidos}</div><div class="slbl">Vencidos sem negociação</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${emNegociacao}</div><div class="slbl">Em negociação</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${renovados}</div><div class="slbl">Renovados</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--text-faint);">${naoRenovados}</div><div class="slbl">Não renovados/Cancelados</div></div>
+  `;
+
+  const statusList = [
+    { label:'Vencidos', n: vencidos, cor:'var(--critico)' },
+    { label:'Em Negociação', n: emNegociacao, cor:'var(--atencao)' },
+    { label:'Renovados', n: renovados, cor:'var(--ok)' },
+    { label:'Não Renovados/Cancelados', n: naoRenovados, cor:'var(--text-faint)' },
+  ];
+  const maxStatus = Math.max(1, ...statusList.map(s=>s.n));
+  document.getElementById('renovMiniDashStatus').innerHTML = statusList.map(s=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${s.label}</span><span>${s.n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${s.n/maxStatus*100}%; height:100%; background:${s.cor};"></div></div>
+    </div>
+  `).join('');
+
+  const contagemFilial = {};
+  renovVencidos.forEach(c => { if (c.filial) contagemFilial[c.filial] = (contagemFilial[c.filial]||0)+1; });
+  const topFiliais = Object.entries(contagemFilial).sort((a,b)=>b[1]-a[1]);
+  const maxFilial = Math.max(1, ...topFiliais.map(f=>f[1]));
+  document.getElementById('renovMiniDashFilial').innerHTML = topFiliais.length ? topFiliais.map(([label,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxFilial*100}%; height:100%; background:var(--accent);"></div></div>
+    </div>
+  `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Nenhum contrato vencido no momento. 🎉</p>';
+}
 
 function renderRenovRenovados(){
   const body = document.getElementById('renovRenovadosBody');
@@ -9965,6 +10203,107 @@ function renderAnaliseImpactoVisitas(){
       <td>${l.renovou ? '<span class="tag" style="color:var(--ok); border:1px solid var(--ok); background:transparent;">Sim</span>' : '—'}</td>
     </tr>`;
   }).join('');
+}
+
+// ============================================================================
+// MINI DASHBOARD — Pesquisa de Satisfação
+// Leitura rápida com os principais números, sem precisar ir no Dashboard
+// Executivo.
+// ============================================================================
+function renderPesquisaMiniDash(){
+  const total = DATA.length;
+  const notas = DATA.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
+  const insatisfeitos = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 8; });
+  const reclamacoesAbertas = DATA.filter(d => d.houveReclamacao && d.statusTratativa && d.statusTratativa !== 'Resolvido');
+  const naoRealizadas = DATA.filter(pesquisaNaoRealizada);
+
+  document.getElementById('pqMiniDashStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${total}</div><div class="slbl">Condomínios monitorados</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${media !== null ? media.toFixed(1) : '—'}</div><div class="slbl">Nota média geral</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${insatisfeitos.length}</div><div class="slbl">Insatisfeitos (nota &lt; 8)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${reclamacoesAbertas.length}</div><div class="slbl">Reclamações sem resolução</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--pendente);">${naoRealizadas.length}</div><div class="slbl">Não realizadas</div></div>
+  `;
+
+  const faixas = [
+    { label:'9 – 10', min:9, max:10, cor:'var(--ok)' },
+    { label:'8 – 8,9', min:8, max:8.999, cor:'var(--ok)' },
+    { label:'6 – 7,9', min:6, max:7.999, cor:'var(--atencao)' },
+    { label:'0 – 5,9', min:0, max:5.999, cor:'var(--critico)' },
+  ];
+  const maxCount = Math.max(1, ...faixas.map(f => notas.filter(n=>n>=f.min && n<=f.max).length));
+  document.getElementById('pqMiniDashNotas').innerHTML = faixas.map(f=>{
+    const n = notas.filter(nn=>nn>=f.min && nn<=f.max).length;
+    const pct = n / maxCount * 100;
+    return `<div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${f.label}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:${f.cor};"></div></div>
+    </div>`;
+  }).join('');
+
+  const dist = computeDistribution(DATA, classifyGrupoMotivo);
+  const topMotivos = Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('pqMiniDashMotivos').innerHTML = topMotivos.length ? topMotivos.map(([label,n])=>{
+    const pct = dist.total ? Math.round(n/dist.total*100) : 0;
+    return `<div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${pct}%</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:var(--accent);"></div></div>
+    </div>`;
+  }).join('') : '<p style="color:var(--text-faint); font-size:12px;">Sem reclamações registradas.</p>';
+}
+
+// ============================================================================
+// MINI DASHBOARD — Visitas Emergenciais
+// ============================================================================
+document.querySelectorAll('[data-ve-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-ve-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-ve-subtab');
+    document.getElementById('veViewLista').style.display = alvo === 'lista' ? 'block' : 'none';
+    document.getElementById('veViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
+    if (alvo === 'minidash') renderVeMiniDash();
+  });
+});
+
+function renderVeMiniDash(){
+  const total = veData.length;
+  const agendadas = veData.filter(v => v.status === 'Visita Agendada').length;
+  const andamento = veData.filter(v => v.status === 'Em Andamento').length;
+  const concluidas = veData.filter(v => v.status === 'Concluído').length;
+  const realizadas = veData.filter(v => v.realizada === 'SIM').length;
+
+  document.getElementById('veMiniDashStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${total}</div><div class="slbl">Total de visitas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--pendente);">${agendadas}</div><div class="slbl">Agendadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${andamento}</div><div class="slbl">Em andamento</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${concluidas}</div><div class="slbl">Concluídas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${realizadas}</div><div class="slbl">Já realizadas</div></div>
+  `;
+
+  const statusList = [
+    { label:'Visita Agendada', n: agendadas, cor:'var(--pendente)' },
+    { label:'Em Andamento', n: andamento, cor:'var(--atencao)' },
+    { label:'Concluído', n: concluidas, cor:'var(--ok)' },
+  ];
+  const maxStatus = Math.max(1, ...statusList.map(s=>s.n));
+  document.getElementById('veMiniDashStatus').innerHTML = statusList.map(s=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${s.label}</span><span>${s.n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${s.n/maxStatus*100}%; height:100%; background:${s.cor};"></div></div>
+    </div>
+  `).join('');
+
+  const contagemSetor = {};
+  veData.forEach(v=>{ if (v.setor) { const setores = v.setor.split(/[,/]/).map(s=>s.trim()); setores.forEach(s => contagemSetor[s] = (contagemSetor[s]||0)+1); } });
+  const topSetores = Object.entries(contagemSetor).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxSetor = Math.max(1, ...topSetores.map(s=>s[1]));
+  document.getElementById('veMiniDashSetor').innerHTML = topSetores.length ? topSetores.map(([label,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxSetor*100}%; height:100%; background:var(--accent);"></div></div>
+    </div>
+  `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Sem dados de setor.</p>';
 }
 
 initTabs();
