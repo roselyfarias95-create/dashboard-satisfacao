@@ -2200,6 +2200,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="subtab-nav" id="faSubtabNav">
       <button type="button" class="subtab-btn active" data-fa-subtab="registros">📋 Registros do Mês</button>
       <button type="button" class="subtab-btn" data-fa-subtab="historico">🗂 Histórico</button>
+      <button type="button" class="subtab-btn" data-fa-subtab="minidash">📊 Mini Dashboard</button>
     </div>
 
     <div id="faViewRegistros">
@@ -2252,9 +2253,37 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <div id="faHistDetailHeader" style="margin:14px 0 10px;"></div>
         <div class="checklist-table-wrap">
           <table class="checklist-table" id="faHistTable">
-            <thead><tr><th class="ck-name">Condomínio</th><th style="text-align:center;">Atendimentos</th><th style="text-align:center;">TMA</th></tr></thead>
+            <thead><tr><th class="ck-name">Condomínio</th><th style="text-align:center;">Mês</th><th style="text-align:center;">Atendimentos</th><th style="text-align:center;">TMA</th></tr></thead>
             <tbody id="faHistTableBody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="faViewMiniDash" style="display:none;">
+      <p style="font-size:12.5px; color:var(--text-faint); margin:-4px 0 16px; line-height:1.5;">
+        Comparativo mensal de TMA e volume de atendimentos, por filial — usa os dados do Histórico quando disponíveis (Jan a Abr) e completa com os registros ao vivo do mês atual.
+      </p>
+      <div class="stats-strip" id="faMiniDashStats"></div>
+      <div id="faMiniDashNarrativa" style="margin:16px 0;"></div>
+      <div class="charts-grid charts-grid-2">
+        <div class="chart-panel">
+          <p class="chart-title">TMA médio por mês (geral)</p>
+          <div id="faMiniDashTmaMes"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">Atendimentos por mês (geral)</p>
+          <div id="faMiniDashAtendMes"></div>
+        </div>
+      </div>
+      <div class="charts-grid charts-grid-2" style="margin-top:16px;">
+        <div class="chart-panel">
+          <p class="chart-title">TMA médio por filial (mês mais recente)</p>
+          <div id="faMiniDashTmaFilial"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">Atendimentos por filial (mês mais recente)</p>
+          <div id="faMiniDashAtendFilial"></div>
         </div>
       </div>
     </div>
@@ -2478,6 +2507,21 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="login-btn" id="adSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
       </div>
       <p class="users-error" id="adError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="adConfirmDeleteModal" style="display:none;">
+    <div class="users-box" style="max-width:420px;">
+      <div class="users-head">
+        <h3>🗑️ Excluir registro</h3>
+        <button type="button" class="logout-btn" id="adConfirmDeleteClose">✕</button>
+      </div>
+      <p id="adConfirmDeleteText" style="font-size:13px; color:var(--text); margin:6px 0 16px;">Excluir esse registro de Adoção Digital?</p>
+      <p id="adConfirmDeleteStatus" style="font-size:12px; margin:0 0 12px; display:none;"></p>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="adConfirmDeleteCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="adConfirmDeleteYesBtn" style="width:auto; margin-top:0; padding:9px 20px; background:var(--critico); border-color:var(--critico);">Excluir</button>
+      </div>
     </div>
   </div>
 
@@ -10866,11 +10910,6 @@ async function loadFluxoAtendimento(){
     let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false });
     if (error) throw error;
     faData = data || [];
-    await seedFluxoDaPlanilhaSeVazio();
-    if (faData.length < SEED_FLUXO.length){
-      const r2 = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false });
-      if (!r2.error) faData = r2.data || [];
-    }
     faLoaded = true;
     faPopularFiltros();
     renderFluxoAtendimento();
@@ -11079,17 +11118,23 @@ const MES_REF_LABEL = {'2026-01':'Janeiro','2026-02':'Fevereiro','2026-03':'Mar�
 // preenchido manualmente. Assim a planilha aparece preenchida sem precisar clicar em nada.
 async function seedFluxoDaPlanilhaSeVazio(){
   if (!sb) return;
+  if (localStorage.getItem('seedFluxoPlanilhaAplicado_v1') === '1') return;
   try{
     const existentes = new Set(faData.map(f => `${(f.condominio||'').trim().toLowerCase()}|||${f.mes_referencia}`));
     const faltando = SEED_FLUXO.filter(r => !existentes.has(`${r.condominio.trim().toLowerCase()}|||${r.mes_referencia}`));
-    if (!faltando.length) return;
-    const rows = faltando.map(r => ({ condominio: r.condominio, filial: r.filial, mes_referencia: r.mes_referencia, atendimentos: r.atendimentos, tma: r.tma }));
-    await sb.from('fluxo_atendimento').insert(rows);
+    if (faltando.length){
+      const rows = faltando.map(r => ({ condominio: r.condominio, filial: r.filial, mes_referencia: r.mes_referencia, atendimentos: r.atendimentos, tma: r.tma }));
+      await sb.from('fluxo_atendimento').insert(rows);
+    }
+    // Marca como aplicado — assim, se você excluir um registro depois, ele fica excluído
+    // de verdade e não volta sozinho na próxima vez que a aba carregar.
+    localStorage.setItem('seedFluxoPlanilhaAplicado_v1', '1');
   }catch(e){ console.error('Falha ao semear Fluxo de Atendimento da planilha:', e); }
 }
 
 async function seedHistoricoFluxoSeVazio(){
   if (!sb) return;
+  if (localStorage.getItem('seedHistoricoFluxoAplicado_v1') === '1') return;
   try{
     const { data, error } = await sb.from('historico_fluxo').select('mes,filial,condominio');
     if (error) throw error;
@@ -11102,8 +11147,10 @@ async function seedHistoricoFluxoSeVazio(){
       tma: r.tma,
     }));
     const novos = candidatos.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${r.condominio.trim().toLowerCase()}`));
-    if (!novos.length) return;
-    await sb.from('historico_fluxo').insert(novos);
+    if (novos.length){
+      await sb.from('historico_fluxo').insert(novos);
+    }
+    localStorage.setItem('seedHistoricoFluxoAplicado_v1', '1');
   }catch(e){ console.error('Falha ao semear Histórico do Fluxo (verifique se a tabela historico_fluxo existe):', e); }
 }
 
@@ -11179,7 +11226,6 @@ async function loadFaHistorico(){
   }
   el.innerHTML = '<p class="empty">Carregando histórico...</p>';
   try{
-    await seedHistoricoFluxoSeVazio();
     const { data, error } = await sb.from('historico_fluxo').select('*').order('mes', { ascending:true });
     if (error) throw error;
     faHistData = data || [];
@@ -11191,14 +11237,17 @@ async function loadFaHistorico(){
   }
 }
 
+const HIST_FLUXO_ANO = '2026'; // ano das pastas agrupadas — ajuste aqui quando entrar dado de outro ano
+
 function faHistPastas(){
   const map = {};
   faHistData.forEach(r=>{
-    const key = r.mes + '|' + r.filial;
-    if (!map[key]) map[key] = { mes:r.mes, filial:r.filial, itens:[] };
+    const key = r.filial || 'Sem filial';
+    if (!map[key]) map[key] = { filial: r.filial, itens:[], meses: new Set() };
     map[key].itens.push(r);
+    map[key].meses.add(r.mes);
   });
-  return Object.values(map).sort((a,b)=> (a.mes+a.filial).localeCompare(b.mes+b.filial, 'pt-BR'));
+  return Object.values(map).sort((a,b)=> (a.filial||'').localeCompare(b.filial||'', 'pt-BR'));
 }
 
 function renderFaHistFolders(){
@@ -11213,11 +11262,13 @@ function renderFaHistFolders(){
     const tmas = p.itens.map(r=>r.tma).filter(n=>n !== null && n !== undefined);
     const totalAt = atendimentos.reduce((a,b)=>a+b,0);
     const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
+    const condosUnicos = new Set(p.itens.map(r=>(r.condominio||'').trim().toLowerCase())).size;
+    const mesesOrdenados = [...p.meses].sort((a,b)=> MES_ORDEM_PT.indexOf(a) - MES_ORDEM_PT.indexOf(b));
     return `
-      <div class="historico-folder-card" data-mes="${escapeHtml(p.mes)}" data-filial="${escapeHtml(p.filial)}">
+      <div class="historico-folder-card" data-filial="${escapeHtml(p.filial||'')}">
         <div class="historico-folder-icon">🗂</div>
-        <div class="historico-folder-title">${escapeHtml(p.mes)} · ${escapeHtml(p.filial)}</div>
-        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · ${totalAt} atendimento(s)</div>
+        <div class="historico-folder-title">${escapeHtml(p.filial||'Sem filial')} · ${HIST_FLUXO_ANO}</div>
+        <div class="historico-folder-meta">${condosUnicos} condomínio(s) · ${mesesOrdenados.join(', ')} · ${totalAt} atendimento(s)</div>
         <div class="historico-folder-stats">
           <span style="color:${corTMA(tmaMedio)};">⏱ TMA médio: ${tmaMedio !== null ? tmaMedio+'s' : '—'}</span>
         </div>
@@ -11225,23 +11276,26 @@ function renderFaHistFolders(){
   }).join('') + '</div>';
 
   el.querySelectorAll('.historico-folder-card').forEach(card=>{
-    card.onclick = ()=> abrirFaHistDetail(card.getAttribute('data-mes'), card.getAttribute('data-filial'));
+    card.onclick = ()=> abrirFaHistDetail(card.getAttribute('data-filial'));
   });
 }
 
-function abrirFaHistDetail(mes, filial){
-  const itens = faHistData.filter(r => r.mes === mes && r.filial === filial);
+function abrirFaHistDetail(filial){
+  const itens = faHistData.filter(r => (r.filial||'') === (filial||''))
+    .sort((a,b)=> MES_ORDEM_PT.indexOf(a.mes) - MES_ORDEM_PT.indexOf(b.mes) || (a.condominio||'').localeCompare(b.condominio||'', 'pt-BR'));
   document.getElementById('faHistFolders').style.display = 'none';
   document.getElementById('faHistDetail').style.display = 'block';
   const atendimentos = itens.map(r=>r.atendimentos).filter(n=>n !== null && n !== undefined);
   const totalAt = atendimentos.reduce((a,b)=>a+b,0);
+  const condosUnicos = new Set(itens.map(r=>(r.condominio||'').trim().toLowerCase())).size;
   document.getElementById('faHistDetailHeader').innerHTML = `
-    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(mes)} · ${escapeHtml(filial)}</h3>
-    <p style="margin:0; font-size:12px; color:var(--text-faint);">${itens.length} condomínio(s) · ${totalAt} atendimento(s) no total</p>
+    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(filial||'Sem filial')} · ${HIST_FLUXO_ANO}</h3>
+    <p style="margin:0; font-size:12px; color:var(--text-faint);">${condosUnicos} condomínio(s) · ${totalAt} atendimento(s) no total</p>
   `;
   document.getElementById('faHistTableBody').innerHTML = itens.map(r=>`
     <tr>
       <td class="ck-name">${escapeHtml(r.condominio)}</td>
+      <td style="text-align:center;">${escapeHtml(r.mes)}</td>
       <td style="text-align:center;">${r.atendimentos ?? '—'}</td>
       <td style="text-align:center; color:${corTMA(r.tma)};">${r.tma ?? '—'}${r.tma!==null&&r.tma!==undefined?'s':''}</td>
     </tr>
@@ -11307,11 +11361,159 @@ document.querySelectorAll('[data-fa-subtab]').forEach(btn=>{
     const alvo = btn.getAttribute('data-fa-subtab');
     document.getElementById('faViewRegistros').style.display = alvo === 'registros' ? 'block' : 'none';
     document.getElementById('faViewHistorico').style.display = alvo === 'historico' ? 'block' : 'none';
+    document.getElementById('faViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     if (alvo === 'historico' && !faHistLoaded) loadFaHistorico();
+    if (alvo === 'minidash'){
+      if (!faHistLoaded){
+        loadFaHistorico().then(renderFaMiniDash);
+      } else {
+        renderFaMiniDash();
+      }
+    }
   });
 });
 
 // ---------- 🧠 Análise I.A — comparativo de TMA e atendimentos por filial ----------
+// ---------- 📊 Mini Dashboard — comparativo mensal (geral + por filial) ----------
+const MES_ORDEM_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function coletarFluxoUnificado(){
+  const porChave = new Map();
+  faHistData.forEach(r=>{
+    const chave = `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`;
+    porChave.set(chave, { mes: r.mes, filial: r.filial, condominio: r.condominio, atendimentos: r.atendimentos, tma: r.tma });
+  });
+  faData.forEach(f=>{
+    const mesLabel = MES_REF_LABEL[f.mes_referencia] || f.mes_referencia;
+    const chave = `${mesLabel}|||${f.filial}|||${(f.condominio||'').trim().toLowerCase()}`;
+    if (!porChave.has(chave)){
+      porChave.set(chave, { mes: mesLabel, filial: f.filial, condominio: f.condominio, atendimentos: f.atendimentos, tma: f.tma });
+    }
+  });
+  return [...porChave.values()];
+}
+
+function barraHorizontal(label, valor, valorMax, cor, sufixo){
+  const pct = valorMax > 0 ? Math.max(2, valor/valorMax*100) : 0;
+  return `
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${valor}${sufixo||''}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:${cor};"></div></div>
+    </div>`;
+}
+
+function renderFaMiniDash(){
+  const unificado = coletarFluxoUnificado();
+  if (!unificado.length){
+    document.getElementById('faMiniDashStats').innerHTML = '';
+    document.getElementById('faMiniDashNarrativa').innerHTML = '<p class="empty">Sem dados suficientes ainda. Importe a planilha na aba Registros ou crie pastas no Histórico.</p>';
+    document.getElementById('faMiniDashTmaMes').innerHTML = '';
+    document.getElementById('faMiniDashAtendMes').innerHTML = '';
+    document.getElementById('faMiniDashTmaFilial').innerHTML = '';
+    document.getElementById('faMiniDashAtendFilial').innerHTML = '';
+    return;
+  }
+
+  const mesesPresentes = [...new Set(unificado.map(r=>r.mes))].sort((a,b)=> MES_ORDEM_PT.indexOf(a) - MES_ORDEM_PT.indexOf(b));
+  const porMes = {};
+  mesesPresentes.forEach(m => { porMes[m] = { tmas:[], atendimentos:[] }; });
+  unificado.forEach(r=>{
+    if (!porMes[r.mes]) return;
+    if (r.tma !== null && r.tma !== undefined) porMes[r.mes].tmas.push(r.tma);
+    if (r.atendimentos !== null && r.atendimentos !== undefined) porMes[r.mes].atendimentos.push(r.atendimentos);
+  });
+
+  const tmaMedioPorMes = mesesPresentes.map(m => {
+    const t = porMes[m].tmas;
+    return t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null;
+  });
+  const atendTotalPorMes = mesesPresentes.map(m => porMes[m].atendimentos.reduce((a,b)=>a+b,0));
+
+  const totalCondos = new Set(unificado.map(r=>(r.condominio||'').trim().toLowerCase())).size;
+  const totalAtendimentosGeral = unificado.reduce((s,r)=>s+(r.atendimentos||0),0);
+  const tmasValidos = unificado.map(r=>r.tma).filter(n=>n!==null && n!==undefined);
+  const tmaMedioGeral = tmasValidos.length ? Math.round(tmasValidos.reduce((a,b)=>a+b,0)/tmasValidos.length) : null;
+
+  document.getElementById('faMiniDashStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${mesesPresentes.length}</div><div class="slbl">Mês(es) com dados</div></div>
+    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios cobertos</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalAtendimentosGeral.toLocaleString('pt-BR')}</div><div class="slbl">Atendimentos (total do período)</div></div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedioGeral)};">${tmaMedioGeral!==null?tmaMedioGeral+'s':'—'}</div><div class="slbl">TMA médio (todo o período)</div></div>
+  `;
+
+  const maxTma = Math.max(1, ...tmaMedioPorMes.filter(n=>n!==null));
+  document.getElementById('faMiniDashTmaMes').innerHTML = mesesPresentes.map((m,i)=>{
+    const v = tmaMedioPorMes[i];
+    return v===null ? '' : barraHorizontal(m, v, maxTma, corTMA(v), 's');
+  }).join('') || '<p class="empty" style="font-size:12px;">Sem TMA registrado.</p>';
+
+  const maxAt = Math.max(1, ...atendTotalPorMes);
+  document.getElementById('faMiniDashAtendMes').innerHTML = mesesPresentes.map((m,i)=>
+    barraHorizontal(m, atendTotalPorMes[i], maxAt, 'var(--accent)')
+  ).join('');
+
+  const mesRecente = mesesPresentes[mesesPresentes.length-1];
+  const doMesRecente = unificado.filter(r=>r.mes===mesRecente);
+  const porFilial = {};
+  doMesRecente.forEach(r=>{
+    const f = r.filial || 'Sem filial';
+    if (!porFilial[f]) porFilial[f] = { tmas:[], atendimentos:[] };
+    if (r.tma !== null && r.tma !== undefined) porFilial[f].tmas.push(r.tma);
+    if (r.atendimentos !== null && r.atendimentos !== undefined) porFilial[f].atendimentos.push(r.atendimentos);
+  });
+  const filiaisOrdenadas = Object.keys(porFilial).sort();
+  const tmaPorFilial = filiaisOrdenadas.map(f => {
+    const t = porFilial[f].tmas;
+    return { filial: f, valor: t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null };
+  }).filter(x=>x.valor!==null).sort((a,b)=>a.valor-b.valor);
+  const atendPorFilial = filiaisOrdenadas.map(f => ({ filial: f, valor: porFilial[f].atendimentos.reduce((a,b)=>a+b,0) }))
+    .sort((a,b)=>b.valor-a.valor);
+
+  const maxTmaFilial = Math.max(1, ...tmaPorFilial.map(x=>x.valor));
+  document.getElementById('faMiniDashTmaFilial').innerHTML = tmaPorFilial.length
+    ? tmaPorFilial.map(x=>barraHorizontal(x.filial, x.valor, maxTmaFilial, corTMA(x.valor), 's')).join('')
+    : '<p class="empty" style="font-size:12px;">Sem TMA no mês mais recente.</p>';
+
+  const maxAtFilial = Math.max(1, ...atendPorFilial.map(x=>x.valor));
+  document.getElementById('faMiniDashAtendFilial').innerHTML = atendPorFilial.length
+    ? atendPorFilial.map(x=>barraHorizontal(x.filial, x.valor, maxAtFilial, 'var(--accent)')).join('')
+    : '<p class="empty" style="font-size:12px;">Sem atendimentos no mês mais recente.</p>';
+
+  // ---- 🧠 Comparativo inteligente automático ----
+  const narrEl = document.getElementById('faMiniDashNarrativa');
+  if (mesesPresentes.length < 2){
+    narrEl.innerHTML = `<div class="chart-panel"><p class="chart-title">🧠 Comparativo Inteligente</p><p>Só há dado de <b>${escapeHtml(mesesPresentes[0]||'')}</b> até agora — assim que outro mês entrar, o comparativo mês a mês aparece aqui automaticamente.</p></div>`;
+    return;
+  }
+  const primeiro = mesesPresentes[0], ultimo = mesesPresentes[mesesPresentes.length-1];
+  const tmaIni = tmaMedioPorMes[0], tmaFim = tmaMedioPorMes[tmaMedioPorMes.length-1];
+  const atIni = atendTotalPorMes[0], atFim = atendTotalPorMes[atendTotalPorMes.length-1];
+  const pctTma = (tmaIni!==null && tmaFim!==null && tmaIni) ? ((tmaFim-tmaIni)/tmaIni*100) : null;
+  const pctAt = atIni ? ((atFim-atIni)/atIni*100) : null;
+
+  let frases = [];
+  frases.push(`Entre <b>${primeiro}</b> e <b>${ultimo}</b>, o TMA médio geral ${pctTma===null?'não pôde ser comparado (falta dado em algum dos meses)':(pctTma<0?`<span style="color:var(--ok);">caiu ${Math.abs(pctTma).toFixed(1)}%</span> (de ${tmaIni}s para ${tmaFim}s)`:pctTma>0?`<span style="color:var(--critico);">subiu ${pctTma.toFixed(1)}%</span> (de ${tmaIni}s para ${tmaFim}s)`:'ficou estável')}.`);
+  if (pctAt !== null){
+    frases.push(`O volume de atendimentos ${pctAt>0?`cresceu ${pctAt.toFixed(1)}%`:pctAt<0?`caiu ${Math.abs(pctAt).toFixed(1)}%`:'ficou estável'} no período (${atIni.toLocaleString('pt-BR')} → ${atFim.toLocaleString('pt-BR')}).`);
+  }
+  if (tmaPorFilial.length >= 2){
+    const melhor = tmaPorFilial[0], pior = tmaPorFilial[tmaPorFilial.length-1];
+    frases.push(`Em ${mesRecente}, <b>${escapeHtml(melhor.filial)}</b> tem o menor TMA médio (${melhor.valor}s) entre as filiais, enquanto <b>${escapeHtml(pior.filial)}</b> tem o maior (${pior.valor}s).`);
+  }
+  if (atendPorFilial.length){
+    const maiorVolume = atendPorFilial[0];
+    frases.push(`<b>${escapeHtml(maiorVolume.filial)}</b> concentra o maior volume de atendimentos em ${mesRecente} (${maiorVolume.valor.toLocaleString('pt-BR')}).`);
+  }
+  const tendenciaBoa = pctTma !== null && pctTma < 0;
+  narrEl.innerHTML = `
+    <div class="chart-panel">
+      <p class="chart-title">🧠 Comparativo Inteligente</p>
+      <p>${frases.join(' ')}</p>
+      ${tendenciaBoa ? '<p style="color:var(--ok); font-weight:600; margin-top:6px;">✅ Tendência de melhora no atendimento ao longo do período.</p>' : (pctTma>0 ? '<p style="color:var(--critico); font-weight:600; margin-top:6px;">⚠️ TMA piorando — vale investigar as filiais com maior alta.</p>' : '')}
+    </div>
+  `;
+}
+
 function gerarAnaliseIAFluxo(){
   const el = document.getElementById('faHistAnaliseResultado');
   const fonte = faHistData.length ? faHistData : faData.map(f => ({ mes: MES_REF_LABEL[f.mes_referencia] || f.mes_referencia, filial: f.filial, condominio: f.condominio, atendimentos: f.atendimentos, tma: f.tma }));
@@ -11455,7 +11657,6 @@ async function loadAdocaoDigital(){
     if (error) throw error;
     adData = data || [];
     await seedAdocaoDigitalSeVazio();
-    await seedAdocaoDaPlanilhaSeVazio();
     {
       const r2 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true });
       if (!r2.error) adData = r2.data || [];
@@ -11553,28 +11754,67 @@ function renderAdocaoDigital(){
   });
 }
 
-async function excluirRegistroAdocao(id){
+let adPendingDeleteId = null;
+
+function excluirRegistroAdocao(id){
   if (!id) return;
-  if (!confirm('Excluir esse registro de Adoção Digital?')) return;
-  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  adPendingDeleteId = id;
+  const registro = adData.find(a => String(a.id) === String(id));
+  document.getElementById('adConfirmDeleteText').textContent = registro
+    ? `Excluir o registro de "${registro.condominio}"?`
+    : 'Excluir esse registro de Adoção Digital?';
+  const statusEl = document.getElementById('adConfirmDeleteStatus');
+  statusEl.style.display = 'none';
+  statusEl.textContent = '';
+  document.getElementById('adConfirmDeleteYesBtn').disabled = false;
+  document.getElementById('adConfirmDeleteYesBtn').textContent = 'Excluir';
+  document.getElementById('adConfirmDeleteModal').style.display = 'flex';
+}
+
+document.getElementById('adConfirmDeleteClose').addEventListener('click', ()=>{
+  document.getElementById('adConfirmDeleteModal').style.display = 'none';
+  adPendingDeleteId = null;
+});
+document.getElementById('adConfirmDeleteCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('adConfirmDeleteModal').style.display = 'none';
+  adPendingDeleteId = null;
+});
+document.getElementById('adConfirmDeleteYesBtn').addEventListener('click', async ()=>{
+  const id = adPendingDeleteId;
+  const statusEl = document.getElementById('adConfirmDeleteStatus');
+  const yesBtn = document.getElementById('adConfirmDeleteYesBtn');
+  if (!id){ statusEl.style.display='block'; statusEl.style.color='var(--critico)'; statusEl.textContent = 'Nenhum registro selecionado.'; return; }
+  if (!sb){ statusEl.style.display='block'; statusEl.style.color='var(--critico)'; statusEl.textContent = 'Sem conexão com o servidor.'; return; }
+  yesBtn.disabled = true; yesBtn.textContent = 'Excluindo...';
+  statusEl.style.display = 'block'; statusEl.style.color = 'var(--text-faint)'; statusEl.textContent = 'Excluindo...';
   try{
     const { data, error, status, statusText } = await sb.from('adocao_digital').delete().eq('id', id).select();
     console.log('[excluirRegistroAdocao]', { id, data, error, status, statusText });
     if (error){
-      alert(`Erro ao excluir (${error.code || status}): ${error.message}${error.hint ? ' — ' + error.hint : ''}`);
+      statusEl.style.color = 'var(--critico)';
+      statusEl.textContent = `Erro ao excluir (${error.code || status}): ${error.message}${error.hint ? ' — ' + error.hint : ''}`;
+      yesBtn.disabled = false; yesBtn.textContent = 'Tentar de novo';
       return;
     }
     if (!data || !data.length){
-      alert('O Supabase respondeu sem erro, mas 0 registros foram excluídos. Isso costuma indicar que a policy de DELETE da tabela "adocao_digital" está ativa mas com uma condição (USING) que essa linha não satisfaz, ou que o id enviado não bate com o tipo de coluna no banco. Abra o Console do navegador (F12) e me mande o que aparece em "[excluirRegistroAdocao]".');
+      statusEl.style.color = 'var(--critico)';
+      statusEl.textContent = 'O Supabase respondeu sem erro, mas 0 registros foram excluídos. Isso indica uma policy de DELETE com condição (USING) que essa linha não satisfaz, ou uma trigger/regra bloqueando. Veja o console (F12) para os detalhes técnicos.';
+      yesBtn.disabled = false; yesBtn.textContent = 'Tentar de novo';
       return;
     }
+    statusEl.style.color = 'var(--ok)';
+    statusEl.textContent = 'Excluído com sucesso!';
+    adPendingDeleteId = null;
     document.getElementById('adModalOverlay').style.display = 'none';
     await loadAdocaoDigital();
+    setTimeout(()=>{ document.getElementById('adConfirmDeleteModal').style.display = 'none'; }, 700);
   }catch(e){
     console.error('[excluirRegistroAdocao] exceção', e);
-    alert('Erro ao excluir: ' + (e.message || e));
+    statusEl.style.color = 'var(--critico)';
+    statusEl.textContent = 'Erro ao excluir: ' + (e.message || e);
+    yesBtn.disabled = false; yesBtn.textContent = 'Tentar de novo';
   }
-}
+});
 
 
 function adRecalcularPercentuais(){
@@ -11705,6 +11945,7 @@ function calcPctAdocao(valor, moradores){
 
 async function seedAdocaoDaPlanilhaSeVazio(){
   if (!sb) return;
+  if (localStorage.getItem('seedAdocaoPlanilhaAplicado_v1') === '1') return;
   try{
     const porCondo = new Map();
     adData.forEach(a => {
@@ -11734,6 +11975,9 @@ async function seedAdocaoDaPlanilhaSeVazio(){
       const { error: errUpd } = await sb.from('adocao_digital').upsert(paraAtualizar, { onConflict: 'id' });
       if (errUpd) throw errUpd;
     }
+    // Marca como aplicado — assim, se você excluir um registro depois, ele fica
+    // excluído de verdade e não volta sozinho na próxima vez que a aba carregar.
+    localStorage.setItem('seedAdocaoPlanilhaAplicado_v1', '1');
     window.__adSeedErro = null;
   }catch(e){
     console.error('Falha ao semear Adoção Digital da planilha:', e);
