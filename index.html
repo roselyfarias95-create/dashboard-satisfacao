@@ -11539,13 +11539,43 @@ function renderAdocaoDigital(){
       <td style="text-align:center;">${a.possui_armario === 'Sim' ? '✅' : '—'}</td>
       <td style="text-align:center;">${a.possui_gphone === 'Sim' ? '✅' : '—'}</td>
       <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${status} (${score}/4)</span></td>
-      <td><button type="button" class="renov-action-btn" data-edit-ad="${a.id}">Editar</button></td>
+      <td>
+        <button type="button" class="renov-action-btn" data-edit-ad="${a.id}">Editar</button>
+        <button type="button" class="renov-action-btn" data-delete-ad="${a.id}" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir</button>
+      </td>
     </tr>`;
   }).join('');
   tbody.querySelectorAll('[data-edit-ad]').forEach(btn=>{
     btn.onclick = ()=> abrirAdocaoDigitalModal(adData.find(a=>String(a.id)===btn.getAttribute('data-edit-ad')));
   });
+  tbody.querySelectorAll('[data-delete-ad]').forEach(btn=>{
+    btn.onclick = ()=> excluirRegistroAdocao(btn.getAttribute('data-delete-ad'));
+  });
 }
+
+async function excluirRegistroAdocao(id){
+  if (!id) return;
+  if (!confirm('Excluir esse registro de Adoção Digital?')) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  try{
+    const { data, error, status, statusText } = await sb.from('adocao_digital').delete().eq('id', id).select();
+    console.log('[excluirRegistroAdocao]', { id, data, error, status, statusText });
+    if (error){
+      alert(`Erro ao excluir (${error.code || status}): ${error.message}${error.hint ? ' — ' + error.hint : ''}`);
+      return;
+    }
+    if (!data || !data.length){
+      alert('O Supabase respondeu sem erro, mas 0 registros foram excluídos. Isso costuma indicar que a policy de DELETE da tabela "adocao_digital" está ativa mas com uma condição (USING) que essa linha não satisfaz, ou que o id enviado não bate com o tipo de coluna no banco. Abra o Console do navegador (F12) e me mande o que aparece em "[excluirRegistroAdocao]".');
+      return;
+    }
+    document.getElementById('adModalOverlay').style.display = 'none';
+    await loadAdocaoDigital();
+  }catch(e){
+    console.error('[excluirRegistroAdocao] exceção', e);
+    alert('Erro ao excluir: ' + (e.message || e));
+  }
+}
+
 
 function adRecalcularPercentuais(){
   const moradores = parseFloat(document.getElementById('adMoradores').value) || 0;
@@ -11651,18 +11681,7 @@ document.getElementById('adSaveBtn').addEventListener('click', async ()=>{
 });
 document.getElementById('adDeleteBtn').addEventListener('click', async ()=>{
   const id = document.getElementById('adId').value;
-  if (!id) return;
-  if (!confirm('Excluir esse registro?')) return;
-  try{
-    const { data, error } = await sb.from('adocao_digital').delete().eq('id', id).select();
-    if (error) throw error;
-    if (!data || !data.length){
-      alert('O Supabase não retornou erro, mas nenhum registro foi excluído. Isso normalmente significa que falta permissão de DELETE na policy (RLS) da tabela "adocao_digital" — as policies atuais provavelmente só liberam select/insert/update para a chave anon. Peça para adicionar uma policy "for delete using (true)" nessa tabela.');
-      return;
-    }
-    document.getElementById('adModalOverlay').style.display = 'none';
-    loadAdocaoDigital();
-  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+  await excluirRegistroAdocao(id);
 });
 ['adSearch','adFilterFilial','adFilterStatus'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderAdocaoDigital);
