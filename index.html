@@ -2550,15 +2550,24 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
     </header>
     <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
-      Histórico completo e análise automática de um condomínio, reunindo Pesquisa, Visitas Emergenciais, Incidentes e Adoção Digital num só lugar.
+      Histórico completo e análise automática de cada condomínio, reunindo Pesquisa, Visitas Emergenciais, Incidentes, Adoção Digital e Fluxo de Atendimento num só lugar.
     </p>
 
     <div class="toolbar" style="margin-bottom:16px;">
+      <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+        <button type="button" id="vidaViewKanbanBtn" class="view-toggle-btn active">🗂 Kanban (todos)</button>
+        <button type="button" id="vidaViewDetalheBtn" class="view-toggle-btn">📋 Detalhes</button>
+      </span>
       <div style="position:relative; flex:1; min-width:220px;">
         <input type="text" id="vidaCondoBusca" class="search" autocomplete="off" placeholder="Digite para buscar um condomínio..." style="width:100%; box-sizing:border-box;">
         <div id="vidaCondoDropdown" class="combo-dropdown"></div>
       </div>
       <button type="button" class="login-btn" id="vidaCondoBuscarBtn" style="width:auto; margin-top:0; padding:11px 18px;">🔍 Ver histórico</button>
+    </div>
+
+    <div id="vidaCondoKanbanView">
+      <div class="stats-strip" id="vidaKanbanStats" style="margin-bottom:16px;"></div>
+      <div class="kanban-board" id="vidaCondoKanban"></div>
     </div>
 
     <div id="vidaCondoConteudo" style="display:none;">
@@ -2577,7 +2586,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       </div>
     </div>
 
-    <div id="vidaCondoVazio" class="empty">Busque um condomínio acima pra ver o histórico completo.</div>
+    <div id="vidaCondoVazio" class="empty" style="display:none;">Busque um condomínio acima pra ver o histórico completo.</div>
   </div>
 
   <div class="users-modal" id="lembreteModalOverlay" style="display:none;">
@@ -11469,8 +11478,28 @@ function calcularNivelRisco(dados){
   if (dados.visitasAbertas > 0){ pontos += dados.visitasAbertas * 2; motivos.push(`${dados.visitasAbertas} visita(s) emergencial(is) em aberto`); }
   if (dados.incidentesAltosAbertos > 0){ pontos += dados.incidentesAltosAbertos * 2; motivos.push(`${dados.incidentesAltosAbertos} incidente(s) grave(s) em aberto`); }
   if (dados.reclamacoesSemResolucao > 0){ pontos += 1; motivos.push('reclamação sem resolução'); }
+  if (dados.tmaForaDaMeta){ pontos += 1; motivos.push('TMA fora da meta no atendimento'); }
+  if (dados.fluxoPendente){ pontos += 1; motivos.push('fluxo de atendimento do mês não preenchido'); }
   const nivel = pontos >= 5 ? 'Alto' : pontos >= 2 ? 'Médio' : 'Baixo';
   return { nivel, pontos, motivos };
+}
+
+function coletarDadosRiscoCondominio(nomeAlvoNorm){
+  const notasHistorico = DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm)
+    .map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const notaAtual = notasHistorico.length ? notasHistorico[notasHistorico.length-1] : null;
+  const visitasCondo = (veData||[]).filter(v => normalizeNomeCondo(v.condominio) === nomeAlvoNorm);
+  const visitasAbertas = visitasCondo.filter(v => v.status !== 'Concluído').length;
+  const incidentesCondo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm);
+  const incidentesAltosAbertos = incidentesCondo.filter(i => i.gravidade === 'Alta' && i.status !== 'Resolvido').length;
+  const reclamacoesCondo = DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm && d.houveReclamacao);
+  const reclamacoesSemResolucao = reclamacoesCondo.filter(d => d.statusTratativa && d.statusTratativa !== 'Resolvido').length;
+  const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).sort((a,b)=>(b.mes_referencia||'').localeCompare(a.mes_referencia||''));
+  const fluxoRecente = fluxoCondo[0] || null;
+  const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 300);
+  const mesAtualFluxo = hojeISO().slice(0,7);
+  const fluxoPendente = !fluxoCondo.some(f => f.mes_referencia === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
+  return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoRecente, tmaForaDaMeta, fluxoPendente };
 }
 
 function abrirVidaCondominio(nomeCondo){
@@ -11479,32 +11508,24 @@ function abrirVidaCondominio(nomeCondo){
   const filial = item ? item.filial : '—';
 
   const eventos = coletarEventosCondominio(nomeAlvoNorm);
-  const notasHistorico = DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm)
-    .map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
-  const notaAtual = notasHistorico.length ? notasHistorico[notasHistorico.length-1] : null;
+  const dadosRisco = coletarDadosRiscoCondominio(nomeAlvoNorm);
+  const { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoRecente, tmaForaDaMeta, fluxoPendente } = dadosRisco;
   const notaMediaGeral = notasHistorico.length ? (notasHistorico.reduce((a,b)=>a+b,0)/notasHistorico.length) : null;
-
-  const visitasCondo = (veData||[]).filter(v => normalizeNomeCondo(v.condominio) === nomeAlvoNorm);
-  const visitasAbertas = visitasCondo.filter(v => v.status !== 'Concluído').length;
-  const incidentesCondo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm);
-  const incidentesAltosAbertos = incidentesCondo.filter(i => i.gravidade === 'Alta' && i.status !== 'Resolvido').length;
   const adocaoCondo = (adData||[]).filter(a => normalizeNomeCondo(a.condominio) === nomeAlvoNorm);
   const adocaoRecente = adocaoCondo[0] || null;
-
-  const reclamacoesCondo = DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm && d.houveReclamacao);
-  const reclamacoesSemResolucao = reclamacoesCondo.filter(d => d.statusTratativa && d.statusTratativa !== 'Resolvido').length;
 
   // Setor com mais ocorrências (pendência/reclamação/visita/incidente)
   const contagemSetor = {};
   eventos.forEach(e => { if (e.setor) contagemSetor[e.setor] = (contagemSetor[e.setor]||0)+1; });
   const topSetor = Object.entries(contagemSetor).sort((a,b)=>b[1]-a[1])[0] || null;
 
-  const risco = calcularNivelRisco({ notaAtual, visitasAbertas, incidentesAltosAbertos, reclamacoesSemResolucao });
+  const risco = calcularNivelRisco({ notaAtual, visitasAbertas, incidentesAltosAbertos, reclamacoesSemResolucao, tmaForaDaMeta, fluxoPendente });
   const corRisco = risco.nivel === 'Alto' ? 'var(--critico)' : risco.nivel === 'Médio' ? 'var(--atencao)' : 'var(--ok)';
 
   let recomendacao;
   if (visitasAbertas > 0) recomendacao = 'Agendar visita presencial para tratar as pendências em aberto.';
   else if (incidentesAltosAbertos > 0) recomendacao = 'Priorizar o encerramento dos incidentes graves em aberto.';
+  else if (tmaForaDaMeta) recomendacao = 'Rever o atendimento da Central — TMA acima da meta de 300s.';
   else if (topSetor) recomendacao = `Acompanhar de perto o setor ${topSetor[0]}, que concentra as ocorrências recentes.`;
   else if (notaAtual !== null && notaAtual < 8) recomendacao = 'Fazer um contato de satisfação para entender o que motivou a nota.';
   else recomendacao = 'Nenhuma ação urgente identificada — manter acompanhamento de rotina.';
@@ -11531,6 +11552,11 @@ function abrirVidaCondominio(nomeCondo){
   } else {
     partesRelatorio.push('Sem registro de Adoção Digital ainda.');
   }
+  if (fluxoRecente){
+    partesRelatorio.push(`Fluxo de Atendimento (${mesLabelBR(fluxoRecente.mes_referencia)}): TMA de <b>${fluxoRecente.tma ?? '—'}${fluxoRecente.tma!=null?'s':''}</b>${tmaForaDaMeta ? ' <span style="color:var(--critico);">(fora da meta)</span>' : ''}.`);
+  } else {
+    partesRelatorio.push('Sem registro de Fluxo de Atendimento ainda.');
+  }
   partesRelatorio.push(incidentesCondo.length
     ? `${incidentesCondo.length} incidente(s) registrado(s), ${incidentesAltosAbertos} de alta gravidade ainda em aberto.`
     : 'Nenhum incidente registrado.');
@@ -11553,13 +11579,96 @@ function abrirVidaCondominio(nomeCondo){
     `).join('');
   }
 
+  mostrarViewDetalheVida();
+}
+
+function mostrarViewDetalheVida(){
+  document.getElementById('vidaCondoKanbanView').style.display = 'none';
   document.getElementById('vidaCondoConteudo').style.display = 'block';
   document.getElementById('vidaCondoVazio').style.display = 'none';
+  document.getElementById('vidaViewDetalheBtn').classList.add('active');
+  document.getElementById('vidaViewKanbanBtn').classList.remove('active');
 }
+function mostrarViewKanbanVida(){
+  document.getElementById('vidaCondoKanbanView').style.display = 'block';
+  document.getElementById('vidaCondoConteudo').style.display = 'none';
+  document.getElementById('vidaCondoVazio').style.display = 'none';
+  document.getElementById('vidaViewKanbanBtn').classList.add('active');
+  document.getElementById('vidaViewDetalheBtn').classList.remove('active');
+  renderVidaCondominioKanban();
+}
+
+function renderVidaCondominioKanban(){
+  const nomes = [...new Set(DATA.map(d=>d.nome))];
+  const linhas = nomes.map(nome => {
+    const nomeNorm = normalizeNomeCondo(nome);
+    const item = DATA.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
+    const dadosRisco = coletarDadosRiscoCondominio(nomeNorm);
+    const risco = calcularNivelRisco({
+      notaAtual: dadosRisco.notaAtual, visitasAbertas: dadosRisco.visitasAbertas,
+      incidentesAltosAbertos: dadosRisco.incidentesAltosAbertos, reclamacoesSemResolucao: dadosRisco.reclamacoesSemResolucao,
+      tmaForaDaMeta: dadosRisco.tmaForaDaMeta, fluxoPendente: dadosRisco.fluxoPendente,
+    });
+    return { nome, filial: item ? item.filial : '—', ...dadosRisco, risco };
+  });
+
+  const alto = linhas.filter(l => l.risco.nivel === 'Alto').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+  const medio = linhas.filter(l => l.risco.nivel === 'Médio').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+  const baixo = linhas.filter(l => l.risco.nivel === 'Baixo').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+
+  document.getElementById('vidaKanbanStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${linhas.length}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${alto.length}</div><div class="slbl">Risco Alto</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${medio.length}</div><div class="slbl">Risco Médio</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${baixo.length}</div><div class="slbl">Risco Baixo</div></div>
+  `;
+
+  const colunas = [
+    { label:'🔴 Risco Alto', cor:'var(--critico)', itens: alto },
+    { label:'🟠 Risco Médio', cor:'var(--atencao)', itens: medio },
+    { label:'🟢 Risco Baixo', cor:'var(--ok)', itens: baixo },
+  ];
+  document.getElementById('vidaCondoKanban').innerHTML = colunas.map(col => `
+    <div class="kanban-col">
+      <div class="kanban-col-head">
+        <div class="kanban-col-title"><span class="kanban-col-dot" style="background:${col.cor};"></span>${col.label}</div>
+        <span class="kanban-col-count">${col.itens.length}</span>
+      </div>
+      <div class="kanban-col-body">
+        ${col.itens.length ? col.itens.map(l => `
+          <div class="kanban-card" style="--kc:${col.cor};" data-vida-kanban-card="${escapeHtml(l.nome)}">
+            <div class="kanban-card-name">${escapeHtml(l.nome)}</div>
+            <div class="kanban-card-meta">${escapeHtml(l.filial||'—')}${l.notaAtual!==null ? ' · Nota ' + l.notaAtual : ''}</div>
+            <div class="kanban-card-row">
+              <span class="kanban-card-nota" style="color:${col.cor};">${l.risco.pontos} pt(s)</span>
+              <span style="font-size:10px; color:var(--text-faint);">${l.visitasAbertas ? l.visitasAbertas + ' visita(s)' : ''}</span>
+            </div>
+          </div>
+        `).join('') : '<p style="text-align:center; color:var(--text-faint); font-size:11.5px; padding:20px 0;">Nenhum condomínio aqui.</p>'}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('vidaCondoKanban').querySelectorAll('[data-vida-kanban-card]').forEach(card=>{
+    card.onclick = ()=>{
+      const nome = card.getAttribute('data-vida-kanban-card');
+      document.getElementById('vidaCondoBusca').value = nome;
+      abrirVidaCondominio(nome);
+    };
+  });
+}
+
+document.getElementById('vidaViewKanbanBtn').addEventListener('click', mostrarViewKanbanVida);
+document.getElementById('vidaViewDetalheBtn').addEventListener('click', ()=>{
+  const nome = document.getElementById('vidaCondoBusca').value.trim();
+  if (nome) abrirVidaCondominio(nome);
+  else mostrarViewDetalheVida();
+});
 
 let vidaCondoLista = [];
 function popularSeletorVidaCondominio(){
   vidaCondoLista = [...new Set(DATA.map(d=>d.nome))].sort();
+  renderVidaCondominioKanban();
 }
 function renderVidaCondoDropdown(lista){
   const dd = document.getElementById('vidaCondoDropdown');
