@@ -502,6 +502,22 @@
   .stat-box .snum{ font-family:"IBM Plex Mono",monospace; font-size:23px; font-weight:650; color:var(--accent); line-height:1; }
   .stat-box .slbl{ margin-top:6px; font-size:11px; color:var(--text-dim); font-weight:500; }
 
+  /* ---------- Vida do Condomínio: modo compacto ---------- */
+  .vida-compact .stats-strip{ gap:8px; margin-bottom:10px; }
+  .vida-compact .stat-box{ min-width:140px; padding:8px 11px; }
+  .vida-compact .stat-box .snum{ font-size:17px; }
+  .vida-compact .stat-box .slbl{ margin-top:3px; font-size:9.5px; line-height:1.3; }
+  .vida-compact .chart-panel{ padding:11px 13px; margin-bottom:10px !important; }
+  .vida-compact .chart-title{ font-size:11.5px; margin-bottom:6px; }
+  .vida-compact .checklist-table th, .vida-compact .checklist-table td{ padding:5px 8px; font-size:11px; }
+  .vida-compact .timeline-item{ padding:7px 10px; gap:9px; }
+  .vida-compact .timeline-icon{ width:24px; height:24px; font-size:11px; }
+  .vida-compact .timeline-data{ font-size:9.5px; }
+  .vida-compact .timeline-desc{ font-size:11.5px; }
+  .vida-compact #vidaCondoRelatorio p{ margin:0 0 5px !important; font-size:12px; }
+  .sparkline-wrap{ margin-top:4px; line-height:0; }
+  .sparkline-wrap svg{ display:block; }
+
   /* ---------- EDIT FORM ---------- */
   .edit-btn{
     background:transparent; border:1px solid var(--line); color:var(--accent);
@@ -633,6 +649,12 @@
     display:flex; gap:12px; background:var(--bg-panel-2); border:1px solid var(--line);
     border-radius:9px; padding:10px 14px; align-items:flex-start;
   }
+  .timeline-item.critico{ border-left:3px solid var(--critico); }
+  .timeline-anexo-btn{
+    font-size:10.5px; color:var(--text-faint); background:transparent; border:1px dashed var(--line);
+    border-radius:6px; padding:3px 8px; cursor:pointer; margin-top:6px; display:inline-block;
+  }
+  .timeline-anexo-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .timeline-icon{
     width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
     font-size:14px; margin-top:1px;
@@ -1622,15 +1644,19 @@ CONDOMINIO Y	9	Concluído"></textarea>
 
   <div id="historicoView" style="display:none;">
     <div id="historicoFolders"></div>
+    <div id="historicoMesFolders" style="display:none;">
+      <button type="button" id="historicoMesVoltarBtn" class="clearbtn" style="margin-bottom:14px;">← Voltar às filiais</button>
+      <div id="historicoMesHeader" style="margin-bottom:14px;"></div>
+      <div id="historicoMesFoldersGrid"></div>
+    </div>
     <div id="historicoDetail" style="display:none;">
-      <button type="button" id="historicoVoltarBtn" class="clearbtn" style="margin-bottom:14px;">← Voltar às pastas</button>
+      <button type="button" id="historicoVoltarBtn" class="clearbtn" style="margin-bottom:14px;">← Voltar aos meses</button>
       <div id="historicoDetailHeader" style="margin-bottom:14px;"></div>
       <div class="checklist-table-wrap">
         <table class="checklist-table" id="historicoTable">
           <thead>
             <tr>
               <th class="ck-name">Condomínio</th>
-              <th style="text-align:center;">Mês</th>
               <th style="text-align:center;">Nota</th>
               <th>Resultado</th>
             </tr>
@@ -2681,21 +2707,95 @@ CONDOMINIO Y	480	45"></textarea>
 
     <div id="vidaCondoKanbanView">
       <div class="stats-strip" id="vidaKanbanStats" style="margin-bottom:16px;"></div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" id="vidaKanbanBusca" class="search" placeholder="Buscar condomínio no quadro...">
+        <select class="filter-select" id="vidaKanbanFilterFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="vidaKanbanFilterRisco">
+          <option value="">Risco: todos</option>
+          <option value="Alto">Só Alto</option>
+          <option value="Médio">Só Médio</option>
+          <option value="Baixo">Só Baixo</option>
+        </select>
+        <button type="button" class="view-toggle-btn" id="vidaKanbanPendenciaBtn">⚠️ Só com pendência</button>
+        <button type="button" class="clearbtn" id="vidaKanbanLimparBtn">Limpar filtros</button>
+      </div>
       <div class="kanban-board" id="vidaCondoKanban"></div>
     </div>
 
-    <div id="vidaCondoConteudo" style="display:none;">
-      <h3 id="vidaCondoTitulo" style="margin:0 0 14px; font-size:18px; color:var(--text);">Vida do Condomínio</h3>
+    <div id="vidaCondoConteudo" class="vida-compact" style="display:none;">
+      <!-- 1) CABEÇALHO -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div>
+          <h3 id="vidaCondoTitulo" style="margin:0 0 4px; font-size:19px; color:var(--text);">Vida do Condomínio</h3>
+          <p id="vidaCondoSubtitulo" style="margin:0; font-size:12px; color:var(--text-faint);"></p>
+        </div>
+        <button type="button" class="clearbtn" id="vidaExportarPdfBtn">🖨️ Exportar Relatório PDF</button>
+      </div>
 
+      <!-- 2) CARDS DE RESUMO -->
       <div class="stats-strip" id="vidaCondoStats" style="margin-bottom:16px;"></div>
 
+      <!-- 3) BLOCO ATENDIMENTO -->
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <p class="chart-title" style="margin:0;">📞 Atendimento</p>
+          <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+            <button type="button" id="vidaPeriodoMesBtn" class="view-toggle-btn active">Mês atual</button>
+            <button type="button" id="vidaPeriodoTodosBtn" class="view-toggle-btn">Todos os meses</button>
+          </span>
+        </div>
+        <div class="stats-strip" id="vidaAtendimentoStats" style="margin-bottom:14px;"></div>
+        <div class="checklist-table-wrap">
+          <table class="checklist-table" id="vidaAtendimentoTable">
+            <thead>
+              <tr><th>Mês</th><th style="text-align:center;">Ligações</th><th style="text-align:center;">Eventos</th><th style="text-align:center;">TMA</th><th style="text-align:center;">Incidentes</th></tr>
+            </thead>
+            <tbody id="vidaAtendimentoTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4) SAÚDE POR DIMENSÃO -->
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <p class="chart-title">💠 Saúde por Dimensão</p>
+        <div class="charts-grid charts-grid-2" id="vidaSaudeDimensoes"></div>
+      </div>
+
+      <!-- 5) RELATÓRIO INTELIGENTE -->
       <div class="chart-panel" style="margin-bottom:16px; border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
         <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente</p>
         <div id="vidaCondoRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+        <div id="vidaCondoAcoesIA" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;"></div>
       </div>
 
+      <!-- 6) LINHA DO TEMPO -->
       <div class="chart-panel">
-        <p class="chart-title">🕓 Linha do Tempo</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+          <p class="chart-title" style="margin:0;">🕓 Linha do Tempo</p>
+          <div class="subtab-nav" id="vidaTimelineFiltro" style="margin:0;">
+            <button type="button" class="subtab-btn active" data-timeline-cat="todos">Todos</button>
+            <button type="button" class="subtab-btn" data-timeline-cat="ligacoes">📞 Ligações</button>
+            <button type="button" class="subtab-btn" data-timeline-cat="visitas">🚨 Visitas</button>
+            <button type="button" class="subtab-btn" data-timeline-cat="pesquisas">📋 Pesquisas</button>
+            <button type="button" class="subtab-btn" data-timeline-cat="portas">🚪 Eventos de Porta</button>
+            <button type="button" class="subtab-btn" data-timeline-cat="incidentes">🛑 Incidentes</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+          <input type="text" id="vidaTimelineBusca" class="search" placeholder="Buscar na linha do tempo..." style="max-width:240px;">
+          <select class="filter-select" id="vidaTimelineStatus" style="max-width:170px;">
+            <option value="">Status: todos</option>
+            <option value="aberto">Só em aberto</option>
+            <option value="resolvido">Só resolvidos/concluídos</option>
+          </select>
+          <button type="button" class="view-toggle-btn" id="vidaTimelineCriticoBtn">⚠️ Somente críticos</button>
+          <select class="filter-select" id="vidaTimelinePeriodo" style="max-width:170px;">
+            <option value="">Período: tudo</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+            <option value="365">Último ano</option>
+          </select>
+        </div>
         <div id="vidaCondoTimeline" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
     </div>
@@ -9282,7 +9382,7 @@ function renderHistoricoFolders(){
       <div class="historico-folder-card" data-filial="${escapeHtml(p.filial||'')}">
         <div class="historico-folder-icon">🗂</div>
         <div class="historico-folder-title">${escapeHtml(p.filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</div>
-        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · ${mesesOrdenados.join(', ')} · nota média ${media}</div>
+        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · ${mesesOrdenados.length} mês(es) · nota média ${media}</div>
         <div class="historico-folder-stats">
           <span style="color:var(--ok);">✓ ${concluidos}</span>
           <span style="color:var(--critico);">✗ ${cancelados}</span>
@@ -9291,25 +9391,71 @@ function renderHistoricoFolders(){
   }).join('') + '</div>';
 
   el.querySelectorAll('.historico-folder-card').forEach(card=>{
-    card.onclick = ()=> abrirHistoricoDetail(card.getAttribute('data-filial'));
+    card.onclick = ()=> abrirHistoricoMesFolders(card.getAttribute('data-filial'));
   });
 }
 
-function abrirHistoricoDetail(filial){
-  const itens = historicoData.filter(r => (r.filial||'') === (filial||''))
-    .sort((a,b)=> MES_ORDEM_PT.indexOf(a.mes) - MES_ORDEM_PT.indexOf(b.mes) || (a.condominio||'').localeCompare(b.condominio||'', 'pt-BR'));
+function abrirHistoricoMesFolders(filial){
+  const itensFilial = historicoData.filter(r => (r.filial||'') === (filial||''));
   document.getElementById('historicoFolders').style.display = 'none';
+  document.getElementById('historicoDetail').style.display = 'none';
+  document.getElementById('historicoMesFolders').style.display = 'block';
+  document.getElementById('historicoMesFolders').setAttribute('data-filial-atual', filial||'');
+
+  document.getElementById('historicoMesHeader').innerHTML = `
+    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</h3>
+    <p style="margin:0; font-size:12px; color:var(--text-faint);">Escolha o mês pra ver os condomínios.</p>
+  `;
+
+  const porMes = {};
+  itensFilial.forEach(r=>{
+    if (!porMes[r.mes]) porMes[r.mes] = [];
+    porMes[r.mes].push(r);
+  });
+  const meses = Object.keys(porMes).sort((a,b)=> MES_ORDEM_PT.indexOf(a) - MES_ORDEM_PT.indexOf(b));
+
+  const grid = document.getElementById('historicoMesFoldersGrid');
+  if (!meses.length){
+    grid.innerHTML = '<p class="empty">Nenhum mês encontrado para essa filial.</p>';
+    return;
+  }
+  grid.innerHTML = '<div class="historico-folders-grid">' + meses.map(m=>{
+    const itens = porMes[m];
+    const notas = itens.map(r=>parseFloat(String(r.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
+    const concluidos = itens.filter(r=>r.resultado === 'Concluído').length;
+    const cancelados = itens.filter(r=>r.resultado === 'Cancelou').length;
+    return `
+      <div class="historico-folder-card" data-mes="${escapeHtml(m)}">
+        <div class="historico-folder-icon">📅</div>
+        <div class="historico-folder-title">${escapeHtml(m)}</div>
+        <div class="historico-folder-meta">${itens.length} condomínio(s) · nota média ${media}</div>
+        <div class="historico-folder-stats">
+          <span style="color:var(--ok);">✓ ${concluidos}</span>
+          <span style="color:var(--critico);">✗ ${cancelados}</span>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+
+  grid.querySelectorAll('.historico-folder-card').forEach(card=>{
+    card.onclick = ()=> abrirHistoricoDetail(filial, card.getAttribute('data-mes'));
+  });
+}
+
+function abrirHistoricoDetail(filial, mes){
+  const itens = historicoData.filter(r => (r.filial||'') === (filial||'') && r.mes === mes)
+    .sort((a,b)=> (a.condominio||'').localeCompare(b.condominio||'', 'pt-BR'));
+  document.getElementById('historicoMesFolders').style.display = 'none';
   document.getElementById('historicoDetail').style.display = 'block';
   const notas = itens.map(r=>parseFloat(String(r.nota).replace(',','.'))).filter(n=>!isNaN(n));
   const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
   document.getElementById('historicoDetailHeader').innerHTML = `
-    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</h3>
+    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(mes||'')} · ${escapeHtml(filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</h3>
     <p style="margin:0; font-size:12px; color:var(--text-faint);">${itens.length} condomínio(s) · nota média ${media}</p>
   `;
   document.getElementById('historicoTableBody').innerHTML = itens.map(r=>`
     <tr>
       <td class="ck-name">${escapeHtml(r.condominio)}</td>
-      <td style="text-align:center;">${escapeHtml(r.mes)}</td>
       <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${r.nota ? escapeHtml(r.nota) : '—'}</td>
       <td>${r.resultado === 'Concluído' ? '<span class="rbadge yes">Concluído</span>' : r.resultado === 'Cancelou' ? '<span class="rbadge no">Cancelou</span>' : '—'}</td>
     </tr>
@@ -9318,8 +9464,14 @@ function abrirHistoricoDetail(filial){
 
 document.getElementById('historicoVoltarBtn').addEventListener('click', ()=>{
   document.getElementById('historicoDetail').style.display = 'none';
+  document.getElementById('historicoMesFolders').style.display = 'block';
+});
+
+document.getElementById('historicoMesVoltarBtn').addEventListener('click', ()=>{
+  document.getElementById('historicoMesFolders').style.display = 'none';
   document.getElementById('historicoFolders').style.display = 'block';
 });
+
 
 document.getElementById('historicoNovaPastaBtn').addEventListener('click', ()=>{
   document.getElementById('historicoPastaMes').value = '';
@@ -12483,6 +12635,24 @@ document.getElementById('incDeleteBtn').addEventListener('click', async ()=>{
 // tempo única, com uma análise automática (template + números reais) do
 // nível de risco e da próxima ação recomendada.
 // ============================================================================
+// Mini-gráfico (sparkline) em SVG puro pra usar dentro dos cards de resumo.
+function sparklineSVG(valores, cor){
+  const vals = (valores||[]).filter(v => v !== null && v !== undefined && !isNaN(v));
+  if (vals.length < 2) return '';
+  const w = 88, h = 22, pad = 2;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = (max - min) || 1;
+  const stepX = (w - pad*2) / (vals.length - 1);
+  const pontos = vals.map((v,i) => {
+    const x = pad + i*stepX;
+    const y = h - pad - ((v-min)/range)*(h-pad*2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const ultimoX = pad + (vals.length-1)*stepX;
+  const ultimoY = h - pad - ((vals[vals.length-1]-min)/range)*(h-pad*2);
+  return `<div class="sparkline-wrap"><svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><polyline points="${pontos}" fill="none" stroke="${cor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${ultimoX.toFixed(1)}" cy="${ultimoY.toFixed(1)}" r="2" fill="${cor}"/></svg></div>`;
+}
+
 function corPorNota(nota){
   const n = parseFloat(String(nota).replace(',','.'));
   if (isNaN(n)) return 'var(--text-faint)';
@@ -12497,31 +12667,47 @@ function coletarEventosCondominio(nomeAlvoNorm){
   DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm).forEach(p=>{
     if (p.dataPesquisa){
       if (pesquisaNaoRealizada(p)){
-        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa não realizada', icone:'⚪', cor:'var(--text-faint)', desc: p.motivoNaoRealizada || 'Motivo não informado.' });
+        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa não realizada', categoria:'pesquisas', icone:'⚪', cor:'var(--text-faint)', desc: p.motivoNaoRealizada || 'Motivo não informado.' });
       } else {
-        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa realizada', icone:'📋', cor: corPorNota(p.nota), desc: `Nota atribuída: ${p.nota ?? '—'}` });
+        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa realizada', categoria:'pesquisas', icone:'📋', cor: corPorNota(p.nota), desc: `Nota atribuída: ${p.nota ?? '—'}` });
       }
     }
     if (p.houvePendencia){
-      eventos.push({ data: p.dataPesquisa || '', tipo:'Pendência', icone:'⚠️', cor:'var(--atencao)', desc: p.pendenciaDescricao || p.pend || 'Sem descrição registrada.', status: p.statusTratativa || 'Pendente', setor: p.setorPendencia });
+      eventos.push({ data: p.dataPesquisa || '', tipo:'Pendência', categoria:'pesquisas', icone:'⚠️', cor:'var(--atencao)', desc: p.pendenciaDescricao || p.pend || 'Sem descrição registrada.', status: p.statusTratativa || 'Pendente', setor: p.setorPendencia });
     }
     if (p.houveReclamacao){
-      eventos.push({ data: p.dataPesquisa || '', tipo:'Reclamação', icone:'📣', cor:'var(--critico)', desc: p.pend || (p.motivo && p.motivo !== '—' ? p.motivo : 'Sem descrição registrada.'), status: p.statusTratativa || 'Pendente', setor: p.setor });
+      const aberta = p.statusTratativa && p.statusTratativa !== 'Resolvido';
+      eventos.push({ data: p.dataPesquisa || '', tipo:'Reclamação', categoria:'pesquisas', icone:'📣', cor:'var(--critico)', desc: p.pend || (p.motivo && p.motivo !== '—' ? p.motivo : 'Sem descrição registrada.'), status: p.statusTratativa || 'Pendente', setor: p.setor, critico: aberta });
     }
     if (p.houveElogio){
-      eventos.push({ data: p.dataPesquisa || '', tipo:'Elogio', icone:'⭐', cor:'var(--ok)', desc: p.elogioDescricao || 'Elogio registrado.', setor: p.elogioSetor });
+      eventos.push({ data: p.dataPesquisa || '', tipo:'Elogio', categoria:'pesquisas', icone:'⭐', cor:'var(--ok)', desc: p.elogioDescricao || 'Elogio registrado.', setor: p.elogioSetor });
     }
     if (p.dataPesquisa2 && p.notaPosResolucao){
-      eventos.push({ data: p.dataPesquisa2, tipo:'Pesquisa de Recuperação', icone:'🔄', cor: corPorNota(p.notaPosResolucao), desc: `Nota 2 (pós-tratativa): ${p.notaPosResolucao}` });
+      eventos.push({ data: p.dataPesquisa2, tipo:'Pesquisa de Recuperação', categoria:'pesquisas', icone:'🔄', cor: corPorNota(p.notaPosResolucao), desc: `Nota 2 (pós-tratativa): ${p.notaPosResolucao}` });
     }
   });
 
   (veData||[]).filter(v => normalizeNomeCondo(v.condominio) === nomeAlvoNorm).forEach(v=>{
-    eventos.push({ data: v.data_visita || (v.created_at ? v.created_at.slice(0,10) : ''), tipo:'Visita Emergencial', icone:'🚨', cor:'var(--critico)', desc: v.diagnostico || 'Sem diagnóstico registrado.', status: v.status, setor: v.setor });
+    const aberta = v.status !== 'Concluído';
+    eventos.push({ data: v.data_visita || (v.created_at ? v.created_at.slice(0,10) : ''), tipo:'Visita Emergencial', categoria:'visitas', icone:'🚨', cor:'var(--critico)', desc: v.diagnostico || 'Sem diagnóstico registrado.', status: v.status, setor: v.setor, critico: aberta, ref:{tipo:'visita', id:v.id} });
   });
 
   (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm).forEach(i=>{
-    eventos.push({ data: i.data_hora ? i.data_hora.slice(0,10) : '', tipo:`Incidente (${i.tipo||'—'})`, icone:'🛑', cor: corGravidade(i.gravidade), desc: i.descricao || '', status: i.status, setor: i.setor });
+    const aberta = i.status !== 'Resolvido';
+    eventos.push({ data: i.data_hora ? i.data_hora.slice(0,10) : '', tipo:`Incidente (${i.tipo||'—'})`, categoria:'incidentes', icone:'🛑', cor: corGravidade(i.gravidade), desc: i.descricao || '', status: i.status, setor: i.setor, critico: (i.gravidade === 'Alta' && aberta), ref:{tipo:'incidente', id:i.id} });
+  });
+
+  (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).forEach(f=>{
+    const dataRef = String(f.mes_referencia||'').slice(0,7);
+    if (f.atendimentos !== null && f.atendimentos !== undefined){
+      eventos.push({ data: dataRef, tipo:'Ligações do Mês', categoria:'ligacoes', icone:'📞', cor: corTMA(f.tma), desc: `${f.atendimentos} atendimento(s) em ${mesLabelBR(dataRef)}${f.tma!=null ? ` · TMA de ${f.tma}s` : ''}.` });
+    }
+    if (f.porta_aberta){
+      eventos.push({ data: dataRef, tipo:'Evento de Porta Aberta', categoria:'portas', icone:'🚪', cor:'var(--atencao)', desc: `${f.porta_aberta} evento(s) de porta aberta em ${mesLabelBR(dataRef)}.` });
+    }
+    if (f.porta_violada){
+      eventos.push({ data: dataRef, tipo:'Evento de Porta Violada', categoria:'portas', icone:'🚪', cor:'var(--critico)', desc: `${f.porta_violada} evento(s) de porta violada em ${mesLabelBR(dataRef)}.`, critico: f.porta_violada > 0 });
+    }
   });
 
   eventos.sort((a,b) => (b.data||'').localeCompare(a.data||''));
@@ -12554,25 +12740,343 @@ function coletarDadosRiscoCondominio(nomeAlvoNorm){
   const incidentesAltosAbertos = incidentesCondo.filter(i => i.gravidade === 'Alta' && i.status !== 'Resolvido').length;
   const reclamacoesCondo = DATA.filter(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm && d.houveReclamacao);
   const reclamacoesSemResolucao = reclamacoesCondo.filter(d => d.statusTratativa && d.statusTratativa !== 'Resolvido').length;
-  const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).sort((a,b)=>(b.mes_referencia||'').localeCompare(a.mes_referencia||''));
-  const fluxoRecente = fluxoCondo[0] || null;
+  const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).sort((a,b)=>String(a.mes_referencia||'').localeCompare(String(b.mes_referencia||'')));
+  const fluxoRecente = fluxoCondo[fluxoCondo.length-1] || null;
   const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 300);
   const mesAtualFluxo = hojeISO().slice(0,7);
   const fluxoPendente = !fluxoCondo.some(f => String(f.mes_referencia||'').slice(0,7) === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
-  return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoRecente, tmaForaDaMeta, fluxoPendente };
+  return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoCondo, fluxoRecente, tmaForaDaMeta, fluxoPendente };
 }
+
+// Nível de risco médio da filial inteira, pra comparar o condomínio com a média.
+const _riscoFilialCache = {};
+function calcularRiscoMedioFilial(filial){
+  if (!filial) return null;
+  if (_riscoFilialCache[filial]) return _riscoFilialCache[filial];
+  const condosFilial = [...new Set(DATA.filter(d=>d.filial===filial).map(d=>normalizeNomeCondo(d.nome)))];
+  if (!condosFilial.length) return null;
+  const pontosTodos = condosFilial.map(normNome => {
+    const d = coletarDadosRiscoCondominio(normNome);
+    return calcularNivelRisco(d).pontos;
+  });
+  const media = pontosTodos.reduce((a,b)=>a+b,0) / pontosTodos.length;
+  const nivelMedio = media >= 5 ? 'Alto' : media >= 2 ? 'Médio' : 'Baixo';
+  const resultado = { media, nivelMedio };
+  _riscoFilialCache[filial] = resultado;
+  return resultado;
+}
+
+// Busca dados de cadastro (contrato, responsável) do condomínio no módulo de Renovação/Cadastro.
+function getCondoCadastroInfo(nomeAlvoNorm){
+  const lista = (typeof renovAllCondos !== 'undefined' && renovAllCondos) || [];
+  return lista.find(c => normalizeNomeCondo(c.nome) === nomeAlvoNorm) || null;
+}
+
+// Notas em ordem cronológica (Histórico arquivado + nota "ao vivo" da Pesquisa) pra calcular tendência.
+function coletarNotasCronologicas(nomeAlvoNorm){
+  const doHistorico = (historicoData||[])
+    .filter(h => normalizeNomeCondo(h.condominio) === nomeAlvoNorm)
+    .map(h => ({ mes: h.mes, nota: parseFloat(String(h.nota||'').replace(',','.')) }))
+    .filter(h => !isNaN(h.nota))
+    .sort((a,b)=> MES_ORDEM_PT.indexOf(a.mes) - MES_ORDEM_PT.indexOf(b.mes));
+  const atual = DATA.find(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm);
+  const notaAtual = atual ? parseFloat(String(atual.nota).replace(',','.')) : NaN;
+  if (!isNaN(notaAtual)) doHistorico.push({ mes: 'Atual', nota: notaAtual });
+  return doHistorico;
+}
+
+function renderVidaAtendimentoBloco(nomeAlvoNorm, periodo){
+  const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm)
+    .sort((a,b)=> String(a.mes_referencia||'').localeCompare(String(b.mes_referencia||'')));
+  const incidentesCondo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm);
+  const mesAtual = hojeISO().slice(0,7);
+
+  const fonte = periodo === 'mes' ? fluxoCondo.filter(f => String(f.mes_referencia||'').slice(0,7) === mesAtual) : fluxoCondo;
+  const totalLigacoes = fonte.reduce((s,f)=>s+(f.atendimentos||0),0);
+  const totalPortaAberta = fonte.reduce((s,f)=>s+(f.porta_aberta||0),0);
+  const totalPortaViolada = fonte.reduce((s,f)=>s+(f.porta_violada||0),0);
+  const tmas = fonte.map(f=>f.tma).filter(n=>n!==null && n!==undefined);
+  const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
+  const incidentesPeriodo = periodo === 'mes'
+    ? incidentesCondo.filter(i => (i.data_hora||'').slice(0,7) === mesAtual)
+    : incidentesCondo;
+
+  // Séries mensais (histórico completo) pra alimentar os mini-gráficos dos cards.
+  const porMesSpark = {};
+  fluxoCondo.forEach(f=>{
+    const chave = String(f.mes_referencia||'').slice(0,7);
+    if (!porMesSpark[chave]) porMesSpark[chave] = { atendimentos:0, eventos:0, tmas:[] };
+    porMesSpark[chave].atendimentos += (f.atendimentos||0);
+    porMesSpark[chave].eventos += (f.porta_aberta||0) + (f.porta_violada||0);
+    if (f.tma !== null && f.tma !== undefined) porMesSpark[chave].tmas.push(f.tma);
+  });
+  const mesesSpark = Object.keys(porMesSpark).sort((a,b)=>a.localeCompare(b));
+  const mensalLigacoes = mesesSpark.map(m=>porMesSpark[m].atendimentos);
+  const mensalEventos = mesesSpark.map(m=>porMesSpark[m].eventos);
+  const mensalTma = mesesSpark.map(m=>{
+    const t = porMesSpark[m].tmas;
+    return t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null;
+  });
+
+  document.getElementById('vidaAtendimentoStats').innerHTML = `
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalLigacoes.toLocaleString('pt-BR')}</div><div class="slbl">Total de ligações</div>${sparklineSVG(mensalLigacoes, 'var(--accent)')}</div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${(totalPortaAberta+totalPortaViolada).toLocaleString('pt-BR')}</div><div class="slbl">Eventos (${totalPortaAberta} aberta · ${totalPortaViolada} violada)</div>${sparklineSVG(mensalEventos, 'var(--atencao)')}</div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 300s)</div>${sparklineSVG(mensalTma, corTMA(tmaMedio))}</div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${incidentesPeriodo.length}</div><div class="slbl">Incidentes</div></div>
+  `;
+
+  // Tabela mensal — histórico completo, independente do período escolhido acima.
+  const porMes = {};
+  fluxoCondo.forEach(f=>{
+    const chave = String(f.mes_referencia||'').slice(0,7);
+    if (!porMes[chave]) porMes[chave] = { atendimentos:0, portaAberta:0, portaViolada:0, tmas:[], incidentes:0 };
+    porMes[chave].atendimentos += (f.atendimentos||0);
+    porMes[chave].portaAberta += (f.porta_aberta||0);
+    porMes[chave].portaViolada += (f.porta_violada||0);
+    if (f.tma !== null && f.tma !== undefined) porMes[chave].tmas.push(f.tma);
+  });
+  incidentesCondo.forEach(i=>{
+    const chave = (i.data_hora||'').slice(0,7);
+    if (!chave) return;
+    if (!porMes[chave]) porMes[chave] = { atendimentos:0, portaAberta:0, portaViolada:0, tmas:[], incidentes:0 };
+    porMes[chave].incidentes += 1;
+  });
+  const mesesOrdenados = Object.keys(porMes).sort((a,b)=>a.localeCompare(b));
+  const tbody = document.getElementById('vidaAtendimentoTableBody');
+  if (!mesesOrdenados.length){
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Sem dados de atendimento registrados ainda.</td></tr>';
+  } else {
+    tbody.innerHTML = mesesOrdenados.map(chave=>{
+      const m = porMes[chave];
+      const tmaMes = m.tmas.length ? Math.round(m.tmas.reduce((a,b)=>a+b,0)/m.tmas.length) : null;
+      return `<tr>
+        <td>${mesLabelBR(chave)}</td>
+        <td style="text-align:center;">${m.atendimentos.toLocaleString('pt-BR')}</td>
+        <td style="text-align:center;">${m.portaAberta+m.portaViolada}</td>
+        <td style="text-align:center; color:${corTMA(tmaMes)};">${tmaMes!==null?tmaMes+'s':'—'}</td>
+        <td style="text-align:center; color:${m.incidentes>0?'var(--critico)':'var(--text-faint)'};">${m.incidentes}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function renderVidaSaudeDimensoes(notaAtual, adocaoRecente){
+  const statusSatisfacao = notaAtual === null ? 'Sem dados' : notaAtual >= 8 ? 'Alta' : notaAtual >= 6 ? 'Média' : 'Baixa';
+  const corSatisfacao = statusSatisfacao === 'Alta' ? 'var(--ok)' : statusSatisfacao === 'Média' ? 'var(--atencao)' : statusSatisfacao === 'Baixa' ? 'var(--critico)' : 'var(--text-faint)';
+
+  let statusAdocao = 'Sem dados', corAdocao = 'var(--text-faint)', detalheAdocao = 'Nenhum registro de Adoção Digital ainda.';
+  if (adocaoRecente){
+    const score = calcScoreDigital(adocaoRecente);
+    const saude = classificarSaude(score, adocaoRecente);
+    const mapa = { 'Saudável':'Alta', 'Atenção':'Média', 'Crítico':'Baixa', 'Pendente':'Sem dados' };
+    statusAdocao = mapa[saude] || saude;
+    corAdocao = statusAdocao === 'Alta' ? 'var(--ok)' : statusAdocao === 'Média' ? 'var(--atencao)' : statusAdocao === 'Baixa' ? 'var(--critico)' : 'var(--text-faint)';
+    detalheAdocao = `Score de ${score}/4 pontos (facial, app, I.A., armário/GPhone).`;
+  }
+
+  document.getElementById('vidaSaudeDimensoes').innerHTML = `
+    <div class="chart-panel" style="border-top:3px solid ${corSatisfacao};">
+      <p class="chart-title">😊 Satisfação</p>
+      <div style="font-size:22px; font-weight:700; color:${corSatisfacao};">${statusSatisfacao}</div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin-top:6px;">${notaAtual!==null ? `Nota atual: ${notaAtual}` : 'Nenhuma pesquisa registrada ainda.'}</p>
+    </div>
+    <div class="chart-panel" style="border-top:3px solid ${corAdocao};">
+      <p class="chart-title">📶 Adoção Digital</p>
+      <div style="font-size:22px; font-weight:700; color:${corAdocao};">${statusAdocao}</div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin-top:6px;">${detalheAdocao}</p>
+    </div>
+  `;
+}
+
+let vidaCondoAtual = { nome:null, normNome:null };
+let vidaPeriodoAtendimento = 'mes';
+let vidaTimelineCategoriaAtiva = 'todos';
+let vidaEventosCache = [];
+
+function renderVidaTimeline(){
+  const tl = document.getElementById('vidaCondoTimeline');
+  const busca = (document.getElementById('vidaTimelineBusca').value || '').trim().toLowerCase();
+  const status = document.getElementById('vidaTimelineStatus').value;
+  const periodo = document.getElementById('vidaTimelinePeriodo').value;
+  const somenteCriticos = document.getElementById('vidaTimelineCriticoBtn').classList.contains('active');
+  const hoje = new Date();
+
+  let eventos = vidaTimelineCategoriaAtiva === 'todos' ? vidaEventosCache : vidaEventosCache.filter(e => e.categoria === vidaTimelineCategoriaAtiva);
+  if (busca){
+    eventos = eventos.filter(e => (e.tipo||'').toLowerCase().includes(busca) || (e.desc||'').toLowerCase().includes(busca) || (e.setor||'').toLowerCase().includes(busca));
+  }
+  if (status === 'aberto'){
+    eventos = eventos.filter(e => e.status && !['Concluído','Resolvido'].includes(e.status));
+  } else if (status === 'resolvido'){
+    eventos = eventos.filter(e => e.status && ['Concluído','Resolvido'].includes(e.status));
+  }
+  if (somenteCriticos){
+    eventos = eventos.filter(e => e.critico);
+  }
+  if (periodo){
+    const dias = parseInt(periodo, 10);
+    eventos = eventos.filter(e => {
+      if (!e.data) return false;
+      const dataEv = new Date(e.data.length === 7 ? e.data + '-01' : e.data + 'T00:00:00');
+      const diffDias = (hoje - dataEv) / 86400000;
+      return diffDias <= dias;
+    });
+  }
+
+  if (!eventos.length){
+    tl.innerHTML = '<p class="empty">Nenhum evento encontrado para esse filtro.</p>';
+    return;
+  }
+  tl.innerHTML = eventos.map((e,idx) => `
+    <div class="timeline-item ${e.critico ? 'critico' : ''}">
+      <div class="timeline-icon" style="background:color-mix(in srgb, ${e.cor} 20%, var(--bg-panel-2));">${e.icone}</div>
+      <div style="flex:1;">
+        <div class="timeline-data">${e.data ? formatDateBR(e.data) : 'Data não informada'} · <b style="color:${e.cor};">${escapeHtml(e.tipo)}</b>${e.status ? ' · ' + escapeHtml(e.status) : ''}</div>
+        <div class="timeline-desc">${escapeHtml((e.desc||'').slice(0,240))}${(e.desc||'').length>240?'…':''}</div>
+        <button type="button" class="timeline-anexo-btn" data-anexo-idx="${idx}">📎 Anexar evidência</button>
+      </div>
+    </div>
+  `).join('');
+  tl.querySelectorAll('[data-anexo-idx]').forEach(btn=>{
+    btn.onclick = ()=> alert('Anexo de evidências (foto, laudo) ainda não está conectado a um repositório de arquivos neste painel — por enquanto, guarde o arquivo na pasta do condomínio e cite o nome dele na descrição do evento.');
+  });
+}
+
+document.querySelectorAll('[data-timeline-cat]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-timeline-cat]').forEach(b=>b.classList.toggle('active', b===btn));
+    vidaTimelineCategoriaAtiva = btn.getAttribute('data-timeline-cat');
+    renderVidaTimeline();
+  });
+});
+document.getElementById('vidaTimelineCriticoBtn').addEventListener('click', function(){
+  this.classList.toggle('active');
+  renderVidaTimeline();
+});
+['vidaTimelineBusca','vidaTimelineStatus','vidaTimelinePeriodo'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderVidaTimeline);
+  document.getElementById(id).addEventListener('change', renderVidaTimeline);
+});
+
+document.getElementById('vidaPeriodoMesBtn').addEventListener('click', ()=>{
+  vidaPeriodoAtendimento = 'mes';
+  document.getElementById('vidaPeriodoMesBtn').classList.add('active');
+  document.getElementById('vidaPeriodoTodosBtn').classList.remove('active');
+  if (vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, vidaPeriodoAtendimento);
+});
+document.getElementById('vidaPeriodoTodosBtn').addEventListener('click', ()=>{
+  vidaPeriodoAtendimento = 'todos';
+  document.getElementById('vidaPeriodoTodosBtn').classList.add('active');
+  document.getElementById('vidaPeriodoMesBtn').classList.remove('active');
+  if (vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, vidaPeriodoAtendimento);
+});
+
+async function vidaMarcarIncidenteResolvido(id){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (!confirm('Marcar esse incidente como Resolvido?')) return;
+  try{
+    const { error } = await sb.from('incidentes').update({ status:'Resolvido' }).eq('id', id);
+    if (error) throw error;
+    await loadIncidentes();
+    if (vidaCondoAtual.nome) abrirVidaCondominio(vidaCondoAtual.nome);
+  }catch(e){ alert('Erro ao atualizar incidente: ' + e.message); }
+}
+
+function vidaAgendarVisita(nomeCondo, filial){
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar visitas agora.'); return; }
+  openVEModal(null);
+  document.getElementById('veCondominio').value = nomeCondo;
+  if (filial){
+    const mapaFilial = { 'Ceará':'CEARA', 'Maranhão':'MARANHAO', 'Amazonas':'MANAUS', 'SECOPI':'SECOPI' };
+    document.getElementById('veFilial').value = mapaFilial[filial] || 'CEARA';
+  }
+}
+
+function exportarVidaCondominioPDF(){
+  const nomeCondo = vidaCondoAtual.nome;
+  if (!nomeCondo){ alert('Abra um condomínio antes de exportar.'); return; }
+  const emitido = new Date().toLocaleString('pt-BR');
+  const conteudoRelatorio = document.getElementById('vidaCondoRelatorio').innerHTML;
+  const conteudoStats = document.getElementById('vidaCondoStats').innerHTML;
+  const conteudoAtendStats = document.getElementById('vidaAtendimentoStats').innerHTML;
+  const conteudoSaude = document.getElementById('vidaSaudeDimensoes').innerHTML;
+  const timelineHtml = vidaEventosCache.slice(0, 40).map(e => `
+    <div style="border:1px solid #d1d5db; border-left:${e.critico ? '4px solid #b91c1c' : '1px solid #d1d5db'}; border-radius:6px; padding:10px 12px; margin-bottom:8px; page-break-inside:avoid;">
+      <div style="font-size:11px; color:#6b7280; font-family:monospace;">${e.data ? formatDateBR(e.data) : 'Data não informada'} · <b>${e.tipo}</b>${e.status ? ' · '+e.status : ''}</div>
+      <div style="font-size:12.5px; margin-top:3px;">${(e.desc||'').slice(0,300)}</div>
+    </div>
+  `).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Vida do Condomínio — ${nomeCondo}</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:960px; margin:0 auto;}
+    h1{font-size:22px; margin:4px 0 0;}
+    h2{font-size:15px; margin:22px 0 10px; border-bottom:1px solid #d1d5db; padding-bottom:6px;}
+    .top{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #1a2333; padding-bottom:14px; margin-bottom:18px;}
+    .brand{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#6b7280;}
+    .meta{font-size:12px; color:#6b7280; margin-top:4px;}
+    .stats-strip, .charts-grid{display:flex; flex-wrap:wrap; gap:10px;}
+    .stat-box, .chart-panel{border:1px solid #d1d5db; border-radius:8px; padding:10px 14px; min-width:150px; flex:1;}
+    .snum{font-size:18px; font-weight:700;}
+    .slbl{font-size:10.5px; color:#6b7280;}
+    @media print{ body{padding:12px;} }
+  </style></head><body>
+    <div class="top">
+      <div>
+        <div class="brand">SERVIS — Sucesso do Cliente</div>
+        <h1>Vida do Condomínio — ${nomeCondo}</h1>
+      </div>
+      <div class="meta">Emitido em: ${emitido}</div>
+    </div>
+    <h2>Resumo</h2>
+    <div class="stats-strip">${conteudoStats}</div>
+    <h2>Atendimento</h2>
+    <div class="stats-strip">${conteudoAtendStats}</div>
+    <h2>Saúde por Dimensão</h2>
+    <div class="charts-grid">${conteudoSaude}</div>
+    <h2>Relatório Inteligente</h2>
+    <div>${conteudoRelatorio}</div>
+    <h2>Linha do Tempo (últimos 40 eventos)</h2>
+    ${timelineHtml}
+    <p style="margin-top:24px; font-size:11px; color:#9ca3af;">SERVIS — Sucesso do Cliente · Relatório gerado em ${emitido}</p>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
+}
+document.getElementById('vidaExportarPdfBtn').addEventListener('click', exportarVidaCondominioPDF);
 
 function abrirVidaCondominio(nomeCondo){
   const nomeAlvoNorm = normalizeNomeCondo(nomeCondo);
+  vidaCondoAtual = { nome: nomeCondo, normNome: nomeAlvoNorm };
   const item = DATA.find(d => normalizeNomeCondo(d.nome) === nomeAlvoNorm);
   const filial = item ? item.filial : '—';
+  const cadastroInfo = getCondoCadastroInfo(nomeAlvoNorm);
 
   const eventos = coletarEventosCondominio(nomeAlvoNorm);
+  vidaEventosCache = eventos;
+  vidaTimelineCategoriaAtiva = 'todos';
+  document.querySelectorAll('[data-timeline-cat]').forEach(b=>b.classList.toggle('active', b.getAttribute('data-timeline-cat')==='todos'));
+  document.getElementById('vidaTimelineBusca').value = '';
+  document.getElementById('vidaTimelineStatus').value = '';
+  document.getElementById('vidaTimelinePeriodo').value = '';
+  document.getElementById('vidaTimelineCriticoBtn').classList.remove('active');
+
   const dadosRisco = coletarDadosRiscoCondominio(nomeAlvoNorm);
   const { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoRecente, tmaForaDaMeta, fluxoPendente } = dadosRisco;
   const notaMediaGeral = notasHistorico.length ? (notasHistorico.reduce((a,b)=>a+b,0)/notasHistorico.length) : null;
   const adocaoCondo = (adData||[]).filter(a => normalizeNomeCondo(a.condominio) === nomeAlvoNorm);
   const adocaoRecente = adocaoCondo[0] || null;
+
+  // Tendência de nota — compara os dois últimos pontos cronológicos disponíveis (Histórico + nota atual).
+  const notasCron = coletarNotasCronologicas(nomeAlvoNorm);
+  let tendenciaHtml = '';
+  if (notasCron.length >= 2){
+    const diff = notasCron[notasCron.length-1].nota - notasCron[notasCron.length-2].nota;
+    if (diff > 0.05) tendenciaHtml = `<span style="color:var(--ok); font-size:13px;">▲ +${diff.toFixed(1)}</span>`;
+    else if (diff < -0.05) tendenciaHtml = `<span style="color:var(--critico); font-size:13px;">▼ ${diff.toFixed(1)}</span>`;
+    else tendenciaHtml = `<span style="color:var(--text-faint); font-size:13px;">▬ estável</span>`;
+  }
 
   // Setor com mais ocorrências (pendência/reclamação/visita/incidente)
   const contagemSetor = {};
@@ -12581,23 +13085,68 @@ function abrirVidaCondominio(nomeCondo){
 
   const risco = calcularNivelRisco({ notaAtual, visitasAbertas, incidentesAltosAbertos, reclamacoesSemResolucao, tmaForaDaMeta, fluxoPendente });
   const corRisco = risco.nivel === 'Alto' ? 'var(--critico)' : risco.nivel === 'Médio' ? 'var(--atencao)' : 'var(--ok)';
+  const riscoFilial = calcularRiscoMedioFilial(filial);
+  let riscoComparativo = '';
+  if (riscoFilial){
+    if (risco.pontos > riscoFilial.media + 0.5) riscoComparativo = `<span style="color:var(--critico);">acima da média da filial (${riscoFilial.nivelMedio})</span>`;
+    else if (risco.pontos < riscoFilial.media - 0.5) riscoComparativo = `<span style="color:var(--ok);">abaixo da média da filial (${riscoFilial.nivelMedio})</span>`;
+    else riscoComparativo = `na média da filial (${riscoFilial.nivelMedio})`;
+  }
+
+  // Responsável + tempo desde o último contato
+  const responsavel = (cadastroInfo && cadastroInfo.responsavel) || (visitasCondo[0] && visitasCondo[0].responsavel) || '—';
+  const ultimoEvento = eventos[0] || null;
+  let tempoUltimoContato = '—';
+  if (ultimoEvento && ultimoEvento.data){
+    const dias = Math.floor((new Date() - new Date(ultimoEvento.data + 'T00:00:00')) / 86400000);
+    tempoUltimoContato = dias <= 0 ? 'Hoje' : dias === 1 ? 'Há 1 dia' : `Há ${dias} dias`;
+  }
 
   let recomendacao;
-  if (visitasAbertas > 0) recomendacao = 'Agendar visita presencial para tratar as pendências em aberto.';
-  else if (incidentesAltosAbertos > 0) recomendacao = 'Priorizar o encerramento dos incidentes graves em aberto.';
-  else if (tmaForaDaMeta) recomendacao = 'Rever o atendimento da Central — TMA acima da meta de 300s.';
-  else if (topSetor) recomendacao = `Acompanhar de perto o setor ${topSetor[0]}, que concentra as ocorrências recentes.`;
-  else if (notaAtual !== null && notaAtual < 8) recomendacao = 'Fazer um contato de satisfação para entender o que motivou a nota.';
-  else recomendacao = 'Nenhuma ação urgente identificada — manter acompanhamento de rotina.';
+  const acoesIA = [];
+  if (visitasAbertas > 0){
+    recomendacao = 'Agendar visita presencial para tratar as pendências em aberto.';
+    acoesIA.push({ label:'📅 Agendar Visita', action:'agendar-visita' });
+  } else if (incidentesAltosAbertos > 0){
+    recomendacao = 'Priorizar o encerramento dos incidentes graves em aberto.';
+    const incidenteAberto = incidentesCondo.find(i => i.gravidade === 'Alta' && i.status !== 'Resolvido');
+    if (incidenteAberto) acoesIA.push({ label:'✅ Marcar Incidente como Resolvido', action:'resolver-incidente', id:incidenteAberto.id });
+  } else if (tmaForaDaMeta){
+    recomendacao = 'Rever o atendimento da Central — TMA acima da meta de 300s.';
+  } else if (topSetor){
+    recomendacao = `Acompanhar de perto o setor ${topSetor[0]}, que concentra as ocorrências recentes.`;
+  } else if (notaAtual !== null && notaAtual < 8){
+    recomendacao = 'Fazer um contato de satisfação para entender o que motivou a nota.';
+    acoesIA.push({ label:'📅 Agendar Visita', action:'agendar-visita' });
+  } else {
+    recomendacao = 'Nenhuma ação urgente identificada — manter acompanhamento de rotina.';
+  }
 
+  // 1) CABEÇALHO
   document.getElementById('vidaCondoTitulo').textContent = `🕓 ${nomeCondo}`;
+  const clienteDesde = cadastroInfo && cadastroInfo.contrato_inicio ? formatDateBR(cadastroInfo.contrato_inicio) : '—';
+  const renovacaoContrato = cadastroInfo && cadastroInfo.contrato_fim ? formatDateBR(cadastroInfo.contrato_fim) : '—';
+  document.getElementById('vidaCondoSubtitulo').textContent = `${filial} · Cliente desde ${clienteDesde} · Renovação em ${renovacaoContrato}`;
+
+  // 2) CARDS DE RESUMO
+  const sparkNotas = sparklineSVG(notasCron.map(n=>n.nota), corPorNota(notaMediaGeral));
   document.getElementById('vidaCondoStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${escapeHtml(filial)}</div><div class="slbl">Filial</div></div>
-    <div class="stat-box"><div class="snum" style="color:${corPorNota(notaMediaGeral)};">${notaMediaGeral !== null ? notaMediaGeral.toFixed(1) : '—'}</div><div class="slbl">Nota média geral</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--critico);">${visitasCondo.length}</div><div class="slbl">Visitas emergenciais</div></div>
-    <div class="stat-box"><div class="snum" style="color:${corRisco};">${risco.nivel}</div><div class="slbl">Nível de risco</div></div>
+    <div class="stat-box"><div class="snum" style="color:${corPorNota(notaMediaGeral)};">${notaMediaGeral !== null ? notaMediaGeral.toFixed(1) : '—'} ${tendenciaHtml}</div><div class="slbl">Nota média geral</div>${sparkNotas}</div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${visitasCondo.length} <span style="font-size:12px; color:var(--text-faint);">(${visitasAbertas} aberta(s))</span></div><div class="slbl">Visitas emergenciais</div></div>
+    <div class="stat-box"><div class="snum" style="color:${corRisco};">${risco.nivel}</div><div class="slbl">Nível de risco ${riscoComparativo ? '· ' + riscoComparativo : ''}</div></div>
+    <div class="stat-box"><div class="snum" style="font-size:14px;">${escapeHtml(responsavel)}</div><div class="slbl">Responsável · Último contato: ${tempoUltimoContato}</div></div>
   `;
 
+  // 3) BLOCO ATENDIMENTO
+  vidaPeriodoAtendimento = 'mes';
+  document.getElementById('vidaPeriodoMesBtn').classList.add('active');
+  document.getElementById('vidaPeriodoTodosBtn').classList.remove('active');
+  renderVidaAtendimentoBloco(nomeAlvoNorm, vidaPeriodoAtendimento);
+
+  // 4) SAÚDE POR DIMENSÃO
+  renderVidaSaudeDimensoes(notaAtual, adocaoRecente);
+
+  // 5) RELATÓRIO INTELIGENTE
   const partesRelatorio = [];
   partesRelatorio.push(notaAtual !== null
     ? `Nota atual: <b>${notaAtual}</b>${notaMediaGeral !== null && notasHistorico.length > 1 ? ` (média histórica de ${notaMediaGeral.toFixed(1)})` : ''}.`
@@ -12620,24 +13169,20 @@ function abrirVidaCondominio(nomeCondo){
   partesRelatorio.push(incidentesCondo.length
     ? `${incidentesCondo.length} incidente(s) registrado(s), ${incidentesAltosAbertos} de alta gravidade ainda em aberto.`
     : 'Nenhum incidente registrado.');
-  partesRelatorio.push(`<b>Nível de risco: ${risco.nivel}</b>${risco.motivos.length ? ' (' + risco.motivos.join(', ') + ')' : ''}.`);
+  partesRelatorio.push(`<b>Nível de risco: ${risco.nivel}</b>${risco.motivos.length ? ' (' + risco.motivos.join(', ') + ')' : ''}${riscoComparativo ? ' — ' + riscoComparativo : ''}.`);
   partesRelatorio.push(`<b>Recomendação:</b> ${recomendacao}`);
   document.getElementById('vidaCondoRelatorio').innerHTML = partesRelatorio.map(p=>`<p style="margin:0 0 8px;">${p}</p>`).join('');
 
-  const tl = document.getElementById('vidaCondoTimeline');
-  if (!eventos.length){
-    tl.innerHTML = '<p class="empty">Nenhum evento registrado ainda para este condomínio.</p>';
-  } else {
-    tl.innerHTML = eventos.map(e => `
-      <div class="timeline-item">
-        <div class="timeline-icon" style="background:color-mix(in srgb, ${e.cor} 20%, var(--bg-panel-2));">${e.icone}</div>
-        <div style="flex:1;">
-          <div class="timeline-data">${e.data ? formatDateBR(e.data) : 'Data não informada'} · <b style="color:${e.cor};">${escapeHtml(e.tipo)}</b>${e.status ? ' · ' + escapeHtml(e.status) : ''}</div>
-          <div class="timeline-desc">${escapeHtml((e.desc||'').slice(0,240))}${(e.desc||'').length>240?'…':''}</div>
-        </div>
-      </div>
-    `).join('');
-  }
+  const acoesEl = document.getElementById('vidaCondoAcoesIA');
+  acoesEl.innerHTML = acoesIA.map(a => `<button type="button" class="login-btn" style="width:auto; margin-top:0; padding:8px 16px;" data-acao="${a.action}" data-acao-id="${a.id||''}">${a.label}</button>`).join('');
+  acoesEl.querySelectorAll('[data-acao]').forEach(btn=>{
+    const acao = btn.getAttribute('data-acao');
+    if (acao === 'agendar-visita') btn.onclick = ()=> vidaAgendarVisita(nomeCondo, filial);
+    if (acao === 'resolver-incidente') btn.onclick = ()=> vidaMarcarIncidenteResolvido(btn.getAttribute('data-acao-id'));
+  });
+
+  // 6) LINHA DO TEMPO
+  renderVidaTimeline();
 
   mostrarViewDetalheVida();
 }
@@ -12672,12 +13217,32 @@ function renderVidaCondominioKanban(){
     return { nome, filial: item ? item.filial : '—', ...dadosRisco, risco };
   });
 
-  const alto = linhas.filter(l => l.risco.nivel === 'Alto').sort((a,b)=>b.risco.pontos-a.risco.pontos);
-  const medio = linhas.filter(l => l.risco.nivel === 'Médio').sort((a,b)=>b.risco.pontos-a.risco.pontos);
-  const baixo = linhas.filter(l => l.risco.nivel === 'Baixo').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+  // Popula o seletor de filial uma vez só (ou atualiza se mudou algo)
+  const selFilial = document.getElementById('vidaKanbanFilterFilial');
+  const filiaisDisponiveis = [...new Set(linhas.map(l=>l.filial).filter(Boolean))].sort();
+  if (selFilial.options.length <= 1){
+    selFilial.innerHTML = '<option value="">Filial: todas</option>' + filiaisDisponiveis.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  }
+
+  const busca = (document.getElementById('vidaKanbanBusca').value || '').trim().toLowerCase();
+  const fFilial = selFilial.value;
+  const fRisco = document.getElementById('vidaKanbanFilterRisco').value;
+  const somentePendencia = document.getElementById('vidaKanbanPendenciaBtn').classList.contains('active');
+
+  const linhasFiltradas = linhas.filter(l=>{
+    if (busca && !l.nome.toLowerCase().includes(busca)) return false;
+    if (fFilial && l.filial !== fFilial) return false;
+    if (fRisco && l.risco.nivel !== fRisco) return false;
+    if (somentePendencia && !(l.visitasAbertas > 0 || l.incidentesAltosAbertos > 0)) return false;
+    return true;
+  });
+
+  const alto = linhasFiltradas.filter(l => l.risco.nivel === 'Alto').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+  const medio = linhasFiltradas.filter(l => l.risco.nivel === 'Médio').sort((a,b)=>b.risco.pontos-a.risco.pontos);
+  const baixo = linhasFiltradas.filter(l => l.risco.nivel === 'Baixo').sort((a,b)=>b.risco.pontos-a.risco.pontos);
 
   document.getElementById('vidaKanbanStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${linhas.length}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum">${linhasFiltradas.length}</div><div class="slbl">Condomínios (filtrados de ${linhas.length})</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${alto.length}</div><div class="slbl">Risco Alto</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--atencao);">${medio.length}</div><div class="slbl">Risco Médio</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--ok);">${baixo.length}</div><div class="slbl">Risco Baixo</div></div>
@@ -12724,11 +13289,43 @@ document.getElementById('vidaViewDetalheBtn').addEventListener('click', ()=>{
   if (nome) abrirVidaCondominio(nome);
   else mostrarViewDetalheVida();
 });
+['vidaKanbanBusca','vidaKanbanFilterFilial','vidaKanbanFilterRisco'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderVidaCondominioKanban);
+  document.getElementById(id).addEventListener('change', renderVidaCondominioKanban);
+});
+document.getElementById('vidaKanbanPendenciaBtn').addEventListener('click', function(){
+  this.classList.toggle('active');
+  renderVidaCondominioKanban();
+});
+document.getElementById('vidaKanbanLimparBtn').addEventListener('click', ()=>{
+  document.getElementById('vidaKanbanBusca').value = '';
+  document.getElementById('vidaKanbanFilterFilial').value = '';
+  document.getElementById('vidaKanbanFilterRisco').value = '';
+  document.getElementById('vidaKanbanPendenciaBtn').classList.remove('active');
+  renderVidaCondominioKanban();
+});
 
 let vidaCondoLista = [];
+// Garante que todos os dados cruzados (Fluxo, Visitas, Incidentes, Adoção, Histórico)
+// estejam carregados antes de montar a Vida do Condomínio — sem isso, quem abrisse essa
+// aba sem antes visitar as outras via nada nos sparklines e no relatório.
+async function garantirDadosVidaCondominio(){
+  const tarefas = [];
+  if (typeof faLoaded !== 'undefined' && !faLoaded && typeof loadFluxoAtendimento === 'function') tarefas.push(loadFluxoAtendimento());
+  if (typeof veLoaded !== 'undefined' && !veLoaded && typeof loadVE === 'function') tarefas.push(loadVE());
+  if (typeof incLoaded !== 'undefined' && !incLoaded && typeof loadIncidentes === 'function') tarefas.push(loadIncidentes());
+  if (typeof adLoaded !== 'undefined' && !adLoaded && typeof loadAdocaoDigital === 'function') tarefas.push(loadAdocaoDigital());
+  if (typeof historicoLoaded !== 'undefined' && !historicoLoaded && typeof loadHistorico === 'function') tarefas.push(loadHistorico());
+  if (tarefas.length) await Promise.allSettled(tarefas);
+}
+
 function popularSeletorVidaCondominio(){
   vidaCondoLista = [...new Set(DATA.map(d=>d.nome))].sort();
   renderVidaCondominioKanban();
+  garantirDadosVidaCondominio().then(()=>{
+    renderVidaCondominioKanban();
+    if (vidaCondoAtual.nome) abrirVidaCondominio(vidaCondoAtual.nome);
+  });
 }
 function renderVidaCondoDropdown(lista){
   const dd = document.getElementById('vidaCondoDropdown');
