@@ -5026,7 +5026,9 @@ const NOTA_FAIXAS = [
   { label:'7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
   { label:'5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
   { label:'3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
-  { label:'0 – 2',     min:0,  max:2.999, color:'#a30d1f' },
+  { label:'Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
+  { label:'Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
+  { label:'Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
   { label:'Sem nota',  min:null, max:null, color:'var(--pendente)' },
 ];
 function notaFaixaIndex(item){
@@ -11652,8 +11654,12 @@ document.getElementById('adDeleteBtn').addEventListener('click', async ()=>{
   if (!id) return;
   if (!confirm('Excluir esse registro?')) return;
   try{
-    const { error } = await sb.from('adocao_digital').delete().eq('id', id);
+    const { data, error } = await sb.from('adocao_digital').delete().eq('id', id).select();
     if (error) throw error;
+    if (!data || !data.length){
+      alert('O Supabase não retornou erro, mas nenhum registro foi excluído. Isso normalmente significa que falta permissão de DELETE na policy (RLS) da tabela "adocao_digital" — as policies atuais provavelmente só liberam select/insert/update para a chave anon. Peça para adicionar uma policy "for delete using (true)" nessa tabela.');
+      return;
+    }
     document.getElementById('adModalOverlay').style.display = 'none';
     loadAdocaoDigital();
   }catch(e){ alert('Erro ao excluir: ' + e.message); }
