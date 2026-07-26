@@ -517,6 +517,15 @@
   .vida-compact #vidaCondoRelatorio p{ margin:0 0 5px !important; font-size:12px; }
   .sparkline-wrap{ margin-top:4px; line-height:0; }
   .sparkline-wrap svg{ display:block; }
+  .mini-bars-wrap{
+    display:flex; align-items:flex-end; gap:2px; height:24px; margin-top:5px; cursor:pointer;
+  }
+  .mini-bar{
+    flex:1; min-width:3px; max-width:10px; border-radius:2px 2px 0 0;
+    transition:opacity .12s ease;
+  }
+  .mini-bars-wrap:hover .mini-bar{ opacity:.75; }
+  .mini-bar:hover{ opacity:1 !important; }
 
   /* ---------- EDIT FORM ---------- */
   .edit-btn{
@@ -1717,6 +1726,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="toolbar" style="margin-bottom:14px;">
       <select class="filter-select" id="renovFilterFilial"><option value="">Filial: todas</option></select>
       <select class="filter-select" id="renovFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosRenovVencidos">Limpar filtros</button>
     </div>
     <div class="checklist-table-wrap" style="margin-bottom:22px;">
       <table class="checklist-table" id="renovVencidosTable">
@@ -1752,6 +1762,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
     <div class="toolbar" style="margin-bottom:14px;">
       <input type="text" class="search" id="renovNegSearch" placeholder="Buscar negociação por nome do condomínio...">
+      <button type="button" class="clearbtn" id="btnLimparFiltrosRenovNeg">Limpar filtros</button>
     </div>
     <div class="checklist-table-wrap">
       <table class="checklist-table" id="renovNegociacoesTable">
@@ -1832,6 +1843,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <option value="Ampliação em andamento">Ampliação em andamento</option>
           <option value="Concluída">Concluída</option>
         </select>
+        <button type="button" class="clearbtn" id="btnLimparFiltrosCronograma">Limpar filtros</button>
       </div>
       <div class="checklist-table-wrap">
         <table class="checklist-table" id="cronogramaTable">
@@ -1991,6 +2003,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="checklist-toolbar">
       <input type="text" id="checklistSearch" class="search" placeholder="Buscar condomínio...">
       <select id="checklistFilialSel"><option value="">Filial: todas</option></select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosChecklist">Limpar filtros</button>
       <span id="checklistProgress" class="count-line" style="margin:0;"></span>
     </div>
     <div class="checklist-table-wrap">
@@ -2215,6 +2228,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <option value="Pendente">Pendente</option>
         <option value="Concluído">Concluído</option>
       </select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosLembretes">Limpar filtros</button>
       <button type="button" class="logout-btn" id="btnNovoLembrete" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Lembrete</button>
     </div>
     <span id="lembreteCount" class="count-line"></span>
@@ -2253,6 +2267,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <option value="Pendente">Pendente</option>
           <option value="Fora da Meta">Fora da Meta</option>
         </select>
+        <button type="button" class="clearbtn" id="btnLimparFiltrosFluxo">Limpar filtros</button>
         <button type="button" class="clearbtn" id="btnImportarPlanilhaFluxo">📥 Importar Planilha (Jan–Abr)</button>
         <button type="button" class="clearbtn" id="btnNovaRodadaFluxo">🔄 Nova Rodada do Mês</button>
         <button type="button" class="logout-btn" id="btnNovoFluxoAtendimento" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
@@ -2435,6 +2450,7 @@ CONDOMINIO Y	480	45"></textarea>
         <option value="Crítico">Crítico</option>
         <option value="Pendente">Pendente</option>
       </select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosAdocao">Limpar filtros</button>
       <button type="button" class="clearbtn" id="btnImportarPlanilhaAdocao">📥 Importar Planilha (Abril)</button>
       <button type="button" class="clearbtn" id="btnAdAnaliseIA">🧠 Análise I.A. Comparativa</button>
       <button type="button" class="logout-btn" id="btnNovoAdocaoDigital" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
@@ -2586,6 +2602,7 @@ CONDOMINIO Y	480	45"></textarea>
         <option value="Resolvido">Resolvido</option>
         <option value="Aguardando">Aguardando</option>
       </select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosIncidentes">Limpar filtros</button>
       <button type="button" class="logout-btn" id="btnNovoIncidente" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Incidente</button>
     </div>
     <span id="incCount" class="count-line"></span>
@@ -2740,10 +2757,18 @@ CONDOMINIO Y	480	45"></textarea>
       <div class="chart-panel" style="margin-bottom:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
           <p class="chart-title" style="margin:0;">📞 Atendimento</p>
-          <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
-            <button type="button" id="vidaPeriodoMesBtn" class="view-toggle-btn active">Mês atual</button>
-            <button type="button" id="vidaPeriodoTodosBtn" class="view-toggle-btn">Todos os meses</button>
-          </span>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+              <button type="button" id="vidaPeriodoMesBtn" class="view-toggle-btn active">Mês atual</button>
+              <button type="button" id="vidaPeriodoTodosBtn" class="view-toggle-btn">Todos os meses</button>
+              <button type="button" id="vidaPeriodoPersonalizadoBtn" class="view-toggle-btn">Personalizado</button>
+            </span>
+            <span id="vidaPeriodoCustomWrap" style="display:none; align-items:center; gap:6px;">
+              <input type="date" id="vidaPeriodoInicio" class="search" style="max-width:150px; padding:6px 8px;">
+              <span style="font-size:11px; color:var(--text-faint);">até</span>
+              <input type="date" id="vidaPeriodoFim" class="search" style="max-width:150px; padding:6px 8px;">
+            </span>
+          </div>
         </div>
         <div class="stats-strip" id="vidaAtendimentoStats" style="margin-bottom:14px;"></div>
         <div class="checklist-table-wrap">
@@ -2796,6 +2821,7 @@ CONDOMINIO Y	480	45"></textarea>
             <option value="90">Últimos 90 dias</option>
             <option value="365">Último ano</option>
           </select>
+          <button type="button" class="clearbtn" id="btnLimparFiltrosTimeline">Limpar filtros</button>
         </div>
         <div id="vidaCondoTimeline" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
@@ -7938,6 +7964,11 @@ async function toggleChecklistItem(condoId, itemKey, checked){
 function initChecklistUI(){
   document.getElementById('checklistSearch').addEventListener('input', renderChecklistTable);
   document.getElementById('checklistFilialSel').addEventListener('change', renderChecklistTable);
+  document.getElementById('btnLimparFiltrosChecklist').addEventListener('click', ()=>{
+    document.getElementById('checklistSearch').value = '';
+    document.getElementById('checklistFilialSel').value = '';
+    renderChecklistTable();
+  });
   document.getElementById('checklistBody').addEventListener('change', (ev) => {
     const t = ev.target;
     if (t && t.matches('input[type="checkbox"][data-condo]')){
@@ -8119,7 +8150,16 @@ function renderRenovVencidos(){
     renderRenovNegociacoes();
   });
 });
+document.getElementById('btnLimparFiltrosRenovVencidos').addEventListener('click', ()=>{
+  document.getElementById('renovFilterFilial').value = '';
+  document.getElementById('renovFilterResponsavel').value = '';
+  renderRenovVencidos();
+});
 document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
+document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()=>{
+  document.getElementById('renovNegSearch').value = '';
+  renderRenovNegociacoes();
+});
 
 function exportarRenovacaoExcel(){
   const vencidos = getFilteredRenovVencidos();
@@ -8484,6 +8524,11 @@ document.getElementById('cronogramaDeleteBtn').addEventListener('click', async (
 ['cronogramaSearch','cronogramaFilterStatus'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderCronograma);
   document.getElementById(id).addEventListener('change', renderCronograma);
+});
+document.getElementById('btnLimparFiltrosCronograma').addEventListener('click', ()=>{
+  document.getElementById('cronogramaSearch').value = '';
+  document.getElementById('cronogramaFilterStatus').value = '';
+  renderCronograma();
 });
 
 // ============================================================================
@@ -10857,6 +10902,11 @@ document.getElementById('lembreteDeleteBtn').addEventListener('click', async ()=
   document.getElementById(id).addEventListener('input', renderLembretes);
   document.getElementById(id).addEventListener('change', renderLembretes);
 });
+document.getElementById('btnLimparFiltrosLembretes').addEventListener('click', ()=>{
+  document.getElementById('lembreteSearch').value = '';
+  document.getElementById('lembreteFilterStatus').value = '';
+  renderLembretes();
+});
 
 // ============================================================================
 // DASHBOARD EXECUTIVO — sub-aba "Comparativo & Evolução"
@@ -11382,6 +11432,13 @@ document.getElementById('faDeleteBtn').addEventListener('click', async ()=>{
 ['faSearch','faFilterFilial','faFilterMes','faFilterStatus'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderFluxoAtendimento);
   document.getElementById(id).addEventListener('change', renderFluxoAtendimento);
+});
+document.getElementById('btnLimparFiltrosFluxo').addEventListener('click', ()=>{
+  document.getElementById('faSearch').value = '';
+  document.getElementById('faFilterFilial').value = '';
+  document.getElementById('faFilterMes').value = '';
+  document.getElementById('faFilterStatus').value = '';
+  renderFluxoAtendimento();
 });
 
 // ============================================================================
@@ -12241,6 +12298,12 @@ document.getElementById('adDeleteBtn').addEventListener('click', async ()=>{
   document.getElementById(id).addEventListener('input', renderAdocaoDigital);
   document.getElementById(id).addEventListener('change', renderAdocaoDigital);
 });
+document.getElementById('btnLimparFiltrosAdocao').addEventListener('click', ()=>{
+  document.getElementById('adSearch').value = '';
+  document.getElementById('adFilterFilial').value = '';
+  document.getElementById('adFilterStatus').value = '';
+  renderAdocaoDigital();
+});
 
 // ============================================================================
 // IMPORTAÇÃO DA PLANILHA (Abril 2026) — ADOÇÃO DIGITAL
@@ -12654,6 +12717,12 @@ document.getElementById('incDeleteBtn').addEventListener('click', async ()=>{
   document.getElementById(id).addEventListener('input', renderIncidentes);
   document.getElementById(id).addEventListener('change', renderIncidentes);
 });
+document.getElementById('btnLimparFiltrosIncidentes').addEventListener('click', ()=>{
+  document.getElementById('incSearch').value = '';
+  document.getElementById('incFilterGravidade').value = '';
+  document.getElementById('incFilterStatus').value = '';
+  renderIncidentes();
+});
 
 // ============================================================================
 // VIDA DO CONDOMÍNIO + RELATÓRIO INTELIGENTE
@@ -12678,6 +12747,53 @@ function sparklineSVG(valores, cor){
   const ultimoX = pad + (vals.length-1)*stepX;
   const ultimoY = h - pad - ((vals[vals.length-1]-min)/range)*(h-pad*2);
   return `<div class="sparkline-wrap"><svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><polyline points="${pontos}" fill="none" stroke="${cor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${ultimoX.toFixed(1)}" cy="${ultimoY.toFixed(1)}" r="2" fill="${cor}"/></svg></div>`;
+}
+
+// Mini-gráfico de barras em CSS puro (uma barra por mês) — usado nos cards de
+// Nota média, Ligações, Eventos, TMA e Incidentes. Barra do mês mais recente
+// fica vermelha quando `destacarUltimoRuim` é true (fora da meta/abaixo do esperado).
+let _miniBarSeq = 0;
+function barChartMini(meses, valores, opts){
+  opts = opts || {};
+  const corNeutra = opts.corNeutra || 'var(--text-faint)';
+  const destacarUltimoRuim = !!opts.destacarUltimoRuim;
+  const onClickTipo = opts.onClickTipo || null;
+  const sufixo = opts.sufixo || '';
+  if (!meses.length) return '';
+  const temSinal = valores.some(v => v !== null && v !== undefined && v !== 0);
+  if (!temSinal) return '';
+  const abs = valores.map(v => (v===null||v===undefined) ? 0 : Math.abs(v));
+  const max = Math.max(1, ...abs);
+  const seqId = 'mb' + (_miniBarSeq++);
+  const barras = meses.map((m,i) => {
+    const v = valores[i];
+    const pct = v===null||v===undefined ? 4 : Math.max(4, abs[i]/max*100);
+    const ultimo = i === meses.length - 1;
+    const cor = (ultimo && destacarUltimoRuim) ? 'var(--critico)' : corNeutra;
+    const valorTxt = (v===null||v===undefined) ? '—' : (v + sufixo);
+    return `<div class="mini-bar" style="height:${pct.toFixed(0)}%; background:${cor};" title="${escapeHtml(m)}: ${escapeHtml(String(valorTxt))}"></div>`;
+  }).join('');
+  return `<div class="mini-bars-wrap" id="${seqId}" ${onClickTipo ? `data-mini-click="${onClickTipo}"` : ''}>${barras}</div>`;
+}
+
+// Depois de inserir o HTML dos cards, conecta o clique dos mini-gráficos pra abrir o
+// histórico/detalhe completo daquele indicador (nota → timeline de Pesquisas;
+// ligações/eventos/TMA/incidentes → tabela mensal do bloco Atendimento).
+function vidaConectarCliqueMiniGraficos(container){
+  container.querySelectorAll('[data-mini-click]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const tipo = el.getAttribute('data-mini-click');
+      if (tipo === 'nota'){
+        const btn = document.querySelector('[data-timeline-cat="pesquisas"]');
+        if (btn) btn.click();
+        const painelTimeline = document.getElementById('vidaCondoTimeline');
+        if (painelTimeline) painelTimeline.scrollIntoView({ behavior:'smooth', block:'start' });
+      } else {
+        const tabela = document.getElementById('vidaAtendimentoTable');
+        if (tabela) tabela.scrollIntoView({ behavior:'smooth', block:'center' });
+      }
+    });
+  });
 }
 
 function corPorNota(nota){
@@ -12813,46 +12929,51 @@ function coletarNotasCronologicas(nomeAlvoNorm){
 }
 
 function renderVidaAtendimentoBloco(nomeAlvoNorm, periodo){
-  const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm)
+  const fluxoCondoTudo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm)
     .sort((a,b)=> String(a.mes_referencia||'').localeCompare(String(b.mes_referencia||'')));
-  const incidentesCondo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm);
+  const incidentesCondoTudo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm);
   const mesAtual = hojeISO().slice(0,7);
 
-  const fonte = periodo === 'mes' ? fluxoCondo.filter(f => String(f.mes_referencia||'').slice(0,7) === mesAtual) : fluxoCondo;
-  const totalLigacoes = fonte.reduce((s,f)=>s+(f.atendimentos||0),0);
-  const totalPortaAberta = fonte.reduce((s,f)=>s+(f.porta_aberta||0),0);
-  const totalPortaViolada = fonte.reduce((s,f)=>s+(f.porta_violada||0),0);
-  const tmas = fonte.map(f=>f.tma).filter(n=>n!==null && n!==undefined);
+  // Define o intervalo de meses (AAAA-MM) conforme o período escolhido — passa a valer
+  // pros cards, pros mini-gráficos E pra tabela mensal (os três refletem o mesmo período).
+  let mesIni = null, mesFim = null, diaIniFull = null, diaFimFull = null;
+  if (periodo === 'mes'){
+    mesIni = mesAtual; mesFim = mesAtual;
+  } else if (periodo === 'custom'){
+    diaIniFull = document.getElementById('vidaPeriodoInicio').value || null;
+    diaFimFull = document.getElementById('vidaPeriodoFim').value || null;
+    mesIni = diaIniFull ? diaIniFull.slice(0,7) : null;
+    mesFim = diaFimFull ? diaFimFull.slice(0,7) : null;
+  }
+  // periodo === 'todos' -> mesIni/mesFim ficam null (sem limite)
+
+  const dentroDoPeriodo = (chaveMes) => {
+    if (mesIni && chaveMes < mesIni) return false;
+    if (mesFim && chaveMes > mesFim) return false;
+    return true;
+  };
+  const dataIncidenteDentro = (dataHora) => {
+    if (!dataHora) return false;
+    if (periodo === 'custom' && (diaIniFull || diaFimFull)){
+      const d = dataHora.slice(0,10);
+      if (diaIniFull && d < diaIniFull) return false;
+      if (diaFimFull && d > diaFimFull) return false;
+      return true;
+    }
+    return dentroDoPeriodo(dataHora.slice(0,7));
+  };
+
+  const fluxoCondo = fluxoCondoTudo.filter(f => dentroDoPeriodo(String(f.mes_referencia||'').slice(0,7)));
+  const incidentesCondo = incidentesCondoTudo.filter(i => dataIncidenteDentro(i.data_hora));
+
+  const totalLigacoes = fluxoCondo.reduce((s,f)=>s+(f.atendimentos||0),0);
+  const totalPortaAberta = fluxoCondo.reduce((s,f)=>s+(f.porta_aberta||0),0);
+  const totalPortaViolada = fluxoCondo.reduce((s,f)=>s+(f.porta_violada||0),0);
+  const tmas = fluxoCondo.map(f=>f.tma).filter(n=>n!==null && n!==undefined);
   const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
-  const incidentesPeriodo = periodo === 'mes'
-    ? incidentesCondo.filter(i => (i.data_hora||'').slice(0,7) === mesAtual)
-    : incidentesCondo;
 
-  // Séries mensais (histórico completo) pra alimentar os mini-gráficos dos cards.
-  const porMesSpark = {};
-  fluxoCondo.forEach(f=>{
-    const chave = String(f.mes_referencia||'').slice(0,7);
-    if (!porMesSpark[chave]) porMesSpark[chave] = { atendimentos:0, eventos:0, tmas:[] };
-    porMesSpark[chave].atendimentos += (f.atendimentos||0);
-    porMesSpark[chave].eventos += (f.porta_aberta||0) + (f.porta_violada||0);
-    if (f.tma !== null && f.tma !== undefined) porMesSpark[chave].tmas.push(f.tma);
-  });
-  const mesesSpark = Object.keys(porMesSpark).sort((a,b)=>a.localeCompare(b));
-  const mensalLigacoes = mesesSpark.map(m=>porMesSpark[m].atendimentos);
-  const mensalEventos = mesesSpark.map(m=>porMesSpark[m].eventos);
-  const mensalTma = mesesSpark.map(m=>{
-    const t = porMesSpark[m].tmas;
-    return t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null;
-  });
-
-  document.getElementById('vidaAtendimentoStats').innerHTML = `
-    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalLigacoes.toLocaleString('pt-BR')}</div><div class="slbl">Total de ligações</div>${sparklineSVG(mensalLigacoes, 'var(--accent)')}</div>
-    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${(totalPortaAberta+totalPortaViolada).toLocaleString('pt-BR')}</div><div class="slbl">Eventos (${totalPortaAberta} aberta · ${totalPortaViolada} violada)</div>${sparklineSVG(mensalEventos, 'var(--atencao)')}</div>
-    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 300s)</div>${sparklineSVG(mensalTma, corTMA(tmaMedio))}</div>
-    <div class="stat-box"><div class="snum" style="color:var(--critico);">${incidentesPeriodo.length}</div><div class="slbl">Incidentes</div></div>
-  `;
-
-  // Tabela mensal — histórico completo, independente do período escolhido acima.
+  // Série mensal (dentro do período escolhido) pra alimentar tabela + mini-gráficos —
+  // as duas coisas agora usam exatamente a mesma base.
   const porMes = {};
   fluxoCondo.forEach(f=>{
     const chave = String(f.mes_referencia||'').slice(0,7);
@@ -12869,9 +12990,36 @@ function renderVidaAtendimentoBloco(nomeAlvoNorm, periodo){
     porMes[chave].incidentes += 1;
   });
   const mesesOrdenados = Object.keys(porMes).sort((a,b)=>a.localeCompare(b));
+  const mesesLabel = mesesOrdenados.map(m=>mesLabelBR(m));
+  const mensalLigacoes = mesesOrdenados.map(m=>porMes[m].atendimentos);
+  const mensalEventos = mesesOrdenados.map(m=>porMes[m].portaAberta + porMes[m].portaViolada);
+  const mensalTma = mesesOrdenados.map(m=>{
+    const t = porMes[m].tmas;
+    return t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null;
+  });
+  const mensalIncidentes = mesesOrdenados.map(m=>porMes[m].incidentes);
+
+  // "Fora da meta/abaixo do esperado" no último mês da série -> barra em vermelho.
+  const ultimaLigacao = mensalLigacoes[mensalLigacoes.length-1];
+  const ligacoesRuim = ultimaLigacao === 0 && mensalLigacoes.length > 1;
+  const ultimoEvento = mensalEventos[mensalEventos.length-1];
+  const mediaEventosAnteriores = mensalEventos.length > 1 ? mensalEventos.slice(0,-1).reduce((a,b)=>a+b,0)/(mensalEventos.length-1) : 0;
+  const eventosRuim = ultimoEvento > mediaEventosAnteriores && ultimoEvento > 0;
+  const tmaRuim = tmaMedio !== null && tmaMedio > 300;
+  const ultimoIncidente = mensalIncidentes[mensalIncidentes.length-1];
+  const incidentesRuim = ultimoIncidente > 0;
+
+  document.getElementById('vidaAtendimentoStats').innerHTML = `
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalLigacoes.toLocaleString('pt-BR')}</div><div class="slbl">Total de ligações</div>${barChartMini(mesesLabel, mensalLigacoes, {corNeutra:'var(--accent)', destacarUltimoRuim:ligacoesRuim, onClickTipo:'ligacoes'})}</div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${(totalPortaAberta+totalPortaViolada).toLocaleString('pt-BR')}</div><div class="slbl">Eventos (${totalPortaAberta} aberta · ${totalPortaViolada} violada)</div>${barChartMini(mesesLabel, mensalEventos, {corNeutra:'var(--atencao)', destacarUltimoRuim:eventosRuim, onClickTipo:'eventos'})}</div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 300s)</div>${barChartMini(mesesLabel, mensalTma, {corNeutra:'var(--text-faint)', destacarUltimoRuim:tmaRuim, onClickTipo:'tma', sufixo:'s'})}</div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${incidentesCondo.length}</div><div class="slbl">Incidentes</div>${barChartMini(mesesLabel, mensalIncidentes, {corNeutra:'var(--text-faint)', destacarUltimoRuim:incidentesRuim, onClickTipo:'incidentes'})}</div>
+  `;
+  vidaConectarCliqueMiniGraficos(document.getElementById('vidaAtendimentoStats'));
+
   const tbody = document.getElementById('vidaAtendimentoTableBody');
   if (!mesesOrdenados.length){
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Sem dados de atendimento registrados ainda.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Sem dados de atendimento registrados nesse período.</td></tr>';
   } else {
     tbody.innerHTML = mesesOrdenados.map(chave=>{
       const m = porMes[chave];
@@ -12984,18 +13132,48 @@ document.getElementById('vidaTimelineCriticoBtn').addEventListener('click', func
   document.getElementById(id).addEventListener('input', renderVidaTimeline);
   document.getElementById(id).addEventListener('change', renderVidaTimeline);
 });
+document.getElementById('btnLimparFiltrosTimeline').addEventListener('click', ()=>{
+  document.getElementById('vidaTimelineBusca').value = '';
+  document.getElementById('vidaTimelineStatus').value = '';
+  document.getElementById('vidaTimelinePeriodo').value = '';
+  document.getElementById('vidaTimelineCriticoBtn').classList.remove('active');
+  vidaTimelineCategoriaAtiva = 'todos';
+  document.querySelectorAll('[data-timeline-cat]').forEach(b=>b.classList.toggle('active', b.getAttribute('data-timeline-cat')==='todos'));
+  renderVidaTimeline();
+});
+
+function vidaAtivarBotaoPeriodo(ativo){
+  document.getElementById('vidaPeriodoMesBtn').classList.toggle('active', ativo==='mes');
+  document.getElementById('vidaPeriodoTodosBtn').classList.toggle('active', ativo==='todos');
+  document.getElementById('vidaPeriodoPersonalizadoBtn').classList.toggle('active', ativo==='custom');
+  document.getElementById('vidaPeriodoCustomWrap').style.display = ativo==='custom' ? 'inline-flex' : 'none';
+}
 
 document.getElementById('vidaPeriodoMesBtn').addEventListener('click', ()=>{
   vidaPeriodoAtendimento = 'mes';
-  document.getElementById('vidaPeriodoMesBtn').classList.add('active');
-  document.getElementById('vidaPeriodoTodosBtn').classList.remove('active');
+  vidaAtivarBotaoPeriodo('mes');
   if (vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, vidaPeriodoAtendimento);
 });
 document.getElementById('vidaPeriodoTodosBtn').addEventListener('click', ()=>{
   vidaPeriodoAtendimento = 'todos';
-  document.getElementById('vidaPeriodoTodosBtn').classList.add('active');
-  document.getElementById('vidaPeriodoMesBtn').classList.remove('active');
+  vidaAtivarBotaoPeriodo('todos');
   if (vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, vidaPeriodoAtendimento);
+});
+document.getElementById('vidaPeriodoPersonalizadoBtn').addEventListener('click', ()=>{
+  vidaPeriodoAtendimento = 'custom';
+  vidaAtivarBotaoPeriodo('custom');
+  if (!document.getElementById('vidaPeriodoInicio').value || !document.getElementById('vidaPeriodoFim').value){
+    return; // espera o usuário escolher as duas datas antes de renderizar
+  }
+  if (vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, vidaPeriodoAtendimento);
+});
+['vidaPeriodoInicio','vidaPeriodoFim'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{
+    if (vidaPeriodoAtendimento !== 'custom') return;
+    const ini = document.getElementById('vidaPeriodoInicio').value;
+    const fim = document.getElementById('vidaPeriodoFim').value;
+    if (ini && fim && vidaCondoAtual.normNome) renderVidaAtendimentoBloco(vidaCondoAtual.normNome, 'custom');
+  });
 });
 
 async function vidaMarcarIncidenteResolvido(id){
@@ -13156,18 +13334,19 @@ function abrirVidaCondominio(nomeCondo){
   document.getElementById('vidaCondoSubtitulo').textContent = `${filial} · Cliente desde ${clienteDesde} · Renovação em ${renovacaoContrato}`;
 
   // 2) CARDS DE RESUMO
-  const sparkNotas = sparklineSVG(notasCron.map(n=>n.nota), corPorNota(notaMediaGeral));
+  const notaRuimUltima = notasCron.length && notasCron[notasCron.length-1].nota < 6;
+  const sparkNotas = barChartMini(notasCron.map(n=>n.mes), notasCron.map(n=>n.nota), { corNeutra:corPorNota(notaMediaGeral), destacarUltimoRuim: notaRuimUltima, onClickTipo:'nota' });
   document.getElementById('vidaCondoStats').innerHTML = `
     <div class="stat-box"><div class="snum" style="color:${corPorNota(notaMediaGeral)};">${notaMediaGeral !== null ? notaMediaGeral.toFixed(1) : '—'} ${tendenciaHtml}</div><div class="slbl">Nota média geral</div>${sparkNotas}</div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${visitasCondo.length} <span style="font-size:12px; color:var(--text-faint);">(${visitasAbertas} aberta(s))</span></div><div class="slbl">Visitas emergenciais</div></div>
     <div class="stat-box"><div class="snum" style="color:${corRisco};">${risco.nivel}</div><div class="slbl">Nível de risco ${riscoComparativo ? '· ' + riscoComparativo : ''}</div></div>
     <div class="stat-box"><div class="snum" style="font-size:14px;">${escapeHtml(responsavel)}</div><div class="slbl">Responsável · Último contato: ${tempoUltimoContato}</div></div>
   `;
+  vidaConectarCliqueMiniGraficos(document.getElementById('vidaCondoStats'));
 
   // 3) BLOCO ATENDIMENTO
   vidaPeriodoAtendimento = 'mes';
-  document.getElementById('vidaPeriodoMesBtn').classList.add('active');
-  document.getElementById('vidaPeriodoTodosBtn').classList.remove('active');
+  vidaAtivarBotaoPeriodo('mes');
   renderVidaAtendimentoBloco(nomeAlvoNorm, vidaPeriodoAtendimento);
 
   // 4) SAÚDE POR DIMENSÃO
