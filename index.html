@@ -1347,6 +1347,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
 
     <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+      <button type="button" class="logout-btn" id="pqDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto; display:none;">🗑️ Excluir Pesquisa</button>
       <button type="button" class="logout-btn" id="pqCancelBtn">Cancelar</button>
       <button type="button" class="login-btn" id="pqSaveBtn" style="width:auto; margin-top:0; padding:10px 22px;">💾 Salvar Pesquisa</button>
     </div>
@@ -9024,6 +9025,7 @@ function openPesquisaModal(item){
   pqNotaSelecionada = item ? String(item.nota || '') : null;
   document.getElementById('pqModalTitle').textContent = item ? '✏️ Editar Pesquisa de Satisfação' : '⭐ Nova Pesquisa de Satisfação';
   document.getElementById('pqError').style.display = 'none';
+  document.getElementById('pqDeleteBtn').style.display = item ? '' : 'none';
 
   pqPopulateDropdowns();
   pqBuildNotaRow();
@@ -9302,6 +9304,31 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
 
   if (typeof autoCriarVisitaEmergencial === 'function') autoCriarVisitaEmergencial(itemSalvo);
 
+});
+
+document.getElementById('pqDeleteBtn').addEventListener('click', async ()=>{
+  if (!pqEditingItem) return;
+  const item = pqEditingItem;
+  if (!confirm(`Excluir definitivamente a pesquisa "${item.nome}"? Isso remove o registro de vez (inclusive de módulos que usam essa lista, como Adoção Digital).`)) return;
+  const errEl = document.getElementById('pqError');
+  errEl.style.display = 'none';
+  try{
+    if (sb){
+      const { error } = await sb.from('condo_extra').delete().eq('item_n', item.n);
+      if (error) throw error;
+    }
+    const idx = DATA.findIndex(d => d.n === item.n);
+    if (idx !== -1) DATA.splice(idx, 1);
+    if (OVERRIDES && OVERRIDES[item.n]) delete OVERRIDES[item.n];
+    persistOverrides(OVERRIDES);
+    document.getElementById('pesquisaModalOverlay').style.display = 'none';
+    populateFilterOptions();
+    render();
+    alert('Pesquisa excluída.');
+  }catch(e){
+    errEl.textContent = 'Erro ao excluir: ' + e.message;
+    errEl.style.display = 'block';
+  }
 });
 
 // ============================================================================
@@ -11922,14 +11949,19 @@ function corSaude(status){
 
 async function seedAdocaoDigitalSeVazio(){
   if (!sb) return;
+  if (localStorage.getItem('seedAdocaoDigitalPendentesAplicado_v1') === '1') return;
   try{
     const condosAtivos = [...new Map(DATA.map(d=>[d.nome.toLowerCase(), d])).values()];
     const jaExistentes = new Set(adData.map(a=>(a.condominio||'').toLowerCase()));
     const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.toLowerCase()));
-    if (!faltando.length) return;
-    const mes = hojeISO().slice(0,7);
-    const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes, possui_ia: 'Não', ia_ativa: 'Não', possui_armario: 'Não', possui_gphone: 'Não' }));
-    await sb.from('adocao_digital').insert(rows);
+    if (faltando.length){
+      const mes = hojeISO().slice(0,7);
+      const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes, possui_ia: 'Não', ia_ativa: 'Não', possui_armario: 'Não', possui_gphone: 'Não' }));
+      await sb.from('adocao_digital').insert(rows);
+    }
+    // Marca como aplicado — assim, se você excluir um registro depois, ele fica excluído
+    // de verdade e não volta sozinho na próxima vez que a aba carregar.
+    localStorage.setItem('seedAdocaoDigitalPendentesAplicado_v1', '1');
   }catch(e){ console.error('Falha ao trazer condomínios pra Adoção Digital:', e); }
 }
 
@@ -11943,11 +11975,6 @@ async function loadAdocaoDigital(){
     let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
     if (error) throw error;
     adData = data || [];
-    await seedAdocaoDigitalSeVazio();
-    {
-      const r2 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
-      if (!r2.error) adData = r2.data || [];
-    }
     const houveMerge = await mesclarDuplicatasAdocao();
     if (houveMerge){
       const r3 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
