@@ -1580,6 +1580,11 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <div id="pqMiniDashMotivos"></div>
       </div>
     </div>
+    <div class="chart-panel" style="margin-top:16px;">
+      <p class="chart-title">📈 Comparativo mensal por filial (nota média)</p>
+      <div id="pqCompFilialMensal"></div>
+    </div>
+    <div id="pqCompNarrativa" style="margin-top:16px;"></div>
   </div>
 
   <div class="toolbar" id="actionBar">
@@ -1625,6 +1630,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <thead>
             <tr>
               <th class="ck-name">Condomínio</th>
+              <th style="text-align:center;">Mês</th>
               <th style="text-align:center;">Nota</th>
               <th>Resultado</th>
             </tr>
@@ -2285,6 +2291,10 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <p class="chart-title">Atendimentos por filial (mês mais recente)</p>
           <div id="faMiniDashAtendFilial"></div>
         </div>
+      </div>
+      <div class="chart-panel" style="margin-top:16px;">
+        <p class="chart-title">📈 Comparativo mensal por filial (TMA médio)</p>
+        <div id="faCompFilialMensal"></div>
       </div>
     </div>
   </div>
@@ -9242,14 +9252,17 @@ async function loadHistorico(){
   }
 }
 
+const HIST_PESQUISA_ANO = '2026'; // ano das pastas agrupadas — ajuste quando entrar dado de outro ano
+
 function historicoPastas(){
   const map = {};
   historicoData.forEach(r=>{
-    const key = r.mes + '|' + r.filial;
-    if (!map[key]) map[key] = { mes:r.mes, filial:r.filial, itens:[] };
+    const key = r.filial || 'Sem filial';
+    if (!map[key]) map[key] = { filial: r.filial, itens:[], meses: new Set() };
     map[key].itens.push(r);
+    map[key].meses.add(r.mes);
   });
-  return Object.values(map).sort((a,b)=> (a.mes+a.filial).localeCompare(b.mes+b.filial, 'pt-BR'));
+  return Object.values(map).sort((a,b)=> (a.filial||'').localeCompare(b.filial||'', 'pt-BR'));
 }
 
 function renderHistoricoFolders(){
@@ -9264,11 +9277,12 @@ function renderHistoricoFolders(){
     const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
     const concluidos = p.itens.filter(r=>r.resultado === 'Concluído').length;
     const cancelados = p.itens.filter(r=>r.resultado === 'Cancelou').length;
+    const mesesOrdenados = [...p.meses].sort((a,b)=> MES_ORDEM_PT.indexOf(a) - MES_ORDEM_PT.indexOf(b));
     return `
-      <div class="historico-folder-card" data-mes="${escapeHtml(p.mes)}" data-filial="${escapeHtml(p.filial)}">
+      <div class="historico-folder-card" data-filial="${escapeHtml(p.filial||'')}">
         <div class="historico-folder-icon">🗂</div>
-        <div class="historico-folder-title">${escapeHtml(p.mes)} · ${escapeHtml(p.filial)}</div>
-        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · nota média ${media}</div>
+        <div class="historico-folder-title">${escapeHtml(p.filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</div>
+        <div class="historico-folder-meta">${p.itens.length} condomínio(s) · ${mesesOrdenados.join(', ')} · nota média ${media}</div>
         <div class="historico-folder-stats">
           <span style="color:var(--ok);">✓ ${concluidos}</span>
           <span style="color:var(--critico);">✗ ${cancelados}</span>
@@ -9277,23 +9291,25 @@ function renderHistoricoFolders(){
   }).join('') + '</div>';
 
   el.querySelectorAll('.historico-folder-card').forEach(card=>{
-    card.onclick = ()=> abrirHistoricoDetail(card.getAttribute('data-mes'), card.getAttribute('data-filial'));
+    card.onclick = ()=> abrirHistoricoDetail(card.getAttribute('data-filial'));
   });
 }
 
-function abrirHistoricoDetail(mes, filial){
-  const itens = historicoData.filter(r => r.mes === mes && r.filial === filial);
+function abrirHistoricoDetail(filial){
+  const itens = historicoData.filter(r => (r.filial||'') === (filial||''))
+    .sort((a,b)=> MES_ORDEM_PT.indexOf(a.mes) - MES_ORDEM_PT.indexOf(b.mes) || (a.condominio||'').localeCompare(b.condominio||'', 'pt-BR'));
   document.getElementById('historicoFolders').style.display = 'none';
   document.getElementById('historicoDetail').style.display = 'block';
   const notas = itens.map(r=>parseFloat(String(r.nota).replace(',','.'))).filter(n=>!isNaN(n));
   const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
   document.getElementById('historicoDetailHeader').innerHTML = `
-    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(mes)} · ${escapeHtml(filial)}</h3>
+    <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(filial||'Sem filial')} · ${HIST_PESQUISA_ANO}</h3>
     <p style="margin:0; font-size:12px; color:var(--text-faint);">${itens.length} condomínio(s) · nota média ${media}</p>
   `;
   document.getElementById('historicoTableBody').innerHTML = itens.map(r=>`
     <tr>
       <td class="ck-name">${escapeHtml(r.condominio)}</td>
+      <td style="text-align:center;">${escapeHtml(r.mes)}</td>
       <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${r.nota ? escapeHtml(r.nota) : '—'}</td>
       <td>${r.resultado === 'Concluído' ? '<span class="rbadge yes">Concluído</span>' : r.resultado === 'Cancelou' ? '<span class="rbadge no">Cancelou</span>' : '—'}</td>
     </tr>
@@ -10813,6 +10829,89 @@ function renderPesquisaMiniDash(){
       <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:var(--accent);"></div></div>
     </div>`;
   }).join('') : '<p style="color:var(--text-faint); font-size:12px;">Sem reclamações registradas.</p>';
+
+  renderPesquisaComparativoFilial();
+}
+
+function corNota(n){
+  if (n === null || n === undefined) return 'var(--text-faint)';
+  if (n >= 8) return 'var(--ok)';
+  if (n >= 6) return 'var(--atencao)';
+  return 'var(--critico)';
+}
+
+function renderPesquisaComparativoFilial(){
+  const tabelaEl = document.getElementById('pqCompFilialMensal');
+  const narrEl = document.getElementById('pqCompNarrativa');
+  const meses = getUltimosMeses(6);
+  const filiais = [...new Set(DATA.map(d=>d.filial))].filter(Boolean).sort();
+
+  if (!meses.length || !filiais.length){
+    tabelaEl.innerHTML = '<p class="empty">Sem dados suficientes ainda.</p>';
+    narrEl.innerHTML = '';
+    return;
+  }
+
+  const linhas = filiais.map(f => ({
+    filial: f,
+    valores: meses.map(m => mediaNotaDoMes(m, itensDoMes(m, f)))
+  }));
+
+  tabelaEl.innerHTML = `
+    <div class="checklist-table-wrap">
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th class="ck-name">Filial</th>
+            ${meses.map(m=>`<th style="text-align:center;">${escapeHtml(mesLabelBR(m))}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${linhas.map(l=>`
+            <tr>
+              <td class="ck-name">${escapeHtml(l.filial)}</td>
+              ${l.valores.map(v=>`<td style="text-align:center; color:${corNota(v)}; font-family:'IBM Plex Mono',monospace;">${v!==null?v.toFixed(1):'—'}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // ---- 🧠 Comparativo inteligente automático ----
+  if (meses.length < 2){
+    narrEl.innerHTML = `<div class="chart-panel"><p class="chart-title">🧠 Comparativo Inteligente</p><p>Só há dado de <b>${escapeHtml(mesLabelBR(meses[0]))}</b> até agora — assim que outro mês entrar, o comparativo aparece aqui automaticamente.</p></div>`;
+    return;
+  }
+  const primeiro = meses[0], ultimo = meses[meses.length-1];
+  const comparaveis = linhas.map(l=>{
+    const ini = l.valores[0], fim = l.valores[l.valores.length-1];
+    const delta = (ini!==null && fim!==null) ? fim-ini : null;
+    return { filial: l.filial, ini, fim, delta };
+  }).filter(x=>x.delta!==null);
+
+  let frases = [];
+  if (comparaveis.length){
+    const melhorEvolucao = [...comparaveis].sort((a,b)=>b.delta-a.delta)[0];
+    const piorEvolucao = [...comparaveis].sort((a,b)=>a.delta-b.delta)[0];
+    frases.push(`Entre <b>${escapeHtml(mesLabelBR(primeiro))}</b> e <b>${escapeHtml(mesLabelBR(ultimo))}</b>, <b>${escapeHtml(melhorEvolucao.filial)}</b> teve a melhor evolução de nota (${melhorEvolucao.ini.toFixed(1)} → ${melhorEvolucao.fim.toFixed(1)}${melhorEvolucao.delta>=0?', alta de '+melhorEvolucao.delta.toFixed(1):''}).`);
+    if (piorEvolucao.filial !== melhorEvolucao.filial && piorEvolucao.delta < 0){
+      frases.push(`<b>${escapeHtml(piorEvolucao.filial)}</b> teve a maior queda no período (${piorEvolucao.ini.toFixed(1)} → ${piorEvolucao.fim.toFixed(1)}).`);
+    }
+  }
+  const doUltimoMes = linhas.map(l=>({ filial:l.filial, nota:l.valores[l.valores.length-1] })).filter(x=>x.nota!==null);
+  if (doUltimoMes.length){
+    const melhorAtual = [...doUltimoMes].sort((a,b)=>b.nota-a.nota)[0];
+    const piorAtual = [...doUltimoMes].sort((a,b)=>a.nota-b.nota)[0];
+    frases.push(`Em ${escapeHtml(mesLabelBR(ultimo))}, <b>${escapeHtml(melhorAtual.filial)}</b> tem a maior nota média (${melhorAtual.nota.toFixed(1)}) e <b>${escapeHtml(piorAtual.filial)}</b> a menor (${piorAtual.nota.toFixed(1)}).`);
+  }
+
+  narrEl.innerHTML = `
+    <div class="chart-panel">
+      <p class="chart-title">🧠 Comparativo Inteligente</p>
+      <p>${frases.length ? frases.join(' ') : 'Ainda não há dado suficiente em pelo menos 2 meses para todas as filiais compararem evolução.'}</p>
+    </div>
+  `;
 }
 
 // ============================================================================
@@ -10907,7 +11006,7 @@ async function loadFluxoAtendimento(){
     return;
   }
   try{
-    let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false });
+    let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).limit(5000);
     if (error) throw error;
     faData = data || [];
     faLoaded = true;
@@ -10936,16 +11035,16 @@ function getFilteredFluxoAtendimento(){
   return faData.filter(f=>{
     if (q && !(f.condominio||'').toLowerCase().includes(q)) return false;
     if (fFilial && f.filial !== fFilial) return false;
-    if (fMes && f.mes_referencia !== fMes) return false;
+    if (fMes && String(f.mes_referencia||'').slice(0,7) !== fMes) return false;
     if (fStatus && faStatus(f) !== fStatus) return false;
     return true;
   });
 }
 
 function renderFluxoAtendimento(){
-  const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && faData[0].mes_referencia) || '';
+  const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && String(faData[0].mes_referencia).slice(0,7)) || '';
   const totalCondos = [...new Set(DATA.map(d=>d.nome))].length;
-  const doMes = faData.filter(f=>f.mes_referencia === mesAtual);
+  const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual);
   const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
   const pendentes = Math.max(0, totalCondos - preenchidos);
   const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 300).length;
@@ -11025,17 +11124,21 @@ async function criarNovaRodadaFluxo(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
   if (!confirm(`Criar registros pendentes de Fluxo de Atendimento para todos os condomínios ativos no mês ${mesLabelBR(mes)}?`)) return;
-  const condosAtivos = [...new Map(DATA.map(d=>[d.nome.toLowerCase(), d])).values()];
-  const jaExistentes = new Set(faData.filter(f=>f.mes_referencia===mes).map(f=>(f.condominio||'').toLowerCase()));
-  const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.toLowerCase()));
+  const condosAtivos = [...new Map(DATA.map(d=>[d.nome.trim().toLowerCase(), d])).values()];
+  const jaExistentes = new Set(faData.filter(f=>String(f.mes_referencia||'').slice(0,7)===mes).map(f=>(f.condominio||'').trim().toLowerCase()));
+  const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.trim().toLowerCase()));
   if (!faltando.length){ alert('Todos os condomínios já têm registro nesse mês.'); return; }
   const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes }));
   try{
-    const { error } = await sb.from('fluxo_atendimento').insert(rows);
+    // upsert com ignoreDuplicates: mesmo que o faData local esteja desatualizado (cache
+    // antigo, aba aberta há tempo etc.), isso nunca trava com erro de chave duplicada —
+    // simplesmente pula quem já existe no banco.
+    const { error } = await sb.from('fluxo_atendimento')
+      .upsert(rows, { onConflict: 'condominio,mes_referencia', ignoreDuplicates: true });
     if (error) throw error;
     document.getElementById('faFilterMes').value = mes;
     await loadFluxoAtendimento();
-    alert(`${rows.length} condomínio(s) adicionado(s) como pendente(s) para ${mesLabelBR(mes)}.`);
+    alert(`Rodada de ${mesLabelBR(mes)} conferida — condomínios pendentes foram adicionados (os que já tinham registro foram ignorados automaticamente).`);
   }catch(e){ alert('Erro ao criar rodada: ' + e.message); }
 }
 document.getElementById('btnNovaRodadaFluxo').addEventListener('click', criarNovaRodadaFluxo);
@@ -11136,7 +11239,7 @@ async function seedHistoricoFluxoSeVazio(){
   if (!sb) return;
   if (localStorage.getItem('seedHistoricoFluxoAplicado_v1') === '1') return;
   try{
-    const { data, error } = await sb.from('historico_fluxo').select('mes,filial,condominio');
+    const { data, error } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
     if (error) throw error;
     const existentes = new Set((data||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
     const candidatos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
@@ -11161,9 +11264,9 @@ async function importarPlanilhaFluxo(){
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Importando...';
   try{
-    const { data: existentesData, error: errSel } = await sb.from('fluxo_atendimento').select('id,condominio,mes_referencia');
+    const { data: existentesData, error: errSel } = await sb.from('fluxo_atendimento').select('id,condominio,mes_referencia').limit(5000);
     if (errSel) throw errSel;
-    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${r.mes_referencia}`, r.id]));
+    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
 
     const paraInserir = [];
     const paraAtualizar = [];
@@ -11178,7 +11281,8 @@ async function importarPlanilhaFluxo(){
     });
 
     if (paraInserir.length){
-      const { error } = await sb.from('fluxo_atendimento').insert(paraInserir);
+      const { error } = await sb.from('fluxo_atendimento')
+        .upsert(paraInserir, { onConflict: 'condominio,mes_referencia', ignoreDuplicates: true });
       if (error) throw error;
     }
     if (paraAtualizar.length){
@@ -11187,7 +11291,7 @@ async function importarPlanilhaFluxo(){
     }
 
     // Arquiva a mesma leva no Histórico (não duplica se a pasta já existir)
-    const { data: histExistData, error: errHist } = await sb.from('historico_fluxo').select('mes,filial,condominio');
+    const { data: histExistData, error: errHist } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
     if (errHist) throw errHist;
     const histExist = new Set((histExistData||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
     const histNovos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
@@ -11226,7 +11330,7 @@ async function loadFaHistorico(){
   }
   el.innerHTML = '<p class="empty">Carregando histórico...</p>';
   try{
-    const { data, error } = await sb.from('historico_fluxo').select('*').order('mes', { ascending:true });
+    const { data, error } = await sb.from('historico_fluxo').select('*').order('mes', { ascending:true }).limit(5000);
     if (error) throw error;
     faHistData = data || [];
     faHistLoaded = true;
@@ -11479,6 +11583,37 @@ function renderFaMiniDash(){
     ? atendPorFilial.map(x=>barraHorizontal(x.filial, x.valor, maxAtFilial, 'var(--accent)')).join('')
     : '<p class="empty" style="font-size:12px;">Sem atendimentos no mês mais recente.</p>';
 
+  // ---- Comparativo mensal por filial (tabela filial x mês) ----
+  const todasFiliais = [...new Set(unificado.map(r=>r.filial || 'Sem filial'))].sort();
+  const compFilialEl = document.getElementById('faCompFilialMensal');
+  const linhasComp = todasFiliais.map(f=>{
+    const valores = mesesPresentes.map(m=>{
+      const t = unificado.filter(r=>(r.filial||'Sem filial')===f && r.mes===m && r.tma!==null && r.tma!==undefined).map(r=>r.tma);
+      return t.length ? Math.round(t.reduce((a,b)=>a+b,0)/t.length) : null;
+    });
+    return { filial:f, valores };
+  });
+  compFilialEl.innerHTML = `
+    <div class="checklist-table-wrap">
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th class="ck-name">Filial</th>
+            ${mesesPresentes.map(m=>`<th style="text-align:center;">${m}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${linhasComp.map(l=>`
+            <tr>
+              <td class="ck-name">${escapeHtml(l.filial)}</td>
+              ${l.valores.map(v=>`<td style="text-align:center; color:${corTMA(v)}; font-family:'IBM Plex Mono',monospace;">${v!==null?v+'s':'—'}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
   // ---- 🧠 Comparativo inteligente automático ----
   const narrEl = document.getElementById('faMiniDashNarrativa');
   if (mesesPresentes.length < 2){
@@ -11653,17 +11788,17 @@ async function loadAdocaoDigital(){
     return;
   }
   try{
-    let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true });
+    let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
     if (error) throw error;
     adData = data || [];
     await seedAdocaoDigitalSeVazio();
     {
-      const r2 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true });
+      const r2 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
       if (!r2.error) adData = r2.data || [];
     }
     const houveMerge = await mesclarDuplicatasAdocao();
     if (houveMerge){
-      const r3 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true });
+      const r3 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
       if (!r3.error) adData = r3.data || [];
     }
     adLoaded = true;
@@ -12037,9 +12172,9 @@ async function importarPlanilhaAdocao(){
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Importando...';
   try{
-    const { data: existentesData, error: errSel } = await sb.from('adocao_digital').select('id,condominio,mes_referencia');
+    const { data: existentesData, error: errSel } = await sb.from('adocao_digital').select('id,condominio,mes_referencia').limit(5000);
     if (errSel) throw errSel;
-    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${r.mes_referencia}`, r.id]));
+    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
 
     const paraInserir = [];
     const paraAtualizar = [];
@@ -12423,7 +12558,7 @@ function coletarDadosRiscoCondominio(nomeAlvoNorm){
   const fluxoRecente = fluxoCondo[0] || null;
   const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 300);
   const mesAtualFluxo = hojeISO().slice(0,7);
-  const fluxoPendente = !fluxoCondo.some(f => f.mes_referencia === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
+  const fluxoPendente = !fluxoCondo.some(f => String(f.mes_referencia||'').slice(0,7) === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
   return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, reclamacoesSemResolucao, fluxoRecente, tmaForaDaMeta, fluxoPendente };
 }
 
