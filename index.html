@@ -2854,6 +2854,7 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="clearbtn" id="btnRelSemanalDemandas">📊 Semanal</button>
         <button type="button" class="clearbtn" id="btnImportarPlanilhaDemandas">📥 Importar Planilha</button>
         <button type="button" class="clearbtn" id="btnGerarRelatorioDemandas">🖨️ Gerar Relatório</button>
+        <button type="button" class="clearbtn" id="btnCriarLoteDemandas">📦 Criar em Lote</button>
         <button type="button" class="logout-btn" id="btnNovaDemanda" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova</button>
       </div>
     </header>
@@ -2914,15 +2915,20 @@ CONDOMINIO Y	480	45"></textarea>
         <div class="kanban-board" id="demKanbanBoard"></div>
       </div>
       <div id="demListaView" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span id="demSelecionadasContagem" style="font-size:11.5px; color:var(--text-faint);">0 selecionada(s)</span>
+          <button type="button" class="clearbtn" id="btnConcluirSelecionadasDemandas" style="color:var(--ok); border-color:var(--ok);">✅ Marcar Selecionadas como Concluída</button>
+        </div>
         <div class="checklist-table-wrap">
           <table class="checklist-table" id="demTable">
             <thead>
               <tr>
+                <th style="width:28px;"><input type="checkbox" id="demSelecionarTodosLista"></th>
                 <th class="ck-name">Condomínio</th><th>Descrição</th><th>Responsável</th><th>Status</th>
                 <th>Prioridade</th><th>Aberta em</th><th>SLA</th><th>Ações</th>
               </tr>
             </thead>
-            <tbody id="demBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+            <tbody id="demBody"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2946,6 +2952,75 @@ CONDOMINIO Y	480	45"></textarea>
       <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente — Demandas</p>
       <div id="demRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
       <div id="demRelatorioAcoes" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="demLoteModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3>📦 Criar Demandas em Lote</h3>
+        <button type="button" class="logout-btn" id="demLoteCloseBtn">✕</button>
+      </div>
+
+      <div class="subtab-nav" id="demLoteModoNav" style="margin-bottom:14px;">
+        <button type="button" class="subtab-btn active" data-lote-modo="condominio">Por Condomínio</button>
+        <button type="button" class="subtab-btn" data-lote-modo="filial">Por Filial</button>
+      </div>
+
+      <div id="demLoteModoCondominio">
+        <input type="text" class="search" id="demLoteBuscaCondo" placeholder="Buscar condomínio..." style="width:100%; box-sizing:border-box; margin-bottom:8px;">
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <button type="button" class="clearbtn" id="demLoteSelecionarTodos" style="font-size:11px; padding:5px 10px;">Selecionar todos (filtrados)</button>
+          <button type="button" class="clearbtn" id="demLoteLimparSelecao" style="font-size:11px; padding:5px 10px;">Limpar seleção</button>
+        </div>
+        <div id="demLoteListaCondos" style="max-height:220px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:4px;"></div>
+      </div>
+
+      <div id="demLoteModoFilial" style="display:none;">
+        <p style="font-size:12px; color:var(--text-faint); margin-bottom:8px;">Selecione a(s) filial(is) — uma demanda será criada pra cada condomínio dela(s).</p>
+        <div id="demLoteListaFiliais" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <p id="demLoteContagem" style="font-size:12.5px; color:var(--accent); font-weight:600; margin:10px 0;">0 condomínio(s) selecionado(s)</p>
+
+      <div style="border-top:1px solid var(--line); padding-top:12px; margin-top:6px;">
+        <div class="users-form">
+          <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Descrição (aplicada a todas)
+            <textarea id="demLoteDescricao" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; resize:vertical;"></textarea>
+          </label>
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tipo
+            <select id="demLoteTipo" style="width:100%; margin-top:4px;">
+              <option value="SAC" selected>SAC</option>
+              <option value="Adoção Digital">Adoção Digital</option>
+              <option value="Relacionamento">Relacionamento</option>
+              <option value="Pesquisa">Pesquisa</option>
+              <option value="Retenção">Retenção</option>
+              <option value="Técnica">Técnica</option>
+              <option value="Reunião">Reunião</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </label>
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Prioridade
+            <select id="demLotePrioridade" style="width:100%; margin-top:4px;">
+              <option value="Alta">Alta</option>
+              <option value="Média" selected>Média</option>
+              <option value="Baixa">Baixa</option>
+            </select>
+          </label>
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+            <select id="demLoteResponsavel" style="width:100%; margin-top:4px;"></select>
+          </label>
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600;">SLA (dias)
+            <input type="number" id="demLoteSlaDias" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="logout-btn" id="demLoteCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="demLoteSalvarBtn" style="width:auto; margin-top:0; padding:9px 20px;">💾 Criar Demandas</button>
+      </div>
+      <p class="users-error" id="demLoteError" style="display:none;"></p>
     </div>
   </div>
 
@@ -13744,6 +13819,7 @@ let demLoaded = false;
 let demVersion = 0;
 let demRiscoDiasLimite = 5; // dias em aberto + Alta prioridade = risco_contribuinte (ajustável aqui)
 let demKanbanLimitePorColuna = { 'Concluída': 30 }; // paginação simples pra colunas com muito volume
+let demSelecionadas = new Set(); // ids selecionados na Lista, pra marcar como concluída em massa
 
 let demAtendData = [];
 let demAtendLoaded = false;
@@ -14164,6 +14240,7 @@ function filaTableRowHTML(d){
   const corPrior = d.prioridade === 'Alta' ? 'var(--critico)' : d.prioridade === 'Média' ? 'var(--atencao)' : 'var(--ok)';
   const vencida = demSlaVencida(d);
   return `<tr>
+    <td><input type="checkbox" class="dem-row-checkbox" data-dem-checkbox="${d.id}" ${demSelecionadas.has(String(d.id)) ? 'checked' : ''}></td>
     <td class="ck-name">${escapeHtml(d.condominio)}</td>
     <td style="max-width:240px;">${escapeHtml((d.descricao||'').slice(0,80))}${(d.descricao||'').length>80?'…':''}</td>
     <td>${escapeHtml(d.responsavel||'—')}</td>
@@ -14218,10 +14295,21 @@ function renderDemandas(){
   });
 
   const tbody = document.getElementById('demBody');
-  tbody.innerHTML = filtradas.length ? filtradas.map(filaTableRowHTML).join('') : '<tr><td colspan="8" class="empty">Nenhuma demanda encontrada.</td></tr>';
+  // Descarta seleções de demandas que saíram do recorte filtrado atual
+  const idsVisiveis = new Set(filtradas.map(d=>String(d.id)));
+  demSelecionadas.forEach(id => { if (!idsVisiveis.has(id)) demSelecionadas.delete(id); });
+  tbody.innerHTML = filtradas.length ? filtradas.map(filaTableRowHTML).join('') : '<tr><td colspan="9" class="empty">Nenhuma demanda encontrada.</td></tr>';
   tbody.querySelectorAll('[data-edit-dem]').forEach(btn=>{
     btn.onclick = ()=> abrirDemandaModal(demData.find(d=>String(d.id)===btn.getAttribute('data-edit-dem')));
   });
+  tbody.querySelectorAll('[data-dem-checkbox]').forEach(cb=>{
+    cb.onchange = ()=>{
+      const id = cb.getAttribute('data-dem-checkbox');
+      if (cb.checked) demSelecionadas.add(id); else demSelecionadas.delete(id);
+      atualizarContagemSelecaoDemandas();
+    };
+  });
+  atualizarContagemSelecaoDemandas();
 
   document.getElementById('demRankBody').innerHTML = ranking.filter(r=>r.total>0).sort((a,b)=>b.total-a.total).map(rankRowHTML).join('') || '<tr><td colspan="7" class="empty">Sem demandas no recorte atual.</td></tr>';
 
@@ -14423,6 +14511,194 @@ document.getElementById('demDeleteBtn').addEventListener('click', async ()=>{
 // ---------------------------------------------------------------------------
 // Gerar Relatório (PDF via janela de impressão, mesmo padrão do resto do app)
 // ---------------------------------------------------------------------------
+function atualizarContagemSelecaoDemandas(){
+  document.getElementById('demSelecionadasContagem').textContent = `${demSelecionadas.size} selecionada(s)`;
+  const headerCb = document.getElementById('demSelecionarTodosLista');
+  const linhasVisiveis = document.querySelectorAll('[data-dem-checkbox]');
+  headerCb.checked = linhasVisiveis.length > 0 && demSelecionadas.size === linhasVisiveis.length;
+  headerCb.indeterminate = demSelecionadas.size > 0 && demSelecionadas.size < linhasVisiveis.length;
+}
+document.getElementById('demSelecionarTodosLista').addEventListener('change', function(){
+  const marcarTudo = this.checked;
+  document.querySelectorAll('[data-dem-checkbox]').forEach(cb=>{
+    cb.checked = marcarTudo;
+    const id = cb.getAttribute('data-dem-checkbox');
+    if (marcarTudo) demSelecionadas.add(id); else demSelecionadas.delete(id);
+  });
+  atualizarContagemSelecaoDemandas();
+});
+
+document.getElementById('btnConcluirSelecionadasDemandas').addEventListener('click', async ()=>{
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (!demSelecionadas.size){ alert('Selecione pelo menos uma demanda na lista (checkbox à esquerda).'); return; }
+  const ids = [...demSelecionadas];
+  const aResolver = demData.filter(d => ids.includes(String(d.id)) && d.status !== 'Concluída');
+  if (!aResolver.length){ alert('As demandas selecionadas já estão todas como Concluída.'); return; }
+  if (!confirm(`Marcar ${aResolver.length} demanda(s) selecionada(s) como Concluída?`)) return;
+  const btn = document.getElementById('btnConcluirSelecionadasDemandas');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Atualizando...';
+  try{
+    const agora = new Date().toISOString();
+    const { error } = await sb.from('demandas').update({ status:'Concluída', data_conclusao: agora, updated_at: agora }).in('id', aResolver.map(d=>d.id));
+    if (error) throw error;
+    demSelecionadas.clear();
+    await loadDemandas();
+    alert(`${aResolver.length} demanda(s) marcada(s) como Concluída.`);
+  }catch(e){
+    alert('Erro ao atualizar: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Criar Demandas em Lote — por condomínio selecionado ou por filial inteira
+// ---------------------------------------------------------------------------
+let demLoteModo = 'condominio';
+let demLoteCondosSelecionados = new Set();
+let demLoteFiliaisSelecionadas = new Set();
+
+function demLoteAtualizarContagem(){
+  const qtd = demLoteModo === 'condominio'
+    ? demLoteCondosSelecionados.size
+    : [...new Set(DATA.filter(d => demLoteFiliaisSelecionadas.has(d.filial)).map(d=>d.nome))].length;
+  document.getElementById('demLoteContagem').textContent = `${qtd} condomínio(s) selecionado(s)`;
+}
+
+function renderDemLoteListaCondos(){
+  const q = (document.getElementById('demLoteBuscaCondo').value || '').trim().toLowerCase();
+  const nomes = [...new Set(DATA.map(d=>d.nome))].sort().filter(n => !q || n.toLowerCase().includes(q));
+  document.getElementById('demLoteListaCondos').innerHTML = nomes.map(n => `
+    <label style="display:flex; align-items:center; gap:7px; font-size:12px; padding:2px 0; cursor:pointer;">
+      <input type="checkbox" class="dem-lote-condo-cb" value="${escapeHtml(n)}" ${demLoteCondosSelecionados.has(n)?'checked':''}>
+      ${escapeHtml(n)}
+    </label>`).join('') || '<p class="empty" style="font-size:11px;">Nenhum condomínio encontrado.</p>';
+  document.querySelectorAll('.dem-lote-condo-cb').forEach(cb=>{
+    cb.onchange = ()=>{
+      if (cb.checked) demLoteCondosSelecionados.add(cb.value); else demLoteCondosSelecionados.delete(cb.value);
+      demLoteAtualizarContagem();
+    };
+  });
+}
+
+function renderDemLoteListaFiliais(){
+  const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort();
+  document.getElementById('demLoteListaFiliais').innerHTML = filiais.map(f=>{
+    const qtdCondo = new Set(DATA.filter(d=>d.filial===f).map(d=>d.nome)).size;
+    return `<label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; cursor:pointer;">
+      <input type="checkbox" class="dem-lote-filial-cb" value="${escapeHtml(f)}" ${demLoteFiliaisSelecionadas.has(f)?'checked':''}>
+      <b>${escapeHtml(f)}</b> <span style="color:var(--text-faint); font-size:11px;">(${qtdCondo} condomínio(s))</span>
+    </label>`;
+  }).join('');
+  document.querySelectorAll('.dem-lote-filial-cb').forEach(cb=>{
+    cb.onchange = ()=>{
+      if (cb.checked) demLoteFiliaisSelecionadas.add(cb.value); else demLoteFiliaisSelecionadas.delete(cb.value);
+      demLoteAtualizarContagem();
+    };
+  });
+}
+
+function abrirDemLoteModal(){
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar demandas agora.'); return; }
+  document.getElementById('demLoteError').style.display = 'none';
+  demLoteModo = 'condominio';
+  demLoteCondosSelecionados = new Set();
+  demLoteFiliaisSelecionadas = new Set();
+  document.querySelectorAll('[data-lote-modo]').forEach(b=>b.classList.toggle('active', b.getAttribute('data-lote-modo')==='condominio'));
+  document.getElementById('demLoteModoCondominio').style.display = 'block';
+  document.getElementById('demLoteModoFilial').style.display = 'none';
+  document.getElementById('demLoteBuscaCondo').value = '';
+  document.getElementById('demLoteDescricao').value = '';
+  document.getElementById('demLoteTipo').value = 'SAC';
+  document.getElementById('demLotePrioridade').value = 'Média';
+  document.getElementById('demLoteSlaDias').value = '';
+  const selResp = document.getElementById('demLoteResponsavel');
+  selResp.innerHTML = DEM_RESPONSAVEIS.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  renderDemLoteListaCondos();
+  renderDemLoteListaFiliais();
+  demLoteAtualizarContagem();
+  document.getElementById('demLoteModalOverlay').style.display = 'flex';
+}
+document.getElementById('btnCriarLoteDemandas').addEventListener('click', abrirDemLoteModal);
+document.getElementById('demLoteCloseBtn').addEventListener('click', ()=>{ document.getElementById('demLoteModalOverlay').style.display = 'none'; });
+document.getElementById('demLoteCancelBtn').addEventListener('click', ()=>{ document.getElementById('demLoteModalOverlay').style.display = 'none'; });
+document.getElementById('demLoteBuscaCondo').addEventListener('input', renderDemLoteListaCondos);
+document.getElementById('demLoteSelecionarTodos').addEventListener('click', ()=>{
+  document.querySelectorAll('.dem-lote-condo-cb').forEach(cb=>{ cb.checked = true; demLoteCondosSelecionados.add(cb.value); });
+  demLoteAtualizarContagem();
+});
+document.getElementById('demLoteLimparSelecao').addEventListener('click', ()=>{
+  demLoteCondosSelecionados.clear();
+  demLoteFiliaisSelecionadas.clear();
+  renderDemLoteListaCondos();
+  renderDemLoteListaFiliais();
+  demLoteAtualizarContagem();
+});
+document.querySelectorAll('[data-lote-modo]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-lote-modo]').forEach(b=>b.classList.toggle('active', b===btn));
+    demLoteModo = btn.getAttribute('data-lote-modo');
+    document.getElementById('demLoteModoCondominio').style.display = demLoteModo === 'condominio' ? 'block' : 'none';
+    document.getElementById('demLoteModoFilial').style.display = demLoteModo === 'filial' ? 'block' : 'none';
+    demLoteAtualizarContagem();
+  });
+});
+
+document.getElementById('demLoteSalvarBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('demLoteError');
+  errEl.style.display = 'none';
+  const descricao = document.getElementById('demLoteDescricao').value.trim();
+  if (!descricao){ errEl.textContent = 'Informe a descrição da demanda.'; errEl.style.display = 'block'; return; }
+
+  let condosAlvo = [];
+  if (demLoteModo === 'condominio'){
+    condosAlvo = [...demLoteCondosSelecionados];
+  } else {
+    condosAlvo = [...new Set(DATA.filter(d => demLoteFiliaisSelecionadas.has(d.filial)).map(d=>d.nome))];
+  }
+  if (!condosAlvo.length){ errEl.textContent = 'Selecione pelo menos um condomínio (ou uma filial).'; errEl.style.display = 'block'; return; }
+  if (!confirm(`Criar ${condosAlvo.length} demanda(s), uma pra cada condomínio selecionado?`)) return;
+
+  const agora = new Date().toISOString();
+  const tipo = document.getElementById('demLoteTipo').value;
+  const prioridade = document.getElementById('demLotePrioridade').value;
+  const responsavel = document.getElementById('demLoteResponsavel').value;
+  const slaDiasVal = document.getElementById('demLoteSlaDias').value;
+  const slaDias = slaDiasVal !== '' && !isNaN(Number(slaDiasVal)) ? Number(slaDiasVal) : null;
+
+  const registros = condosAlvo.map(nomeCondo=>{
+    const match = DATA.find(d => d.nome === nomeCondo);
+    return {
+      condominio: nomeCondo,
+      filial: match ? match.filial : null,
+      tipo, prioridade, responsavel, descricao,
+      status: 'Aberta',
+      data_abertura: agora,
+      data_conclusao: null,
+      sla_dias: slaDias,
+      updated_at: agora,
+    };
+  });
+
+  const btn = document.getElementById('demLoteSalvarBtn');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Criando...';
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = textoOriginal; return; }
+  try{
+    const { error } = await sb.from('demandas').insert(registros);
+    if (error) throw error;
+    document.getElementById('demLoteModalOverlay').style.display = 'none';
+    await loadDemandas();
+    alert(`${registros.length} demanda(s) criada(s) com sucesso.`);
+  }catch(e){
+    errEl.textContent = 'Erro ao criar demandas: ' + e.message;
+    errEl.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+});
+
 function gerarRelatorioDemandas(){
   const { filtradas, metricas, ranking } = demGetMetricas();
   const emitido = new Date().toLocaleString('pt-BR');
