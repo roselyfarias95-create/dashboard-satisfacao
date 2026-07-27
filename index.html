@@ -1058,6 +1058,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="fluxoAtendimento" checked> Fluxo de Atendimento</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="adocaoDigital" checked> Adoção Digital</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="incidentes" checked> Incidentes</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="demandas" checked> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="vidaCondominio" checked> Vida do Condomínio</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
@@ -1094,6 +1095,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="fluxoAtendimento"> Fluxo de Atendimento</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="adocaoDigital"> Adoção Digital</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="incidentes"> Incidentes</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="demandas"> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="vidaCondominio"> Vida do Condomínio</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
@@ -1427,6 +1429,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="fluxoAtendimento"><span class="tab-icon">📞</span><span class="tab-label">Fluxo de Atendimento</span></button>
       <button type="button" class="tab-btn" data-tab="adocaoDigital"><span class="tab-icon">📲</span><span class="tab-label">Adoção Digital</span></button>
       <button type="button" class="tab-btn" data-tab="incidentes"><span class="tab-icon">🛑</span><span class="tab-label">Incidentes</span></button>
+      <button type="button" class="tab-btn" data-tab="demandas"><span class="tab-icon">🗂️</span><span class="tab-label">Demandas</span></button>
       <button type="button" class="tab-btn" data-tab="vidaCondominio"><span class="tab-icon">🕓</span><span class="tab-label">Vida do Condomínio</span></button>
     </nav>
 
@@ -2834,6 +2837,211 @@ CONDOMINIO Y	480	45"></textarea>
   </div>
 
   <!-- ==================== VIDA DO CONDOMÍNIO ==================== -->
+  <div id="tabDemandas" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+        <h2 style="margin:2px 0 0;">Demandas</h2>
+        <p id="demSubtitulo" style="margin:2px 0 0; font-size:12px; color:var(--text-faint);"></p>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+          <button type="button" id="demViewKanbanBtn" class="view-toggle-btn active">🗂️ Kanban</button>
+          <button type="button" id="demViewListaBtn" class="view-toggle-btn">📋 Lista</button>
+        </span>
+        <button type="button" class="clearbtn" id="btnEditarAtendimentos">🗓️ Editar Atendimentos</button>
+        <button type="button" class="clearbtn" id="btnRelDiarioDemandas">📄 Rel. Diário</button>
+        <button type="button" class="clearbtn" id="btnRelSemanalDemandas">📊 Semanal</button>
+        <button type="button" class="clearbtn" id="btnGerarRelatorioDemandas">🖨️ Gerar Relatório</button>
+        <button type="button" class="logout-btn" id="btnNovaDemanda" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova</button>
+      </div>
+    </header>
+
+    <div class="chart-panel" id="demVencidasCard" style="margin-bottom:14px; border:1px solid var(--critico); background:linear-gradient(135deg, rgba(239,68,68,0.08), var(--bg-panel));">
+      <p class="chart-title" style="color:var(--critico); margin-bottom:6px;">⚠ VENCIDAS</p>
+      <div style="font-size:34px; font-weight:800; color:var(--critico); line-height:1;" id="demVencidasNumero">0</div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:4px 0 0;">Demandas com SLA estourado no recorte atual</p>
+    </div>
+
+    <div class="stats-strip" id="demStats" style="margin-bottom:14px;"></div>
+
+    <div class="chart-panel" style="margin-bottom:14px;">
+      <p class="chart-title">📞 Atendimentos</p>
+      <div class="stats-strip" id="demAtendimentosStats"></div>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:10px;">
+      <input type="text" class="search" id="demSearch" placeholder="Buscar condomínio ou descrição...">
+      <select class="filter-select" id="demFilterFilial" multiple size="1"><option value="">Filial: todas</option></select>
+      <select class="filter-select" id="demFilterData">
+        <option value="">Data: tudo</option>
+        <option value="hoje">Hoje</option>
+        <option value="semana">Esta semana</option>
+        <option value="mes">Este mês</option>
+        <option value="mes_anterior">Mês anterior</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <span id="demDataCustomWrap" style="display:none; align-items:center; gap:6px;">
+        <input type="date" id="demDataInicio" class="search" style="max-width:150px; padding:6px 8px;">
+        <span style="font-size:11px; color:var(--text-faint);">até</span>
+        <input type="date" id="demDataFim" class="search" style="max-width:150px; padding:6px 8px;">
+      </span>
+      <select class="filter-select" id="demFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <select class="filter-select" id="demFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Aberta">Aberta</option>
+        <option value="Em andamento">Em andamento</option>
+        <option value="Aguardando">Aguardando</option>
+        <option value="Concluída">Concluída</option>
+      </select>
+      <select class="filter-select" id="demFilterPrioridade">
+        <option value="">Prioridade: todas</option>
+        <option value="Alta">Alta</option>
+        <option value="Média">Média</option>
+        <option value="Baixa">Baixa</option>
+      </select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosDemandas">Limpar filtros</button>
+    </div>
+
+    <div class="subtab-nav" id="demSubtabNav">
+      <button type="button" class="subtab-btn active" data-dem-subtab="demandas">🗂️ Demandas</button>
+      <button type="button" class="subtab-btn" data-dem-subtab="produtividade">🏆 Produtividade</button>
+    </div>
+
+    <div id="demViewDemandas">
+      <div id="demKanbanView">
+        <div class="kanban-board" id="demKanbanBoard"></div>
+      </div>
+      <div id="demListaView" style="display:none;">
+        <div class="checklist-table-wrap">
+          <table class="checklist-table" id="demTable">
+            <thead>
+              <tr>
+                <th class="ck-name">Condomínio</th><th>Descrição</th><th>Responsável</th><th>Status</th>
+                <th>Prioridade</th><th>Aberta em</th><th>SLA</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="demBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="demViewProdutividade" style="display:none;">
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="demRankTable">
+          <thead>
+            <tr>
+              <th class="ck-name">Responsável</th><th>Abertas</th><th>Em andamento</th><th>Concluídas</th>
+              <th>% Conclusão</th><th>SLA vencido</th><th>TMR (dias)</th>
+            </tr>
+          </thead>
+          <tbody id="demRankBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-top:16px; border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
+      <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente — Demandas</p>
+      <div id="demRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+      <div id="demRelatorioAcoes" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="demAtendModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:480px;">
+      <div class="users-head">
+        <h3>🗓️ Editar Atendimentos</h3>
+        <button type="button" class="logout-btn" id="demAtendModalCloseBtn">✕</button>
+      </div>
+      <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:14px;">Data
+        <input type="date" id="demAtendData" style="width:100%; margin-top:4px; box-sizing:border-box;">
+      </label>
+      <div class="users-form">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">📱 Blip — Atendimentos
+          <input type="number" id="demAtendBlipQtd" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">💬 WhatsApp — Atendimentos
+          <input type="number" id="demAtendWhatsappQtd" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">☎️ SAC Gear — Atendimentos
+          <input type="number" id="demAtendSacGearQtd" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🕐 TMA Blip (segundos)
+          <input type="number" id="demAtendTmaBlip" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🎯 Dentro da Meta (%)
+          <input type="number" id="demAtendPctMeta" min="0" max="100" step="0.1" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="logout-btn" id="demAtendCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="demAtendSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">💾 Salvar</button>
+      </div>
+      <p class="users-error" id="demAtendError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="demModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="demModalTitle">+ Nova Demanda</h3>
+        <button type="button" class="logout-btn" id="demModalCloseBtn">✕</button>
+      </div>
+      <div class="users-form">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="demCondominio" list="dem-condo-list" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <datalist id="dem-condo-list"></datalist>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
+          <input type="text" id="demFilial" readonly style="width:100%; margin-top:4px; box-sizing:border-box; opacity:.7;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+          <select id="demResponsavel" style="width:100%; margin-top:4px;"></select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Descrição
+          <textarea id="demDescricao" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; resize:vertical;"></textarea>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tipo de demanda
+          <select id="demTipo" style="width:100%; margin-top:4px;">
+            <option value="Técnica">Técnica</option>
+            <option value="Financeira">Financeira</option>
+            <option value="Atendimento">Atendimento</option>
+            <option value="Administrativa">Administrativa</option>
+            <option value="Outro" selected>Outro</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
+          <select id="demStatus" style="width:100%; margin-top:4px;">
+            <option value="Aberta">Aberta</option>
+            <option value="Em andamento">Em andamento</option>
+            <option value="Aguardando">Aguardando</option>
+            <option value="Concluída">Concluída</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Prioridade
+          <select id="demPrioridade" style="width:100%; margin-top:4px;">
+            <option value="Alta">Alta</option>
+            <option value="Média" selected>Média</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Aberta em
+          <input type="datetime-local" id="demDataAbertura" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">SLA (dias)
+          <input type="number" id="demSlaDias" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="logout-btn" id="demDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto; display:none;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="demCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="demSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">💾 Salvar</button>
+      </div>
+      <p class="users-error" id="demError" style="display:none;"></p>
+    </div>
+  </div>
+
   <div id="tabVidaCondominio" class="tab-panel" style="display:none;">
     <header>
       <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
@@ -3082,7 +3290,7 @@ const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','vidaCondominio'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -9066,6 +9274,7 @@ function initTabs(){
       document.getElementById('tabFluxoAtendimento').style.display = tab === 'fluxoAtendimento' ? 'block' : 'none';
       document.getElementById('tabAdocaoDigital').style.display = tab === 'adocaoDigital' ? 'block' : 'none';
       document.getElementById('tabIncidentes').style.display = tab === 'incidentes' ? 'block' : 'none';
+      document.getElementById('tabDemandas').style.display = tab === 'demandas' ? 'block' : 'none';
       document.getElementById('tabVidaCondominio').style.display = tab === 'vidaCondominio' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
@@ -9101,6 +9310,9 @@ function initTabs(){
       }
       if (tab === 'incidentes'){
         if (typeof loadIncidentes === 'function') loadIncidentes();
+      }
+      if (tab === 'demandas'){
+        if (typeof loadDemandas === 'function') loadDemandas();
       }
       if (tab === 'vidaCondominio'){
         if (typeof popularSeletorVidaCondominio === 'function') popularSeletorVidaCondominio();
@@ -13493,6 +13705,696 @@ document.getElementById('btnLimparFiltrosIncidentes').addEventListener('click', 
 });
 
 // ============================================================================
+// DEMANDAS
+// Fase 1 (cálculo puro) + Fase 2 (render componentizado) + Fase 3 (filtro
+// centralizado) + Fase 4 (cache por versão) + Fase 5 (integração com Vida do
+// Condomínio via risco_contribuinte e getMetricasCondominio).
+// ============================================================================
+const DEM_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josiane - Assistente de Qualidade', 'Geovanna - Aprendiz Tarde', 'Nicole - Aprendiz Manhã'];
+const DEM_STATUS_LIST = ['Aberta', 'Em andamento', 'Aguardando', 'Concluída'];
+
+let demData = [];
+let demLoaded = false;
+let demVersion = 0;
+let demRiscoDiasLimite = 5; // dias em aberto + Alta prioridade = risco_contribuinte (ajustável aqui)
+let demKanbanLimitePorColuna = { 'Concluída': 30 }; // paginação simples pra colunas com muito volume
+
+let demAtendData = [];
+let demAtendLoaded = false;
+
+async function loadDemandasAtendimentos(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('demandas_atendimentos').select('*').order('data', { ascending:true }).limit(5000);
+    if (error) throw error;
+    demAtendData = data || [];
+    demAtendLoaded = true;
+  }catch(e){
+    console.error('Falha ao carregar demandas_atendimentos (a tabela pode não existir ainda):', e);
+    demAtendData = [];
+  }
+}
+
+async function loadDemandas(){
+  const body = document.getElementById('demBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="8" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    const { data, error } = await sb.from('demandas').select('*').order('data_abertura', { ascending:false }).limit(5000);
+    if (error) throw error;
+    demData = data || [];
+    demVersion++;
+    demLoaded = true;
+    await loadDemandasAtendimentos();
+    document.getElementById('dem-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+    demPopularFiltros();
+    renderDemandas();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="8" class="empty">Erro ao carregar: ${escapeHtml(e.message)}${e.message && e.message.includes('demandas') ? ' — a tabela "demandas" pode não existir ainda no Supabase.' : ''}</td></tr>`;
+  }
+}
+
+function demPopularFiltros(){
+  const selFilial = document.getElementById('demFilterFilial');
+  if (selFilial.options.length <= 1){
+    const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort();
+    selFilial.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  }
+  const selResp = document.getElementById('demFilterResponsavel');
+  if (selResp.options.length <= 1){
+    selResp.innerHTML = '<option value="">Responsável: todos</option>' + DEM_RESPONSAVEIS.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  }
+  const selRespModal = document.getElementById('demResponsavel');
+  if (selRespModal.options.length === 0){
+    selRespModal.innerHTML = DEM_RESPONSAVEIS.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FASE 3 — FilterStore centralizado (lê/escreve os campos do DOM, aplica sobre uma lista)
+// ---------------------------------------------------------------------------
+const DemFilterStore = {
+  get(){
+    return {
+      q: (document.getElementById('demSearch').value || '').trim().toLowerCase(),
+      filial: document.getElementById('demFilterFilial').value,
+      dataOpcao: document.getElementById('demFilterData').value,
+      dataInicio: document.getElementById('demDataInicio').value,
+      dataFim: document.getElementById('demDataFim').value,
+      responsavel: document.getElementById('demFilterResponsavel').value,
+      status: document.getElementById('demFilterStatus').value,
+      prioridade: document.getElementById('demFilterPrioridade').value,
+    };
+  },
+  clear(){
+    document.getElementById('demSearch').value = '';
+    document.getElementById('demFilterFilial').value = '';
+    document.getElementById('demFilterData').value = '';
+    document.getElementById('demDataInicio').value = '';
+    document.getElementById('demDataFim').value = '';
+    document.getElementById('demDataCustomWrap').style.display = 'none';
+    document.getElementById('demFilterResponsavel').value = '';
+    document.getElementById('demFilterStatus').value = '';
+    document.getElementById('demFilterPrioridade').value = '';
+  },
+  apply(lista){
+    const f = this.get();
+    const hoje = new Date();
+    let dataIni = null, dataFim = null;
+    if (f.dataOpcao === 'hoje'){
+      dataIni = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    } else if (f.dataOpcao === 'semana'){
+      dataIni = new Date(hoje); dataIni.setDate(hoje.getDate() - 7);
+    } else if (f.dataOpcao === 'mes'){
+      dataIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    } else if (f.dataOpcao === 'mes_anterior'){
+      dataIni = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 23, 59, 59);
+    } else if (f.dataOpcao === 'custom'){
+      dataIni = f.dataInicio ? new Date(f.dataInicio + 'T00:00:00') : null;
+      dataFim = f.dataFim ? new Date(f.dataFim + 'T23:59:59') : null;
+    }
+    return lista.filter(d=>{
+      if (f.q && !((d.condominio||'').toLowerCase().includes(f.q) || (d.descricao||'').toLowerCase().includes(f.q))) return false;
+      if (f.filial && d.filial !== f.filial) return false;
+      if (f.responsavel && d.responsavel !== f.responsavel) return false;
+      if (f.status && d.status !== f.status) return false;
+      if (f.prioridade && d.prioridade !== f.prioridade) return false;
+      if (dataIni || dataFim){
+        if (!d.data_abertura) return false;
+        const dt = new Date(d.data_abertura);
+        if (dataIni && dt < dataIni) return false;
+        if (dataFim && dt > dataFim) return false;
+      }
+      return true;
+    });
+  }
+};
+
+// ---------------------------------------------------------------------------
+// FASE 1 — Cálculo puro (sem tocar DOM), com cache invalidado por demVersion
+// ---------------------------------------------------------------------------
+function demDiasAberta(d){
+  if (!d.data_abertura) return null;
+  const fim = d.data_conclusao ? new Date(d.data_conclusao) : new Date();
+  return Math.max(0, Math.floor((fim - new Date(d.data_abertura)) / 86400000));
+}
+function demSlaVencida(d){
+  if (d.status === 'Concluída' || !d.sla_dias) return false;
+  const dias = demDiasAberta(d);
+  return dias !== null && dias > d.sla_dias;
+}
+function demandaRiscoContribuinte(d){
+  if (d.status === 'Concluída') return false;
+  if (d.prioridade !== 'Alta') return false;
+  const dias = demDiasAberta(d);
+  return dias !== null && dias > demRiscoDiasLimite;
+}
+
+let _demMetricasCache = null, _demMetricasCacheVersion = -1;
+function calcularMetricas(demandas){
+  const abertas = demandas.filter(d=>d.status==='Aberta').length;
+  const emAndamento = demandas.filter(d=>d.status==='Em andamento').length;
+  const aguardando = demandas.filter(d=>d.status==='Aguardando').length;
+  const concluidas = demandas.filter(d=>d.status==='Concluída');
+  const slaVencido = demandas.filter(demSlaVencida).length;
+  const temposResolucao = concluidas.filter(d=>d.data_conclusao && d.data_abertura)
+    .map(d => (new Date(d.data_conclusao) - new Date(d.data_abertura)) / 86400000);
+  const slaMedio = temposResolucao.length ? temposResolucao.reduce((a,b)=>a+b,0)/temposResolucao.length : null;
+  return { total: demandas.length, abertas, emAndamento, aguardando, concluidas: concluidas.length, slaVencido, slaMedio };
+}
+
+function calcularRanking(demandas){
+  const porResp = {};
+  DEM_RESPONSAVEIS.forEach(r => { porResp[r] = []; });
+  demandas.forEach(d=>{
+    const r = d.responsavel || 'Sem responsável';
+    if (!porResp[r]) porResp[r] = [];
+    porResp[r].push(d);
+  });
+  return Object.entries(porResp).map(([responsavel, itens])=>{
+    const abertas = itens.filter(d=>d.status==='Aberta').length;
+    const emAndamento = itens.filter(d=>d.status==='Em andamento').length;
+    const concluidasArr = itens.filter(d=>d.status==='Concluída');
+    const pctConclusao = itens.length ? (concluidasArr.length/itens.length*100) : 0;
+    const slaVencido = itens.filter(demSlaVencida).length;
+    const tempos = concluidasArr.filter(d=>d.data_conclusao && d.data_abertura).map(d => (new Date(d.data_conclusao)-new Date(d.data_abertura))/86400000);
+    const tmr = tempos.length ? tempos.reduce((a,b)=>a+b,0)/tempos.length : null;
+    return { responsavel, total: itens.length, abertas, emAndamento, concluidas: concluidasArr.length, pctConclusao, slaVencido, tmr };
+  });
+}
+
+function calcularAnaliseFilial(demandas){
+  const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))];
+  return filiais.map(filial=>{
+    const itens = demandas.filter(d=>d.filial===filial);
+    const concluidasArr = itens.filter(d=>d.status==='Concluída');
+    const tempos = concluidasArr.filter(d=>d.data_conclusao && d.data_abertura).map(d => (new Date(d.data_conclusao)-new Date(d.data_abertura))/86400000);
+    const slaMedio = tempos.length ? tempos.reduce((a,b)=>a+b,0)/tempos.length : null;
+    const ordenados = [...itens].filter(d=>d.data_abertura).sort((a,b)=> new Date(a.data_abertura)-new Date(b.data_abertura));
+    let tendencia = null;
+    if (ordenados.length >= 4){
+      const meio = Math.floor(ordenados.length/2);
+      tendencia = ordenados.slice(meio).length - ordenados.slice(0,meio).length;
+    }
+    const porTipo = {};
+    itens.forEach(d=>{ const t=d.tipo||'Outro'; porTipo[t]=(porTipo[t]||0)+1; });
+    const tipoPredominante = Object.entries(porTipo).sort((a,b)=>b[1]-a[1])[0] || null;
+    return { filial, total: itens.length, slaMedio, tendencia, tipoPredominante };
+  });
+}
+
+function demGetMetricas(){
+  if (_demMetricasCacheVersion === demVersion && _demMetricasCache) return _demMetricasCache;
+  const filtradas = DemFilterStore.apply(demData);
+  _demMetricasCache = {
+    filtradas,
+    metricas: calcularMetricas(filtradas),
+    ranking: calcularRanking(filtradas),
+    analiseFilial: calcularAnaliseFilial(filtradas),
+  };
+  _demMetricasCacheVersion = demVersion;
+  return _demMetricasCache;
+}
+
+// Filtra demandas_atendimentos pelo mesmo recorte de data do DemFilterStore
+function getFilteredDemAtendimentos(){
+  const f = DemFilterStore.get();
+  const hoje = new Date();
+  let dataIni = null, dataFim = null;
+  if (f.dataOpcao === 'hoje'){
+    dataIni = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  } else if (f.dataOpcao === 'semana'){
+    dataIni = new Date(hoje); dataIni.setDate(hoje.getDate() - 7);
+  } else if (f.dataOpcao === 'mes'){
+    dataIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  } else if (f.dataOpcao === 'mes_anterior'){
+    dataIni = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 23, 59, 59);
+  } else if (f.dataOpcao === 'custom'){
+    dataIni = f.dataInicio ? new Date(f.dataInicio + 'T00:00:00') : null;
+    dataFim = f.dataFim ? new Date(f.dataFim + 'T23:59:59') : null;
+  }
+  if (!dataIni && !dataFim) return demAtendData;
+  return demAtendData.filter(a=>{
+    if (!a.data) return false;
+    const d = new Date(a.data + 'T00:00:00');
+    if (dataIni && d < dataIni) return false;
+    if (dataFim && d > dataFim) return false;
+    return true;
+  });
+}
+
+function renderDemAtendimentosStats(){
+  const itens = getFilteredDemAtendimentos();
+  const totalBlip = itens.reduce((s,a)=>s+(a.atendimentos_blip||0), 0);
+  const totalWhats = itens.reduce((s,a)=>s+(a.atendimentos_whatsapp||0), 0);
+  const totalSac = itens.reduce((s,a)=>s+(a.atendimentos_sac_gear||0), 0);
+  const tmaValidos = itens.map(a=>a.tma_blip_segundos).filter(v=>v!==null && v!==undefined);
+  const tmaMedio = tmaValidos.length ? Math.round(tmaValidos.reduce((a,b)=>a+b,0)/tmaValidos.length) : null;
+  const metaValidos = itens.map(a=>a.pct_dentro_meta).filter(v=>v!==null && v!==undefined);
+  const metaMedia = metaValidos.length ? (metaValidos.reduce((a,b)=>a+b,0)/metaValidos.length) : null;
+
+  document.getElementById('demAtendimentosStats').innerHTML = [
+    kpiCardHTML('Blip', totalBlip.toLocaleString('pt-BR'), 'var(--accent)'),
+    kpiCardHTML('WhatsApp', totalWhats.toLocaleString('pt-BR'), 'var(--ok)'),
+    kpiCardHTML('SAC Gear', totalSac.toLocaleString('pt-BR'), 'var(--accent-2)'),
+    kpiCardHTML('TMA Blip', tmaMedio!==null ? tmaMedio+'s' : '—', 'var(--atencao)'),
+    kpiCardHTML('Dentro da Meta', metaMedia!==null ? metaMedia.toFixed(1)+'%' : '—', metaMedia!==null && metaMedia>=80 ? 'var(--ok)' : 'var(--critico)'),
+  ].join('');
+}
+
+// ---------------------------------------------------------------------------
+// Modal "Editar Atendimentos" — registro diário agregado de Blip/WhatsApp/TMA/Meta
+// ---------------------------------------------------------------------------
+function abrirDemAtendModal(dataAlvo){
+  document.getElementById('demAtendError').style.display = 'none';
+  const dataStr = dataAlvo || hojeISO();
+  document.getElementById('demAtendData').value = dataStr;
+  const existente = demAtendData.find(a => a.data === dataStr);
+  document.getElementById('demAtendBlipQtd').value = existente && existente.atendimentos_blip !== null && existente.atendimentos_blip !== undefined ? existente.atendimentos_blip : '';
+  document.getElementById('demAtendWhatsappQtd').value = existente && existente.atendimentos_whatsapp !== null && existente.atendimentos_whatsapp !== undefined ? existente.atendimentos_whatsapp : '';
+  document.getElementById('demAtendSacGearQtd').value = existente && existente.atendimentos_sac_gear !== null && existente.atendimentos_sac_gear !== undefined ? existente.atendimentos_sac_gear : '';
+  document.getElementById('demAtendTmaBlip').value = existente && existente.tma_blip_segundos !== null && existente.tma_blip_segundos !== undefined ? existente.tma_blip_segundos : '';
+  document.getElementById('demAtendPctMeta').value = existente && existente.pct_dentro_meta !== null && existente.pct_dentro_meta !== undefined ? existente.pct_dentro_meta : '';
+  document.getElementById('demAtendModalOverlay').style.display = 'flex';
+}
+document.getElementById('btnEditarAtendimentos').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  abrirDemAtendModal(hojeISO());
+});
+document.getElementById('demAtendModalCloseBtn').addEventListener('click', ()=>{ document.getElementById('demAtendModalOverlay').style.display = 'none'; });
+document.getElementById('demAtendCancelBtn').addEventListener('click', ()=>{ document.getElementById('demAtendModalOverlay').style.display = 'none'; });
+document.getElementById('demAtendSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('demAtendError');
+  errEl.style.display = 'none';
+  const dataStr = document.getElementById('demAtendData').value;
+  if (!dataStr){ errEl.textContent = 'Informe a data.'; errEl.style.display = 'block'; return; }
+  const numOuNull = (v) => { const n = Number(v); return v !== '' && !isNaN(n) ? n : null; };
+  const blip = numOuNull(document.getElementById('demAtendBlipQtd').value);
+  const whats = numOuNull(document.getElementById('demAtendWhatsappQtd').value);
+  const sac = numOuNull(document.getElementById('demAtendSacGearQtd').value);
+  const payload = {
+    data: dataStr,
+    atendimentos_blip: blip,
+    atendimentos_blip_origem: blip !== null ? 'manual' : null,
+    atendimentos_whatsapp: whats,
+    atendimentos_whatsapp_origem: whats !== null ? 'manual' : null,
+    atendimentos_sac_gear: sac,
+    atendimentos_sac_gear_origem: sac !== null ? 'manual' : null,
+    tma_blip_segundos: numOuNull(document.getElementById('demAtendTmaBlip').value),
+    pct_dentro_meta: numOuNull(document.getElementById('demAtendPctMeta').value),
+    updated_at: new Date().toISOString(),
+  };
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = await sb.from('demandas_atendimentos').upsert(payload, { onConflict: 'data' });
+    if (error) throw error;
+    document.getElementById('demAtendModalOverlay').style.display = 'none';
+    await loadDemandasAtendimentos();
+    renderDemAtendimentosStats();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('demandas_atendimentos') ? ' — a tabela "demandas_atendimentos" pode não existir ainda no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Rel. Diário / Semanal — mesma janela de impressão, período pré-ajustado
+// ---------------------------------------------------------------------------
+document.getElementById('btnRelDiarioDemandas').addEventListener('click', ()=>{
+  document.getElementById('demFilterData').value = 'hoje';
+  document.getElementById('demDataCustomWrap').style.display = 'none';
+  renderDemandas();
+  gerarRelatorioDemandas();
+});
+document.getElementById('btnRelSemanalDemandas').addEventListener('click', ()=>{
+  document.getElementById('demFilterData').value = 'semana';
+  document.getElementById('demDataCustomWrap').style.display = 'none';
+  renderDemandas();
+  gerarRelatorioDemandas();
+});
+
+// Ponto único de leitura agregada por condomínio (demandas + incidentes + visitas),
+// pra outras abas (Vida do Condomínio) não reimplementarem a própria query.
+function getMetricasCondominio(nome){
+  const norm = normalizeNomeCondo(nome);
+  const demandasCondo = (demData||[]).filter(d => normalizeNomeCondo(d.condominio) === norm);
+  const incidentesCondo = (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === norm);
+  const visitasCondo = (veData||[]).filter(v => normalizeNomeCondo(v.condominio) === norm);
+  return {
+    demandas: { total: demandasCondo.length, abertas: demandasCondo.filter(d=>d.status!=='Concluída').length, riscoContribuinte: demandasCondo.some(demandaRiscoContribuinte) },
+    incidentes: { total: incidentesCondo.length, altosAbertos: incidentesCondo.filter(i=>i.gravidade==='Alta' && i.status!=='Resolvido').length },
+    visitas: { total: visitasCondo.length, abertas: visitasCondo.filter(v=>v.status!=='Concluído').length },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FASE 2 — Render componentizado (funções puras que retornam HTML)
+// ---------------------------------------------------------------------------
+function kpiCardHTML(label, value, color, sublabel){
+  return `<div class="stat-box"><div class="snum" style="color:${color||'var(--accent)'};">${value}</div><div class="slbl">${label}${sublabel ? ' · ' + sublabel : ''}</div></div>`;
+}
+
+function demandaCardHTML(d){
+  const corPrior = d.prioridade === 'Alta' ? 'var(--critico)' : d.prioridade === 'Média' ? 'var(--atencao)' : 'var(--ok)';
+  const dias = demDiasAberta(d);
+  const vencida = demSlaVencida(d);
+  return `
+    <div class="kanban-card" data-dem-card="${d.id}" style="border-left:3px solid ${corPrior}; cursor:pointer;">
+      <div class="kanban-card-name">${escapeHtml(d.condominio)}</div>
+      <div style="font-size:11px; color:var(--text-faint); margin-top:3px;">${escapeHtml((d.descricao||'').slice(0,70))}${(d.descricao||'').length>70?'…':''}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:10.5px; color:var(--text-faint);">
+        <span>${escapeHtml(d.responsavel || 'Sem responsável')}</span>
+        <span style="color:${vencida ? 'var(--critico)' : 'var(--text-faint)'};">${dias!==null ? dias+'d' : '—'}${vencida ? ' ⚠' : ''}</span>
+      </div>
+    </div>`;
+}
+
+function kanbanColumnHTML(status, demandas){
+  const cores = { 'Aberta':'var(--critico)', 'Em andamento':'var(--accent)', 'Aguardando':'var(--atencao)', 'Concluída':'var(--ok)' };
+  const doStatus = demandas.filter(d=>d.status===status);
+  const limite = demKanbanLimitePorColuna[status];
+  const paraMostrar = limite ? doStatus.slice(0, limite) : doStatus;
+  const restante = doStatus.length - paraMostrar.length;
+  return `
+    <div class="kanban-col">
+      <div class="kanban-col-head">
+        <span class="kanban-col-title"><span class="kanban-col-dot" style="background:${cores[status]};"></span>${status}</span>
+        <span class="kanban-col-count">${doStatus.length}</span>
+      </div>
+      <div class="kanban-col-body">
+        ${paraMostrar.map(demandaCardHTML).join('') || '<p class="empty" style="font-size:11px;">Nenhuma.</p>'}
+        ${restante > 0 ? `<button type="button" class="clearbtn" data-dem-mostrar-mais="${status}" style="font-size:11px; padding:6px;">Mostrar mais ${restante}...</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function filaTableRowHTML(d){
+  const corPrior = d.prioridade === 'Alta' ? 'var(--critico)' : d.prioridade === 'Média' ? 'var(--atencao)' : 'var(--ok)';
+  const vencida = demSlaVencida(d);
+  return `<tr>
+    <td class="ck-name">${escapeHtml(d.condominio)}</td>
+    <td style="max-width:240px;">${escapeHtml((d.descricao||'').slice(0,80))}${(d.descricao||'').length>80?'…':''}</td>
+    <td>${escapeHtml(d.responsavel||'—')}</td>
+    <td>${escapeHtml(d.status||'—')}</td>
+    <td><span class="tag" style="color:${corPrior}; border:1px solid ${corPrior}; background:transparent;">${escapeHtml(d.prioridade||'—')}</span></td>
+    <td>${d.data_abertura ? new Date(d.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
+    <td style="color:${vencida?'var(--critico)':'var(--text-faint)'};">${d.sla_dias ? d.sla_dias+'d'+(vencida?' (vencido)':'') : '—'}</td>
+    <td><button type="button" class="renov-action-btn" data-edit-dem="${d.id}">Editar</button></td>
+  </tr>`;
+}
+
+function rankRowHTML(r){
+  return `<tr>
+    <td class="ck-name">${escapeHtml(r.responsavel)}</td>
+    <td style="text-align:center;">${r.abertas}</td>
+    <td style="text-align:center;">${r.emAndamento}</td>
+    <td style="text-align:center;">${r.concluidas}</td>
+    <td style="text-align:center; color:${r.pctConclusao>=70?'var(--ok)':r.pctConclusao>=40?'var(--atencao)':'var(--critico)'};">${r.pctConclusao.toFixed(0)}%</td>
+    <td style="text-align:center; color:${r.slaVencido>0?'var(--critico)':'var(--text-faint)'};">${r.slaVencido}</td>
+    <td style="text-align:center;">${r.tmr!==null ? r.tmr.toFixed(1)+'d' : '—'}</td>
+  </tr>`;
+}
+
+// ---------------------------------------------------------------------------
+// RENDER PRINCIPAL
+// ---------------------------------------------------------------------------
+function renderDemandas(){
+  const { filtradas, metricas, ranking, analiseFilial } = demGetMetricas();
+
+  document.getElementById('demSubtitulo').textContent = `${filtradas.length} de ${demData.length} demanda(s) no recorte atual`;
+  document.getElementById('demVencidasNumero').textContent = metricas.slaVencido;
+
+  document.getElementById('demStats').innerHTML = [
+    kpiCardHTML('Abertas', metricas.abertas, 'var(--critico)'),
+    kpiCardHTML('Em andamento', metricas.emAndamento, 'var(--accent)'),
+    kpiCardHTML('Aguardando', metricas.aguardando, 'var(--atencao)'),
+    kpiCardHTML('SLA médio', metricas.slaMedio!==null ? metricas.slaMedio.toFixed(1)+'d' : '—', 'var(--ok)', 'abertura → conclusão'),
+  ].join('');
+
+  renderDemAtendimentosStats();
+
+  document.getElementById('demKanbanBoard').innerHTML = DEM_STATUS_LIST.map(s => kanbanColumnHTML(s, filtradas)).join('');
+  document.getElementById('demKanbanBoard').querySelectorAll('[data-dem-card]').forEach(card=>{
+    card.onclick = ()=> abrirDemandaModal(demData.find(d=>String(d.id)===card.getAttribute('data-dem-card')));
+  });
+  document.getElementById('demKanbanBoard').querySelectorAll('[data-dem-mostrar-mais]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const status = btn.getAttribute('data-dem-mostrar-mais');
+      demKanbanLimitePorColuna[status] = (demKanbanLimitePorColuna[status]||30) + 30;
+      renderDemandas();
+    };
+  });
+
+  const tbody = document.getElementById('demBody');
+  tbody.innerHTML = filtradas.length ? filtradas.map(filaTableRowHTML).join('') : '<tr><td colspan="8" class="empty">Nenhuma demanda encontrada.</td></tr>';
+  tbody.querySelectorAll('[data-edit-dem]').forEach(btn=>{
+    btn.onclick = ()=> abrirDemandaModal(demData.find(d=>String(d.id)===btn.getAttribute('data-edit-dem')));
+  });
+
+  document.getElementById('demRankBody').innerHTML = ranking.filter(r=>r.total>0).sort((a,b)=>b.total-a.total).map(rankRowHTML).join('') || '<tr><td colspan="7" class="empty">Sem demandas no recorte atual.</td></tr>';
+
+  renderDemandaRelatorioIA(metricas, ranking, analiseFilial, filtradas);
+}
+
+function renderDemandaRelatorioIA(metricas, ranking, analiseFilial, filtradas){
+  const frases = [];
+  const comCarga = ranking.filter(r=>r.total>0);
+  if (comCarga.length){
+    const melhorConclusao = [...comCarga].sort((a,b)=>b.pctConclusao-a.pctConclusao)[0];
+    const maisSobrecarregado = [...comCarga].sort((a,b)=>(b.abertas+b.emAndamento)-(a.abertas+a.emAndamento))[0];
+    frases.push(`<b>${escapeHtml(melhorConclusao.responsavel)}</b> tem a maior taxa de conclusão (${melhorConclusao.pctConclusao.toFixed(0)}%), enquanto <b>${escapeHtml(maisSobrecarregado.responsavel)}</b> está com mais demandas em aberto/andamento (${maisSobrecarregado.abertas+maisSobrecarregado.emAndamento}).`);
+    const maisVencidas = [...comCarga].sort((a,b)=>b.slaVencido-a.slaVencido)[0];
+    if (maisVencidas.slaVencido > 0) frases.push(`<b>${escapeHtml(maisVencidas.responsavel)}</b> tem o maior número de demandas com SLA vencido (${maisVencidas.slaVencido}).`);
+    const tmrValidos = comCarga.filter(r=>r.tmr!==null);
+    if (tmrValidos.length >= 2 && metricas.slaMedio !== null){
+      const desvio = tmrValidos.filter(r => Math.abs(r.tmr - metricas.slaMedio) > metricas.slaMedio*0.4 && r.tmr > metricas.slaMedio);
+      if (desvio.length) frases.push(`${desvio.map(r=>`<b>${escapeHtml(r.responsavel)}</b>`).join(', ')} ${desvio.length>1?'estão':'está'} com tempo médio de resolução bem acima da média geral (${metricas.slaMedio.toFixed(1)}d).`);
+    }
+  }
+  const filiaisComDados = analiseFilial.filter(f=>f.total>0);
+  let filialDestaque = null;
+  if (filiaisComDados.length){
+    filialDestaque = [...filiaisComDados].sort((a,b)=>b.total-a.total)[0];
+    frases.push(`<b>${escapeHtml(filialDestaque.filial)}</b> é a filial que mais gera demandas no período (${filialDestaque.total}${filialDestaque.tipoPredominante ? `, principalmente ${escapeHtml(filialDestaque.tipoPredominante[0])}` : ''}).`);
+    const piorSla = [...filiaisComDados].filter(f=>f.slaMedio!==null).sort((a,b)=>b.slaMedio-a.slaMedio)[0];
+    if (piorSla) frases.push(`<b>${escapeHtml(piorSla.filial)}</b> tem o pior SLA médio de resolução (${piorSla.slaMedio.toFixed(1)}d).`);
+    const emAlta = filiaisComDados.filter(f=>f.tendencia>0).sort((a,b)=>b.tendencia-a.tendencia)[0];
+    const emQueda = filiaisComDados.filter(f=>f.tendencia<0).sort((a,b)=>a.tendencia-b.tendencia)[0];
+    if (emAlta) frases.push(`<b>${escapeHtml(emAlta.filial)}</b> mostra tendência de <span style="color:var(--critico);">alta</span> no volume de demandas.`);
+    if (emQueda) frases.push(`<b>${escapeHtml(emQueda.filial)}</b> mostra tendência de <span style="color:var(--ok);">queda</span> no volume de demandas.`);
+  }
+  if (!frases.length) frases.push('Sem demandas suficientes no recorte atual para gerar uma análise.');
+
+  let recomendacao = 'Nenhuma ação urgente identificada.';
+  const acoes = [];
+  if (comCarga.length){
+    const maisSobrecarregado = [...comCarga].sort((a,b)=>(b.abertas+b.emAndamento)-(a.abertas+a.emAndamento))[0];
+    const menosCarregado = [...comCarga].sort((a,b)=>(a.abertas+a.emAndamento)-(b.abertas+b.emAndamento))[0];
+    if (maisSobrecarregado && menosCarregado && maisSobrecarregado.responsavel !== menosCarregado.responsavel && (maisSobrecarregado.abertas+maisSobrecarregado.emAndamento) > 2*(menosCarregado.abertas+menosCarregado.emAndamento+1)){
+      recomendacao = `Redistribuir demandas de ${maisSobrecarregado.responsavel} para ${menosCarregado.responsavel} para equilibrar a carga.`;
+      acoes.push({ label:`Ver carga de ${maisSobrecarregado.responsavel} ↗`, prompt:`Mostre todas as demandas em aberto do responsável ${maisSobrecarregado.responsavel}` });
+    }
+  }
+  if (filialDestaque) acoes.push({ label:`Ver detalhes da filial ${filialDestaque.filial} ↗`, prompt:`Mostre o comparativo por filial focando em ${filialDestaque.filial}` });
+
+  frases.push(`<b>Recomendação:</b> ${recomendacao}`);
+  document.getElementById('demRelatorio').innerHTML = frases.map(f=>`<p style="margin:0 0 8px;">${f}</p>`).join('');
+  document.getElementById('demRelatorioAcoes').innerHTML = acoes.map(a=>`<button type="button" class="login-btn" style="width:auto; margin-top:0; padding:8px 16px;" data-dem-prompt="${escapeHtml(a.prompt)}">${escapeHtml(a.label)}</button>`).join('');
+  document.getElementById('demRelatorioAcoes').querySelectorAll('[data-dem-prompt]').forEach(btn=>{
+    btn.onclick = ()=>{
+      if (typeof sendPrompt === 'function') sendPrompt(btn.getAttribute('data-dem-prompt'));
+      else alert(btn.getAttribute('data-dem-prompt'));
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Sub-abas (Demandas / Produtividade) + alternância Kanban/Lista
+// ---------------------------------------------------------------------------
+document.querySelectorAll('[data-dem-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-dem-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-dem-subtab');
+    document.getElementById('demViewDemandas').style.display = alvo === 'demandas' ? 'block' : 'none';
+    document.getElementById('demViewProdutividade').style.display = alvo === 'produtividade' ? 'block' : 'none';
+  });
+});
+document.getElementById('demViewKanbanBtn').addEventListener('click', ()=>{
+  document.getElementById('demViewKanbanBtn').classList.add('active');
+  document.getElementById('demViewListaBtn').classList.remove('active');
+  document.getElementById('demKanbanView').style.display = 'block';
+  document.getElementById('demListaView').style.display = 'none';
+});
+document.getElementById('demViewListaBtn').addEventListener('click', ()=>{
+  document.getElementById('demViewListaBtn').classList.add('active');
+  document.getElementById('demViewKanbanBtn').classList.remove('active');
+  document.getElementById('demKanbanView').style.display = 'none';
+  document.getElementById('demListaView').style.display = 'block';
+});
+
+// ---------------------------------------------------------------------------
+// Filtros
+// ---------------------------------------------------------------------------
+['demSearch','demFilterFilial','demFilterResponsavel','demFilterStatus','demFilterPrioridade'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderDemandas);
+  document.getElementById(id).addEventListener('change', renderDemandas);
+});
+document.getElementById('demFilterData').addEventListener('change', ()=>{
+  const v = document.getElementById('demFilterData').value;
+  document.getElementById('demDataCustomWrap').style.display = v === 'custom' ? 'inline-flex' : 'none';
+  if (v !== 'custom') renderDemandas();
+});
+['demDataInicio','demDataFim'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{
+    if (document.getElementById('demFilterData').value === 'custom') renderDemandas();
+  });
+});
+document.getElementById('btnLimparFiltrosDemandas').addEventListener('click', ()=>{
+  DemFilterStore.clear();
+  renderDemandas();
+});
+
+// ---------------------------------------------------------------------------
+// Modal Nova/Editar Demanda
+// ---------------------------------------------------------------------------
+let demEditingItem = null;
+function abrirDemandaModal(d){
+  demEditingItem = d || null;
+  document.getElementById('demError').style.display = 'none';
+  document.getElementById('demModalTitle').textContent = d ? 'Editar Demanda' : '+ Nova Demanda';
+  document.getElementById('demCondominio').value = d ? (d.condominio||'') : '';
+  document.getElementById('demFilial').value = d ? (d.filial||'') : '';
+  document.getElementById('demTipo').value = d ? (d.tipo||'Outro') : 'Outro';
+  document.getElementById('demResponsavel').value = d ? (d.responsavel||DEM_RESPONSAVEIS[0]) : DEM_RESPONSAVEIS[0];
+  document.getElementById('demDescricao').value = d ? (d.descricao||'') : '';
+  document.getElementById('demStatus').value = d ? (d.status||'Aberta') : 'Aberta';
+  document.getElementById('demPrioridade').value = d ? (d.prioridade||'Média') : 'Média';
+  document.getElementById('demDataAbertura').value = d && d.data_abertura ? d.data_abertura.slice(0,16) : new Date().toISOString().slice(0,16);
+  document.getElementById('demSlaDias').value = d && d.sla_dias !== null && d.sla_dias !== undefined ? d.sla_dias : '';
+  document.getElementById('demDeleteBtn').style.display = d ? '' : 'none';
+  document.getElementById('demModalOverlay').style.display = 'flex';
+}
+document.getElementById('btnNovaDemanda').addEventListener('click', ()=>{
+  if (!sb){ alert('Sem conexão com o servidor — não é possível criar demandas agora.'); return; }
+  abrirDemandaModal(null);
+});
+document.getElementById('demCondominio').addEventListener('input', ()=>{
+  const nome = document.getElementById('demCondominio').value.trim();
+  const match = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
+  document.getElementById('demFilial').value = match ? (match.filial||'') : '';
+});
+document.getElementById('demModalCloseBtn').addEventListener('click', ()=>{ document.getElementById('demModalOverlay').style.display = 'none'; });
+document.getElementById('demCancelBtn').addEventListener('click', ()=>{ document.getElementById('demModalOverlay').style.display = 'none'; });
+
+document.getElementById('demSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('demError');
+  errEl.style.display = 'none';
+  const condominio = document.getElementById('demCondominio').value.trim();
+  const descricao = document.getElementById('demDescricao').value.trim();
+  if (!condominio || !descricao){
+    errEl.textContent = 'Informe o condomínio e a descrição da demanda.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const statusNovo = document.getElementById('demStatus').value;
+  const agora = new Date().toISOString();
+  const numOuNull = (v) => { const n = Number(v); return v !== '' && !isNaN(n) ? n : null; };
+  let dataConclusao = null;
+  if (statusNovo === 'Concluída'){
+    dataConclusao = (demEditingItem && demEditingItem.status === 'Concluída' && demEditingItem.data_conclusao) ? demEditingItem.data_conclusao : agora;
+  }
+  const payload = {
+    condominio,
+    filial: document.getElementById('demFilial').value || null,
+    tipo: document.getElementById('demTipo').value,
+    responsavel: document.getElementById('demResponsavel').value,
+    descricao,
+    status: statusNovo,
+    prioridade: document.getElementById('demPrioridade').value,
+    data_abertura: document.getElementById('demDataAbertura').value || agora,
+    data_conclusao: dataConclusao,
+    sla_dias: numOuNull(document.getElementById('demSlaDias').value),
+    updated_at: agora,
+  };
+  payload.risco_contribuinte = demandaRiscoContribuinte({ ...payload, id: demEditingItem ? demEditingItem.id : null });
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = demEditingItem
+      ? await sb.from('demandas').update(payload).eq('id', demEditingItem.id)
+      : await sb.from('demandas').insert(payload);
+    if (error) throw error;
+    document.getElementById('demModalOverlay').style.display = 'none';
+    await loadDemandas();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('demandas') ? ' — a tabela "demandas" pode não existir ainda no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('demDeleteBtn').addEventListener('click', async ()=>{
+  if (!demEditingItem || !sb) return;
+  if (!confirm('Excluir essa demanda?')) return;
+  try{
+    const { data, error } = await sb.from('demandas').delete().eq('id', demEditingItem.id).select();
+    if (error) throw error;
+    if (!data || !data.length){
+      alert('O Supabase não retornou erro, mas nada foi excluído — provavelmente falta a policy de DELETE na tabela "demandas".');
+      return;
+    }
+    document.getElementById('demModalOverlay').style.display = 'none';
+    await loadDemandas();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+
+// ---------------------------------------------------------------------------
+// Gerar Relatório (PDF via janela de impressão, mesmo padrão do resto do app)
+// ---------------------------------------------------------------------------
+function gerarRelatorioDemandas(){
+  const { filtradas, metricas, ranking } = demGetMetricas();
+  const emitido = new Date().toLocaleString('pt-BR');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Demandas</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:960px; margin:0 auto;}
+    h1{font-size:20px; margin:4px 0 0;} h2{font-size:14px; margin:20px 0 8px; border-bottom:1px solid #d1d5db; padding-bottom:5px;}
+    table{width:100%; border-collapse:collapse; font-size:11.5px;} th,td{border:1px solid #d1d5db; padding:6px 8px; text-align:left;}
+    .stats{display:flex; gap:10px; flex-wrap:wrap;} .box{border:1px solid #d1d5db; border-radius:6px; padding:8px 12px; flex:1; min-width:120px;}
+    .snum{font-size:16px; font-weight:700;} .slbl{font-size:10px; color:#6b7280;}
+  </style></head><body>
+    <div style="border-bottom:2px solid #1a2333; padding-bottom:12px; margin-bottom:16px;">
+      <div style="font-size:11px; color:#6b7280; text-transform:uppercase;">SERVIS — Sucesso do Cliente</div>
+      <h1>Relatório de Demandas</h1>
+      <div style="font-size:11px; color:#6b7280;">Emitido em: ${emitido} · ${filtradas.length} demanda(s) no recorte</div>
+    </div>
+    <h2>KPIs do período</h2>
+    <div class="stats">
+      <div class="box"><div class="snum">${metricas.abertas}</div><div class="slbl">Abertas</div></div>
+      <div class="box"><div class="snum">${metricas.emAndamento}</div><div class="slbl">Em andamento</div></div>
+      <div class="box"><div class="snum">${metricas.aguardando}</div><div class="slbl">Aguardando</div></div>
+      <div class="box"><div class="snum">${metricas.slaVencido}</div><div class="slbl">SLA vencido</div></div>
+      <div class="box"><div class="snum">${metricas.slaMedio!==null?metricas.slaMedio.toFixed(1)+'d':'—'}</div><div class="slbl">SLA médio</div></div>
+    </div>
+    <h2>Ranking de Produtividade</h2>
+    <table><thead><tr><th>Responsável</th><th>Abertas</th><th>Em andamento</th><th>Concluídas</th><th>% Conclusão</th><th>SLA vencido</th><th>TMR</th></tr></thead>
+    <tbody>${ranking.filter(r=>r.total>0).map(r=>`<tr><td>${r.responsavel}</td><td>${r.abertas}</td><td>${r.emAndamento}</td><td>${r.concluidas}</td><td>${r.pctConclusao.toFixed(0)}%</td><td>${r.slaVencido}</td><td>${r.tmr!==null?r.tmr.toFixed(1)+'d':'—'}</td></tr>`).join('')}</tbody></table>
+    <h2>Relatório Inteligente</h2>
+    <div>${document.getElementById('demRelatorio').innerHTML}</div>
+    <h2>Demandas do recorte (${filtradas.length})</h2>
+    <table><thead><tr><th>Condomínio</th><th>Descrição</th><th>Responsável</th><th>Status</th><th>Prioridade</th><th>Aberta em</th></tr></thead>
+    <tbody>${filtradas.map(d=>`<tr><td>${d.condominio}</td><td>${(d.descricao||'').slice(0,80)}</td><td>${d.responsavel||'—'}</td><td>${d.status}</td><td>${d.prioridade}</td><td>${d.data_abertura?new Date(d.data_abertura).toLocaleDateString('pt-BR'):'—'}</td></tr>`).join('')}</tbody></table>
+    <p style="margin-top:24px; font-size:11px; color:#9ca3af;">SERVIS — Sucesso do Cliente · Relatório gerado em ${emitido}</p>
+    <script>window.onload = () => window.print();</` + `script>
+  </body></html>`);
+  win.document.close();
+}
+document.getElementById('btnGerarRelatorioDemandas').addEventListener('click', gerarRelatorioDemandas);
+
+// ============================================================================
 // VIDA DO CONDOMÍNIO + RELATÓRIO INTELIGENTE
 // Reúne, pra um único condomínio, tudo que já existe espalhado pelo sistema
 // (Pesquisa, Visitas Emergenciais, Incidentes, Adoção Digital) numa linha do
@@ -13661,6 +14563,10 @@ function calcularNivelRisco(dados){
     subirNivel(1);
     motivos.push('reincidência de incidentes (2+ em 3 meses seguidos)');
   }
+  if (dados.demandaRiscoAlto){
+    subirNivel(1);
+    motivos.push('demanda de alta prioridade em aberto há muitos dias');
+  }
   // "Sem incidentes em 90 dias" não penaliza — nenhuma ação necessária (regra já é o padrão).
 
   return { nivel, pontos, motivos };
@@ -13692,7 +14598,9 @@ function coletarDadosRiscoCondominio(nomeAlvoNorm){
   const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 300);
   const mesAtualFluxo = hojeISO().slice(0,7);
   const fluxoPendente = !fluxoCondo.some(f => String(f.mes_referencia||'').slice(0,7) === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
-  return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, incidentes90dias, incidenteSemResponsavelAtrasado, reincidenciaIncidentes, reclamacoesSemResolucao, fluxoCondo, fluxoRecente, tmaForaDaMeta, fluxoPendente };
+  const demandasCondo = (typeof demData !== 'undefined' ? demData : []).filter(d => normalizeNomeCondo(d.condominio) === nomeAlvoNorm);
+  const demandaRiscoAlto = typeof demandaRiscoContribuinte === 'function' ? demandasCondo.some(demandaRiscoContribuinte) : false;
+  return { notaAtual, notasHistorico, visitasCondo, visitasAbertas, incidentesCondo, incidentesAltosAbertos, incidentes90dias, incidenteSemResponsavelAtrasado, reincidenciaIncidentes, reclamacoesSemResolucao, fluxoCondo, fluxoRecente, tmaForaDaMeta, fluxoPendente, demandasCondo, demandaRiscoAlto };
 }
 
 // Nível de risco médio da filial inteira, pra comparar o condomínio com a média.
@@ -14405,6 +15313,7 @@ async function garantirDadosVidaCondominio(){
   if (typeof incLoaded !== 'undefined' && !incLoaded && typeof loadIncidentes === 'function') tarefas.push(loadIncidentes());
   if (typeof adLoaded !== 'undefined' && !adLoaded && typeof loadAdocaoDigital === 'function') tarefas.push(loadAdocaoDigital());
   if (typeof historicoLoaded !== 'undefined' && !historicoLoaded && typeof loadHistorico === 'function') tarefas.push(loadHistorico());
+  if (typeof demLoaded !== 'undefined' && !demLoaded && typeof loadDemandas === 'function') tarefas.push(loadDemandas());
   if (tarefas.length) await Promise.allSettled(tarefas);
 }
 
