@@ -1843,6 +1843,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <option value="Ampliação em andamento">Ampliação em andamento</option>
           <option value="Concluída">Concluída</option>
         </select>
+        <select class="filter-select" id="cronogramaFilterFilial"><option value="">Filial: todas</option></select>
         <button type="button" class="clearbtn" id="btnLimparFiltrosCronograma">Limpar filtros</button>
       </div>
       <div class="checklist-table-wrap">
@@ -2228,6 +2229,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <option value="Pendente">Pendente</option>
         <option value="Concluído">Concluído</option>
       </select>
+      <select class="filter-select" id="lembreteFilterFilial"><option value="">Filial: todas</option></select>
       <button type="button" class="clearbtn" id="btnLimparFiltrosLembretes">Limpar filtros</button>
       <button type="button" class="logout-btn" id="btnNovoLembrete" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Lembrete</button>
     </div>
@@ -2587,6 +2589,12 @@ CONDOMINIO Y	480	45"></textarea>
       Registro de ocorrências de segurança e operacionais por condomínio.
     </p>
 
+    <div class="subtab-nav" id="incSubtabNav">
+      <button type="button" class="subtab-btn active" data-inc-subtab="detalhamento">📋 Detalhamento</button>
+      <button type="button" class="subtab-btn" data-inc-subtab="comparativo">🏢 Comparativo por Filial</button>
+    </div>
+
+    <div id="incViewDetalhamento">
     <!-- MINI DASHBOARD -->
     <div class="stats-strip" id="incStats"></div>
     <div class="charts-grid charts-grid-2" style="margin:14px 0;">
@@ -2615,6 +2623,7 @@ CONDOMINIO Y	480	45"></textarea>
         <option value="Resolvido">Resolvido</option>
         <option value="Aguardando">Aguardando</option>
       </select>
+      <select class="filter-select" id="incFilterFilial"><option value="">Filial: todas</option></select>
       <select class="filter-select" id="incFilterPeriodo">
         <option value="">Período: tudo</option>
         <option value="semana">Esta semana</option>
@@ -2688,6 +2697,39 @@ CONDOMINIO Y	480	45"></textarea>
           poucos → muitos incidentes
         </span>
         <span>🔥 = reincidência (2+ incidentes em 3 meses seguidos)</span>
+      </div>
+    </div>
+    </div>
+
+    <div id="incViewComparativo" style="display:none;">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <select class="filter-select" id="incCompPeriodo">
+          <option value="mes">Mês atual</option>
+          <option value="trimestre">Trimestre</option>
+          <option value="ano">Ano</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <span id="incCompCustomWrap" style="display:none; align-items:center; gap:6px;">
+          <input type="date" id="incCompInicio" class="search" style="max-width:150px; padding:6px 8px;">
+          <span style="font-size:11px; color:var(--text-faint);">até</span>
+          <input type="date" id="incCompFim" class="search" style="max-width:150px; padding:6px 8px;">
+        </span>
+        <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+          <button type="button" class="view-toggle-btn active" data-inc-comp-metrica="total">Total de incidentes</button>
+          <button type="button" class="view-toggle-btn" data-inc-comp-metrica="tmr">TMR</button>
+          <button type="button" class="view-toggle-btn" data-inc-comp-metrica="alta">% alta gravidade</button>
+          <button type="button" class="view-toggle-btn" data-inc-comp-metrica="resolucao">Taxa de resolução</button>
+        </span>
+      </div>
+      <div class="stats-strip" id="incCompStats" style="margin-bottom:14px;"></div>
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <p class="chart-title" id="incCompChartTitulo">Total de incidentes por filial</p>
+        <div id="incCompChart" style="display:flex; align-items:flex-end; gap:16px; height:180px; padding:8px 4px 0;"></div>
+      </div>
+      <div class="chart-panel" style="border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
+        <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente — Comparativo entre Filiais</p>
+        <div id="incCompRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+        <div id="incCompAcoes" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
       </div>
     </div>
   </div>
@@ -8503,9 +8545,11 @@ async function loadCronograma(){
 function getFilteredCronograma(){
   const q = (document.getElementById('cronogramaSearch').value || '').trim().toLowerCase();
   const fStatus = document.getElementById('cronogramaFilterStatus').value;
+  const fFilial = document.getElementById('cronogramaFilterFilial').value;
   return cronogramaData.filter(c=>{
     if (q && !(c.condominio||'').toLowerCase().includes(q)) return false;
     if (fStatus && c.status !== fStatus) return false;
+    if (fFilial && c.filial !== fFilial) return false;
     return true;
   });
 }
@@ -8610,13 +8654,15 @@ document.getElementById('cronogramaDeleteBtn').addEventListener('click', async (
     loadCronograma();
   }catch(e){ alert('Erro ao excluir: ' + e.message); }
 });
-['cronogramaSearch','cronogramaFilterStatus'].forEach(id=>{
+document.getElementById('cronogramaFilterFilial').innerHTML = '<option value="">Filial: todas</option>' + [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort().map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+['cronogramaSearch','cronogramaFilterStatus','cronogramaFilterFilial'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderCronograma);
   document.getElementById(id).addEventListener('change', renderCronograma);
 });
 document.getElementById('btnLimparFiltrosCronograma').addEventListener('click', ()=>{
   document.getElementById('cronogramaSearch').value = '';
   document.getElementById('cronogramaFilterStatus').value = '';
+  document.getElementById('cronogramaFilterFilial').value = '';
   renderCronograma();
 });
 
@@ -10879,9 +10925,14 @@ function atualizarBadgeLembretes(){
 function getFilteredLembretes(){
   const q = (document.getElementById('lembreteSearch').value || '').trim().toLowerCase();
   const fStatus = document.getElementById('lembreteFilterStatus').value;
+  const fFilial = document.getElementById('lembreteFilterFilial').value;
   return lembretesData.filter(l=>{
     if (q && !((l.titulo||'').toLowerCase().includes(q) || (l.condominio||'').toLowerCase().includes(q))) return false;
     if (fStatus && l.status !== fStatus) return false;
+    if (fFilial){
+      const match = DATA.find(d => d.nome.toLowerCase() === (l.condominio||'').toLowerCase());
+      if (!match || match.filial !== fFilial) return false;
+    }
     return true;
   });
 }
@@ -10987,13 +11038,15 @@ document.getElementById('lembreteDeleteBtn').addEventListener('click', async ()=
     loadLembretes().then(renderLembretes);
   }catch(e){ alert('Erro ao excluir: ' + e.message); }
 });
-['lembreteSearch','lembreteFilterStatus'].forEach(id=>{
+document.getElementById('lembreteFilterFilial').innerHTML = '<option value="">Filial: todas</option>' + [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort().map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+['lembreteSearch','lembreteFilterStatus','lembreteFilterFilial'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderLembretes);
   document.getElementById(id).addEventListener('change', renderLembretes);
 });
 document.getElementById('btnLimparFiltrosLembretes').addEventListener('click', ()=>{
   document.getElementById('lembreteSearch').value = '';
   document.getElementById('lembreteFilterStatus').value = '';
+  document.getElementById('lembreteFilterFilial').value = '';
   renderLembretes();
 });
 
@@ -12717,6 +12770,9 @@ async function loadIncidentes(){
     incData = data || [];
     incLoaded = true;
     document.getElementById('inc-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+    if (document.getElementById('incFilterFilial').options.length <= 1){
+      document.getElementById('incFilterFilial').innerHTML = '<option value="">Filial: todas</option>' + [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort().map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
     renderIncidentes();
   }catch(e){
     console.error(e);
@@ -12729,10 +12785,12 @@ function getFilteredIncidentesBase(){
   const q = (document.getElementById('incSearch').value || '').trim().toLowerCase();
   const fGravidade = document.getElementById('incFilterGravidade').value;
   const fStatus = document.getElementById('incFilterStatus').value;
+  const fFilial = document.getElementById('incFilterFilial').value;
   return incData.filter(i=>{
     if (q && !((i.condominio||'').toLowerCase().includes(q) || (i.tipo||'').toLowerCase().includes(q))) return false;
     if (fGravidade && i.gravidade !== fGravidade) return false;
     if (fStatus && i.status !== fStatus) return false;
+    if (fFilial && i.filial !== fFilial) return false;
     return true;
   });
 }
@@ -13157,6 +13215,178 @@ function renderIncidentesHeatmap(){
 }
 document.getElementById('incHeatmapMeses').addEventListener('change', renderIncidentesHeatmap);
 
+// ============================================================================
+// SUB-ABA: COMPARATIVO POR FILIAL
+// Mesma fonte de dados da aba Incidentes (incData), só que agregada por
+// filial em vez de por condomínio — mesmo padrão visual (KPIs + gráfico +
+// relatório inteligente) já usado na Vida do Condomínio.
+// ============================================================================
+document.querySelectorAll('[data-inc-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-inc-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-inc-subtab');
+    document.getElementById('incViewDetalhamento').style.display = alvo === 'detalhamento' ? 'block' : 'none';
+    document.getElementById('incViewComparativo').style.display = alvo === 'comparativo' ? 'block' : 'none';
+    if (alvo === 'comparativo') renderIncidentesComparativo();
+  });
+});
+
+let incCompMetrica = 'total';
+document.querySelectorAll('[data-inc-comp-metrica]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-inc-comp-metrica]').forEach(b=>b.classList.toggle('active', b===btn));
+    incCompMetrica = btn.getAttribute('data-inc-comp-metrica');
+    renderIncidentesComparativo();
+  });
+});
+document.getElementById('incCompPeriodo').addEventListener('change', ()=>{
+  const v = document.getElementById('incCompPeriodo').value;
+  document.getElementById('incCompCustomWrap').style.display = v === 'custom' ? 'inline-flex' : 'none';
+  if (v !== 'custom') renderIncidentesComparativo();
+});
+['incCompInicio','incCompFim'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{
+    if (document.getElementById('incCompPeriodo').value === 'custom') renderIncidentesComparativo();
+  });
+});
+
+function getIncidentesPeriodoComparativo(){
+  const v = document.getElementById('incCompPeriodo').value;
+  const hoje = new Date();
+  let dataIni = null, dataFim = null;
+  if (v === 'mes'){
+    dataIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  } else if (v === 'trimestre'){
+    dataIni = new Date(hoje); dataIni.setMonth(hoje.getMonth() - 3);
+  } else if (v === 'ano'){
+    dataIni = new Date(hoje.getFullYear(), 0, 1);
+  } else if (v === 'custom'){
+    const ini = document.getElementById('incCompInicio').value;
+    const fim = document.getElementById('incCompFim').value;
+    dataIni = ini ? new Date(ini + 'T00:00:00') : null;
+    dataFim = fim ? new Date(fim + 'T23:59:59') : null;
+  }
+  return incData.filter(i=>{
+    if (!dataIni && !dataFim) return true;
+    if (!i.data_hora) return false;
+    const d = new Date(i.data_hora);
+    if (dataIni && d < dataIni) return false;
+    if (dataFim && d > dataFim) return false;
+    return true;
+  });
+}
+
+function renderIncidentesComparativo(){
+  const periodo = getIncidentesPeriodoComparativo();
+  const filiaisTodas = [...new Set(DATA.map(d=>d.filial).filter(Boolean))];
+
+  const porFilial = {};
+  filiaisTodas.forEach(f => { porFilial[f] = []; });
+  periodo.forEach(i=>{
+    const f = i.filial || 'Sem filial';
+    if (!porFilial[f]) porFilial[f] = [];
+    porFilial[f].push(i);
+  });
+
+  const linhas = Object.entries(porFilial).map(([filial, itens])=>{
+    const total = itens.length;
+    const altos = itens.filter(i=>i.gravidade==='Alta').length;
+    const resolvidos = itens.filter(i=>i.status==='Resolvido').length;
+    const tmr = calcularTMR(itens);
+    const pctAlta = total ? (altos/total*100) : 0;
+    const pctResolucao = total ? (resolvidos/total*100) : 0;
+    // tendência: compara 1ª metade x 2ª metade do período pelo total de incidentes
+    const ordenados = [...itens].filter(i=>i.data_hora).sort((a,b)=> new Date(a.data_hora) - new Date(b.data_hora));
+    let tendencia = null;
+    if (ordenados.length >= 4){
+      const meio = Math.floor(ordenados.length/2);
+      const primeiraMetade = ordenados.slice(0, meio).length;
+      const segundaMetade = ordenados.slice(meio).length;
+      tendencia = segundaMetade - primeiraMetade;
+    }
+    const tipoPorFilial = {};
+    itens.forEach(i=>{ const t = i.tipo||'Outros'; tipoPorFilial[t] = (tipoPorFilial[t]||0)+1; });
+    const tipoPredominante = Object.entries(tipoPorFilial).sort((a,b)=>b[1]-a[1])[0] || null;
+    return { filial, itens, total, altos, resolvidos, tmr, pctAlta, pctResolucao, tendencia, tipoPredominante };
+  });
+
+  // ---- KPIs ----
+  const filiaisComIncidente = linhas.filter(l=>l.total>0);
+  const filialMaiorVolume = [...linhas].sort((a,b)=>b.total-a.total)[0];
+  const tmrRede = calcularTMR(periodo);
+  const totalRede = periodo.length;
+  const altoRede = periodo.filter(i=>i.gravidade==='Alta').length;
+  const pctAltaRede = totalRede ? (altoRede/totalRede*100) : 0;
+
+  document.getElementById('incCompStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${filiaisTodas.length}</div><div class="slbl">Filiais monitoradas</div></div>
+    <div class="stat-box"><div class="snum" style="font-size:15px;">${filialMaiorVolume && filialMaiorVolume.total ? escapeHtml(filialMaiorVolume.filial) : '—'}</div><div class="slbl">Maior volume de incidentes${filialMaiorVolume && filialMaiorVolume.total ? ` (${filialMaiorVolume.total})` : ''}</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${tmrRede!==null ? tmrRede.toFixed(1)+'d' : '—'}</div><div class="slbl">TMR médio geral da rede</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${pctAltaRede.toFixed(0)}%</div><div class="slbl">Incidentes de alta gravidade (rede)</div></div>
+  `;
+
+  // ---- Gráfico de barras verticais ----
+  const metricaConfig = {
+    total:      { label:'Total de incidentes por filial',      getValor:l=>l.total,        formatar:v=>v,               cor:'var(--accent)' },
+    tmr:        { label:'TMR (dias) por filial',                getValor:l=>l.tmr,          formatar:v=>v!==null?v.toFixed(1)+'d':'—', cor:'var(--atencao)' },
+    alta:       { label:'% de alta gravidade por filial',       getValor:l=>l.pctAlta,      formatar:v=>v.toFixed(0)+'%', cor:'var(--critico)' },
+    resolucao:  { label:'Taxa de resolução por filial',         getValor:l=>l.pctResolucao, formatar:v=>v.toFixed(0)+'%', cor:'var(--ok)' },
+  };
+  const cfg = metricaConfig[incCompMetrica] || metricaConfig.total;
+  document.getElementById('incCompChartTitulo').textContent = cfg.label;
+
+  const linhasOrdenadas = [...linhas].sort((a,b)=> (cfg.getValor(b)||0) - (cfg.getValor(a)||0));
+  const valores = linhasOrdenadas.map(l => cfg.getValor(l));
+  const maxValor = Math.max(1, ...valores.filter(v=>v!==null));
+  document.getElementById('incCompChart').innerHTML = linhasOrdenadas.map((l,idx)=>{
+    const v = valores[idx];
+    const pct = v===null ? 3 : Math.max(3, (v/maxValor)*100);
+    return `
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px;">
+        <span style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;">${cfg.formatar(v)}</span>
+        <div style="width:70%; max-width:52px; height:${pct}%; background:${cfg.cor}; border-radius:5px 5px 0 0;" title="${escapeHtml(l.filial)}: ${cfg.formatar(v)}"></div>
+        <span style="font-size:11px; color:var(--text-faint); text-align:center;">${escapeHtml(l.filial)}</span>
+      </div>`;
+  }).join('');
+
+  // ---- Relatório inteligente ----
+  const frases = [];
+  if (filialMaiorVolume && filialMaiorVolume.total){
+    frases.push(`<b>${escapeHtml(filialMaiorVolume.filial)}</b> concentra o maior volume de incidentes no período (${filialMaiorVolume.total}${filialMaiorVolume.tipoPredominante ? `, principalmente ${escapeHtml(filialMaiorVolume.tipoPredominante[0])}` : ''}).`);
+  }
+  const tmrsValidos = linhas.filter(l=>l.tmr!==null);
+  if (tmrsValidos.length >= 2 && tmrRede!==null){
+    const foraDaMedia = tmrsValidos.filter(l => Math.abs(l.tmr - tmrRede) > tmrRede*0.4 && l.tmr > tmrRede);
+    if (foraDaMedia.length){
+      frases.push(`<b>${foraDaMedia.map(l=>escapeHtml(l.filial)).join(', ')}</b> ${foraDaMedia.length>1?'estão':'está'} com TMR bem acima da média da rede (${tmrRede.toFixed(1)}d).`);
+    }
+  }
+  const emAlta = linhas.filter(l=>l.tendencia!==null && l.tendencia>0).sort((a,b)=>b.tendencia-a.tendencia);
+  const emQueda = linhas.filter(l=>l.tendencia!==null && l.tendencia<0).sort((a,b)=>a.tendencia-b.tendencia);
+  if (emAlta.length) frases.push(`<b>${escapeHtml(emAlta[0].filial)}</b> mostra tendência de <span style="color:var(--critico);">alta</span> no período (mais incidentes na segunda metade do que na primeira).`);
+  if (emQueda.length) frases.push(`<b>${escapeHtml(emQueda[0].filial)}</b> mostra tendência de <span style="color:var(--ok);">queda</span> no período.`);
+  const comTipo = linhas.filter(l=>l.tipoPredominante);
+  if (comTipo.length){
+    frases.push('Tipo predominante por filial: ' + comTipo.map(l=>`<b>${escapeHtml(l.filial)}</b> → ${escapeHtml(l.tipoPredominante[0])} (${l.tipoPredominante[1]}×)`).join('; ') + '.');
+  }
+  if (!frases.length) frases.push('Sem incidentes suficientes no período selecionado para gerar um comparativo.');
+
+  document.getElementById('incCompRelatorio').innerHTML = frases.map(f=>`<p style="margin:0 0 8px;">${f}</p>`).join('');
+
+  const filialDestaque = filialMaiorVolume && filialMaiorVolume.total ? filialMaiorVolume.filial : null;
+  document.getElementById('incCompAcoes').innerHTML = filialDestaque
+    ? `<button type="button" class="login-btn" style="width:auto; margin-top:0; padding:8px 16px;" id="incCompVerDetalhes">Ver detalhes de ${escapeHtml(filialDestaque)} ↗</button>`
+    : '';
+  const btnDetalhes = document.getElementById('incCompVerDetalhes');
+  if (btnDetalhes){
+    btnDetalhes.onclick = ()=>{
+      document.getElementById('incFilterFilial').value = filialDestaque;
+      document.querySelector('[data-inc-subtab="detalhamento"]').click();
+      renderIncidentes();
+    };
+  }
+}
+
 let incEditingOriginal = null;
 function abrirIncidenteModal(i){
   incEditingOriginal = i || null;
@@ -13246,7 +13476,7 @@ document.getElementById('incDeleteBtn').addEventListener('click', async ()=>{
     loadIncidentes();
   }catch(e){ alert('Erro ao excluir: ' + e.message); }
 });
-['incSearch','incFilterGravidade','incFilterStatus'].forEach(id=>{
+['incSearch','incFilterGravidade','incFilterStatus','incFilterFilial'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderIncidentes);
   document.getElementById(id).addEventListener('change', renderIncidentes);
 });
@@ -13254,6 +13484,7 @@ document.getElementById('btnLimparFiltrosIncidentes').addEventListener('click', 
   document.getElementById('incSearch').value = '';
   document.getElementById('incFilterGravidade').value = '';
   document.getElementById('incFilterStatus').value = '';
+  document.getElementById('incFilterFilial').value = '';
   document.getElementById('incFilterPeriodo').value = '';
   document.getElementById('incPeriodoInicio').value = '';
   document.getElementById('incPeriodoFim').value = '';
