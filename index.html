@@ -2873,7 +2873,7 @@ CONDOMINIO Y	480	45"></textarea>
 
     <div class="toolbar" style="margin-bottom:10px;">
       <input type="text" class="search" id="demSearch" placeholder="Buscar condomínio ou descrição...">
-      <select class="filter-select" id="demFilterFilial" multiple size="1"><option value="">Filial: todas</option></select>
+      <button type="button" class="clearbtn" id="btnPesquisarDemandas">🔍 Pesquisar</button>      <select class="filter-select" id="demFilterFilial" multiple size="1"><option value="">Filial: todas</option></select>
       <select class="filter-select" id="demFilterData">
         <option value="">Data: tudo</option>
         <option value="hoje">Hoje</option>
@@ -13717,7 +13717,7 @@ document.getElementById('btnLimparFiltrosIncidentes').addEventListener('click', 
 // centralizado) + Fase 4 (cache por versão) + Fase 5 (integração com Vida do
 // Condomínio via risco_contribuinte e getMetricasCondominio).
 // ============================================================================
-const DEM_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josiane - Assistente de Qualidade', 'Geovanna - Aprendiz Tarde', 'Nicole - Aprendiz Manhã'];
+const DEM_RESPONSAVEIS = ['Josy - Assistente de Qualidade', 'Rosely - Analista de Qualidade', 'Nicole - Aprendiz Manhã', 'Geovana - Aprendiz Tarde'];
 const DEM_STATUS_LIST = ['Aberta', 'Em andamento', 'Aguardando', 'Concluída'];
 
 let demData = [];
@@ -13898,7 +13898,7 @@ function demandaRiscoContribuinte(d){
   return dias !== null && dias > demRiscoDiasLimite;
 }
 
-let _demMetricasCache = null, _demMetricasCacheVersion = -1;
+let _demMetricasCache = null, _demMetricasCacheVersion = -1, _demMetricasCacheFiltro = null;
 function calcularMetricas(demandas){
   const abertas = demandas.filter(d=>d.status==='Aberta').length;
   const emAndamento = demandas.filter(d=>d.status==='Em andamento').length;
@@ -13952,7 +13952,10 @@ function calcularAnaliseFilial(demandas){
 }
 
 function demGetMetricas(){
-  if (_demMetricasCacheVersion === demVersion && _demMetricasCache) return _demMetricasCache;
+  const assinaturaFiltro = JSON.stringify(DemFilterStore.get());
+  if (_demMetricasCacheVersion === demVersion && _demMetricasCacheFiltro === assinaturaFiltro && _demMetricasCache){
+    return _demMetricasCache;
+  }
   const filtradas = DemFilterStore.apply(demData);
   _demMetricasCache = {
     filtradas,
@@ -13961,6 +13964,7 @@ function demGetMetricas(){
     analiseFilial: calcularAnaliseFilial(filtradas),
   };
   _demMetricasCacheVersion = demVersion;
+  _demMetricasCacheFiltro = assinaturaFiltro;
   return _demMetricasCache;
 }
 
@@ -14288,6 +14292,8 @@ document.getElementById('demViewListaBtn').addEventListener('click', ()=>{
   document.getElementById(id).addEventListener('input', renderDemandas);
   document.getElementById(id).addEventListener('change', renderDemandas);
 });
+document.getElementById('btnPesquisarDemandas').addEventListener('click', renderDemandas);
+document.getElementById('demSearch').addEventListener('keydown', (e)=>{ if (e.key === 'Enter') renderDemandas(); });
 document.getElementById('demFilterData').addEventListener('change', ()=>{
   const v = document.getElementById('demFilterData').value;
   document.getElementById('demDataCustomWrap').style.display = v === 'custom' ? 'inline-flex' : 'none';
