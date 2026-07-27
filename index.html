@@ -3361,7 +3361,26 @@ function showApp(role, username, allowedTabs){
 
 function initAuth(){
   const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-  if (saved && saved.role && saved.username) showApp(saved.role, saved.username, saved.allowedTabs);
+  if (saved && saved.role && saved.username){
+    // Mostra a UI na hora com o que já está em cache (sem tela em branco)...
+    showApp(saved.role, saved.username, saved.allowedTabs);
+    // ...mas confere na hora se o Supabase mudou o cargo/abas liberadas desde o
+    // último login, e já aplica sem precisar deslogar e logar de novo.
+    if (sb){
+      sb.from('app_users').select('role,allowed_tabs').eq('username', saved.username).limit(1)
+        .then(({ data, error })=>{
+          if (error || !data || !data[0]) return;
+          const row = data[0];
+          const allowedTabsAtual = row.allowed_tabs ? String(row.allowed_tabs).split(',').map(s=>s.trim()).filter(Boolean) : null;
+          const mudou = row.role !== saved.role || JSON.stringify(allowedTabsAtual) !== JSON.stringify(saved.allowedTabs || null);
+          if (mudou){
+            localStorage.setItem(AUTH_KEY, JSON.stringify({ role: row.role, username: saved.username, allowedTabs: allowedTabsAtual }));
+            showApp(row.role, saved.username, allowedTabsAtual);
+          }
+        })
+        .catch(()=>{ /* offline — segue com o que já estava em cache */ });
+    }
+  }
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
