@@ -7507,9 +7507,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   }
 
   async function pushUpsert(condo){
-    if (!sb || !condo) return;
-    try{ var r = await sb.from('cadastro_condominios').upsert(condoToRow(condo)); if (r.error) throw r.error; }
-    catch(e){ console.error('Falha ao salvar no Supabase:', e); setSyncTag("🔴 erro ao sincronizar última alteração"); }
+    if (!sb || !condo) return false;
+    try{ var r = await sb.from('cadastro_condominios').upsert(condoToRow(condo)); if (r.error) throw r.error; return true; }
+    catch(e){ console.error('Falha ao salvar no Supabase:', e); setSyncTag("🔴 erro ao sincronizar última alteração"); return false; }
   }
   async function pushDelete(id){
     if (!sb) return;
@@ -7957,7 +7957,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   document.getElementById("btnCancel").addEventListener("click", closeModal);
   overlay.addEventListener("click", function(e){ if(e.target === overlay) closeModal(); });
 
-  document.getElementById("btnSave").addEventListener("click", function(){
+  document.getElementById("btnSave").addEventListener("click", async function(){
     var nome = document.getElementById("fNome").value.trim();
     if(!nome){ showToast("Informe o nome do condomínio.", true); return; }
     var payload = {
@@ -7998,18 +7998,21 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       var idx = state.data.findIndex(function(c){return c.id===state.editingId;});
       state.data[idx] = Object.assign({id: state.editingId}, payload);
       savedCondo = state.data[idx];
-      showToast("Condomínio atualizado com sucesso.");
     } else {
       payload.id = nextId();
       state.data.push(payload);
       savedCondo = payload;
-      showToast("Condomínio cadastrado com sucesso.");
     }
     saveData();
-    pushUpsert(savedCondo);
-    if (isNovo) addToPesquisaAtual(savedCondo);
     renderAll();
     closeModal();
+    var sincronizou = await pushUpsert(savedCondo);
+    if (sincronizou){
+      showToast(isNovo ? "Condomínio cadastrado com sucesso." : "Condomínio atualizado com sucesso.");
+    } else {
+      showToast("⚠ Salvo só neste navegador — falhou ao sincronizar com o servidor. Josy e outros usuários NÃO vão ver essa alteração até isso ser corrigido.", true);
+    }
+    if (isNovo) addToPesquisaAtual(savedCondo);
   });
 
   document.getElementById("btnDeleteInModal").addEventListener("click", function(){
