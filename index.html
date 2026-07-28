@@ -7542,7 +7542,16 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     return seed;
   }
   function saveData(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }catch(e){
+      // Cache local (só uma cópia de conveniência pra abrir mais rápido/offline) cheio
+      // ou bloqueado — não deve impedir o salvamento de verdade, que é no Supabase.
+      console.warn('Não foi possível salvar cópia local (localStorage cheio ou bloqueado):', e);
+      if (typeof showToast === 'function'){
+        showToast('⚠ O cache local deste navegador está cheio — a edição foi enviada ao servidor mesmo assim, mas pode ficar mais lento aqui. Peça pro suporte limpar o cache deste navegador quando puder.', true);
+      }
+    }
   }
 
   // ==========================================================================
