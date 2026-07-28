@@ -7233,9 +7233,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg>
       Exportar PDF
     </button>
-    <button class="btn btn-ghost" id="btnForcarSync" title="Ignora o que está salvo neste navegador e busca os dados atualizados direto do servidor">
-      🔄 Forçar Sincronização
-    </button>
     <button class="btn btn-ghost" id="btnSaveBackup">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
       Salvar
@@ -7275,7 +7272,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   </div>
   </div>
 
-  <footer class="note">Dados salvos automaticamente neste navegador (localStorage) · 286 condomínios importados da planilha de controle · <b style="color:#E07B2C;">Versão do build: CADASTRO-2026-07-28-A</b></footer>
+  <footer class="note">Dados salvos automaticamente neste navegador (localStorage) · 286 condomínios importados da planilha de controle</footer>
 </div>
 
 <!-- MODAL -->
@@ -7545,11 +7542,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
     }catch(e){
-      // Cache local (só uma cópia de conveniência pra abrir mais rápido/offline) cheio
-      // ou bloqueado — não deve impedir o salvamento de verdade, que é no Supabase.
       console.warn('Não foi possível salvar cópia local (localStorage cheio ou bloqueado):', e);
       if (typeof showToast === 'function'){
-        showToast('⚠ O cache local deste navegador está cheio — a edição foi enviada ao servidor mesmo assim, mas pode ficar mais lento aqui. Peça pro suporte limpar o cache deste navegador quando puder.', true);
+        showToast('⚠ O cache local deste navegador está cheio — a edição foi enviada ao servidor mesmo assim, mas pode ficar mais lento aqui.', true);
       }
     }
   }
@@ -7577,22 +7572,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       setSyncTag("🔴 erro de sincronização — salvando só neste navegador");
     }
   }
-
-  document.getElementById("btnForcarSync").addEventListener("click", async function(){
-    var btn = document.getElementById("btnForcarSync");
-    var textoOriginal = btn.textContent;
-    btn.disabled = true; btn.textContent = "Sincronizando...";
-    try{
-      localStorage.removeItem(STORAGE_KEY);
-      await pullFromSupabase();
-      renderCancelados();
-      showToast("Sincronização concluída — " + state.data.length + " condomínio(s) carregado(s) direto do servidor.");
-    }catch(e){
-      showToast("Erro ao sincronizar: " + e.message, true);
-    }finally{
-      btn.disabled = false; btn.textContent = textoOriginal;
-    }
-  });
 
   function subscribeRealtime(){
     if (!sb) return;
@@ -7641,11 +7620,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   }
   async function pushUpsert(condo){
     if (!sb || !condo) return false;
-    try{
-      var r = await comLimiteDeTempo(sb.from('cadastro_condominios').upsert(condoToRow(condo)), 12);
-      if (r.error) throw r.error;
-      return true;
-    }
+    try{ var r = await comLimiteDeTempo(sb.from('cadastro_condominios').upsert(condoToRow(condo)), 12); if (r.error) throw r.error; return true; }
     catch(e){ console.error('Falha ao salvar no Supabase:', e); setSyncTag("🔴 erro ao sincronizar última alteração"); return false; }
   }
   async function pushDelete(id){
@@ -7717,7 +7692,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   function parseMoedaBR(str){
     if (!str) return null;
     // aceita tanto "4.610,55" (formato BR) quanto "4610.55" (formato solto)
-    const limpo = String(str).trim().replace(/\./g, '').replace(',', '.');
+    const limpo = String(str).trim().replace(/\\./g, '').replace(',', '.');
     const n = parseFloat(limpo);
     return isNaN(n) ? null : n;
   }
@@ -7789,7 +7764,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   // RENDERIZAÇÃO DA TABELA DE CONDOMÍNIOS
   // ==========================================================================
   function renderTable(){
-   try{
     var list = getFiltered();
     var tbody = document.getElementById("tableBody");
     var empty = document.getElementById("emptyState");
@@ -7797,14 +7771,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     note.textContent = list.length + " de " + state.data.length + " condomínios";
     if(list.length === 0){
       tbody.innerHTML = "";
-      if (state.data.length > 0){
-        var todosInativos = state.data.every(function(c){ return c.status === "Inativo"; });
-        empty.innerHTML = todosInativos
-          ? '⚠️ Os ' + state.data.length + ' condomínios cadastrados estão TODOS marcados como "Inativo" — por isso não aparecem aqui. Veja a aba "❌ Condomínios Cancelados", ou confira com o suporte se isso é esperado.'
-          : 'Nenhum condomínio encontrado com os filtros atuais. Clique em "Limpar filtros" (role a tela pra cima) pra ver todos.';
-      } else {
-        empty.textContent = 'Nenhum condomínio cadastrado ainda.';
-      }
       empty.style.display = "block";
       return;
     }
@@ -7829,11 +7795,6 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
         '</div></td>'+
       '</tr>';
     }).join("");
-   }catch(err){
-     console.error('Erro ao renderizar tabela de condomínios:', err);
-     var tbody2 = document.getElementById("tableBody");
-     if (tbody2) tbody2.innerHTML = '<tr><td colspan="13" style="color:#ef4444; padding:14px;">❌ Erro ao carregar a lista: ' + esc(err && err.message ? err.message : String(err)) + '</td></tr>';
-   }
   }
 
   // ==========================================================================
