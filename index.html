@@ -1765,6 +1765,20 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
     <div class="toolbar" style="margin-bottom:14px;">
       <input type="text" class="search" id="renovNegSearch" placeholder="Buscar negociação por nome do condomínio...">
+      <select class="filter-select" id="renovNegFilterFilial"><option value="">Filial: todas</option></select>
+      <select class="filter-select" id="renovNegFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <select class="filter-select" id="renovNegFilterStatus">
+        <option value="">Status: todos</option>
+        <option value="Em negociação">Em negociação</option>
+        <option value="Aguardando envio do aditivo pelo comercial">Aguardando envio do aditivo pelo comercial</option>
+        <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
+        <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
+        <option value="Pendente lançar pedido no ERP">Pendente lançar pedido no ERP</option>
+        <option value="Aguardando assinatura Sr. Giuliano">Aguardando assinatura Sr. Giuliano</option>
+        <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
+        <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
+        <option value="Ampliação concluída">Ampliação concluída</option>
+      </select>
       <button type="button" class="clearbtn" id="btnLimparFiltrosRenovNeg">Limpar filtros</button>
     </div>
     <div class="checklist-table-wrap">
@@ -8543,6 +8557,8 @@ function populateRenovFiltros(){
   const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   fillSelect('renovFilterFilial', uniq(renovAllCondos.map(c => c.filial)));
   fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel).concat(renovNegociacoes.map(n => n.responsavel))));
+  fillSelect('renovNegFilterFilial', uniq(renovAllCondos.map(c => c.filial)));
+  fillSelect('renovNegFilterResponsavel', uniq(renovNegociacoes.map(n => n.responsavel)));
 }
 
 const NEG_STATUS_FINALIZADOS = ['Renovado', 'Não renovado', 'Cancelado'];
@@ -8563,8 +8579,9 @@ function getFilteredRenovVencidos(){
 }
 
 function getFilteredRenovNegociacoes(){
-  const fFilial = document.getElementById('renovFilterFilial').value;
-  const fResp = document.getElementById('renovFilterResponsavel').value;
+  const fFilial = document.getElementById('renovNegFilterFilial').value;
+  const fResp = document.getElementById('renovNegFilterResponsavel').value;
+  const fStatus = document.getElementById('renovNegFilterStatus').value;
   const q = (document.getElementById('renovNegSearch').value || '').trim().toLowerCase();
   return renovNegociacoes.filter(n=>{
     if (!negociacaoEmAndamento(n)) return false;
@@ -8572,6 +8589,7 @@ function getFilteredRenovNegociacoes(){
     const filial = condo ? condo.filial : null;
     if (fFilial && filial !== fFilial) return false;
     if (fResp && n.responsavel !== fResp) return false;
+    if (fStatus && n.status !== fStatus) return false;
     if (q && !(condo && condo.nome.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -8625,7 +8643,6 @@ function renderRenovVencidos(){
 ['renovFilterFilial','renovFilterResponsavel'].forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{
     renderRenovVencidos();
-    renderRenovNegociacoes();
   });
 });
 document.getElementById('btnLimparFiltrosRenovVencidos').addEventListener('click', ()=>{
@@ -8634,8 +8651,14 @@ document.getElementById('btnLimparFiltrosRenovVencidos').addEventListener('click
   renderRenovVencidos();
 });
 document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
+['renovNegFilterFilial','renovNegFilterResponsavel','renovNegFilterStatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderRenovNegociacoes);
+});
 document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()=>{
   document.getElementById('renovNegSearch').value = '';
+  document.getElementById('renovNegFilterFilial').value = '';
+  document.getElementById('renovNegFilterResponsavel').value = '';
+  document.getElementById('renovNegFilterStatus').value = '';
   renderRenovNegociacoes();
 });
 
