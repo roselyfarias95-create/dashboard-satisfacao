@@ -1779,6 +1779,15 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
         <option value="Ampliação concluída">Ampliação concluída</option>
       </select>
+      <select class="filter-select" id="renovNegFilterTempoRenovado">
+        <option value="">Tempo Renovado: todos</option>
+        <option value="6">6 meses</option>
+        <option value="12">12 meses</option>
+        <option value="24">24 meses</option>
+        <option value="36">36 meses</option>
+        <option value="48">48 meses</option>
+        <option value="60">60 meses</option>
+      </select>
       <button type="button" class="clearbtn" id="btnLimparFiltrosRenovNeg">Limpar filtros</button>
     </div>
     <div class="checklist-table-wrap">
@@ -1791,12 +1800,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <th>Responsável</th>
             <th>Status</th>
             <th>Nova Data Proposta</th>
+            <th>Tempo Renovado</th>
             <th>Observações</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody id="renovNegociacoesBody">
-          <tr><td colspan="8" class="empty">Nenhuma negociação registrada.</td></tr>
+          <tr><td colspan="9" class="empty">Nenhuma negociação registrada.</td></tr>
         </tbody>
       </table>
     </div>
@@ -8582,6 +8592,7 @@ function getFilteredRenovNegociacoes(){
   const fFilial = document.getElementById('renovNegFilterFilial').value;
   const fResp = document.getElementById('renovNegFilterResponsavel').value;
   const fStatus = document.getElementById('renovNegFilterStatus').value;
+  const fTempo = document.getElementById('renovNegFilterTempoRenovado').value;
   const q = (document.getElementById('renovNegSearch').value || '').trim().toLowerCase();
   return renovNegociacoes.filter(n=>{
     if (!negociacaoEmAndamento(n)) return false;
@@ -8590,6 +8601,7 @@ function getFilteredRenovNegociacoes(){
     if (fFilial && filial !== fFilial) return false;
     if (fResp && n.responsavel !== fResp) return false;
     if (fStatus && n.status !== fStatus) return false;
+    if (fTempo && String(n.tempo_renovado_meses||'') !== fTempo) return false;
     if (q && !(condo && condo.nome.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -8651,7 +8663,7 @@ document.getElementById('btnLimparFiltrosRenovVencidos').addEventListener('click
   renderRenovVencidos();
 });
 document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
-['renovNegFilterFilial','renovNegFilterResponsavel','renovNegFilterStatus'].forEach(id=>{
+['renovNegFilterFilial','renovNegFilterResponsavel','renovNegFilterStatus','renovNegFilterTempoRenovado'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderRenovNegociacoes);
 });
 document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()=>{
@@ -8659,6 +8671,7 @@ document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()
   document.getElementById('renovNegFilterFilial').value = '';
   document.getElementById('renovNegFilterResponsavel').value = '';
   document.getElementById('renovNegFilterStatus').value = '';
+  document.getElementById('renovNegFilterTempoRenovado').value = '';
   renderRenovNegociacoes();
 });
 
@@ -8788,7 +8801,7 @@ function renderRenovNegociacoes(){
   const countEl = document.getElementById('renovNegociacoesCount');
   if (countEl) countEl.textContent = `${filtered.length} de ${renovNegociacoes.length} negociação(ões)`;
   if (!filtered.length){
-    body.innerHTML = `<tr><td colspan="8" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
     return;
   }
   body.innerHTML = filtered.map(n => {
@@ -8801,6 +8814,7 @@ function renderRenovNegociacoes(){
       <td>${n.responsavel || ''}</td>
       <td>${negBadge(n.status)}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
+      <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
       <td>
         <button type="button" class="renov-action-btn" data-edit-neg="${n.id}">Editar</button>
@@ -9296,7 +9310,7 @@ function editNegociacao(id){
   document.getElementById('negResponsavel').value = n.responsavel || '';
   document.getElementById('negData').value = n.data_negociacao || '';
   document.getElementById('negStatus').value = n.status || 'Em negociação';
-  document.getElementById('negTempoRenovado').value = '';
+  document.getElementById('negTempoRenovado').value = n.tempo_renovado_meses ? String(n.tempo_renovado_meses) : '';
   document.getElementById('negNovaData').value = n.nova_data || '';
   document.getElementById('negObs').value = n.obs || '';
   document.getElementById('negAmpliacaoMaterial').value = n.ampliacao_material || '';
@@ -9336,6 +9350,7 @@ async function salvarNegociacao(){
   }
   const status = document.getElementById('negStatus').value;
   const novaData = document.getElementById('negNovaData').value || null;
+  const tempoRenovadoVal = document.getElementById('negTempoRenovado').value;
   const registro = {
     id: negociacaoEditingId || ('neg_' + Date.now()),
     condo_id: condo.item_id,
@@ -9344,6 +9359,7 @@ async function salvarNegociacao(){
     data_negociacao: document.getElementById('negData').value,
     status: status,
     nova_data: novaData,
+    tempo_renovado_meses: tempoRenovadoVal ? parseInt(tempoRenovadoVal, 10) : null,
     obs: document.getElementById('negObs').value.trim(),
     ampliacao_material: document.getElementById('negAmpliacaoMaterial').value.trim() || null,
     ampliacao_pedido: document.getElementById('negAmpliacaoPedido').value.trim() || null,
