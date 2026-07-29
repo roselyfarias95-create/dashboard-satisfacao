@@ -1702,6 +1702,23 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
 
     <div id="renovViewMiniDash" style="display:none;">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <select class="filter-select" id="renovMDFilterFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="renovMDFilterResponsavel"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="renovMDFilterPeriodo">
+          <option value="">Período: tudo</option>
+          <option value="mes">Este mês</option>
+          <option value="trimestre">Últimos 3 meses</option>
+          <option value="ano">Este ano</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <span id="renovMDPeriodoCustomWrap" style="display:none; align-items:center; gap:6px;">
+          <input type="date" id="renovMDPeriodoInicio" class="search" style="max-width:150px; padding:6px 8px;">
+          <span style="font-size:11px; color:var(--text-faint);">até</span>
+          <input type="date" id="renovMDPeriodoFim" class="search" style="max-width:150px; padding:6px 8px;">
+        </span>
+        <button type="button" class="clearbtn" id="btnLimparFiltrosRenovMD">Limpar filtros</button>
+      </div>
       <div class="stats-strip" id="renovMiniDashStats"></div>
       <div class="charts-grid charts-grid-2" style="margin-top:16px;">
         <div class="chart-panel">
@@ -1712,6 +1729,27 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <p class="chart-title">Vencidos por Filial</p>
           <div id="renovMiniDashFilial"></div>
         </div>
+        <div class="chart-panel">
+          <p class="chart-title">✅ Renovados por Filial</p>
+          <div id="renovMiniDashRenovadosFilial"></div>
+        </div>
+        <div class="chart-panel">
+          <p class="chart-title">👤 Renovações por Responsável</p>
+          <div id="renovMiniDashResponsavel"></div>
+        </div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <p class="chart-title" style="margin:0;">📊 Comparativo entre Filiais</p>
+          <span style="display:inline-flex; gap:4px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:3px;">
+            <button type="button" class="view-toggle-btn active" data-renov-comp-metrica="vencidos">Vencidos</button>
+            <button type="button" class="view-toggle-btn" data-renov-comp-metrica="negociacao">Em Negociação</button>
+            <button type="button" class="view-toggle-btn" data-renov-comp-metrica="renovados">Renovados</button>
+            <button type="button" class="view-toggle-btn" data-renov-comp-metrica="taxa">Taxa de Renovação</button>
+          </span>
+        </div>
+        <div id="renovComparativoChart" style="display:flex; align-items:flex-end; gap:16px; height:200px; padding:8px 4px 0;"></div>
       </div>
     </div>
 
@@ -1813,6 +1851,21 @@ CONDOMINIO Y	9	Concluído"></textarea>
     </div>
 
     <div id="renovViewRenovados" style="display:none;">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="renovRenovadosSearch" placeholder="Buscar por nome do condomínio...">
+        <select class="filter-select" id="renovRenovadosFilterFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="renovRenovadosFilterResponsavel"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="renovRenovadosFilterTempoRenovado">
+          <option value="">Tempo Renovado: todos</option>
+          <option value="6">6 meses</option>
+          <option value="12">12 meses</option>
+          <option value="24">24 meses</option>
+          <option value="36">36 meses</option>
+          <option value="48">48 meses</option>
+          <option value="60">60 meses</option>
+        </select>
+        <button type="button" class="clearbtn" id="btnLimparFiltrosRenovados">Limpar filtros</button>
+      </div>
       <div class="checklist-toolbar">
         <strong style="color:var(--text); font-size:13px; flex:1;">✅ Contratos Renovados</strong>
         <span id="renovRenovadosCount" class="count-line" style="margin:0;"></span>
@@ -1826,11 +1879,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
               <th>Data Negociação</th>
               <th>Responsável</th>
               <th>Nova Data de Vencimento</th>
+              <th>Tempo Renovado</th>
               <th>Observações</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody id="renovRenovadosBody">
-            <tr><td colspan="6" class="empty">Nenhum contrato renovado ainda.</td></tr>
+            <tr><td colspan="8" class="empty">Nenhum contrato renovado ainda.</td></tr>
           </tbody>
         </table>
       </div>
@@ -8552,18 +8607,18 @@ function fmtMoedaRenov(v){
   return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+function fillSelect(id, values){
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
 function populateRenovFiltros(){
-  function fillSelect(id, values){
-    const sel = document.getElementById(id);
-    const current = sel.value;
-    sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
-    values.forEach(v => {
-      const opt = document.createElement('option');
-      opt.value = v; opt.textContent = v;
-      sel.appendChild(opt);
-    });
-    sel.value = current;
-  }
   const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   fillSelect('renovFilterFilial', uniq(renovAllCondos.map(c => c.filial)));
   fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel).concat(renovNegociacoes.map(n => n.responsavel))));
@@ -8843,11 +8898,65 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
   });
 });
 
+function getRenovMDPeriodoRange(){
+  const opcao = document.getElementById('renovMDFilterPeriodo').value;
+  const hoje = new Date();
+  let ini = null, fim = null;
+  if (opcao === 'mes'){
+    ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  } else if (opcao === 'trimestre'){
+    ini = new Date(hoje); ini.setMonth(hoje.getMonth() - 3);
+  } else if (opcao === 'ano'){
+    ini = new Date(hoje.getFullYear(), 0, 1);
+  } else if (opcao === 'custom'){
+    const i = document.getElementById('renovMDPeriodoInicio').value;
+    const f = document.getElementById('renovMDPeriodoFim').value;
+    ini = i ? new Date(i + 'T00:00:00') : null;
+    fim = f ? new Date(f + 'T23:59:59') : null;
+  }
+  return { ini, fim };
+}
+
+function getMDFilteredVencidos(){
+  const fFilial = document.getElementById('renovMDFilterFilial').value;
+  const fResp = document.getElementById('renovMDFilterResponsavel').value;
+  return renovVencidos.filter(c=>{
+    if (fFilial && c.filial !== fFilial) return false;
+    if (fResp && c.responsavel !== fResp) return false;
+    return true;
+  });
+}
+
+function getMDFilteredNegociacoes(){
+  const fFilial = document.getElementById('renovMDFilterFilial').value;
+  const fResp = document.getElementById('renovMDFilterResponsavel').value;
+  const { ini, fim } = getRenovMDPeriodoRange();
+  return renovNegociacoes.filter(n=>{
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    const filial = condo ? condo.filial : null;
+    if (fFilial && filial !== fFilial) return false;
+    if (fResp && n.responsavel !== fResp) return false;
+    if (ini || fim){
+      if (!n.data_negociacao) return false;
+      const d = new Date(n.data_negociacao + 'T00:00:00');
+      if (ini && d < ini) return false;
+      if (fim && d > fim) return false;
+    }
+    return true;
+  });
+}
+
 function renderRenovMiniDash(){
-  const vencidos = renovVencidos.length;
-  const emNegociacao = renovNegociacoes.filter(negociacaoEmAndamento).length;
-  const renovados = renovNegociacoes.filter(n=>n.status==='Renovado').length;
-  const naoRenovados = renovNegociacoes.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
+  fillSelect('renovMDFilterFilial', Array.from(new Set(renovAllCondos.map(c=>c.filial).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+  fillSelect('renovMDFilterResponsavel', Array.from(new Set(renovAllCondos.map(c=>c.responsavel).concat(renovNegociacoes.map(n=>n.responsavel)).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+
+  const vencidosF = getMDFilteredVencidos();
+  const negociacoesF = getMDFilteredNegociacoes();
+
+  const vencidos = vencidosF.length;
+  const emNegociacao = negociacoesF.filter(negociacaoEmAndamento).length;
+  const renovados = negociacoesF.filter(n=>n.status==='Renovado').length;
+  const naoRenovados = negociacoesF.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
 
   document.getElementById('renovMiniDashStats').innerHTML = `
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${vencidos}</div><div class="slbl">Vencidos sem negociação</div></div>
@@ -8871,7 +8980,7 @@ function renderRenovMiniDash(){
   `).join('');
 
   const contagemFilial = {};
-  renovVencidos.forEach(c => { if (c.filial) contagemFilial[c.filial] = (contagemFilial[c.filial]||0)+1; });
+  vencidosF.forEach(c => { if (c.filial) contagemFilial[c.filial] = (contagemFilial[c.filial]||0)+1; });
   const topFiliais = Object.entries(contagemFilial).sort((a,b)=>b[1]-a[1]);
   const maxFilial = Math.max(1, ...topFiliais.map(f=>f[1]));
   document.getElementById('renovMiniDashFilial').innerHTML = topFiliais.length ? topFiliais.map(([label,n])=>`
@@ -8880,14 +8989,140 @@ function renderRenovMiniDash(){
       <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxFilial*100}%; height:100%; background:var(--accent);"></div></div>
     </div>
   `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Nenhum contrato vencido no momento. 🎉</p>';
+
+  // Renovados por Filial — cruza cada negociação Renovada com a filial do condomínio
+  const renovadosList = negociacoesF.filter(n => n.status === 'Renovado');
+  const contagemRenovadosFilial = {};
+  renovadosList.forEach(n=>{
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    const filial = (condo && condo.filial) || 'Sem filial';
+    contagemRenovadosFilial[filial] = (contagemRenovadosFilial[filial]||0) + 1;
+  });
+  const topRenovadosFilial = Object.entries(contagemRenovadosFilial).sort((a,b)=>b[1]-a[1]);
+  const maxRenovadosFilial = Math.max(1, ...topRenovadosFilial.map(f=>f[1]));
+  document.getElementById('renovMiniDashRenovadosFilial').innerHTML = topRenovadosFilial.length ? topRenovadosFilial.map(([label,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxRenovadosFilial*100}%; height:100%; background:var(--ok);"></div></div>
+    </div>
+  `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Nenhuma renovação concluída ainda.</p>';
+
+  // Renovações por Responsável — quem negociou cada contrato já renovado
+  const contagemResponsavel = {};
+  renovadosList.forEach(n=>{
+    const resp = n.responsavel || 'Sem responsável';
+    contagemResponsavel[resp] = (contagemResponsavel[resp]||0) + 1;
+  });
+  const topResponsaveis = Object.entries(contagemResponsavel).sort((a,b)=>b[1]-a[1]);
+  const maxResponsavel = Math.max(1, ...topResponsaveis.map(f=>f[1]));
+  document.getElementById('renovMiniDashResponsavel').innerHTML = topResponsaveis.length ? topResponsaveis.map(([label,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${n} renovação(ões)</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxResponsavel*100}%; height:100%; background:#E07B2C;"></div></div>
+    </div>
+  `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Nenhuma renovação concluída ainda.</p>';
+
+  renderRenovComparativo(vencidosF, negociacoesF);
+}
+
+// ---------------------------------------------------------------------------
+// Comparativo entre Filiais — gráfico de barras verticais com métrica selecionável
+// ---------------------------------------------------------------------------
+let renovCompMetrica = 'vencidos';
+function renderRenovComparativo(vencidosF, negociacoesF){
+  const filiais = Array.from(new Set(renovAllCondos.map(c=>c.filial).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const linhas = filiais.map(filial=>{
+    const vencidosCount = vencidosF.filter(c=>c.filial===filial).length;
+    const negsDaFilial = negociacoesF.filter(n=>{
+      const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+      return condo && condo.filial === filial;
+    });
+    const emNegociacaoCount = negsDaFilial.filter(negociacaoEmAndamento).length;
+    const renovadosCount = negsDaFilial.filter(n=>n.status==='Renovado').length;
+    const naoRenovadosCount = negsDaFilial.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
+    const totalFinalizadas = renovadosCount + naoRenovadosCount;
+    const taxa = totalFinalizadas ? (renovadosCount/totalFinalizadas*100) : 0;
+    return { filial, vencidosCount, emNegociacaoCount, renovadosCount, taxa };
+  });
+
+  const metricaConfig = {
+    vencidos:    { label:'Vencidos sem negociação por filial', getValor:l=>l.vencidosCount,     formatar:v=>v,             cor:'var(--critico)' },
+    negociacao:  { label:'Em negociação por filial',            getValor:l=>l.emNegociacaoCount, formatar:v=>v,             cor:'var(--atencao)' },
+    renovados:   { label:'Renovados por filial',                 getValor:l=>l.renovadosCount,    formatar:v=>v,             cor:'var(--ok)' },
+    taxa:        { label:'Taxa de renovação por filial (%)',     getValor:l=>l.taxa,              formatar:v=>v.toFixed(0)+'%', cor:'var(--accent)' },
+  };
+  const cfg = metricaConfig[renovCompMetrica] || metricaConfig.vencidos;
+
+  const linhasOrdenadas = [...linhas].sort((a,b)=> cfg.getValor(b) - cfg.getValor(a));
+  const valores = linhasOrdenadas.map(l => cfg.getValor(l));
+  const maxValor = Math.max(1, ...valores);
+  document.getElementById('renovComparativoChart').innerHTML = linhasOrdenadas.length ? linhasOrdenadas.map((l,idx)=>{
+    const v = valores[idx];
+    const pct = Math.max(3, (v/maxValor)*100);
+    return `
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px;">
+        <span style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;">${cfg.formatar(v)}</span>
+        <div style="width:70%; max-width:56px; height:${pct}%; background:${cfg.cor}; border-radius:5px 5px 0 0;" title="${escapeHtml(l.filial)}: ${cfg.formatar(v)}"></div>
+        <span style="font-size:11px; color:var(--text-faint); text-align:center;">${escapeHtml(l.filial)}</span>
+      </div>`;
+  }).join('') : '<p style="color:var(--text-faint); font-size:12px;">Sem dados suficientes pra comparar as filiais.</p>';
+}
+document.querySelectorAll('[data-renov-comp-metrica]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-renov-comp-metrica]').forEach(b=>b.classList.toggle('active', b===btn));
+    renovCompMetrica = btn.getAttribute('data-renov-comp-metrica');
+    renderRenovComparativo(getMDFilteredVencidos(), getMDFilteredNegociacoes());
+  });
+});
+['renovMDFilterFilial','renovMDFilterResponsavel'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderRenovMiniDash);
+});
+document.getElementById('renovMDFilterPeriodo').addEventListener('change', ()=>{
+  const v = document.getElementById('renovMDFilterPeriodo').value;
+  document.getElementById('renovMDPeriodoCustomWrap').style.display = v === 'custom' ? 'inline-flex' : 'none';
+  if (v !== 'custom') renderRenovMiniDash();
+});
+['renovMDPeriodoInicio','renovMDPeriodoFim'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{
+    if (document.getElementById('renovMDFilterPeriodo').value === 'custom') renderRenovMiniDash();
+  });
+});
+document.getElementById('btnLimparFiltrosRenovMD').addEventListener('click', ()=>{
+  document.getElementById('renovMDFilterFilial').value = '';
+  document.getElementById('renovMDFilterResponsavel').value = '';
+  document.getElementById('renovMDFilterPeriodo').value = '';
+  document.getElementById('renovMDPeriodoInicio').value = '';
+  document.getElementById('renovMDPeriodoFim').value = '';
+  document.getElementById('renovMDPeriodoCustomWrap').style.display = 'none';
+  renderRenovMiniDash();
+});
+
+function getFilteredRenovRenovados(){
+  const q = (document.getElementById('renovRenovadosSearch').value || '').trim().toLowerCase();
+  const fFilial = document.getElementById('renovRenovadosFilterFilial').value;
+  const fResp = document.getElementById('renovRenovadosFilterResponsavel').value;
+  const fTempo = document.getElementById('renovRenovadosFilterTempoRenovado').value;
+  return renovNegociacoes.filter(n=>{
+    if (n.status !== 'Renovado') return false;
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    const filial = condo ? condo.filial : null;
+    if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
+    if (fFilial && filial !== fFilial) return false;
+    if (fResp && n.responsavel !== fResp) return false;
+    if (fTempo && String(n.tempo_renovado_meses||'') !== fTempo) return false;
+    return true;
+  });
 }
 
 function renderRenovRenovados(){
   const body = document.getElementById('renovRenovadosBody');
-  const renovados = renovNegociacoes.filter(n => n.status === 'Renovado');
-  document.getElementById('renovRenovadosCount').textContent = `${renovados.length} contrato(s) renovado(s)`;
+  const totalRenovados = renovNegociacoes.filter(n => n.status === 'Renovado').length;
+  const renovados = getFilteredRenovRenovados();
+  fillSelect('renovRenovadosFilterFilial', Array.from(new Set(renovAllCondos.map(c=>c.filial).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+  fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>n.status==='Renovado').map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+  document.getElementById('renovRenovadosCount').textContent = `${renovados.length} de ${totalRenovados} contrato(s) renovado(s)`;
   if (!renovados.length){
-    body.innerHTML = '<tr><td colspan="6" class="empty">Nenhum contrato renovado ainda.</td></tr>';
+    body.innerHTML = `<tr><td colspan="8" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
     return;
   }
   body.innerHTML = renovados.map(n => {
@@ -8898,7 +9133,9 @@ function renderRenovRenovados(){
       <td>${fmtDataBRRenov(n.data_negociacao)}</td>
       <td>${n.responsavel || ''}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
-      <td style="text-align:left; max-width:260px; white-space:normal;">${n.obs || ''}</td>
+      <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
+      <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
+      <td><button type="button" class="renov-del-btn" data-del-renovado="${n.id}">🗑️ Excluir</button></td>
     </tr>`;
   }).join('');
 }
@@ -9402,6 +9639,7 @@ async function salvarNegociacao(){
 async function excluirNegociacao(id){
   renovNegociacoes = renovNegociacoes.filter(n => n.id !== id);
   renderRenovNegociacoes();
+  renderRenovRenovados();
   if (sb){
     try{ await sb.from('negociacoes_contrato').delete().eq('id', id); }
     catch(e){ console.warn('Falha ao excluir negociação:', e); }
@@ -9425,6 +9663,23 @@ function initRenovacaoUI(){
     if (editBtn){ editNegociacao(editBtn.dataset.editNeg); return; }
     const delBtn = ev.target.closest('[data-del-neg]');
     if (delBtn) excluirNegociacao(delBtn.dataset.delNeg);
+  });
+  document.getElementById('renovRenovadosBody').addEventListener('click', (ev) => {
+    const delBtn = ev.target.closest('[data-del-renovado]');
+    if (!delBtn) return;
+    if (!confirm('Excluir este registro de renovação? Isso remove o histórico dessa renovação, não pode ser desfeito.')) return;
+    excluirNegociacao(delBtn.dataset.delRenovado);
+  });
+  ['renovRenovadosSearch','renovRenovadosFilterFilial','renovRenovadosFilterResponsavel','renovRenovadosFilterTempoRenovado'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', renderRenovRenovados);
+    document.getElementById(id).addEventListener('change', renderRenovRenovados);
+  });
+  document.getElementById('btnLimparFiltrosRenovados').addEventListener('click', ()=>{
+    document.getElementById('renovRenovadosSearch').value = '';
+    document.getElementById('renovRenovadosFilterFilial').value = '';
+    document.getElementById('renovRenovadosFilterResponsavel').value = '';
+    document.getElementById('renovRenovadosFilterTempoRenovado').value = '';
+    renderRenovRenovados();
   });
 }
 initRenovacaoUI();
