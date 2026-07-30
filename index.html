@@ -1431,6 +1431,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="incidentes"><span class="tab-icon">🛑</span><span class="tab-label">Incidentes</span></button>
       <button type="button" class="tab-btn" data-tab="demandas"><span class="tab-icon">🗂️</span><span class="tab-label">Demandas</span></button>
       <button type="button" class="tab-btn" data-tab="vidaCondominio"><span class="tab-icon">🕓</span><span class="tab-label">Vida do Condomínio</span></button>
+      <button type="button" class="tab-btn" data-tab="atividades" id="tabBtnAtividades" style="display:none;"><span class="tab-icon">🕵️</span><span class="tab-label">Atividades da Equipe</span></button>
     </nav>
 
     <div class="content-area">
@@ -3340,6 +3341,24 @@ CONDOMINIO Y	480	45"></textarea>
     <div id="vidaCondoVazio" class="empty" style="display:none;">Busque um condomínio acima pra ver o histórico completo.</div>
   </div>
 
+  <div id="tabAtividades" class="tab-panel" style="display:none;">
+    <header>
+      <div>
+        <p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p>
+        <h2 style="margin:2px 0 0;">🕵️ Atividades da Equipe</h2>
+        <p style="margin:2px 0 0; font-size:12px; color:var(--text-faint);">Visível só pra conta Administradora — mostra o que cada pessoa fez no painel.</p>
+      </div>
+    </header>
+    <div class="toolbar" style="margin:16px 0;">
+      <input type="date" id="atividadesData" class="search" style="max-width:170px;">
+      <button type="button" class="clearbtn" id="btnAtividadesHoje">Hoje</button>
+      <button type="button" class="clearbtn" id="btnAtividadesOntem">Ontem</button>
+      <select class="filter-select" id="atividadesFilterUsuario"><option value="">Usuário: todos</option></select>
+    </div>
+    <div class="stats-strip" id="atividadesStats" style="margin-bottom:16px;"></div>
+    <div id="atividadesLista"></div>
+  </div>
+
   <div class="users-modal" id="lembreteModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:480px;">
       <div class="users-head">
@@ -3468,6 +3487,143 @@ CONDOMINIO Y	480	45"></textarea>
 const AUTH_KEY = 'sc_pesquisa_auth_session';
 let currentRole = null;
 let currentUsername = null;
+
+// Registra uma ação do usuário atual pro Relatório Diário de Atividades
+// (só a conta Administradora consegue ver esse relatório depois).
+async function logActivity(acao, entidadeTipo, entidadeNome, detalhes){
+  if (!sb || !currentUsername) return;
+  try{
+    await sb.from('activity_log').insert({
+      username: currentUsername, acao, entidade_tipo: entidadeTipo,
+      entidade_nome: entidadeNome || null, detalhes: detalhes || null,
+    });
+  }catch(e){ console.warn('Falha ao registrar atividade (tabela activity_log pode não existir ainda):', e); }
+}
+
+// O Cadastro de Condomínios roda num quadro separado (iframe, às vezes em
+// origem diferente por causa do Blob URL), então ele avisa por postMessage
+// em vez de chamar logActivity direto.
+window.addEventListener('message', (ev)=>{
+  const msg = ev.data;
+  if (msg && msg.type === 'cadastro_activity'){
+    logActivity(msg.acao, 'cadastro', msg.nome, msg.detalhes || null);
+  }
+});
+
+// ============================================================================
+// RELATÓRIO DIÁRIO DE ATIVIDADES (só Administrador)
+// ============================================================================
+let atividadesLogCache = [];
+
+const ATIVIDADE_LABELS = {
+  pesquisa: 'pesquisa(s) de satisfação',
+  demanda: 'demanda(s)',
+  negociacao: 'negociação(ões) de renovação',
+  incidente: 'incidente(s)',
+  visita: 'visita(s) emergencial(is)',
+  lembrete: 'lembrete(s)',
+  checklist: 'item(ns) de checklist',
+  cadastro: 'cadastro(s) de condomínio',
+};
+const ACAO_LABELS = { criou: 'criou', editou: 'editou/preencheu', concluiu: 'concluiu', excluiu: 'excluiu', resolveu: 'resolveu' };
+
+async function carregarRelatorioAtividades(){
+  const lista = document.getElementById('atividadesLista');
+  if (!sb){ lista.innerHTML = '<p class="empty">Sem conexão com o Supabase.</p>'; return; }
+  if (!document.getElementById('atividadesData').value){
+    document.getElementById('atividadesData').value = hojeISO();
+  }
+  const dataAlvo = document.getElementById('atividadesData').value;
+  lista.innerHTML = '<p class="empty">Carregando...</p>';
+  try{
+    const inicio = dataAlvo + 'T00:00:00';
+    const fim = dataAlvo + 'T23:59:59';
+    const { data, error } = await sb.from('activity_log').select('*')
+      .gte('created_at', inicio).lte('created_at', fim)
+      .order('created_at', { ascending:false }).limit(2000);
+    if (error) throw error;
+    atividadesLogCache = data || [];
+    popularFiltroUsuarioAtividades();
+    renderRelatorioAtividades();
+  }catch(e){
+    console.error(e);
+    lista.innerHTML = `<p class="empty">Erro ao carregar: ${escapeHtml(e.message)}${e.message && e.message.includes('activity_log') ? ' — a tabela "activity_log" pode não existir ainda no Supabase.' : ''}</p>`;
+  }
+}
+
+function popularFiltroUsuarioAtividades(){
+  const sel = document.getElementById('atividadesFilterUsuario');
+  const atual = sel.value;
+  const usuarios = Array.from(new Set(atividadesLogCache.map(a=>a.username))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  sel.innerHTML = '<option value="">Usuário: todos</option>' + usuarios.map(u=>`<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+  sel.value = atual;
+}
+
+function renderRelatorioAtividades(){
+  const fUsuario = document.getElementById('atividadesFilterUsuario').value;
+  const registros = fUsuario ? atividadesLogCache.filter(a=>a.username===fUsuario) : atividadesLogCache;
+
+  const usuariosAtivos = new Set(registros.map(a=>a.username));
+  document.getElementById('atividadesStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${registros.length}</div><div class="slbl">Ações no dia</div></div>
+    <div class="stat-box"><div class="snum">${usuariosAtivos.size}</div><div class="slbl">Usuário(s) com atividade</div></div>
+  `;
+
+  if (!registros.length){
+    document.getElementById('atividadesLista').innerHTML = '<p class="empty">Nenhuma atividade registrada nesse dia.</p>';
+    return;
+  }
+
+  // Agrupa por usuário -> por (ação + tipo de entidade) -> lista de nomes
+  const porUsuario = {};
+  registros.forEach(r=>{
+    if (!porUsuario[r.username]) porUsuario[r.username] = {};
+    const chave = `${r.acao}||${r.entidade_tipo}`;
+    if (!porUsuario[r.username][chave]) porUsuario[r.username][chave] = [];
+    porUsuario[r.username][chave].push(r);
+  });
+
+  const usuariosOrdenados = Object.keys(porUsuario).sort((a,b)=> Object.values(porUsuario[b]).flat().length - Object.values(porUsuario[a]).flat().length);
+
+  document.getElementById('atividadesLista').innerHTML = usuariosOrdenados.map(usuario=>{
+    const grupos = porUsuario[usuario];
+    const totalUsuario = Object.values(grupos).flat().length;
+    const itensHtml = Object.entries(grupos).map(([chave, itens])=>{
+      const [acao, tipo] = chave.split('||');
+      const acaoLabel = ACAO_LABELS[acao] || acao;
+      const tipoLabel = ATIVIDADE_LABELS[tipo] || tipo;
+      const nomes = itens.map(i=>i.entidade_nome).filter(Boolean);
+      const nomesUnicos = Array.from(new Set(nomes));
+      const mostrar = nomesUnicos.slice(0, 8);
+      const resto = nomesUnicos.length - mostrar.length;
+      return `
+        <div style="margin-bottom:8px; padding:8px 10px; background:var(--bg-panel-2); border-radius:7px;">
+          <div style="font-size:12.5px;"><b>${itens.length}</b> ${escapeHtml(acaoLabel)} ${escapeHtml(tipoLabel)}</div>
+          ${mostrar.length ? `<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">${mostrar.map(escapeHtml).join(', ')}${resto>0 ? ` e mais ${resto}` : ''}</div>` : ''}
+        </div>`;
+    }).join('');
+    return `
+      <div class="chart-panel" style="margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <p class="chart-title" style="margin:0;">👤 ${escapeHtml(usuario)}</p>
+          <span style="font-size:11.5px; color:var(--accent); font-weight:600;">${totalUsuario} ação(ões)</span>
+        </div>
+        ${itensHtml}
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('atividadesData').addEventListener('change', carregarRelatorioAtividades);
+document.getElementById('atividadesFilterUsuario').addEventListener('change', renderRelatorioAtividades);
+document.getElementById('btnAtividadesHoje').addEventListener('click', ()=>{
+  document.getElementById('atividadesData').value = hojeISO();
+  carregarRelatorioAtividades();
+});
+document.getElementById('btnAtividadesOntem').addEventListener('click', ()=>{
+  const ontem = new Date(); ontem.setDate(ontem.getDate()-1);
+  document.getElementById('atividadesData').value = ontem.toISOString().slice(0,10);
+  carregarRelatorioAtividades();
+});
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
 const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio'];
 
@@ -3519,6 +3675,7 @@ function showApp(role, username, allowedTabs){
   document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   document.getElementById('newRodadaBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   applyTabPermissions();
+  document.getElementById('tabBtnAtividades').style.display = role === 'admin' ? '' : 'none';
   render();
   updateSyncTag();
   pullOverridesFromSupabase();
@@ -8234,6 +8391,9 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var sincronizou = await pushUpsert(savedCondo);
     if (sincronizou){
       showToast(isNovo ? "Condomínio cadastrado com sucesso." : "Condomínio atualizado com sucesso.");
+      try{
+        window.parent.postMessage({ type: 'cadastro_activity', acao: isNovo ? 'criou' : 'editou', nome: savedCondo.nome }, '*');
+      }catch(ePost){ /* iframe pode não ter parent acessível em algum contexto raro — ignora silenciosamente */ }
     } else {
       showToast("⚠ Salvo só neste navegador — falhou ao sincronizar com o servidor. Josy e outros usuários NÃO vão ver essa alteração até isso ser corrigido.", true);
     }
@@ -9748,6 +9908,7 @@ async function salvarNegociacao(){
   }
   renderRenovNegociacoes();
   closeNegociacaoModal();
+  logActivity(negociacaoEditingId ? 'editou' : 'criou', 'negociacao', condo.nome, `Status: ${status}`);
 
   if (sb){
     try{
@@ -9844,6 +10005,7 @@ function initTabs(){
       document.getElementById('tabIncidentes').style.display = tab === 'incidentes' ? 'block' : 'none';
       document.getElementById('tabDemandas').style.display = tab === 'demandas' ? 'block' : 'none';
       document.getElementById('tabVidaCondominio').style.display = tab === 'vidaCondominio' ? 'block' : 'none';
+      document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
@@ -9884,6 +10046,9 @@ function initTabs(){
       }
       if (tab === 'vidaCondominio'){
         if (typeof popularSeletorVidaCondominio === 'function') popularSeletorVidaCondominio();
+      }
+      if (tab === 'atividades'){
+        if (typeof carregarRelatorioAtividades === 'function') carregarRelatorioAtividades();
       }
     });
   });
@@ -10262,6 +10427,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   populateFilterOptions();
   render();
 
+  logActivity(pqEditingItem ? 'editou' : 'criou', 'pesquisa', nome);
   if (typeof autoCriarVisitaEmergencial === 'function') autoCriarVisitaEmergencial(itemSalvo);
 
 });
@@ -11180,6 +11346,7 @@ function initVECrudUI(){
         : await sb.from('visitas_emergenciais').insert(payload);
       if (error) throw error;
       document.getElementById('veModalOverlay').style.display = 'none';
+      logActivity(id ? 'editou' : 'criou', 'visita', condominio, `Status: ${payload.status}`);
       loadVE();
     }catch(e){
       errEl.textContent = 'Erro ao salvar visita: ' + e.message;
@@ -11802,6 +11969,7 @@ document.getElementById('lembreteSaveBtn').addEventListener('click', async ()=>{
       : await sb.from('lembretes').insert(payload);
     if (error) throw error;
     document.getElementById('lembreteModalOverlay').style.display = 'none';
+    logActivity(id ? 'editou' : 'criou', 'lembrete', titulo, payload.condominio || null);
     loadLembretes().then(renderLembretes);
   }catch(e){
     errEl.textContent = 'Erro ao salvar lembrete: ' + e.message;
@@ -14240,6 +14408,7 @@ document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
       : await sb.from('incidentes').insert(payload);
     if (error) throw error;
     document.getElementById('incModalOverlay').style.display = 'none';
+    logActivity(id ? 'editou' : 'criou', 'incidente', condominio, `${payload.tipo} — ${payload.gravidade}`);
     loadIncidentes();
   }catch(e){
     errEl.textContent = 'Erro ao salvar: ' + e.message;
@@ -14954,6 +15123,7 @@ document.getElementById('demSaveBtn').addEventListener('click', async ()=>{
       : await sb.from('demandas').insert(payload);
     if (error) throw error;
     document.getElementById('demModalOverlay').style.display = 'none';
+    logActivity(demEditingItem ? 'editou' : 'criou', 'demanda', condominio, descricao.slice(0,80));
     await loadDemandas();
   }catch(e){
     errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('demandas') ? ' — a tabela "demandas" pode não existir ainda no Supabase.' : '');
@@ -15012,6 +15182,7 @@ document.getElementById('btnConcluirSelecionadasDemandas').addEventListener('cli
     if (error) throw error;
     demSelecionadas.clear();
     await loadDemandas();
+    logActivity('concluiu', 'demanda', null, `${aResolver.length} demanda(s) marcada(s) como Concluída em massa: ${aResolver.slice(0,10).map(d=>d.condominio).join(', ')}${aResolver.length>10?` e mais ${aResolver.length-10}`:''}`);
     alert(`${aResolver.length} demanda(s) marcada(s) como Concluída.`);
   }catch(e){
     alert('Erro ao atualizar: ' + e.message);
@@ -15158,6 +15329,7 @@ document.getElementById('demLoteSalvarBtn').addEventListener('click', async ()=>
     if (error) throw error;
     document.getElementById('demLoteModalOverlay').style.display = 'none';
     await loadDemandas();
+    logActivity('criou', 'demanda', null, `Criou ${registros.length} demanda(s) em lote (${descricao.slice(0,60)}): ${condosAlvo.slice(0,10).join(', ')}${condosAlvo.length>10?` e mais ${condosAlvo.length-10}`:''}`);
     alert(`${registros.length} demanda(s) criada(s) com sucesso.`);
   }catch(e){
     errEl.textContent = 'Erro ao criar demandas: ' + e.message;
