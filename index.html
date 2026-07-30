@@ -1839,12 +1839,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <th>Status</th>
             <th>Nova Data Proposta</th>
             <th>Tempo Renovado</th>
+            <th>Valor do Custo</th>
             <th>Observações</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody id="renovNegociacoesBody">
-          <tr><td colspan="9" class="empty">Nenhuma negociação registrada.</td></tr>
+          <tr><td colspan="10" class="empty">Nenhuma negociação registrada.</td></tr>
         </tbody>
       </table>
     </div>
@@ -1880,12 +1881,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
               <th>Responsável</th>
               <th>Nova Data de Vencimento</th>
               <th>Tempo Renovado</th>
+              <th>Valor do Custo</th>
               <th>Observações</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody id="renovRenovadosBody">
-            <tr><td colspan="8" class="empty">Nenhum contrato renovado ainda.</td></tr>
+            <tr><td colspan="9" class="empty">Nenhum contrato renovado ainda.</td></tr>
           </tbody>
         </table>
       </div>
@@ -2050,6 +2052,9 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
           <input type="date" id="negNovaData" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor do Custo (R$)
+          <input type="text" id="negValorCusto" placeholder="Ex: 4.610,55" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
           <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📦 Ampliação</label>
         </div>
@@ -2068,6 +2073,14 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
           <textarea id="negObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Notas sobre a negociação (opcional)"></textarea>
         </label>
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📎 Anexos (PDF, foto ou qualquer arquivo)</label>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input type="file" id="negAnexoInput" style="flex:1; font-size:12px;">
+            <button type="button" class="clearbtn" id="negAnexoUploadBtn" style="white-space:nowrap;">📤 Anexar</button>
+          </div>
+          <div id="negAnexosBox"></div>
+        </div>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button type="button" class="logout-btn" id="negociacaoCancelBtn">Cancelar</button>
@@ -3423,6 +3436,14 @@ CONDOMINIO Y	480	45"></textarea>
             <option value="Concluído">Concluído</option>
           </select>
         </label>
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📎 Anexos (PDF, foto ou qualquer arquivo)</label>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input type="file" id="veAnexoInput" style="flex:1; font-size:12px;">
+            <button type="button" class="clearbtn" id="veAnexoUploadBtn" style="white-space:nowrap;">📤 Anexar</button>
+          </div>
+          <div id="veAnexosBox"></div>
+        </div>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button type="button" class="logout-btn" id="veDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
@@ -8602,9 +8623,116 @@ function simNaoBadgeRenov(v){
   if (v === 'Não') return '<span class="rbadge no">Não</span>';
   return '<span class="rbadge">—</span>';
 }
+// ============================================================================
+// ANEXOS — sistema genérico de upload de arquivos (Supabase Storage), usado em
+// Renovação de Contrato (Negociações) e Visitas Emergenciais.
+// ============================================================================
+function formatarTamanhoArquivo(bytes){
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+async function uploadAnexo(file, tipo, entidadeId){
+  if (!sb) throw new Error('Sem conexão com o servidor.');
+  const nomeSeguro = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${tipo}/${entidadeId}/${Date.now()}_${nomeSeguro}`;
+  const { error: upErr } = await sb.storage.from('anexos').upload(path, file);
+  if (upErr) throw upErr;
+  const { data: urlData } = sb.storage.from('anexos').getPublicUrl(path);
+  const registro = {
+    entidade_tipo: tipo, entidade_id: String(entidadeId),
+    nome_arquivo: file.name, caminho_storage: path, url: urlData.publicUrl,
+    tamanho_bytes: file.size,
+  };
+  const { error: insErr } = await sb.from('anexos').insert(registro);
+  if (insErr) throw insErr;
+  return registro;
+}
+
+async function carregarAnexos(tipo, entidadeId){
+  if (!sb || !entidadeId) return [];
+  try{
+    const { data, error } = await sb.from('anexos').select('*')
+      .eq('entidade_tipo', tipo).eq('entidade_id', String(entidadeId))
+      .order('created_at', { ascending:false });
+    if (error) throw error;
+    return data || [];
+  }catch(e){
+    console.error('Falha ao carregar anexos (a tabela "anexos" pode não existir ainda):', e);
+    return [];
+  }
+}
+
+async function renderAnexosBox(containerId, tipo, entidadeId){
+  const container = document.getElementById(containerId);
+  if (!entidadeId){
+    container.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint);">Salve o registro primeiro pra poder anexar arquivos.</p>';
+    return;
+  }
+  container.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint);">Carregando anexos...</p>';
+  const anexos = await carregarAnexos(tipo, entidadeId);
+  container.innerHTML = anexos.length ? anexos.map(a => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:6px; padding:6px 10px; margin-bottom:6px;">
+      <a href="${a.url}" target="_blank" rel="noopener" style="font-size:12px; color:var(--accent); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">📎 ${escapeHtml(a.nome_arquivo)}</a>
+      <span style="font-size:10.5px; color:var(--text-faint); white-space:nowrap;">${formatarTamanhoArquivo(a.tamanho_bytes)}</span>
+      <button type="button" class="renov-del-btn" data-del-anexo="${a.id}" data-anexo-path="${escapeHtml(a.caminho_storage)}" style="padding:3px 8px; font-size:11px;">🗑️</button>
+    </div>
+  `).join('') : '<p style="font-size:11.5px; color:var(--text-faint);">Nenhum arquivo anexado ainda.</p>';
+  container.querySelectorAll('[data-del-anexo]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      if (!confirm('Excluir esse anexo? Não pode ser desfeito.')) return;
+      const id = btn.getAttribute('data-del-anexo');
+      const path = btn.getAttribute('data-anexo-path');
+      btn.disabled = true;
+      try{
+        await sb.storage.from('anexos').remove([path]);
+        await sb.from('anexos').delete().eq('id', id);
+        await renderAnexosBox(containerId, tipo, entidadeId);
+      }catch(e){ alert('Erro ao excluir anexo: ' + e.message); btn.disabled = false; }
+    };
+  });
+}
+
+function wireAnexoUpload(inputId, btnId, containerId, tipo, idGetter){
+  document.getElementById(btnId).addEventListener('click', async ()=>{
+    const input = document.getElementById(inputId);
+    const file = input.files[0];
+    if (!file){ alert('Escolha um arquivo primeiro.'); return; }
+    const entidadeId = idGetter();
+    if (!entidadeId){ alert('Salve o registro primeiro pra poder anexar arquivos.'); return; }
+    if (!sb){ alert('Sem conexão com o servidor.'); return; }
+    const btn = document.getElementById(btnId);
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{
+      await uploadAnexo(file, tipo, entidadeId);
+      input.value = '';
+      await renderAnexosBox(containerId, tipo, entidadeId);
+    }catch(e){
+      alert('Erro ao enviar arquivo: ' + e.message + (e.message && e.message.includes('anexos') ? ' — confira se o bucket/tabela "anexos" já foram criados no Supabase.' : ''));
+    }finally{
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+}
+wireAnexoUpload('negAnexoInput', 'negAnexoUploadBtn', 'negAnexosBox', 'negociacao', () => negociacaoEditingId);
+wireAnexoUpload('veAnexoInput', 'veAnexoUploadBtn', 'veAnexosBox', 'visita', () => document.getElementById('veId').value || null);
+
 function fmtMoedaRenov(v){
   if (v === null || v === undefined || v === '') return '—';
   return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function parseMoedaBRRenov(str){
+  if (!str) return null;
+  const limpo = String(str).trim().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? null : n;
+}
+function formatarMoedaParaInputRenov(v){
+  if (v === null || v === undefined || v === '') return '';
+  return Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function fillSelect(id, values){
@@ -8856,7 +8984,7 @@ function renderRenovNegociacoes(){
   const countEl = document.getElementById('renovNegociacoesCount');
   if (countEl) countEl.textContent = `${filtered.length} de ${renovNegociacoes.length} negociação(ões)`;
   if (!filtered.length){
-    body.innerHTML = `<tr><td colspan="9" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
     return;
   }
   body.innerHTML = filtered.map(n => {
@@ -8870,6 +8998,7 @@ function renderRenovNegociacoes(){
       <td>${negBadge(n.status)}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
       <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
+      <td>${fmtMoedaRenov(n.valor_custo)}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
       <td>
         <button type="button" class="renov-action-btn" data-edit-neg="${n.id}">Editar</button>
@@ -9122,7 +9251,7 @@ function renderRenovRenovados(){
   fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>n.status==='Renovado').map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
   document.getElementById('renovRenovadosCount').textContent = `${renovados.length} de ${totalRenovados} contrato(s) renovado(s)`;
   if (!renovados.length){
-    body.innerHTML = `<tr><td colspan="8" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
     return;
   }
   body.innerHTML = renovados.map(n => {
@@ -9134,6 +9263,7 @@ function renderRenovRenovados(){
       <td>${n.responsavel || ''}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
       <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
+      <td>${fmtMoedaRenov(n.valor_custo)}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
       <td><button type="button" class="renov-del-btn" data-del-renovado="${n.id}">🗑️ Excluir</button></td>
     </tr>`;
@@ -9525,6 +9655,7 @@ function openNegociacaoModal(condoId){
   document.getElementById('negStatus').value = 'Em negociação';
   document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = '';
+  document.getElementById('negValorCusto').value = '';
   document.getElementById('negObs').value = '';
   document.getElementById('negAmpliacaoMaterial').value = '';
   document.getElementById('negAmpliacaoPedido').value = '';
@@ -9533,6 +9664,7 @@ function openNegociacaoModal(condoId){
   document.getElementById('negCondoDropdown').classList.remove('open');
   if (condoId) setNegCondo(condoId);
   else setNegCondo(null);
+  renderAnexosBox('negAnexosBox', 'negociacao', negociacaoEditingId);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
 }
 
@@ -9549,12 +9681,14 @@ function editNegociacao(id){
   document.getElementById('negStatus').value = n.status || 'Em negociação';
   document.getElementById('negTempoRenovado').value = n.tempo_renovado_meses ? String(n.tempo_renovado_meses) : '';
   document.getElementById('negNovaData').value = n.nova_data || '';
+  document.getElementById('negValorCusto').value = formatarMoedaParaInputRenov(n.valor_custo);
   document.getElementById('negObs').value = n.obs || '';
   document.getElementById('negAmpliacaoMaterial').value = n.ampliacao_material || '';
   document.getElementById('negAmpliacaoPedido').value = n.ampliacao_pedido || '';
   document.getElementById('negAmpliacaoOS').value = n.ampliacao_os || '';
   document.getElementById('negAmpliacaoRequisicao').value = n.ampliacao_requisicao || '';
   document.getElementById('negCondoDropdown').classList.remove('open');
+  renderAnexosBox('negAnexosBox', 'negociacao', negociacaoEditingId);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
 }
 
@@ -9597,6 +9731,7 @@ async function salvarNegociacao(){
     status: status,
     nova_data: novaData,
     tempo_renovado_meses: tempoRenovadoVal ? parseInt(tempoRenovadoVal, 10) : null,
+    valor_custo: parseMoedaBRRenov(document.getElementById('negValorCusto').value),
     obs: document.getElementById('negObs').value.trim(),
     ampliacao_material: document.getElementById('negAmpliacaoMaterial').value.trim() || null,
     ampliacao_pedido: document.getElementById('negAmpliacaoPedido').value.trim() || null,
@@ -10991,6 +11126,7 @@ function openVEModal(v){
   document.getElementById('veTratativa').value = v ? (v.tratativa || '') : '';
   document.getElementById('veStatus').value = v ? (v.status || 'Visita Agendada') : 'Visita Agendada';
   document.getElementById('veDeleteBtn').style.display = v ? '' : 'none';
+  renderAnexosBox('veAnexosBox', 'visita', v ? v.id : null);
   document.getElementById('veModalOverlay').style.display = 'flex';
 }
 
