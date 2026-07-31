@@ -1841,12 +1841,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <th>Nova Data Proposta</th>
             <th>Tempo Renovado</th>
             <th>Valor do Custo</th>
+            <th>Tratativa</th>
             <th>Observações</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody id="renovNegociacoesBody">
-          <tr><td colspan="10" class="empty">Nenhuma negociação registrada.</td></tr>
+          <tr><td colspan="11" class="empty">Nenhuma negociação registrada.</td></tr>
         </tbody>
       </table>
     </div>
@@ -2073,6 +2074,9 @@ CONDOMINIO Y	9	Concluído"></textarea>
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Número da Requisição
           <input type="text" id="negAmpliacaoRequisicao" placeholder="Ex: REQ-4321" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Tratativa
+          <textarea id="negTratativa" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="O que está sendo feito / próximos passos dessa negociação"></textarea>
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
           <textarea id="negObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Notas sobre a negociação (opcional)"></textarea>
@@ -9247,7 +9251,7 @@ function renderRenovNegociacoes(){
   const countEl = document.getElementById('renovNegociacoesCount');
   if (countEl) countEl.textContent = `${filtered.length} de ${renovNegociacoes.length} negociação(ões)`;
   if (!filtered.length){
-    body.innerHTML = `<tr><td colspan="10" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="11" class="empty">${renovNegociacoes.length ? 'Nenhuma negociação encontrada com esses filtros.' : 'Nenhuma negociação registrada.'}</td></tr>`;
     return;
   }
   body.innerHTML = filtered.map(n => {
@@ -9262,6 +9266,7 @@ function renderRenovNegociacoes(){
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
       <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
       <td>${fmtMoedaRenov(n.valor_custo)}</td>
+      <td style="text-align:left; max-width:200px; white-space:normal;" title="${escapeHtml(n.tratativa||'')}">${n.tratativa || '—'}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
       <td>
         <button type="button" class="renov-action-btn" data-edit-neg="${n.id}">Editar</button>
@@ -9919,6 +9924,7 @@ function openNegociacaoModal(condoId){
   document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = '';
   document.getElementById('negValorCusto').value = '';
+  document.getElementById('negTratativa').value = '';
   document.getElementById('negObs').value = '';
   document.getElementById('negAmpliacaoMaterial').value = '';
   document.getElementById('negAmpliacaoPedido').value = '';
@@ -9945,6 +9951,7 @@ function editNegociacao(id){
   document.getElementById('negTempoRenovado').value = n.tempo_renovado_meses ? String(n.tempo_renovado_meses) : '';
   document.getElementById('negNovaData').value = n.nova_data || '';
   document.getElementById('negValorCusto').value = formatarMoedaParaInputRenov(n.valor_custo);
+  document.getElementById('negTratativa').value = n.tratativa || '';
   document.getElementById('negObs').value = n.obs || '';
   document.getElementById('negAmpliacaoMaterial').value = n.ampliacao_material || '';
   document.getElementById('negAmpliacaoPedido').value = n.ampliacao_pedido || '';
@@ -9995,6 +10002,7 @@ async function salvarNegociacao(){
     nova_data: novaData,
     tempo_renovado_meses: tempoRenovadoVal ? parseInt(tempoRenovadoVal, 10) : null,
     valor_custo: parseMoedaBRRenov(document.getElementById('negValorCusto').value),
+    tratativa: document.getElementById('negTratativa').value.trim(),
     obs: document.getElementById('negObs').value.trim(),
     ampliacao_material: document.getElementById('negAmpliacaoMaterial').value.trim() || null,
     ampliacao_pedido: document.getElementById('negAmpliacaoPedido').value.trim() || null,
