@@ -2035,6 +2035,9 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
             <option value="Ampliação concluída">Ampliação concluída</option>
             <option value="Renovado">Renovado</option>
+            <option value="Renovado - Aguardando Cronograma Técnico">Renovado - Aguardando Cronograma Técnico</option>
+            <option value="Renovado - Obra Iniciada">Renovado - Obra Iniciada</option>
+            <option value="Renovado - Obra Finalizada">Renovado - Obra Finalizada</option>
             <option value="Não renovado">Não renovado</option>
             <option value="Cancelado">Cancelado</option>
           </select>
@@ -9008,7 +9011,10 @@ function populateRenovFiltros(){
   fillSelect('renovNegFilterResponsavel', uniq(renovNegociacoes.map(n => n.responsavel)));
 }
 
-const NEG_STATUS_FINALIZADOS = ['Renovado', 'Não renovado', 'Cancelado'];
+const NEG_STATUS_FINALIZADOS = ['Renovado', 'Renovado - Aguardando Cronograma Técnico', 'Renovado - Obra Iniciada', 'Renovado - Obra Finalizada', 'Não renovado', 'Cancelado'];
+function ehStatusRenovado(status){
+  return !!status && status.indexOf('Renovado') === 0;
+}
 function negociacaoEmAndamento(n){
   return !NEG_STATUS_FINALIZADOS.includes(n.status);
 }
@@ -9225,6 +9231,9 @@ function negBadge(status){
     "Aguardando cronograma da ampliação": ["aguardando-ampliacao","Aguardando cronograma da ampliação"],
     "Ampliação concluída": ["ampliacao-concluida","Ampliação concluída"],
     "Renovado": ["renovado","Renovado"],
+    "Renovado - Aguardando Cronograma Técnico": ["renovado","Renovado - Aguardando Cronograma"],
+    "Renovado - Obra Iniciada": ["renovado","Renovado - Obra Iniciada"],
+    "Renovado - Obra Finalizada": ["renovado","Renovado - Obra Finalizada"],
     "Não renovado": ["nao-renovado","Não renovado"],
     "Cancelado": ["cancelado","Cancelado"]
   };
@@ -9338,7 +9347,7 @@ function renderRenovMiniDash(){
 
   const vencidos = vencidosF.length;
   const emNegociacao = negociacoesF.filter(negociacaoEmAndamento).length;
-  const renovados = negociacoesF.filter(n=>n.status==='Renovado').length;
+  const renovados = negociacoesF.filter(n=>ehStatusRenovado(n.status)).length;
   const naoRenovados = negociacoesF.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
 
   document.getElementById('renovMiniDashStats').innerHTML = `
@@ -9374,7 +9383,7 @@ function renderRenovMiniDash(){
   `).join('') : '<p style="color:var(--text-faint); font-size:12px;">Nenhum contrato vencido no momento. 🎉</p>';
 
   // Renovados por Filial — cruza cada negociação Renovada com a filial do condomínio
-  const renovadosList = negociacoesF.filter(n => n.status === 'Renovado');
+  const renovadosList = negociacoesF.filter(n => ehStatusRenovado(n.status));
   const contagemRenovadosFilial = {};
   renovadosList.forEach(n=>{
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
@@ -9421,7 +9430,7 @@ function renderRenovComparativo(vencidosF, negociacoesF){
       return condo && condo.filial === filial;
     });
     const emNegociacaoCount = negsDaFilial.filter(negociacaoEmAndamento).length;
-    const renovadosCount = negsDaFilial.filter(n=>n.status==='Renovado').length;
+    const renovadosCount = negsDaFilial.filter(n=>ehStatusRenovado(n.status)).length;
     const naoRenovadosCount = negsDaFilial.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
     const totalFinalizadas = renovadosCount + naoRenovadosCount;
     const taxa = totalFinalizadas ? (renovadosCount/totalFinalizadas*100) : 0;
@@ -9486,7 +9495,7 @@ function getFilteredRenovRenovados(){
   const fResp = document.getElementById('renovRenovadosFilterResponsavel').value;
   const fTempo = document.getElementById('renovRenovadosFilterTempoRenovado').value;
   return renovNegociacoes.filter(n=>{
-    if (n.status !== 'Renovado') return false;
+    if (!ehStatusRenovado(n.status)) return false;
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     const filial = condo ? condo.filial : null;
     if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
@@ -9499,10 +9508,10 @@ function getFilteredRenovRenovados(){
 
 function renderRenovRenovados(){
   const body = document.getElementById('renovRenovadosBody');
-  const totalRenovados = renovNegociacoes.filter(n => n.status === 'Renovado').length;
+  const totalRenovados = renovNegociacoes.filter(n => ehStatusRenovado(n.status)).length;
   const renovados = getFilteredRenovRenovados();
   fillSelect('renovRenovadosFilterFilial', Array.from(new Set(renovAllCondos.map(c=>c.filial).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
-  fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>n.status==='Renovado').map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+  fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>ehStatusRenovado(n.status)).map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
   document.getElementById('renovRenovadosCount').textContent = `${renovados.length} de ${totalRenovados} contrato(s) renovado(s)`;
   if (!renovados.length){
     body.innerHTML = `<tr><td colspan="9" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
@@ -10014,7 +10023,7 @@ async function salvarNegociacao(){
   // Se a negociação foi concluída como "Renovado" e há uma nova data de
   // vencimento, atualiza automaticamente o Fim do Contrato no Cadastro de
   // Condomínios (tabela cadastro_condominios) para esse condomínio.
-  if (status === 'Renovado' && novaData && sb){
+  if (ehStatusRenovado(status) && novaData && sb){
     try{
       const { error } = await sb.from('cadastro_condominios').update({ contrato_fim: novaData }).eq('item_id', condo.item_id);
       if (error) throw error;
@@ -12127,7 +12136,7 @@ function renderDashComparativo(){
   // ---------- Renovação ----------
   const totalVencidos = (typeof renovVencidos !== 'undefined') ? renovVencidos.length : 0;
   const totalEmNegociacao = (typeof renovNegociacoes !== 'undefined') ? renovNegociacoes.filter(negociacaoEmAndamento).length : 0;
-  const totalRenovados = (typeof renovNegociacoes !== 'undefined') ? renovNegociacoes.filter(n=>n.status==='Renovado').length : 0;
+  const totalRenovados = (typeof renovNegociacoes !== 'undefined') ? renovNegociacoes.filter(n=>ehStatusRenovado(n.status)).length : 0;
   document.getElementById('dashCompRenovacao').innerHTML = `
     <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v" style="color:var(--critico);">${totalVencidos}</div><div class="l">Contratos vencidos sem negociação</div></div>
     <div class="exec-comp-num" style="margin-bottom:10px;"><div class="v" style="color:var(--atencao);">${totalEmNegociacao}</div><div class="l">Em negociação</div></div>
@@ -12153,7 +12162,7 @@ function renderAnaliseImpactoVisitas(){
     if (!item) return;
     const notaAntes = parseFloat(String(item.nota).replace(',','.'));
     const notaDepois = item.notaPosResolucao ? parseFloat(String(item.notaPosResolucao).replace(',','.')) : null;
-    const renovou = (typeof renovNegociacoes !== 'undefined') && renovNegociacoes.some(n => n.status === 'Renovado' && normalizeNomeCondo(n.condo_nome||'') === nomeAlvo);
+    const renovou = (typeof renovNegociacoes !== 'undefined') && renovNegociacoes.some(n => ehStatusRenovado(n.status) && normalizeNomeCondo(n.condo_nome||'') === nomeAlvo);
     linhas.push({ condominio: v.condominio, statusVisita: v.status, notaAntes: isNaN(notaAntes) ? null : notaAntes, notaDepois, renovou });
   });
 
