@@ -3356,6 +3356,23 @@ CONDOMINIO Y	480	45"></textarea>
       <select class="filter-select" id="atividadesFilterUsuario"><option value="">Usuário: todos</option></select>
     </div>
     <div class="stats-strip" id="atividadesStats" style="margin-bottom:16px;"></div>
+
+    <div class="charts-grid charts-grid-2" style="margin-bottom:16px;">
+      <div class="chart-panel">
+        <p class="chart-title">👤 Ações por Usuário</p>
+        <div id="atividadesChartUsuario"></div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">📂 Ações por Tipo</p>
+        <div id="atividadesChartTipo"></div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px; border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel));">
+      <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente — Resumo do Dia</p>
+      <div id="atividadesRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+    </div>
+
     <div id="atividadesLista"></div>
   </div>
 
@@ -3571,6 +3588,9 @@ function renderRelatorioAtividades(){
 
   if (!registros.length){
     document.getElementById('atividadesLista').innerHTML = '<p class="empty">Nenhuma atividade registrada nesse dia.</p>';
+    document.getElementById('atividadesChartUsuario').innerHTML = '<p style="color:var(--text-faint); font-size:12px;">Sem dados.</p>';
+    document.getElementById('atividadesChartTipo').innerHTML = '<p style="color:var(--text-faint); font-size:12px;">Sem dados.</p>';
+    document.getElementById('atividadesRelatorio').innerHTML = '<p style="margin:0;">Nenhuma atividade registrada nesse dia — nada pra resumir ainda.</p>';
     return;
   }
 
@@ -3592,14 +3612,23 @@ function renderRelatorioAtividades(){
       const [acao, tipo] = chave.split('||');
       const acaoLabel = ACAO_LABELS[acao] || acao;
       const tipoLabel = ATIVIDADE_LABELS[tipo] || tipo;
-      const nomes = itens.map(i=>i.entidade_nome).filter(Boolean);
-      const nomesUnicos = Array.from(new Set(nomes));
-      const mostrar = nomesUnicos.slice(0, 8);
-      const resto = nomesUnicos.length - mostrar.length;
+      const itensOrdenados = [...itens].sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+      const mostrar = itensOrdenados.slice(0, 12);
+      const resto = itensOrdenados.length - mostrar.length;
+      const linhasHtml = mostrar.map(i=>{
+        const hora = i.created_at ? new Date(i.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '';
+        const partes = [];
+        if (i.entidade_nome) partes.push(`<b>${escapeHtml(i.entidade_nome)}</b>`);
+        if (i.detalhes) partes.push(escapeHtml(i.detalhes));
+        return `<div style="font-size:11.5px; color:var(--text-dim); padding:3px 0; border-top:1px solid var(--line);">
+          <span style="color:var(--text-faint); font-family:'IBM Plex Mono',monospace; margin-right:6px;">${hora}</span>${partes.join(' — ') || '<span style="color:var(--text-faint);">sem detalhes</span>'}
+        </div>`;
+      }).join('');
       return `
         <div style="margin-bottom:8px; padding:8px 10px; background:var(--bg-panel-2); border-radius:7px;">
           <div style="font-size:12.5px;"><b>${itens.length}</b> ${escapeHtml(acaoLabel)} ${escapeHtml(tipoLabel)}</div>
-          ${mostrar.length ? `<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">${mostrar.map(escapeHtml).join(', ')}${resto>0 ? ` e mais ${resto}` : ''}</div>` : ''}
+          ${linhasHtml}
+          ${resto>0 ? `<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">e mais ${resto}...</div>` : ''}
         </div>`;
     }).join('');
     return `
@@ -3611,6 +3640,71 @@ function renderRelatorioAtividades(){
         ${itensHtml}
       </div>`;
   }).join('');
+
+  renderAtividadesCharts(registros, porUsuario);
+  renderAtividadesRelatorioIA(registros, porUsuario);
+}
+
+function renderAtividadesCharts(registros, porUsuario){
+  // Ações por Usuário
+  const contagemUsuario = Object.entries(porUsuario).map(([u, grupos]) => [u, Object.values(grupos).flat().length]).sort((a,b)=>b[1]-a[1]);
+  const maxUsuario = Math.max(1, ...contagemUsuario.map(u=>u[1]));
+  document.getElementById('atividadesChartUsuario').innerHTML = contagemUsuario.map(([label,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxUsuario*100}%; height:100%; background:var(--accent);"></div></div>
+    </div>
+  `).join('');
+
+  // Ações por Tipo de entidade
+  const contagemTipo = {};
+  registros.forEach(r => { contagemTipo[r.entidade_tipo] = (contagemTipo[r.entidade_tipo]||0) + 1; });
+  const topTipos = Object.entries(contagemTipo).sort((a,b)=>b[1]-a[1]);
+  const maxTipo = Math.max(1, ...topTipos.map(t=>t[1]));
+  document.getElementById('atividadesChartTipo').innerHTML = topTipos.map(([tipo,n])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(ATIVIDADE_LABELS[tipo] || tipo)}</span><span>${n}</span></div>
+      <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${n/maxTipo*100}%; height:100%; background:#E07B2C;"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderAtividadesRelatorioIA(registros, porUsuario){
+  const frases = [];
+  const dataLabel = document.getElementById('atividadesData').value ? new Date(document.getElementById('atividadesData').value + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+
+  const contagemUsuario = Object.entries(porUsuario).map(([u, grupos]) => [u, Object.values(grupos).flat().length]).sort((a,b)=>b[1]-a[1]);
+  frases.push(`No dia ${dataLabel}, a equipe registrou <b>${registros.length}</b> ação(ões) no painel, feitas por <b>${contagemUsuario.length}</b> pessoa(s).`);
+
+  if (contagemUsuario.length){
+    const [maisAtivo, totalMaisAtivo] = contagemUsuario[0];
+    frases.push(`<b>${escapeHtml(maisAtivo)}</b> foi quem mais atuou no dia, com ${totalMaisAtivo} ação(ões).`);
+    if (contagemUsuario.length > 1){
+      const [menosAtivo, totalMenosAtivo] = contagemUsuario[contagemUsuario.length-1];
+      if (menosAtivo !== maisAtivo) frases.push(`<b>${escapeHtml(menosAtivo)}</b> teve o menor volume, com ${totalMenosAtivo} ação(ões).`);
+    }
+  }
+
+  const contagemTipo = {};
+  registros.forEach(r => { contagemTipo[r.entidade_tipo] = (contagemTipo[r.entidade_tipo]||0) + 1; });
+  const topTipo = Object.entries(contagemTipo).sort((a,b)=>b[1]-a[1])[0];
+  if (topTipo){
+    frases.push(`A maior parte do movimento foi em <b>${escapeHtml(ATIVIDADE_LABELS[topTipo[0]] || topTipo[0])}</b> (${topTipo[1]} registro(s)).`);
+  }
+
+  // Destaque por pessoa: o que cada uma mais fez
+  const destaquesPorPessoa = Object.entries(porUsuario).map(([usuario, grupos])=>{
+    const chaves = Object.entries(grupos).sort((a,b)=>b[1].length - a[1].length);
+    if (!chaves.length) return null;
+    const [chave, itens] = chaves[0];
+    const [acao, tipo] = chave.split('||');
+    return `<b>${escapeHtml(usuario)}</b>: ${itens.length} ${ACAO_LABELS[acao]||acao} ${ATIVIDADE_LABELS[tipo]||tipo}`;
+  }).filter(Boolean);
+  if (destaquesPorPessoa.length){
+    frases.push('Destaque de cada pessoa: ' + destaquesPorPessoa.join(' · ') + '.');
+  }
+
+  document.getElementById('atividadesRelatorio').innerHTML = frases.map(f=>`<p style="margin:0 0 8px;">${f}</p>`).join('');
 }
 
 document.getElementById('atividadesData').addEventListener('change', carregarRelatorioAtividades);
