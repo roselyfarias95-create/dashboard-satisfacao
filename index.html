@@ -1297,19 +1297,45 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="pq-card pq-card-recuperacao" id="pqCardRecuperacao" style="display:none;">
       <div class="pq-card-title">🔄 Pesquisa de Recuperação <span style="font-weight:400; text-transform:none; color:var(--text-faint); font-size:11px;">— novo contato após a tratativa</span></div>
       <div id="pqRecuperacaoResumo" style="font-size:12px; color:var(--text-faint); background:var(--bg-panel-3); border-radius:9px; padding:8px 12px; margin-bottom:14px;"></div>
-      <div class="pq-row2">
-        <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Data da Pesquisa 2 <span class="pq-required">*</span></label>
-          <input type="date" id="pqDataPesquisa2">
-        </div>
-        <div class="pq-field" style="margin-bottom:0;">
-          <label class="pq-label">Nota 2 <span class="pq-required">*</span></label>
-          <input type="text" id="pqNotaPos" placeholder="ex: 9">
+      <div class="pq-field" style="margin-bottom:14px;">
+        <span class="pq-label">Pesquisa 2 realizada?</span>
+        <div class="toggle-pair">
+          <button type="button" class="toggle-btn" data-group="pqRecRealizada" data-val="sim">☑ Sim</button>
+          <button type="button" class="toggle-btn" data-group="pqRecRealizada" data-val="nao">✕ Não</button>
         </div>
       </div>
-      <div class="pq-field" style="margin-bottom:0; margin-top:12px;">
-        <label class="pq-label">Comentário do Síndico <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
-        <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
+      <div id="pqRecCorpoNormal">
+        <div class="pq-row2">
+          <div class="pq-field" style="margin-bottom:0;">
+            <label class="pq-label">Data da Pesquisa 2 <span class="pq-required">*</span></label>
+            <input type="date" id="pqDataPesquisa2">
+          </div>
+          <div class="pq-field" style="margin-bottom:0;">
+            <label class="pq-label">Nota 2 <span class="pq-required">*</span></label>
+            <input type="text" id="pqNotaPos" placeholder="ex: 9">
+          </div>
+        </div>
+        <div class="pq-field" style="margin-bottom:0; margin-top:12px;">
+          <label class="pq-label">Comentário do Síndico <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
+          <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
+        </div>
+      </div>
+      <div id="pqRecNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-top:8px;">
+        <div class="pq-field">
+          <label class="pq-label" style="color:var(--critico);">Motivo da não realização (Pesquisa 2) <span class="pq-required">*</span></label>
+          <select id="pqMotivoNaoRealizada2">
+            <option value="">Selecione...</option>
+            <option value="Síndico não atendeu">Síndico não atendeu</option>
+            <option value="Síndico pediu para retornar depois">Síndico pediu para retornar depois</option>
+            <option value="Número incorreto ou fora de serviço">Número incorreto ou fora de serviço</option>
+            <option value="Condomínio sem síndico no momento">Condomínio sem síndico no momento</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="pq-field" style="margin-bottom:0;">
+          <label class="pq-label">Observação <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
+          <textarea id="pqObservacaoNaoRealizada2" placeholder="Detalhes sobre a tentativa..."></textarea>
+        </div>
       </div>
     </div>
 
@@ -1444,8 +1470,12 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="msf-panel" id="filialFilterPanel"></div>
     </div>
     <div class="msf" id="notaFilterWrap">
-      <button type="button" class="msf-btn" id="notaFilterBtn">Nota: todas</button>
+      <button type="button" class="msf-btn" id="notaFilterBtn">Nota 1: todas</button>
       <div class="msf-panel" id="notaFilterPanel"></div>
+    </div>
+    <div class="msf" id="nota2FilterWrap">
+      <button type="button" class="msf-btn" id="nota2FilterBtn">Nota 2: todas</button>
+      <div class="msf-panel" id="nota2FilterPanel"></div>
     </div>
     <div class="msf" id="statusFilterWrap">
       <button type="button" class="msf-btn" id="statusFilterBtn">Status da pesquisa: todos</button>
@@ -1809,6 +1839,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <select class="filter-select" id="renovNegFilterStatus">
         <option value="">Status: todos</option>
         <option value="Em negociação">Em negociação</option>
+        <option value="Proposta Enviada - Aguardando Retorno do Síndico">Proposta Enviada - Aguardando Retorno do Síndico</option>
         <option value="Aguardando envio do aditivo pelo comercial">Aguardando envio do aditivo pelo comercial</option>
         <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
         <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
@@ -1858,6 +1889,13 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <input type="text" class="search" id="renovRenovadosSearch" placeholder="Buscar por nome do condomínio...">
         <select class="filter-select" id="renovRenovadosFilterFilial"><option value="">Filial: todas</option></select>
         <select class="filter-select" id="renovRenovadosFilterResponsavel"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="renovRenovadosFilterStatus">
+          <option value="">Status: todos</option>
+          <option value="Renovado">Renovado</option>
+          <option value="Renovado - Aguardando Cronograma Técnico">Renovado - Aguardando Cronograma Técnico</option>
+          <option value="Renovado - Obra Iniciada">Renovado - Obra Iniciada</option>
+          <option value="Renovado - Obra Finalizada">Renovado - Obra Finalizada (Concluída)</option>
+        </select>
         <select class="filter-select" id="renovRenovadosFilterTempoRenovado">
           <option value="">Tempo Renovado: todos</option>
           <option value="6">6 meses</option>
@@ -1881,6 +1919,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
               <th>Filial</th>
               <th>Data Negociação</th>
               <th>Responsável</th>
+              <th>Status</th>
               <th>Nova Data de Vencimento</th>
               <th>Tempo Renovado</th>
               <th>Valor do Custo</th>
@@ -2027,6 +2066,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status
           <select id="negStatus" style="width:100%; margin-top:4px;">
             <option value="Em negociação">Em negociação</option>
+            <option value="Proposta Enviada - Aguardando Retorno do Síndico">Proposta Enviada - Aguardando Retorno do Síndico</option>
             <option value="Aguardando envio do aditivo pelo comercial">Aguardando envio do aditivo pelo comercial</option>
             <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
             <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
@@ -5966,6 +6006,7 @@ let selectedSetores = [];
 let selectedResolvidos = []; // valores: 'true' | 'false' | 'null'
 let selectedPendencias = []; // valores: 'true' | 'false' — tem diagnóstico/pendência registrado ou não
 let selectedNotaFaixas = []; // índices de NOTA_FAIXAS selecionados (como string)
+let selectedNota2Faixas = []; // índices de NOTA2_FAIXAS selecionados (como string)
 let activeSetorBar = null;  // clique no gráfico de setor
 let activeMotivoBar = null; // clique no gráfico de motivo
 let SETORES_CANONICOS = []; // preenchido em populateFilterOptions, usado no form de edição
@@ -6013,6 +6054,28 @@ function notaFaixaIndex(item){
     ? NOTA_FAIXAS.length - 1
     : NOTA_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
   return idx === -1 ? NOTA_FAIXAS.length - 1 : idx;
+}
+// Nota 2 (pesquisa de recuperação) — mesmas faixas, mais "Não realizada" (motivo
+// registrado) e "Sem nota 2" (ainda pendente de retorno, ou nota 1 já era alta).
+const NOTA2_FAIXAS = [
+  { label:'9 – 10',    min:9,  max:10, color:'var(--ok)' },
+  { label:'7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
+  { label:'5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
+  { label:'3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
+  { label:'Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
+  { label:'Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
+  { label:'Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
+  { label:'Não realizada', min:null, max:null, special:'nao_realizada', color:'var(--critico)' },
+  { label:'Sem nota 2',    min:null, max:null, special:'sem_nota', color:'var(--pendente)' },
+];
+function notaFaixaIndex2(item){
+  if (item.pesquisa2NaoRealizada) return NOTA2_FAIXAS.findIndex(f=>f.special==='nao_realizada');
+  const n = parseFloat(String(item.notaPosResolucao).replace(',', '.'));
+  if (!isNaN(n)){
+    const idx = NOTA2_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
+    if (idx !== -1) return idx;
+  }
+  return NOTA2_FAIXAS.findIndex(f=>f.special==='sem_nota');
 }
 function emojiParaNota(notaRaw){
   const n = parseFloat(String(notaRaw).replace(',', '.'));
@@ -6319,7 +6382,13 @@ function populateFilterOptions(){
   setupMultiFilter({
     btnId:'notaFilterBtn', panelId:'notaFilterPanel', wrapId:'notaFilterWrap',
     getSelected:()=>selectedNotaFaixas, setSelected:(v)=>{selectedNotaFaixas=v;},
-    options: NOTA_FAIXAS.map((f,i)=>({value:String(i), label:f.label})), prefixLabel:'Nota',
+    options: NOTA_FAIXAS.map((f,i)=>({value:String(i), label:f.label})), prefixLabel:'Nota 1',
+  });
+
+  setupMultiFilter({
+    btnId:'nota2FilterBtn', panelId:'nota2FilterPanel', wrapId:'nota2FilterWrap',
+    getSelected:()=>selectedNota2Faixas, setSelected:(v)=>{selectedNota2Faixas=v;},
+    options: NOTA2_FAIXAS.map((f,i)=>({value:String(i), label:f.label})), prefixLabel:'Nota 2',
   });
 
   const statuses = [...new Set(DATA.filter(d=>getMes(d)===selectedMes).map(d=>d.statusPesquisa))].sort();
@@ -6365,6 +6434,7 @@ function baseMatches(item, q){
   if (selectedStatuses.length && !selectedStatuses.includes(item.statusPesquisa)) return false;
   if (selectedFiliais.length && !selectedFiliais.includes(item.filial)) return false;
   if (selectedNotaFaixas.length && !selectedNotaFaixas.includes(String(notaFaixaIndex(item)))) return false;
+  if (selectedNota2Faixas.length && !selectedNota2Faixas.includes(String(notaFaixaIndex2(item)))) return false;
   if (selectedSetores.length){
     const tokens = item.setor ? item.setor.split('/').map(s=>s.trim()) : [];
     if (!tokens.some(t => selectedSetores.includes(t))) return false;
@@ -6410,6 +6480,10 @@ function resolvedBadge(r){
 }
 
 function nota2Display(item){
+  if (item.pesquisa2NaoRealizada) {
+    const motivo = item.motivoNaoRealizada2 ? ` — ${item.motivoNaoRealizada2}` : '';
+    return `<span title="Pesquisa 2 não realizada${escapeHtml(motivo)}">⚪ Não realizada${motivo ? escapeHtml(motivo) : ''}</span>`;
+  }
   if (item.notaPosResolucao) return escapeHtml(item.notaPosResolucao);
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
   if (!isNaN(n1) && n1 >= 9) return '<span title="Nota já era 9 ou 10 na 1ª pesquisa — sem necessidade de retorno">⭐</span>';
@@ -6648,7 +6722,7 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
       progEl.textContent = `Salvando... ${Math.min(i+chunkSize, rows.length)} de ${rows.length}`;
     }
     selectedMes = novoMes;
-    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedPendencias = [];
+    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
     activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
     populateFilterOptions();
     render();
@@ -7006,7 +7080,8 @@ function generateReport(){
   const filtrosAplicados = [
     q ? `Busca: "${escapeHtml(q)}"` : null,
     selectedFiliais.length ? `Filial: ${selectedFiliais.map(escapeHtml).join(', ')}` : null,
-    selectedNotaFaixas.length ? `Nota: ${selectedNotaFaixas.map(i=>NOTA_FAIXAS[+i].label).join(', ')}` : null,
+    selectedNotaFaixas.length ? `Nota 1: ${selectedNotaFaixas.map(i=>NOTA_FAIXAS[+i].label).join(', ')}` : null,
+    selectedNota2Faixas.length ? `Nota 2: ${selectedNota2Faixas.map(i=>NOTA2_FAIXAS[+i].label).join(', ')}` : null,
     selectedStatuses.length ? `Status da pesquisa: ${selectedStatuses.map(escapeHtml).join(', ')}` : null,
     selectedSetores.length ? `Setor: ${selectedSetores.map(escapeHtml).join(', ')}` : null,
     selectedResolvidos.length ? `Resolução: ${selectedResolvidos.map(v=>v==='true'?'Resolvido':(v==='false'?'Em andamento':'Não se aplica')).join(', ')}` : null,
@@ -7058,7 +7133,7 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('mesSelector').addEventListener('change', (e)=>{
   selectedMes = e.target.value;
   document.getElementById('refMes').textContent = mesLabelBR(selectedMes);
-  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedPendencias = [];
+  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
   activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
   populateFilterOptions();
   render();
@@ -7067,6 +7142,7 @@ document.getElementById('clearBtn').addEventListener('click', ()=>{
   document.getElementById('search').value='';
   selectedFiliais = [];
   selectedNotaFaixas = [];
+  selectedNota2Faixas = [];
   selectedStatuses = [];
   selectedSetores = [];
   selectedResolvidos = [];
@@ -9226,6 +9302,7 @@ document.getElementById('btnExportarRenovPDF').addEventListener('click', gerarRe
 function negBadge(status){
   const map = {
     "Em negociação": ["andamento","Em negociação"],
+    "Proposta Enviada - Aguardando Retorno do Síndico": ["aguardando-tecnico","Proposta Enviada - Aguard. Síndico"],
     "Aguardando envio do aditivo pelo comercial": ["aguardando-aditivo","Aguardando aditivo (Comercial)"],
     "Aguardando levantamento técnico": ["aguardando-tecnico","Aguardando levantamento técnico"],
     "Pendente assinatura síndico": ["pendente-assinatura","Pendente assinatura síndico"],
@@ -9498,6 +9575,7 @@ function getFilteredRenovRenovados(){
   const q = (document.getElementById('renovRenovadosSearch').value || '').trim().toLowerCase();
   const fFilial = document.getElementById('renovRenovadosFilterFilial').value;
   const fResp = document.getElementById('renovRenovadosFilterResponsavel').value;
+  const fStatus = document.getElementById('renovRenovadosFilterStatus').value;
   const fTempo = document.getElementById('renovRenovadosFilterTempoRenovado').value;
   return renovNegociacoes.filter(n=>{
     if (!ehStatusRenovado(n.status)) return false;
@@ -9506,6 +9584,7 @@ function getFilteredRenovRenovados(){
     if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
     if (fFilial && filial !== fFilial) return false;
     if (fResp && n.responsavel !== fResp) return false;
+    if (fStatus && n.status !== fStatus) return false;
     if (fTempo && String(n.tempo_renovado_meses||'') !== fTempo) return false;
     return true;
   });
@@ -9519,7 +9598,7 @@ function renderRenovRenovados(){
   fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>ehStatusRenovado(n.status)).map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
   document.getElementById('renovRenovadosCount').textContent = `${renovados.length} de ${totalRenovados} contrato(s) renovado(s)`;
   if (!renovados.length){
-    body.innerHTML = `<tr><td colspan="9" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" class="empty">${totalRenovados ? 'Nenhum contrato renovado encontrado com esses filtros.' : 'Nenhum contrato renovado ainda.'}</td></tr>`;
     return;
   }
   body.innerHTML = renovados.map(n => {
@@ -9529,11 +9608,15 @@ function renderRenovRenovados(){
       <td>${escapeHtml((condo && condo.filial) || '—')}</td>
       <td>${fmtDataBRRenov(n.data_negociacao)}</td>
       <td>${n.responsavel || ''}</td>
+      <td>${negBadge(n.status)}</td>
       <td>${n.nova_data ? fmtDataBRRenov(n.nova_data) : '—'}</td>
       <td>${n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—'}</td>
       <td>${fmtMoedaRenov(n.valor_custo)}</td>
       <td style="text-align:left; max-width:220px; white-space:normal;">${n.obs || ''}</td>
-      <td><button type="button" class="renov-del-btn" data-del-renovado="${n.id}">🗑️ Excluir</button></td>
+      <td>
+        <button type="button" class="renov-action-btn" data-edit-renovado="${n.id}">Editar</button>
+        <button type="button" class="renov-del-btn" data-del-renovado="${n.id}">🗑️ Excluir</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -9718,9 +9801,13 @@ function renderMiniCal(gridId, mesLabelId, ano, mes, eventosPorDia, diaSeleciona
     const ehHoje = hoje.getFullYear()===ano && hoje.getMonth()===mes && hoje.getDate()===dia;
     const ehSelecionado = diaSelecionado === dia;
     const eventosDoDia = eventosPorDia[dia] || [];
+    const legendaUnica = eventosDoDia.length === 1
+      ? `<div class="mini-cal-day-legenda" style="font-size:8.5px; color:var(--text-faint); line-height:1.15; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(eventosDoDia[0].condominio||'')}">${escapeHtml((eventosDoDia[0].condominio||'').slice(0,14))}${(eventosDoDia[0].condominio||'').length>14?'…':''}</div>`
+      : '';
     html += `<div class="mini-cal-day ${ehHoje?'hoje':''} ${ehSelecionado?'selecionado':''}" data-dia-cal="${dia}">
       <div class="mini-cal-day-num">${dia}</div>
-      <div class="mini-cal-day-dots">${eventosDoDia.slice(0,5).map(e=>`<span class="mini-cal-dot" style="background:${e.cor};"></span>`).join('')}</div>
+      <div class="mini-cal-day-dots">${eventosDoDia.slice(0,5).map(e=>`<span class="mini-cal-dot" style="background:${e.cor};" title="${escapeHtml(e.condominio||'')} — ${escapeHtml(e.tipo||'')}"></span>`).join('')}</div>
+      ${legendaUnica}
     </div>`;
   }
   grid.innerHTML = html;
@@ -10072,12 +10159,14 @@ function initRenovacaoUI(){
     if (delBtn) excluirNegociacao(delBtn.dataset.delNeg);
   });
   document.getElementById('renovRenovadosBody').addEventListener('click', (ev) => {
+    const editBtn = ev.target.closest('[data-edit-renovado]');
+    if (editBtn){ editNegociacao(editBtn.dataset.editRenovado); return; }
     const delBtn = ev.target.closest('[data-del-renovado]');
     if (!delBtn) return;
     if (!confirm('Excluir este registro de renovação? Isso remove o histórico dessa renovação, não pode ser desfeito.')) return;
     excluirNegociacao(delBtn.dataset.delRenovado);
   });
-  ['renovRenovadosSearch','renovRenovadosFilterFilial','renovRenovadosFilterResponsavel','renovRenovadosFilterTempoRenovado'].forEach(id=>{
+  ['renovRenovadosSearch','renovRenovadosFilterFilial','renovRenovadosFilterResponsavel','renovRenovadosFilterStatus','renovRenovadosFilterTempoRenovado'].forEach(id=>{
     document.getElementById(id).addEventListener('input', renderRenovRenovados);
     document.getElementById(id).addEventListener('change', renderRenovRenovados);
   });
@@ -10085,6 +10174,7 @@ function initRenovacaoUI(){
     document.getElementById('renovRenovadosSearch').value = '';
     document.getElementById('renovRenovadosFilterFilial').value = '';
     document.getElementById('renovRenovadosFilterResponsavel').value = '';
+    document.getElementById('renovRenovadosFilterStatus').value = '';
     document.getElementById('renovRenovadosFilterTempoRenovado').value = '';
     renderRenovRenovados();
   });
@@ -10204,6 +10294,7 @@ function pqSetToggle(group, val){
     if (isActive){
       btn.classList.add('active');
       if (group === 'pqRealizada') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
+      if (group === 'pqRecRealizada') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
       if (group === 'pqPendencia') btn.classList.add(val === 'sim' ? 'warn' : 'pos');
       if (group === 'pqReclamacao') btn.classList.add(val === 'sim' ? 'neg' : 'pos');
       if (group === 'pqElogio') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
@@ -10225,6 +10316,10 @@ function pqSetToggle(group, val){
   if (group === 'pqRealizada'){
     document.getElementById('pqNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
     document.getElementById('pqCorpoNormal').style.display = val === 'nao' ? 'none' : 'block';
+  }
+  if (group === 'pqRecRealizada'){
+    document.getElementById('pqRecNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
+    document.getElementById('pqRecCorpoNormal').style.display = val === 'nao' ? 'none' : 'block';
   }
 }
 
@@ -10275,6 +10370,9 @@ function openPesquisaModal(item){
   document.getElementById('pqMesReferencia').value = item ? getMes(item) : selectedMes;
   document.getElementById('pqNotaPos').value = item ? (item.notaPosResolucao || '') : '';
   document.getElementById('pqDataPesquisa2').value = item ? (item.dataPesquisa2 || '') : '';
+  document.getElementById('pqMotivoNaoRealizada2').value = item ? (item.motivoNaoRealizada2 || '') : '';
+  document.getElementById('pqObservacaoNaoRealizada2').value = item ? (item.observacaoNaoRealizada2 || '') : '';
+  pqSetToggle('pqRecRealizada', item && item.pesquisa2NaoRealizada ? 'nao' : 'sim');
   document.getElementById('pqData').value = item && item.dataPesquisa ? item.dataPesquisa : new Date().toISOString().slice(0,10);
 
   if (pqNotaSelecionada !== null && pqNotaSelecionada !== ''){
@@ -10334,7 +10432,8 @@ function openPesquisaModal(item){
 
 function pqAtualizarVisibilidadeRecuperacao(){
   const n = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
-  const mostrar = !isNaN(n) && n < 9;
+  const jaTemPesquisa2 = !!(pqEditingItem && (pqEditingItem.dataPesquisa2 || pqEditingItem.notaPosResolucao || pqEditingItem.pesquisa2NaoRealizada));
+  const mostrar = (!isNaN(n) && n < 9) || jaTemPesquisa2;
   document.getElementById('pqCardRecuperacao').style.display = mostrar ? 'block' : 'none';
   if (mostrar){
     const dataTxt = document.getElementById('pqData').value ? formatDateBR(document.getElementById('pqData').value) : '—';
@@ -10450,15 +10549,23 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     }
     const notaNumValidacao = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
     if (notaNumValidacao < 9){
-      if (!document.getElementById('pqDataPesquisa2').value){
-        errEl.textContent = 'Informe a Data da Pesquisa 2 (Pesquisa de Recuperação).';
-        errEl.style.display = 'block';
-        return;
-      }
-      if (!document.getElementById('pqNotaPos').value.trim()){
-        errEl.textContent = 'Informe a Nota 2 (Pesquisa de Recuperação).';
-        errEl.style.display = 'block';
-        return;
+      if (pqToggleState.pqRecRealizada === 'nao'){
+        if (!document.getElementById('pqMotivoNaoRealizada2').value){
+          errEl.textContent = 'Informe o motivo da Pesquisa 2 não realizada.';
+          errEl.style.display = 'block';
+          return;
+        }
+      } else {
+        if (!document.getElementById('pqDataPesquisa2').value){
+          errEl.textContent = 'Informe a Data da Pesquisa 2 (Pesquisa de Recuperação).';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (!document.getElementById('pqNotaPos').value.trim()){
+          errEl.textContent = 'Informe a Nota 2 (Pesquisa de Recuperação).';
+          errEl.style.display = 'block';
+          return;
+        }
       }
     }
   }
@@ -10498,8 +10605,11 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     elogioDescricao: usaElogio ? document.getElementById('pqDescricaoElogio').value.trim() : '',
     comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
     responsavelPesquisa: document.getElementById('pqResponsavel').value,
-    dataPesquisa2: document.getElementById('pqDataPesquisa2').value,
-    notaPosResolucao: document.getElementById('pqNotaPos').value.trim(),
+    dataPesquisa2: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqDataPesquisa2').value,
+    notaPosResolucao: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqNotaPos').value.trim(),
+    pesquisa2NaoRealizada: pqToggleState.pqRecRealizada === 'nao',
+    motivoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada2').value : '',
+    observacaoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada2').value.trim() : '',
     motivoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada').value : '',
     observacaoNaoRealizada: pqToggleState.pqRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada').value.trim() : '',
     pesquisaRemarcada: !realizada && remarcada,
@@ -11067,6 +11177,9 @@ function renderComparativoFiliais(){
 // junto com o resto da pesquisa (mesmo mecanismo de OVERRIDES/condo_extra).
 // ============================================================================
 function pesquisaNaoRealizada(item){
+  const temNota = item.nota && item.nota !== '—';
+  const temInteracaoRegistrada = item.houveReclamacao || item.houvePendencia || item.houveElogio;
+  if (temNota || temInteracaoRegistrada) return false; // já tem dado real registrado — é uma pesquisa realizada, mesmo que o status ainda diga "Pendente"
   return item.statusPesquisa === 'Pendente' || item.statusPesquisa === 'Síndico não atende';
 }
 function notaPesquisaParaCondoVE(nomeCondo){
@@ -15593,6 +15706,9 @@ function coletarEventosCondominio(nomeAlvoNorm){
     }
     if (p.dataPesquisa2 && p.notaPosResolucao){
       eventos.push({ data: p.dataPesquisa2, tipo:'Pesquisa de Recuperação', categoria:'pesquisas', icone:'🔄', cor: corPorNota(p.notaPosResolucao), desc: `Nota 2 (pós-tratativa): ${p.notaPosResolucao}` });
+    }
+    if (p.pesquisa2NaoRealizada){
+      eventos.push({ data: p.dataPesquisa || '', tipo:'Pesquisa de Recuperação não realizada', categoria:'pesquisas', icone:'⚪', cor:'var(--text-faint)', desc: p.motivoNaoRealizada2 || 'Motivo não informado.' });
     }
   });
 
