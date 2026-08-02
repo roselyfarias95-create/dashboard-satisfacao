@@ -1009,6 +1009,12 @@
 </head>
 <body>
 
+<div id="erroPersistenteOuter" style="display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:99999; max-width:640px; background:#3d1010; border:2px solid #ef4444; color:#fecaca; padding:14px 18px; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.4); font-size:13px;">
+  <b style="color:#fff;">❌ Erro ao sincronizar com o servidor</b>
+  <button type="button" id="erroPersistenteOuterFechar" style="float:right; background:none; border:none; color:#fecaca; font-size:16px; cursor:pointer; line-height:1;">✕</button>
+  <div id="erroPersistenteOuterTexto" style="margin-top:6px; word-break:break-word;"></div>
+</div>
+
 <div id="loginOverlay" class="login-overlay">
   <form id="loginForm" class="login-box">
     <div class="login-icon">🏢</div>
@@ -5612,6 +5618,7 @@ function extraRowToItem(row){
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
+    pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
   };
 }
@@ -5625,6 +5632,7 @@ function itemToExtraRow(item){
     elogio_setor: item.elogioSetor || null, elogio_descricao: item.elogioDescricao || null,
     comentario_sindico: item.comentarioSindico || null, responsavel_pesquisa: item.responsavelPesquisa || null,
     motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
+    pesquisa2_nao_realizada: !!item.pesquisa2NaoRealizada, motivo_nao_realizada2: item.motivoNaoRealizada2 || null, observacao_nao_realizada2: item.observacaoNaoRealizada2 || null,
     pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
     data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
     pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
@@ -5687,6 +5695,7 @@ function rowToUpdates(row){
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
+    pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
     statusVisitaEmergencial: row.status_visita_emergencial,
   };
@@ -5700,6 +5709,7 @@ function updatesToRow(itemN, updates){
     elogio_setor: updates.elogioSetor || null, elogio_descricao: updates.elogioDescricao || null,
     comentario_sindico: updates.comentarioSindico || null, responsavel_pesquisa: updates.responsavelPesquisa || null,
     motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
+    pesquisa2_nao_realizada: !!updates.pesquisa2NaoRealizada, motivo_nao_realizada2: updates.motivoNaoRealizada2 || null, observacao_nao_realizada2: updates.observacaoNaoRealizada2 || null,
     pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
@@ -5707,13 +5717,29 @@ function updatesToRow(itemN, updates){
   };
 }
 
+function mostrarErroPersistenteOuter(msg){
+  document.getElementById('erroPersistenteOuterTexto').textContent = msg;
+  document.getElementById('erroPersistenteOuter').style.display = 'block';
+}
+document.getElementById('erroPersistenteOuterFechar').addEventListener('click', ()=>{
+  document.getElementById('erroPersistenteOuter').style.display = 'none';
+});
+
 async function pushOverrideToSupabase(itemN, updates){
   if (!sb) return;
   try{
     const { error } = await sb.from('condo_overrides').upsert(updatesToRow(itemN, updates));
-    if (error){ console.error('Supabase upsert error:', error); syncStatus = 'offline'; updateSyncTag(); }
+    if (error){
+      console.error('Supabase upsert error:', error);
+      syncStatus = 'offline'; updateSyncTag();
+      mostrarErroPersistenteOuter('Não foi possível salvar essa pesquisa no servidor. Erro técnico: ' + error.message + ' — Tire um print desta mensagem e mande pro suporte. A informação pode ter ficado só neste navegador.');
+    }
     else { syncStatus = 'online'; updateSyncTag(); }
-  }catch(e){ console.error(e); syncStatus = 'offline'; updateSyncTag(); }
+  }catch(e){
+    console.error(e);
+    syncStatus = 'offline'; updateSyncTag();
+    mostrarErroPersistenteOuter('Não foi possível salvar essa pesquisa no servidor. Erro técnico: ' + (e && e.message ? e.message : e) + ' — Tire um print desta mensagem e mande pro suporte.');
+  }
 }
 
 // ---- Pesquisa de Satisfação → Cadastro de Condomínios ----
@@ -10637,8 +10663,11 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     item.humor = classifyHumor(item);
     DATA.push(item);
     if (sb){
-      try{ await sb.from('condo_extra').insert(itemToExtraRow(item)); }
-      catch(e){ console.error('Erro ao salvar nova pesquisa no Supabase:', e); }
+      try{ const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item)); if (error) throw error; }
+      catch(e){
+        console.error('Erro ao salvar nova pesquisa no Supabase:', e);
+        mostrarErroPersistenteOuter('Não foi possível salvar essa pesquisa no servidor. Erro técnico: ' + (e && e.message ? e.message : e) + ' — Tire um print desta mensagem e mande pro suporte. A informação pode ter ficado só neste navegador.');
+      }
     }
     syncPesquisaParaCadastro(item);
     itemSalvo = item;
