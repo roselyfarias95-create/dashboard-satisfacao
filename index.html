@@ -1199,6 +1199,10 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <div class="nota-row" id="pqNotaRow"></div>
         <p class="nota-hint" id="pqNotaHint">Selecione uma nota</p>
       </div>
+      <div class="pq-field" style="margin-bottom:0; margin-top:14px;">
+        <label class="pq-label">Comentário do Contato <span style="font-weight:400; text-transform:none;">(opcional — como foi a ligação, mesmo sem pendência/reclamação)</span></label>
+        <textarea id="pqComentarioContato" placeholder="Observações gerais sobre a ligação com o síndico..."></textarea>
+      </div>
     </div>
 
     <div class="pq-card">
@@ -1260,15 +1264,15 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <select id="pqSetorReclamacao"><option value="">Selecione...</option></select>
         <input type="text" id="pqSetorReclamacaoOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
       </div>
-      <div class="pq-field">
+      <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Descrição da Situação <span class="pq-required">*</span></label>
         <textarea id="pqDescricaoSituacao" placeholder="Descreva o que o síndico relatou..."></textarea>
       </div>
+    </div>
+
+    <div class="pq-card" id="pqCardEncaminhamento" style="display:none;">
+      <div class="pq-card-title">📋 Encaminhamento <span style="font-weight:400; text-transform:none; color:var(--text-faint); font-size:11px;">— vale pra Pendência e/ou Reclamação</span></div>
       <div class="pq-field">
-        <label class="pq-label">Retorno do Setor</label>
-        <textarea id="pqRetornoSetor" placeholder="Retorno dado pelo setor..."></textarea>
-      </div>
-      <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Status da Tratativa <span class="pq-required">*</span></label>
         <select id="pqStatusTratativa">
           <option value="Em andamento">Em andamento</option>
@@ -1276,6 +1280,14 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <option value="Resolvido">Resolvido</option>
           <option value="Improcedente">Improcedente</option>
         </select>
+      </div>
+      <div class="pq-field">
+        <label class="pq-label">Retorno / Resolução <span style="font-weight:400; text-transform:none;">(o que foi feito)</span></label>
+        <textarea id="pqRetornoSetor" placeholder="Retorno dado pelo setor / o que foi resolvido..."></textarea>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Comentário do Síndico <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
+        <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
       </div>
     </div>
 
@@ -1311,10 +1323,6 @@ CONDOMINIO Y	9	Concluído"></textarea>
             <label class="pq-label">Nota 2 <span class="pq-required">*</span></label>
             <input type="text" id="pqNotaPos" placeholder="ex: 9">
           </div>
-        </div>
-        <div class="pq-field" style="margin-bottom:0; margin-top:12px;">
-          <label class="pq-label">Comentário do Síndico <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
-          <textarea id="pqComentarioSindico" placeholder="O que o síndico disse..."></textarea>
         </div>
       </div>
       <div id="pqRecNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-top:8px;">
@@ -5610,6 +5618,7 @@ function extraRowToItem(row){
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
+    comentarioContato: row.comentario_contato,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
   };
 }
@@ -5624,6 +5633,7 @@ function itemToExtraRow(item){
     comentario_sindico: item.comentarioSindico || null, responsavel_pesquisa: item.responsavelPesquisa || null,
     motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
     pesquisa2_nao_realizada: !!item.pesquisa2NaoRealizada, motivo_nao_realizada2: item.motivoNaoRealizada2 || null, observacao_nao_realizada2: item.observacaoNaoRealizada2 || null,
+    comentario_contato: item.comentarioContato || null,
     pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
     data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
     pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
@@ -5687,6 +5697,7 @@ function rowToUpdates(row){
     pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
+    comentarioContato: row.comentario_contato,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
     statusVisitaEmergencial: row.status_visita_emergencial,
   };
@@ -5701,6 +5712,7 @@ function updatesToRow(itemN, updates){
     comentario_sindico: updates.comentarioSindico || null, responsavel_pesquisa: updates.responsavelPesquisa || null,
     motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
     pesquisa2_nao_realizada: !!updates.pesquisa2NaoRealizada, motivo_nao_realizada2: updates.motivoNaoRealizada2 || null, observacao_nao_realizada2: updates.observacaoNaoRealizada2 || null,
+    comentario_contato: updates.comentarioContato || null,
     pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
@@ -6949,6 +6961,7 @@ function render(){
               ${item.observacaoNaoRealizada ? `<p class="blk-text">${escapeHtml(item.observacaoNaoRealizada)}</p>` : ''}
               ${item.pesquisaRemarcada ? `<div class="meta-row"><span class="pill">Remarcada para: ${item.dataRemarcada ? formatDateBR(item.dataRemarcada) : '—'}</span></div>${item.retornoVisitaRemarcada ? `<p class="blk-text">${escapeHtml(item.retornoVisitaRemarcada)}</p>` : ''}` : `<p class="blk-text" style="color:var(--text-faint);">Ainda não foi remarcada.</p>`}
             ` : ''}
+            ${item.comentarioContato ? `<p class="blk-text" style="margin-top:8px;"><i>💬 ${escapeHtml(item.comentarioContato)}</i></p>` : ''}
             <p class="blk-title" style="margin-top:14px;">Classificação</p>
             <div class="meta-row">
               <span class="pill ${item.houvePendencia ? 'resolved-no' : ''}">Pendência: ${item.houvePendencia ? 'Sim' : 'Não'}</span>
@@ -10347,9 +10360,11 @@ function pqSetToggle(group, val){
   });
   if (group === 'pqPendencia'){
     document.getElementById('pqCardPendencia').style.display = val === 'sim' ? 'block' : 'none';
+    pqAtualizarVisibilidadeEncaminhamento();
   }
   if (group === 'pqReclamacao'){
     document.getElementById('pqCardReclamacao').style.display = val === 'sim' ? 'block' : 'none';
+    pqAtualizarVisibilidadeEncaminhamento();
   }
   if (group === 'pqElogio'){
     document.getElementById('pqCardElogio').style.display = val === 'sim' ? 'block' : 'none';
@@ -10459,6 +10474,7 @@ function openPesquisaModal(item){
     document.getElementById('pqSetorReclamacaoOutro').style.display = (!ehPadraoRec && setorRecValor) ? 'block' : 'none';
   }
   document.getElementById('pqDescricaoSituacao').value = item ? (item.pend || '') : '';
+  document.getElementById('pqComentarioContato').value = item ? (item.comentarioContato || '') : '';
   document.getElementById('pqRetornoSetor').value = item ? (item.resolucao || '') : '';
   document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || 'Em andamento') : 'Em andamento';
   document.getElementById('pqDescricaoPendencia').value = item ? (item.pendenciaDescricao || '') : '';
@@ -10481,6 +10497,12 @@ function openPesquisaModal(item){
   document.getElementById('pqResponsavel').value = item ? (item.responsavelPesquisa || '') : '';
 
   document.getElementById('pesquisaModalOverlay').style.display = 'flex';
+}
+
+function pqAtualizarVisibilidadeEncaminhamento(){
+  const pendSim = pqToggleState.pqPendencia === 'sim';
+  const reclSim = pqToggleState.pqReclamacao === 'sim';
+  document.getElementById('pqCardEncaminhamento').style.display = (pendSim || reclSim) ? 'block' : 'none';
 }
 
 function pqAtualizarVisibilidadeRecuperacao(){
@@ -10626,7 +10648,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const motivoVals = [...document.querySelectorAll('.pq-motivo-cb:checked')].map(cb=>cb.value);
   const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
   const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
-  const statusTratativa = usaReclamacao ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
+  const statusTratativa = (usaPendencia || usaReclamacao) ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
   const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
 
   const dados = {
@@ -10651,12 +10673,13 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
       : (pqEditingItem ? pqEditingItem.setor : '—'),
     motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
     pend: usaReclamacao ? document.getElementById('pqDescricaoSituacao').value.trim() : '',
-    resolucao: usaReclamacao ? document.getElementById('pqRetornoSetor').value.trim() : '',
+    resolucao: (usaPendencia || usaReclamacao) ? document.getElementById('pqRetornoSetor').value.trim() : '',
     statusTratativa,
     resolvido: statusTratativa ? resolvidoMap[statusTratativa] : null,
     elogioSetor: usaElogio ? document.getElementById('pqSetorElogio').value : '',
     elogioDescricao: usaElogio ? document.getElementById('pqDescricaoElogio').value.trim() : '',
     comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
+    comentarioContato: document.getElementById('pqComentarioContato').value.trim(),
     responsavelPesquisa: document.getElementById('pqResponsavel').value,
     dataPesquisa2: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqDataPesquisa2').value,
     notaPosResolucao: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqNotaPos').value.trim(),
