@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1328,6 +1327,47 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <div class="pq-field" style="margin-bottom:0; margin-top:12px;">
           <label class="pq-label">Comentário do Contato <span style="font-weight:400; text-transform:none;">(opcional — como foi essa segunda ligação)</span></label>
           <textarea id="pqComentarioContato2" placeholder="Observações gerais sobre essa ligação de retorno..."></textarea>
+        </div>
+        <div class="pq-field" style="margin-top:14px; margin-bottom:0;">
+          <span class="pq-label">Nessa 2ª ligação, houve...</span>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:6px;">
+            <div>
+              <span class="pq-label" style="font-size:10px;">⚠ Pendência?</span>
+              <div class="toggle-pair">
+                <button type="button" class="toggle-btn" data-group="pqPendencia2" data-val="nao">✕ Não</button>
+                <button type="button" class="toggle-btn" data-group="pqPendencia2" data-val="sim">⚠ Sim</button>
+              </div>
+            </div>
+            <div>
+              <span class="pq-label" style="font-size:10px;">📣 Reclamação?</span>
+              <div class="toggle-pair">
+                <button type="button" class="toggle-btn" data-group="pqReclamacao2" data-val="nao">✕ Não</button>
+                <button type="button" class="toggle-btn" data-group="pqReclamacao2" data-val="sim">📣 Sim</button>
+              </div>
+            </div>
+            <div>
+              <span class="pq-label" style="font-size:10px;">⭐ Elogio?</span>
+              <div class="toggle-pair">
+                <button type="button" class="toggle-btn" data-group="pqElogio2" data-val="nao">✕ Não</button>
+                <button type="button" class="toggle-btn" data-group="pqElogio2" data-val="sim">⭐ Sim</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="pqCardPendencia2" style="display:none; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">⚠️ Pendência (2ª ligação)</p>
+          <textarea id="pqDescricaoPendencia2" placeholder="Descreva a pendência relatada..." style="margin-bottom:8px;"></textarea>
+          <select id="pqSetorPendencia2"><option value="">Setor Responsável...</option></select>
+        </div>
+        <div id="pqCardReclamacao2" style="display:none; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">📣 Reclamação (2ª ligação)</p>
+          <textarea id="pqDescricaoReclamacao2" placeholder="Descreva a reclamação relatada..." style="margin-bottom:8px;"></textarea>
+          <select id="pqSetorReclamacao2"><option value="">Setor Responsável...</option></select>
+        </div>
+        <div id="pqCardElogio2" style="display:none; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;">
+          <p class="pq-label" style="margin-bottom:8px;">⭐ Elogio (2ª ligação)</p>
+          <textarea id="pqDescricaoElogio2" placeholder="Descreva o elogio recebido..." style="margin-bottom:8px;"></textarea>
+          <select id="pqSetorElogio2"><option value="">Setor...</option></select>
         </div>
       </div>
       <div id="pqRecNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-top:8px;">
@@ -5624,6 +5664,9 @@ function extraRowToItem(row){
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
+    houvePendencia2: !!row.houve_pendencia2, pendenciaDescricao2: row.pendencia_descricao2, setorPendencia2: row.setor_pendencia2,
+    houveReclamacao2: !!row.houve_reclamacao2, reclamacaoDescricao2: row.reclamacao_descricao2, setorReclamacao2: row.setor_reclamacao2,
+    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
   };
 }
@@ -5639,6 +5682,9 @@ function itemToExtraRow(item){
     motivo_nao_realizada: item.motivoNaoRealizada || null, observacao_nao_realizada: item.observacaoNaoRealizada || null,
     pesquisa2_nao_realizada: !!item.pesquisa2NaoRealizada, motivo_nao_realizada2: item.motivoNaoRealizada2 || null, observacao_nao_realizada2: item.observacaoNaoRealizada2 || null,
     comentario_contato: item.comentarioContato || null, comentario_contato2: item.comentarioContato2 || null,
+    houve_pendencia2: !!item.houvePendencia2, pendencia_descricao2: item.pendenciaDescricao2 || null, setor_pendencia2: item.setorPendencia2 || null,
+    houve_reclamacao2: !!item.houveReclamacao2, reclamacao_descricao2: item.reclamacaoDescricao2 || null, setor_reclamacao2: item.setorReclamacao2 || null,
+    houve_elogio2: !!item.houveElogio2, elogio_descricao2: item.elogioDescricao2 || null, elogio_setor2: item.elogioSetor2 || null,
     pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
     data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
     pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
@@ -5703,6 +5749,9 @@ function rowToUpdates(row){
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
+    houvePendencia2: !!row.houve_pendencia2, pendenciaDescricao2: row.pendencia_descricao2, setorPendencia2: row.setor_pendencia2,
+    houveReclamacao2: !!row.houve_reclamacao2, reclamacaoDescricao2: row.reclamacao_descricao2, setorReclamacao2: row.setor_reclamacao2,
+    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
     statusVisitaEmergencial: row.status_visita_emergencial,
   };
@@ -5718,6 +5767,9 @@ function updatesToRow(itemN, updates){
     motivo_nao_realizada: updates.motivoNaoRealizada || null, observacao_nao_realizada: updates.observacaoNaoRealizada || null,
     pesquisa2_nao_realizada: !!updates.pesquisa2NaoRealizada, motivo_nao_realizada2: updates.motivoNaoRealizada2 || null, observacao_nao_realizada2: updates.observacaoNaoRealizada2 || null,
     comentario_contato: updates.comentarioContato || null, comentario_contato2: updates.comentarioContato2 || null,
+    houve_pendencia2: !!updates.houvePendencia2, pendencia_descricao2: updates.pendenciaDescricao2 || null, setor_pendencia2: updates.setorPendencia2 || null,
+    houve_reclamacao2: !!updates.houveReclamacao2, reclamacao_descricao2: updates.reclamacaoDescricao2 || null, setor_reclamacao2: updates.setorReclamacao2 || null,
+    houve_elogio2: !!updates.houveElogio2, elogio_descricao2: updates.elogioDescricao2 || null, elogio_setor2: updates.elogioSetor2 || null,
     pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
@@ -7010,6 +7062,9 @@ function render(){
               </div>
               ${item.comentarioSindico ? `<p class="blk-text" style="margin-top:6px;"><i>Comentário do síndico: ${escapeHtml(item.comentarioSindico)}</i></p>` : ''}
               ${item.comentarioContato2 ? `<p class="blk-text" style="margin-top:4px;"><i>💬 ${escapeHtml(item.comentarioContato2)}</i></p>` : ''}
+              ${item.houvePendencia2 ? `<p class="blk-text" style="margin-top:6px;">⚠️ <b>Pendência (2ª ligação):</b> ${escapeHtml(item.pendenciaDescricao2||'')}${item.setorPendencia2 ? ' — Setor: '+escapeHtml(item.setorPendencia2) : ''}</p>` : ''}
+              ${item.houveReclamacao2 ? `<p class="blk-text" style="margin-top:6px;">📣 <b>Reclamação (2ª ligação):</b> ${escapeHtml(item.reclamacaoDescricao2||'')}${item.setorReclamacao2 ? ' — Setor: '+escapeHtml(item.setorReclamacao2) : ''}</p>` : ''}
+              ${item.houveElogio2 ? `<p class="blk-text" style="margin-top:6px;">⭐ <b>Elogio (2ª ligação):</b> ${escapeHtml(item.elogioDescricao2||'')}${item.elogioSetor2 ? ' — Setor: '+escapeHtml(item.elogioSetor2) : ''}</p>` : ''}
             ` : ''}
             ${item.pesquisa2NaoRealizada ? `
               <p class="blk-title" style="margin-top:14px; color:var(--critico);">Pesquisa de Recuperação — Não Realizada</p>
@@ -7035,10 +7090,17 @@ function render(){
       <div class="card-head">
         <div class="idx">${String(item.n).padStart(2,'0')}</div>
         <div class="name">${escapeHtml(item.nome)}<small>${escapeHtml(item.filial)}${item.setor !== '—' ? ' · ' + escapeHtml(item.setor) : ''}</small> <span class="vida-condo-link" data-vida-condo="${escapeHtml(item.nome)}" title="Ver histórico completo deste condomínio">🕓 Histórico</span></div>
+        ${pesquisaNaoRealizada(item) ? `
+        <div class="motivo" style="grid-column: span 4; color:var(--text-faint); font-size:12.5px; display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--critico); font-weight:600;">⚪ Não realizada</span>
+          ${item.motivoNaoRealizada ? `— ${escapeHtml(item.motivoNaoRealizada)}` : ''}
+        </div>
+        ` : `
         <div class="motivo">${escapeHtml(item.motivo || '—')}</div>
         <div class="nota">${notaMedia(item)} ${emojiParaNota(notaMedia(item))}<span class="nlabel">média</span></div>
         <div class="nota2col">${escapeHtml(item.nota)}</div>
         <div class="nota2col">${nota2Display(item)}</div>
+        `}
         <div class="datacol">${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</div>
         <div class="tag">${c.label}</div>
         <div class="humorcol">${humorCell(item)}</div>
@@ -10358,6 +10420,9 @@ function pqSetToggle(group, val){
       btn.classList.add('active');
       if (group === 'pqRealizada') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
       if (group === 'pqRecRealizada') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
+      if (group === 'pqPendencia2') btn.classList.add(val === 'sim' ? 'warn' : 'pos');
+      if (group === 'pqReclamacao2') btn.classList.add(val === 'sim' ? 'neg' : 'pos');
+      if (group === 'pqElogio2') btn.classList.add(val === 'sim' ? 'pos' : 'neg');
       if (group === 'pqPendencia') btn.classList.add(val === 'sim' ? 'warn' : 'pos');
       if (group === 'pqReclamacao') btn.classList.add(val === 'sim' ? 'neg' : 'pos');
       if (group === 'pqElogio') btn.classList.add(val === 'sim' ? 'info' : 'neutral');
@@ -10386,6 +10451,15 @@ function pqSetToggle(group, val){
     document.getElementById('pqRecNaoRealizadaWrap').style.display = val === 'nao' ? 'block' : 'none';
     document.getElementById('pqRecCorpoNormal').style.display = val === 'nao' ? 'none' : 'block';
   }
+  if (group === 'pqPendencia2'){
+    document.getElementById('pqCardPendencia2').style.display = val === 'sim' ? 'block' : 'none';
+  }
+  if (group === 'pqReclamacao2'){
+    document.getElementById('pqCardReclamacao2').style.display = val === 'sim' ? 'block' : 'none';
+  }
+  if (group === 'pqElogio2'){
+    document.getElementById('pqCardElogio2').style.display = val === 'sim' ? 'block' : 'none';
+  }
 }
 
 function pqPopulateDropdowns(){
@@ -10398,6 +10472,13 @@ function pqPopulateDropdowns(){
 
   const setorPendencia = document.getElementById('pqSetorPendencia');
   setorPendencia.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+  const setorPendencia2 = document.getElementById('pqSetorPendencia2');
+  setorPendencia2.innerHTML = '<option value="">Setor Responsável...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  const setorReclamacao2 = document.getElementById('pqSetorReclamacao2');
+  setorReclamacao2.innerHTML = '<option value="">Setor Responsável...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  const setorElogio2 = document.getElementById('pqSetorElogio2');
+  setorElogio2.innerHTML = '<option value="">Setor...</option>' + PQ_SETORES_ELOGIO.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 
   const setorElogio = document.getElementById('pqSetorElogio');
   setorElogio.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_ELOGIO.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
@@ -10439,6 +10520,15 @@ function openPesquisaModal(item){
   document.getElementById('pqNotaPos').value = item ? (item.notaPosResolucao || '') : '';
   document.getElementById('pqDataPesquisa2').value = item ? (item.dataPesquisa2 || '') : '';
   document.getElementById('pqComentarioContato2').value = item ? (item.comentarioContato2 || '') : '';
+  pqSetToggle('pqPendencia2', item && item.houvePendencia2 ? 'sim' : 'nao');
+  pqSetToggle('pqReclamacao2', item && item.houveReclamacao2 ? 'sim' : 'nao');
+  pqSetToggle('pqElogio2', item && item.houveElogio2 ? 'sim' : 'nao');
+  document.getElementById('pqDescricaoPendencia2').value = item ? (item.pendenciaDescricao2 || '') : '';
+  document.getElementById('pqSetorPendencia2').value = item ? (item.setorPendencia2 || '') : '';
+  document.getElementById('pqDescricaoReclamacao2').value = item ? (item.reclamacaoDescricao2 || '') : '';
+  document.getElementById('pqSetorReclamacao2').value = item ? (item.setorReclamacao2 || '') : '';
+  document.getElementById('pqDescricaoElogio2').value = item ? (item.elogioDescricao2 || '') : '';
+  document.getElementById('pqSetorElogio2').value = item ? (item.elogioSetor2 || '') : '';
   document.getElementById('pqMotivoNaoRealizada2').value = item ? (item.motivoNaoRealizada2 || '') : '';
   document.getElementById('pqObservacaoNaoRealizada2').value = item ? (item.observacaoNaoRealizada2 || '') : '';
   pqSetToggle('pqRecRealizada', item && item.pesquisa2NaoRealizada ? 'nao' : 'sim');
@@ -10691,6 +10781,15 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     dataPesquisa2: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqDataPesquisa2').value,
     notaPosResolucao: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqNotaPos').value.trim(),
     comentarioContato2: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqComentarioContato2').value.trim(),
+    houvePendencia2: pqToggleState.pqPendencia2 === 'sim',
+    pendenciaDescricao2: pqToggleState.pqPendencia2 === 'sim' ? document.getElementById('pqDescricaoPendencia2').value.trim() : '',
+    setorPendencia2: pqToggleState.pqPendencia2 === 'sim' ? document.getElementById('pqSetorPendencia2').value : '',
+    houveReclamacao2: pqToggleState.pqReclamacao2 === 'sim',
+    reclamacaoDescricao2: pqToggleState.pqReclamacao2 === 'sim' ? document.getElementById('pqDescricaoReclamacao2').value.trim() : '',
+    setorReclamacao2: pqToggleState.pqReclamacao2 === 'sim' ? document.getElementById('pqSetorReclamacao2').value : '',
+    houveElogio2: pqToggleState.pqElogio2 === 'sim',
+    elogioDescricao2: pqToggleState.pqElogio2 === 'sim' ? document.getElementById('pqDescricaoElogio2').value.trim() : '',
+    elogioSetor2: pqToggleState.pqElogio2 === 'sim' ? document.getElementById('pqSetorElogio2').value : '',
     pesquisa2NaoRealizada: pqToggleState.pqRecRealizada === 'nao',
     motivoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada2').value : '',
     observacaoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada2').value.trim() : '',
