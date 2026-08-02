@@ -1236,16 +1236,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       </div>
       <div class="pq-field">
         <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
-        <select id="pqSetorPendencia">
-          <option value="">Selecione...</option>
-          <option value="Síndico">Síndico</option>
-          <option value="Zeladoria">Zeladoria</option>
-          <option value="Portaria">Portaria</option>
-          <option value="Financeiro">Financeiro</option>
-          <option value="Manutenção">Manutenção</option>
-          <option value="Administração">Administração</option>
-          <option value="Outro">Outro</option>
-        </select>
+        <select id="pqSetorPendencia"><option value="">Selecione...</option></select>
         <input type="text" id="pqSetorPendenciaOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
       </div>
       <div class="pq-field" style="margin-bottom:0;">
@@ -10301,12 +10292,15 @@ function pqBuildNotaRow(){
     const cls = n < 8 ? 'low' : 'high';
     return `<button type="button" class="nota-btn ${cls}" data-nota="${n}">${n}</button>`;
   }).join('');
+  document.getElementById('pqNotaHint').textContent = 'Selecione uma nota';
+  document.getElementById('pqNotaHint').style.color = '';
   row.querySelectorAll('.nota-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       pqNotaSelecionada = btn.getAttribute('data-nota');
       row.querySelectorAll('.nota-btn').forEach(b=>b.classList.remove('selected'));
       btn.classList.add('selected');
       document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`;
+      document.getElementById('pqNotaHint').style.color = '';
       pqAtualizarVisibilidadeRecuperacao();
     });
   });
@@ -10357,6 +10351,9 @@ function pqPopulateDropdowns(){
   const setorReclamacao = document.getElementById('pqSetorReclamacao');
   setorReclamacao.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 
+  const setorPendencia = document.getElementById('pqSetorPendencia');
+  setorPendencia.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
   const setorElogio = document.getElementById('pqSetorElogio');
   setorElogio.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_ELOGIO.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
 
@@ -10403,7 +10400,13 @@ function openPesquisaModal(item){
 
   if (pqNotaSelecionada !== null && pqNotaSelecionada !== ''){
     const btn = document.querySelector(`.nota-btn[data-nota="${pqNotaSelecionada}"]`);
-    if (btn){ btn.classList.add('selected'); document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`; }
+    if (btn){
+      btn.classList.add('selected');
+      document.getElementById('pqNotaHint').textContent = `Nota selecionada: ${pqNotaSelecionada}`;
+    } else {
+      document.getElementById('pqNotaHint').innerHTML = `⚠ Valor salvo antigo, em formato de texto (não é uma nota simples de 0 a 10): <b>"${escapeHtml(pqNotaSelecionada)}"</b>. Clique numa nota abaixo pra substituir por um valor único, ou deixe como está se não quiser mudar.`;
+      document.getElementById('pqNotaHint').style.color = 'var(--atencao)';
+    }
   }
   pqAtualizarVisibilidadeRecuperacao();
 
@@ -10438,7 +10441,7 @@ function openPesquisaModal(item){
   document.getElementById('pqObservacoesPendencia').value = item ? (item.pendenciaObservacoes || '') : '';
   {
     const setorPendValor = item ? (item.setorPendencia || '') : '';
-    const ehPadraoPend = PQ_SETORES_PENDENCIA.includes(setorPendValor);
+    const ehPadraoPend = PQ_SETORES_RESPONSAVEL.includes(setorPendValor);
     document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : (setorPendValor ? 'Outro' : '');
     document.getElementById('pqSetorPendenciaOutro').value = ehPadraoPend ? '' : setorPendValor;
     document.getElementById('pqSetorPendenciaOutro').style.display = (!ehPadraoPend && setorPendValor) ? 'block' : 'none';
