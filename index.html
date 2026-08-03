@@ -1608,13 +1608,17 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <p class="chart-title" style="margin:0;">Comparativo mensal de notas</p>
         <div class="exec-comp-numbers" id="compMensalNumeros"></div>
       </div>
+      <p style="font-size:11px; color:var(--text-faint); margin:2px 0 10px;">📈 A linha mostra a evolução da nota média geral mês a mês. O gráfico empilhado logo abaixo mostra quantas pesquisas caíram em cada faixa de nota (🟢 9–10 · 🟡 7–8 · 🟠 5–6 · 🔴 0–4) em cada mês.</p>
       <div id="compMensalLinha"></div>
       <div id="compMensalEmpilhado" style="margin-top:18px;"></div>
       <p class="exec-insight" id="compMensalInsight"></p>
+      <button type="button" class="clearbtn" id="btnExplicarMensal" style="margin-top:8px;">🧠 Explicar em Detalhes</button>
+      <div id="compMensalExplicacao" style="display:none; margin-top:10px; font-size:12.5px; color:var(--text-dim); line-height:1.7; background:var(--bg-panel-2); border-radius:9px; padding:14px 16px;"></div>
     </div>
 
     <div class="chart-panel exec-comparativo-block">
       <p class="chart-title">Comparativo entre filiais</p>
+      <p style="font-size:11px; color:var(--text-faint); margin:2px 0 10px;">🏢 Cada card mostra a nota média da filial no mês mais recente com dado, a variação (▲ subiu / ▼ caiu) frente ao mês anterior, e quantos condomínios ela representa na base. A tabela e o gráfico de linhas abaixo detalham a mesma comparação ao longo dos meses.</p>
       <div class="exec-filial-cards" id="compFilialCards"></div>
       <div id="compFilialLinhas" style="margin-top:18px;"></div>
       <div class="checklist-table-wrap" style="margin-top:16px;">
@@ -1632,6 +1636,8 @@ CONDOMINIO Y	9	Concluído"></textarea>
         </table>
       </div>
       <p class="exec-insight" id="compFilialInsight"></p>
+      <button type="button" class="clearbtn" id="btnExplicarFilial" style="margin-top:8px;">🧠 Explicar em Detalhes</button>
+      <div id="compFilialExplicacao" style="display:none; margin-top:10px; font-size:12.5px; color:var(--text-dim); line-height:1.7; background:var(--bg-panel-2); border-radius:9px; padding:14px 16px;"></div>
     </div>
     </div>
 
@@ -10719,27 +10725,9 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
         return;
       }
     }
-    const notaNumValidacao = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
-    if (notaNumValidacao < 9){
-      if (pqToggleState.pqRecRealizada === 'nao'){
-        if (!document.getElementById('pqMotivoNaoRealizada2').value){
-          errEl.textContent = 'Informe o motivo da Pesquisa 2 não realizada.';
-          errEl.style.display = 'block';
-          return;
-        }
-      } else {
-        if (!document.getElementById('pqDataPesquisa2').value){
-          errEl.textContent = 'Informe a Data da Pesquisa 2 (Pesquisa de Recuperação).';
-          errEl.style.display = 'block';
-          return;
-        }
-        if (!document.getElementById('pqNotaPos').value.trim()){
-          errEl.textContent = 'Informe a Nota 2 (Pesquisa de Recuperação).';
-          errEl.style.display = 'block';
-          return;
-        }
-      }
-    }
+    // A Pesquisa 2 (Recuperação) fica só como lembrete quando a nota 1 é baixa —
+    // não é obrigatória pra salvar, já que normalmente ela só acontece depois
+    // de resolver a pendência/reclamação da Pesquisa 1.
   }
 
   const motivoVals = [...document.querySelectorAll('.pq-motivo-cb:checked')].map(cb=>cb.value);
@@ -11117,6 +11105,19 @@ function notaNumerica(item){
   return isNaN(n) ? null : n;
 }
 
+// Padroniza variações de escrita/maiúsculas da filial (CEARÁ, Ceará, ceara...)
+// pra um único nome canônico, evitando que a mesma filial apareça duplicada
+// no comparativo por causa de digitação/importação diferente.
+function normalizeFilialCanonica(raw){
+  const t = String(raw||'').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // remove acentos pra comparar
+  if (t.includes('ceara')) return 'Ceará';
+  if (t.includes('maranh')) return 'Maranhão';
+  if (t.includes('amazon') || t.includes('manaus')) return 'Amazonas';
+  if (t.includes('secopi')) return 'SECOPI';
+  return raw; // não reconhecido — mantém como veio, não força um valor errado
+}
+
 function historicoMesParaChave(mesNome){
   const norm = (mesNome||'').trim().toLowerCase();
   const num = MESES_PT_PARA_NUM[norm];
@@ -11128,9 +11129,9 @@ function historicoMesParaChave(mesNome){
 // dado nesse mês ainda (fica em branco no gráfico até alguém cadastrar a pasta
 // delas também).
 function itensDoMes(mesKey, filial){
-  const doVivo = DATA.filter(d => getMes(d) === mesKey && (!filial || d.filial === filial))
+  const doVivo = DATA.filter(d => getMes(d) === mesKey && (!filial || normalizeFilialCanonica(d.filial) === filial))
     .map(d => ({ nota: notaNumerica(d) }));
-  const doHistorico = (historicoData||[]).filter(h => historicoMesParaChave(h.mes) === mesKey && (!filial || h.filial === filial))
+  const doHistorico = (historicoData||[]).filter(h => historicoMesParaChave(h.mes) === mesKey && (!filial || normalizeFilialCanonica(h.filial) === filial))
     .map(h => ({ nota: parseFloat(String(h.nota||'').replace(',','.')) }))
     .map(h => ({ nota: isNaN(h.nota) ? null : h.nota }));
   return [...doVivo, ...doHistorico];
@@ -11159,14 +11160,89 @@ function faixaGravidade(n){
   return 'ok';
 }
 
+// ============================================================================
+// EXPLICAÇÃO DETALHADA — monta um texto completo, explicando cada gráfico
+// número por número, a partir dos mesmos dados já calculados pros cards.
+// (Não chama nenhuma IA externa — é o mesmo tipo de análise por regras que o
+// resto do painel já usa, só que aprofundada.)
+// ============================================================================
+function explicarComparativoMensal(){
+  const d = window._compMensalDados;
+  const box = document.getElementById('compMensalExplicacao');
+  if (!d){ box.innerHTML = '<p>Ainda não há dados suficientes pra explicar.</p>'; return; }
+  const partes = [];
+  partes.push(`<p><b>📈 Linha de evolução:</b> cada ponto da linha é a nota média de <b>todos</b> os condomínios que tiveram pesquisa respondida naquele mês. O mês usado como "atual" é <b>${escapeHtml(mesLabelBR(d.mesAtualChave))}</b> — o mês mais recente que já tem pelo menos uma nota lançada (meses futuros, criados com antecedência e ainda sem pesquisa respondida, são ignorados nessa conta).</p>`);
+  if (d.notaAtual !== null){
+    partes.push(`<p>Em ${escapeHtml(mesLabelBR(d.mesAtualChave))}, a nota média foi <b>${d.notaAtual.toFixed(1)}</b>${d.notaAnterior!==null ? `, contra <b>${d.notaAnterior.toFixed(1)}</b> no mês anterior (${escapeHtml(mesLabelBR(d.meses[d.idxAtual-1]))})` : ' (ainda não há mês anterior com nota pra comparar)'}. ${d.variacao !== null ? (d.variacao >= 0 ? `Isso é uma <b style="color:var(--ok);">alta de ${d.variacao.toFixed(1)} ponto(s)</b>.` : `Isso é uma <b style="color:var(--critico);">queda de ${Math.abs(d.variacao).toFixed(1)} ponto(s)</b>.`) : ''}</p>`);
+    partes.push(`<p>A meta da equipe é <b>${META_NOTA.toFixed(1)}</b>. ${d.distMeta >= 0 ? `A nota atual está <b style="color:var(--ok);">${d.distMeta.toFixed(1)} ponto(s) acima</b> da meta.` : `A nota atual está <b style="color:var(--critico);">${Math.abs(d.distMeta).toFixed(1)} ponto(s) abaixo</b> da meta — vale atenção.`}</p>`);
+  } else {
+    partes.push(`<p>Nenhum mês do período tem nota lançada ainda — assim que a primeira pesquisa desse período for respondida, os números aparecem aqui.</p>`);
+  }
+  if (d.barRows && d.barRows.length){
+    partes.push(`<p><b>🟩🟨🟧🟥 Gráfico empilhado (faixas de nota):</b> mostra, mês a mês, qual % dos condomínios pesquisados caiu em cada faixa de nota (${d.faixasOrdenadas.map(f=>f.label).join(' · ')}). Quanto mais verde, melhor a satisfação geral; quanto mais vermelho/laranja, mais condomínios insatisfeitos naquele mês.</p>`);
+    const rowAtual = d.barRows[d.idxAtual];
+    if (rowAtual){
+      const critico = rowAtual.pcts[3] + rowAtual.pcts[4];
+      partes.push(`<p>Em ${escapeHtml(mesLabelBR(d.mesAtualChave))}, <b>${critico.toFixed(0)}%</b> dos condomínios com pesquisa respondida estão em faixa crítica (nota de 0 a 4).</p>`);
+    }
+  }
+  box.innerHTML = partes.join('');
+}
+
+function explicarComparativoFilial(){
+  const d = window._compFilialDados;
+  const box = document.getElementById('compFilialExplicacao');
+  if (!d){ box.innerHTML = '<p>Ainda não há dados suficientes pra explicar.</p>'; return; }
+  const partes = [];
+  partes.push(`<p><b>🏢 O que cada card mostra:</b> a nota média da filial em <b>${escapeHtml(mesLabelBR(d.mesAtual))}</b> (mês mais recente com nota lançada), a variação frente a ${d.mesAnterior ? escapeHtml(mesLabelBR(d.mesAnterior)) : 'o mês anterior (ainda sem dado)'}, e quantos condomínios da filial tiveram pesquisa respondida nesse mês (e qual % isso representa da base toda).</p>`);
+  const comDado = d.stats.filter(s=>s.notaAtual!==null);
+  if (comDado.length){
+    partes.push(`<p><b>Situação de cada filial em ${escapeHtml(mesLabelBR(d.mesAtual))}:</b></p><ul style="margin:4px 0 8px 18px; padding:0;">` +
+      [...d.stats].sort((a,b)=>(b.notaAtual||0)-(a.notaAtual||0)).map(s=>{
+        if (s.notaAtual === null) return `<li><b>${escapeHtml(s.filial)}</b>: sem pesquisa respondida ainda nesse mês (${s.count} condomínio(s) na base).</li>`;
+        const variacaoTxt = s.variacao===null ? 'sem mês anterior pra comparar' : (s.variacao>=0 ? `subiu ${s.variacao.toFixed(1)}` : `caiu ${Math.abs(s.variacao).toFixed(1)}`);
+        return `<li><b>${escapeHtml(s.filial)}</b>: nota <b>${s.notaAtual.toFixed(1)}</b> (${variacaoTxt} vs. mês anterior) · <b>${s.pctCriticos.toFixed(0)}%</b> de casos críticos (nota ≤6) · representa <b>${s.pctBase.toFixed(0)}%</b> da base (${s.count} condomínio(s)).</li>`;
+      }).join('') + `</ul>`);
+    const melhor = [...comDado].sort((a,b)=>b.notaAtual-a.notaAtual)[0];
+    const pior = [...comDado].sort((a,b)=>a.notaAtual-b.notaAtual)[0];
+    if (melhor.filial !== pior.filial){
+      partes.push(`<p><b>${escapeHtml(melhor.filial)}</b> é a filial com a melhor nota (${melhor.notaAtual.toFixed(1)}), enquanto <b>${escapeHtml(pior.filial)}</b> tem a menor (${pior.notaAtual.toFixed(1)}).</p>`);
+    }
+    const semDado = d.stats.filter(s=>s.notaAtual===null);
+    if (semDado.length){
+      partes.push(`<p>⚠️ ${semDado.map(s=>escapeHtml(s.filial)).join(', ')} ainda ${semDado.length>1?'não têm':'não tem'} nenhuma pesquisa respondida em ${escapeHtml(mesLabelBR(d.mesAtual))} — por isso aparece "—" no card.</p>`);
+    }
+  } else {
+    partes.push(`<p>Nenhuma filial tem pesquisa respondida em ${escapeHtml(mesLabelBR(d.mesAtual))} ainda.</p>`);
+  }
+  partes.push(`<p><b>📊 Tabela e gráfico de linhas abaixo:</b> repetem a mesma comparação, mas mês a mês — a tabela está ordenada da maior pra menor nota atual, e o gráfico de linhas mostra a tendência de cada filial ao longo do tempo (uma cor por filial, indicada na legenda ao lado).</p>`);
+  box.innerHTML = partes.join('');
+}
+
+document.getElementById('btnExplicarMensal').addEventListener('click', ()=>{
+  const box = document.getElementById('compMensalExplicacao');
+  const abrir = box.style.display === 'none';
+  if (abrir) explicarComparativoMensal();
+  box.style.display = abrir ? 'block' : 'none';
+});
+document.getElementById('btnExplicarFilial').addEventListener('click', ()=>{
+  const box = document.getElementById('compFilialExplicacao');
+  const abrir = box.style.display === 'none';
+  if (abrir) explicarComparativoFilial();
+  box.style.display = abrir ? 'block' : 'none';
+});
+
 function renderComparativoMensal(){
   const meses = getUltimosMeses(6);
   if (!meses.length) return;
   const medias = meses.map(m => mediaNotaDoMes(m));
-  const notaAtual = medias[medias.length-1];
-  const notaAnterior = medias.length > 1 ? medias[medias.length-2] : null;
+  const mesAtualChave = getUltimoMesComNota(meses);
+  const idxAtual = meses.indexOf(mesAtualChave);
+  const notaAtual = medias[idxAtual];
+  const notaAnterior = idxAtual > 0 ? medias[idxAtual-1] : null;
   const variacao = (notaAtual !== null && notaAnterior !== null) ? notaAtual - notaAnterior : null;
   const distMeta = notaAtual !== null ? notaAtual - META_NOTA : null;
+  window._compMensalDados = { meses, medias, mesAtualChave, idxAtual, notaAtual, notaAnterior, variacao, distMeta };
 
   // Cabeçalho — 3 números
   const fmt = (v) => v === null ? '—' : v.toFixed(1);
@@ -11175,7 +11251,7 @@ function renderComparativoMensal(){
   const distHtml = distMeta === null ? '—' :
     `<span style="color:${distMeta >= 0 ? 'var(--ok)' : 'var(--critico)'}">${distMeta >= 0 ? '+' : ''}${distMeta.toFixed(1)}</span>`;
   document.getElementById('compMensalNumeros').innerHTML = `
-    <div class="exec-comp-num"><div class="v">${fmt(notaAtual)}</div><div class="l">Nota atual (${mesLabelBR(meses[meses.length-1])})</div></div>
+    <div class="exec-comp-num"><div class="v">${fmt(notaAtual)}</div><div class="l">Nota atual (${mesLabelBR(mesAtualChave)})</div></div>
     <div class="exec-comp-num"><div class="v">${deltaHtml}</div><div class="l">vs. mês anterior</div></div>
     <div class="exec-comp-num"><div class="v">${distHtml}</div><div class="l">distância até a meta (${META_NOTA.toFixed(1)})</div></div>
   `;
@@ -11231,6 +11307,8 @@ function renderComparativoMensal(){
     });
     return { mes:m, pcts };
   });
+  window._compMensalDados.barRows = barRows;
+  window._compMensalDados.faixasOrdenadas = faixasOrdenadas;
   document.getElementById('compMensalEmpilhado').innerHTML = `
     <p class="exec-mini-title">% de condomínios por faixa de nota, por mês</p>
     <div style="display:flex; flex-direction:column; gap:10px;">
@@ -11251,8 +11329,7 @@ function renderComparativoMensal(){
   // Insight automático
   let insight = 'Ainda não há histórico suficiente (pelo menos 2 meses com nota) para gerar um insight comparativo.';
   if (medias.length >= 2 && notaAtual !== null && notaAnterior !== null){
-    const idxAtual = meses.length - 1;
-    const idxAnterior = meses.length - 2;
+    const idxAnterior = idxAtual - 1;
     const criticoAtual = barRows[idxAtual].pcts[3] + barRows[idxAtual].pcts[4];
     const criticoAnterior = barRows[idxAnterior].pcts[3] + barRows[idxAnterior].pcts[4];
     if (variacao !== null && variacao < -0.1){
@@ -11266,14 +11343,22 @@ function renderComparativoMensal(){
   document.getElementById('compMensalInsight').textContent = '💡 ' + insight;
 }
 
+function getUltimoMesComNota(meses){
+  for (let i = meses.length - 1; i >= 0; i--){
+    if (mediaNotaDoMes(meses[i], itensDoMes(meses[i])) !== null) return meses[i];
+  }
+  return meses[meses.length - 1]; // nenhum mês tem nota ainda — usa o último mesmo assim
+}
+
 function renderComparativoFiliais(){
   const meses = getUltimosMeses(6);
   if (!meses.length) return;
-  const mesAtual = meses[meses.length-1];
-  const mesAnterior = meses.length > 1 ? meses[meses.length-2] : null;
-  const filiaisVivo = [...new Set(DATA.map(d=>d.filial))];
-  const filiaisHistorico = [...new Set((historicoData||[]).map(h=>h.filial))];
-  const filiais = [...new Set([...filiaisVivo, ...filiaisHistorico])].sort();
+  const mesAtual = getUltimoMesComNota(meses);
+  const idxMesAtual = meses.indexOf(mesAtual);
+  const mesAnterior = idxMesAtual > 0 ? meses[idxMesAtual-1] : null;
+  const filiaisVivo = [...new Set(DATA.map(d=>normalizeFilialCanonica(d.filial)))];
+  const filiaisHistorico = [...new Set((historicoData||[]).map(h=>normalizeFilialCanonica(h.filial)))];
+  const filiais = [...new Set([...filiaisVivo, ...filiaisHistorico])].filter(Boolean).sort();
   const totalCondosAtual = DATA.filter(d=>getMes(d)===mesAtual).length || 1;
 
   const stats = filiais.map(f=>{
@@ -11281,12 +11366,13 @@ function renderComparativoFiliais(){
     const notaAtual = mediaNotaDoMes(mesAtual, itensAtual);
     const notaAnterior = mesAnterior ? mediaNotaDoMes(mesAnterior, itensDoMes(mesAnterior, f)) : null;
     const variacao = (notaAtual!==null && notaAnterior!==null) ? notaAtual - notaAnterior : null;
-    const countVivo = DATA.filter(d=>d.filial===f && getMes(d)===mesAtual).length;
+    const countVivo = DATA.filter(d=>normalizeFilialCanonica(d.filial)===f && getMes(d)===mesAtual).length;
     const pctBase = (countVivo / totalCondosAtual) * 100;
     const criticos = itensAtual.filter(d=> d.nota!==null && d.nota <= 6);
     const pctCriticos = itensAtual.length ? (criticos.length/itensAtual.length*100) : 0;
     return { filial:f, notaAtual, variacao, pctBase, count:countVivo, pctCriticos, critico: notaAtual!==null && notaAtual < 6.5 };
   });
+  window._compFilialDados = { mesAtual, mesAnterior, stats, totalCondosAtual };
 
   // Mini cards
   const el = document.getElementById('compFilialCards');
