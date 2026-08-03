@@ -3502,9 +3502,9 @@ CONDOMINIO Y	480	45"></textarea>
   </div>
 
   <div class="users-modal" id="pqFechamentoModalOverlay" style="display:none;">
-    <div class="users-box" style="max-width:680px; max-height:88vh; overflow-y:auto;">
+    <div class="users-box" style="max-width:960px; max-height:88vh; overflow-y:auto;">
       <div class="users-head">
-        <h3>🏁 Fechamento do Ciclo — <span id="pqFechamentoMesLabel"></span></h3>
+        <h3>🏁 Fechamento do Ciclo — <span id="pqFechamentoMesLabel"></span> <span id="pqFechamentoBadgeConcluido" style="display:none; font-size:11px; color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid var(--ok); border-radius:20px; padding:3px 10px; margin-left:8px; vertical-align:middle;">✅ Ciclo Concluído</span></h3>
         <button type="button" class="logout-btn" id="pqFechamentoCloseBtn">✕</button>
       </div>
       <div class="stats-strip" id="pqFechamentoStats" style="margin-bottom:16px;"></div>
@@ -3512,7 +3512,28 @@ CONDOMINIO Y	480	45"></textarea>
         <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente de Fechamento</p>
         <div id="pqFechamentoRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
       </div>
+      <div class="chart-panel" style="margin-bottom:14px;">
+        <p class="chart-title">🏢 Análise Detalhada por Filial</p>
+        <div class="checklist-table-wrap">
+          <table class="checklist-table" id="pqFechamentoTabelaFilial">
+            <thead>
+              <tr>
+                <th class="ck-name">Filial</th>
+                <th>Realizadas</th>
+                <th>Não Realizadas</th>
+                <th>Nota Média</th>
+                <th>Críticos (≤6)</th>
+                <th>Pendências</th>
+                <th>Reclamações</th>
+                <th>Elogios</th>
+              </tr>
+            </thead>
+            <tbody id="pqFechamentoTabelaFilialBody"></tbody>
+          </table>
+        </div>
+      </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="clearbtn" id="btnGerarRelatorioPDFCiclo">🖨️ Gerar Relatório PDF</button>
         <button type="button" class="logout-btn" id="pqFechamentoCancelarBtn">Fechar sem concluir</button>
         <button type="button" class="login-btn" id="pqFechamentoConfirmarBtn" style="width:auto; margin-top:0; padding:9px 20px; background:linear-gradient(135deg, var(--ok), var(--accent));">✅ Confirmar Conclusão do Ciclo</button>
       </div>
@@ -6527,7 +6548,160 @@ function renderPqCicloProgresso(){
 }
 document.getElementById('pqCicloFilialSel').addEventListener('change', renderPqCicloProgresso);
 
+function gerarRelatorioFechamentoCicloPDF(){
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const total = doMes.length;
+  const realizadasArr = doMes.filter(d => !pesquisaNaoRealizada(d));
+  const naoRealizadasArr = doMes.filter(pesquisaNaoRealizada);
+  const notasArr = realizadasArr.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const mediaGeral = notasArr.length ? (notasArr.reduce((a,b)=>a+b,0)/notasArr.length) : null;
+
+  const faixasNota = [
+    { label:'9 – 10 (Excelente)', min:9, max:10 },
+    { label:'7 – 8 (Boa)', min:7, max:8.999 },
+    { label:'5 – 6 (Regular)', min:5, max:6.999 },
+    { label:'0 – 4 (Ruim)', min:0, max:4.999 },
+  ];
+  function distribuicaoNotas(notas){
+    return faixasNota.map(f => ({ label:f.label, n: notas.filter(n=>n>=f.min && n<=f.max).length }));
+  }
+  function topMotivos(itens, limite){
+    const dist = computeDistribution(itens, classifyGrupoMotivo);
+    return Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]).slice(0, limite||6).map(([label,n])=>{
+      let exemplos = [];
+      if (label === 'Outros'){
+        exemplos = itens
+          .filter(d => classifyGrupoMotivo(d).includes('Outros') && d.pend && d.pend.trim())
+          .slice(0, 4)
+          .map(d => `${d.nome}: "${(d.pend||'').trim().slice(0,110)}${(d.pend||'').trim().length>110?'…':''}"`);
+      }
+      return { label, n, pct: dist.total ? Math.round(n/dist.total*100) : 0, exemplos };
+    });
+  }
+
+  const filiais = [...new Set(doMes.map(d => normalizeFilialCanonica(d.filial)))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  const blocoGeral = `
+    <div class="filial-block">
+      <h2>📊 Resumo Geral — Todas as Filiais</h2>
+      <div class="summary">
+        <div class="sbox"><b>${total}</b><span>Condomínios no ciclo</span></div>
+        <div class="sbox ok"><b>${realizadasArr.length}</b><span>Pesquisas realizadas (${total?Math.round(realizadasArr.length/total*100):0}%)</span></div>
+        <div class="sbox crit"><b>${naoRealizadasArr.length}</b><span>Não realizadas</span></div>
+        <div class="sbox"><b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b><span>Nota média geral</span></div>
+        <div class="sbox"><b>${doMes.filter(temPendencia).length}</b><span>Pendências</span></div>
+        <div class="sbox crit"><b>${doMes.filter(temReclamacao).length}</b><span>Reclamações</span></div>
+        <div class="sbox ok"><b>${doMes.filter(temElogio).length}</b><span>Elogios</span></div>
+      </div>
+      <table class="mini-table">
+        <thead><tr><th>Faixa de Nota</th><th>Quantidade</th><th>%</th></tr></thead>
+        <tbody>${distribuicaoNotas(notasArr).map(f=>`<tr><td>${f.label}</td><td>${f.n}</td><td>${notasArr.length?Math.round(f.n/notasArr.length*100):0}%</td></tr>`).join('')}</tbody>
+      </table>
+      <p class="subtitle">Principais motivos de reclamação (todas as filiais)</p>
+      <table class="mini-table">
+        <thead><tr><th>Motivo</th><th>Ocorrências</th><th>%</th></tr></thead>
+        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos">Exemplos: ${m.exemplos.map(escapeHtml).join(' · ')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+
+  const blocosFilial = filiais.map(f=>{
+    const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
+    const realizadasF = doFilial.filter(d => !pesquisaNaoRealizada(d));
+    const naoRealizadasF = doFilial.filter(pesquisaNaoRealizada);
+    const notasF = realizadasF.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const mediaF = notasF.length ? (notasF.reduce((a,b)=>a+b,0)/notasF.length) : null;
+    const reclamacoesF = doFilial.filter(temReclamacao);
+    const pendenciasF = doFilial.filter(temPendencia);
+    const elogiosF = doFilial.filter(temElogio);
+    const naoRealizadasMotivos = {};
+    naoRealizadasF.forEach(d=>{ const m = d.motivoNaoRealizada || d.statusPesquisa || 'Não informado'; naoRealizadasMotivos[m] = (naoRealizadasMotivos[m]||0)+1; });
+    const naoRealizadasMotivosOrdenados = Object.entries(naoRealizadasMotivos).sort((a,b)=>b[1]-a[1]);
+
+    const pendenciasAbertasF = pendenciasF.filter(d => d.resolvido !== 'true' && d.resolvido !== true);
+
+    return `
+    <div class="filial-block">
+      <h2>🏢 ${escapeHtml(f)}</h2>
+      <div class="summary">
+        <div class="sbox"><b>${doFilial.length}</b><span>Condomínios</span></div>
+        <div class="sbox ok"><b>${realizadasF.length}</b><span>Realizadas (${doFilial.length?Math.round(realizadasF.length/doFilial.length*100):0}%)</span></div>
+        <div class="sbox crit"><b>${naoRealizadasF.length}</b><span>Não realizadas</span></div>
+        <div class="sbox"><b>${mediaF!==null?mediaF.toFixed(1):'—'}</b><span>Nota média</span></div>
+        <div class="sbox"><b>${pendenciasF.length}</b><span>Pendências</span></div>
+        <div class="sbox crit"><b>${reclamacoesF.length}</b><span>Reclamações</span></div>
+        <div class="sbox ok"><b>${elogiosF.length}</b><span>Elogios</span></div>
+      </div>
+      <div class="cols2">
+        <div>
+          <p class="subtitle">Distribuição de notas (boas x ruins)</p>
+          <table class="mini-table">
+            <thead><tr><th>Faixa</th><th>Qtd</th><th>%</th></tr></thead>
+            <tbody>${distribuicaoNotas(notasF).map(fx=>`<tr><td>${fx.label}</td><td>${fx.n}</td><td>${notasF.length?Math.round(fx.n/notasF.length*100):0}%</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div>
+          <p class="subtitle">Principais motivos de reclamação</p>
+          <table class="mini-table">
+            <thead><tr><th>Motivo</th><th>Qtd</th><th>%</th></tr></thead>
+            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos">Exemplos: ${m.exemplos.map(escapeHtml).join(' · ')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+      ${pendenciasAbertasF.length ? `
+      <p class="subtitle">⚠️ Pendências em andamento (${pendenciasAbertasF.length})</p>
+      <table class="mini-table">
+        <thead><tr><th>Condomínio</th><th>Motivo / Descrição</th><th>Setor</th></tr></thead>
+        <tbody>${pendenciasAbertasF.map(d=>`<tr><td>${escapeHtml(d.nome)}</td><td>${escapeHtml(d.pendenciaDescricao || d.pend || d.motivo || 'Não informado')}</td><td>${escapeHtml(d.setorPendencia || d.setor || '—')}</td></tr>`).join('')}</tbody>
+      </table>` : ''}
+      ${naoRealizadasMotivosOrdenados.length ? `
+      <p class="subtitle">Motivos das pesquisas não realizadas</p>
+      <table class="mini-table">
+        <thead><tr><th>Motivo</th><th>Qtd</th></tr></thead>
+        <tbody>${naoRealizadasMotivosOrdenados.map(([m,n])=>`<tr><td>${escapeHtml(m)}</td><td>${n}</td></tr>`).join('')}</tbody>
+      </table>` : ''}
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Relatório de Fechamento — ${mesLabelBR(selectedMes)}</title>
+  <style>
+    body{ font-family:Arial, sans-serif; color:#1a1a1a; padding:28px; max-width:1000px; margin:0 auto; }
+    h1{ font-size:21px; margin:0 0 2px; color:#222F59; }
+    h2{ font-size:15px; margin:0 0 10px; color:#222F59; border-bottom:2px solid #E07B2C; padding-bottom:6px; }
+    .meta{ font-size:11px; color:#666; margin-bottom:20px; }
+    .filial-block{ margin-bottom:26px; page-break-inside:avoid; }
+    .summary{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .sbox{ border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:10.5px; min-width:100px; background:#fafafa; }
+    .sbox b{ display:block; font-size:17px; color:#222F59; }
+    .sbox.crit b{ color:#c0392b; }
+    .sbox.ok b{ color:#27ae60; }
+    .cols2{ display:flex; gap:20px; }
+    .cols2>div{ flex:1; }
+    .subtitle{ font-size:11.5px; font-weight:bold; color:#444; margin:10px 0 6px; }
+    table.mini-table{ border-collapse:collapse; width:100%; font-size:10.5px; margin-bottom:8px; }
+    table.mini-table th, table.mini-table td{ border:1px solid #ddd; padding:5px 7px; text-align:left; }
+    table.mini-table th{ background:#222F59; color:#fff; }
+    table.mini-table td.exemplos{ background:#fff8ee; font-style:italic; font-size:9.5px; color:#555; }
+    @media print{ button{ display:none; } .filial-block{ page-break-after:auto; } }
+  </style></head><body>
+  <button onclick="window.print()" style="margin-bottom:16px; padding:8px 16px; background:#222F59; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">🖨️ Imprimir / Salvar como PDF</button>
+  <h1>Relatório de Fechamento do Ciclo</h1>
+  <div class="meta">Servis Eletrônica · Sucesso do Cliente — Pesquisa de Satisfação<br>Período: <b>${mesLabelBR(selectedMes)}</b> · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  ${blocoGeral}
+  ${blocosFilial}
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+document.getElementById('btnGerarRelatorioPDFCiclo').addEventListener('click', gerarRelatorioFechamentoCicloPDF);
+
 function montarFechamentoCiclo(){
+  document.getElementById('pqFechamentoBadgeConcluido').style.display = 'none';
+  document.getElementById('pqFechamentoConfirmarBtn').style.display = '';
+  document.getElementById('pqFechamentoCancelarBtn').textContent = 'Fechar sem concluir';
   const doMes = DATA.filter(d => getMes(d) === selectedMes);
   const total = doMes.length;
   const realizadasArr = doMes.filter(d => !pesquisaNaoRealizada(d));
@@ -6548,6 +6722,38 @@ function montarFechamentoCiclo(){
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${pctCriticos.toFixed(0)}%</div><div class="slbl">Críticos (nota ≤6)</div></div>
   `;
 
+  // Análise por filial
+  const filiaisDoMes = [...new Set(doMes.map(d => normalizeFilialCanonica(d.filial)))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const linhasFilial = filiaisDoMes.map(f=>{
+    const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
+    const realizadasF = doFilial.filter(d => !pesquisaNaoRealizada(d));
+    const naoRealizadasF = doFilial.filter(pesquisaNaoRealizada);
+    const notasF = realizadasF.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const mediaF = notasF.length ? (notasF.reduce((a,b)=>a+b,0)/notasF.length) : null;
+    const criticosF = notasF.filter(n=>n<=6).length;
+    return {
+      filial: f,
+      realizadas: realizadasF.length,
+      naoRealizadas: naoRealizadasF.length,
+      media: mediaF,
+      criticos: criticosF,
+      pendencias: doFilial.filter(temPendencia).length,
+      reclamacoes: doFilial.filter(temReclamacao).length,
+      elogios: doFilial.filter(temElogio).length,
+    };
+  });
+  document.getElementById('pqFechamentoTabelaFilialBody').innerHTML = linhasFilial.length ? linhasFilial.map(l=>`
+    <tr>
+      <td class="ck-name">${escapeHtml(l.filial)}</td>
+      <td>${l.realizadas}</td>
+      <td style="color:${l.naoRealizadas>0 ? 'var(--critico)' : 'var(--text-faint)'};">${l.naoRealizadas}</td>
+      <td>${l.media!==null ? l.media.toFixed(1) : '—'}</td>
+      <td style="color:${l.criticos>0 ? 'var(--critico)' : 'var(--text-faint)'};">${l.criticos}</td>
+      <td>${l.pendencias}</td>
+      <td>${l.reclamacoes}</td>
+      <td>${l.elogios}</td>
+    </tr>`).join('') : '<tr><td colspan="8" class="empty">Sem dados suficientes.</td></tr>';
+
   const frases = [];
   frases.push(`O ciclo de <b>${escapeHtml(mesLabelBR(selectedMes))}</b> teve <b>${realizadasArr.length}</b> de <b>${total}</b> pesquisas realizadas (${total ? (realizadasArr.length/total*100).toFixed(0) : 0}%).`);
   if (naoRealizadasArr.length){
@@ -6560,6 +6766,17 @@ function montarFechamentoCiclo(){
     frases.push(`A nota média do ciclo foi <b>${media.toFixed(1)}</b>, com <b>${pctCriticos.toFixed(0)}%</b> dos condomínios respondidos em faixa crítica (nota ≤6).`);
   }
   frases.push(`Foram registradas <b>${pendencias}</b> pendência(s), <b>${reclamacoes}</b> reclamação(ões) e <b>${elogios}</b> elogio(s) nesse ciclo.`);
+  if (linhasFilial.length > 1){
+    const melhorF = [...linhasFilial].filter(l=>l.media!==null).sort((a,b)=>b.media-a.media)[0];
+    const piorF = [...linhasFilial].filter(l=>l.media!==null).sort((a,b)=>a.media-b.media)[0];
+    if (melhorF && piorF && melhorF.filial !== piorF.filial){
+      frases.push(`Por filial: <b>${escapeHtml(melhorF.filial)}</b> teve a melhor nota (${melhorF.media.toFixed(1)}), enquanto <b>${escapeHtml(piorF.filial)}</b> teve a menor (${piorF.media.toFixed(1)}).`);
+    }
+    const maisNaoRealizada = [...linhasFilial].sort((a,b)=>b.naoRealizadas-a.naoRealizadas)[0];
+    if (maisNaoRealizada && maisNaoRealizada.naoRealizadas > 0){
+      frases.push(`<b>${escapeHtml(maisNaoRealizada.filial)}</b> é a filial com mais pesquisas não realizadas (${maisNaoRealizada.naoRealizadas}).`);
+    }
+  }
   const pendenciasAbertas = doMes.filter(d => temPendencia(d) && d.resolvido !== 'true' && d.resolvido !== true).length;
   if (pendenciasAbertas > 0){
     frases.push(`⚠️ <b>${pendenciasAbertas}</b> pendência(s) ainda em aberto — recomendo revisar antes de fechar o ciclo, se possível.`);
@@ -6625,8 +6842,10 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
     if (typeof logActivity === 'function'){
       logActivity('concluiu', 'ciclo_pesquisa', mesLabelBR(selectedMes), `${realizadas} de ${doMes.length} pesquisas realizadas — arquivado no Histórico`);
     }
-    document.getElementById('pqFechamentoModalOverlay').style.display = 'none';
-    alert(`✅ Ciclo de ${mesLabelBR(selectedMes)} concluído e arquivado na aba Histórico, dentro da pasta de cada filial. Os dados continuam disponíveis normalmente em "Todos" também.`);
+    document.getElementById('pqFechamentoBadgeConcluido').style.display = 'inline-block';
+    btn.style.display = 'none';
+    document.getElementById('pqFechamentoCancelarBtn').textContent = 'Fechar';
+    alert(`✅ Ciclo Concluído! ${mesLabelBR(selectedMes)} foi arquivado na aba Histórico, dentro da pasta de cada filial. Os dados continuam disponíveis normalmente em "Todos" também.`);
   }catch(e){
     alert('Erro ao arquivar o ciclo no Histórico: ' + e.message);
   }finally{
