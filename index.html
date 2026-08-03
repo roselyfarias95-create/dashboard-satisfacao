@@ -5705,7 +5705,7 @@ function extraRowToItem(row){
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
     houvePendencia2: !!row.houve_pendencia2, pendenciaDescricao2: row.pendencia_descricao2, setorPendencia2: row.setor_pendencia2,
     houveReclamacao2: !!row.houve_reclamacao2, reclamacaoDescricao2: row.reclamacao_descricao2, setorReclamacao2: row.setor_reclamacao2,
-    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2,
+    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2, excluido: !!row.excluido,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
   };
 }
@@ -5790,7 +5790,7 @@ function rowToUpdates(row){
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
     houvePendencia2: !!row.houve_pendencia2, pendenciaDescricao2: row.pendencia_descricao2, setorPendencia2: row.setor_pendencia2,
     houveReclamacao2: !!row.houve_reclamacao2, reclamacaoDescricao2: row.reclamacao_descricao2, setorReclamacao2: row.setor_reclamacao2,
-    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2,
+    houveElogio2: !!row.houve_elogio2, elogioDescricao2: row.elogio_descricao2, elogioSetor2: row.elogio_setor2, excluido: !!row.excluido,
     pesquisaRemarcada: !!row.pesquisa_remarcada, dataRemarcada: row.data_remarcada, retornoVisitaRemarcada: row.retorno_visita_remarcada,
     statusVisitaEmergencial: row.status_visita_emergencial,
   };
@@ -5809,6 +5809,7 @@ function updatesToRow(itemN, updates){
     houve_pendencia2: !!updates.houvePendencia2, pendencia_descricao2: updates.pendenciaDescricao2 || null, setor_pendencia2: updates.setorPendencia2 || null,
     houve_reclamacao2: !!updates.houveReclamacao2, reclamacao_descricao2: updates.reclamacaoDescricao2 || null, setor_reclamacao2: updates.setorReclamacao2 || null,
     houve_elogio2: !!updates.houveElogio2, elogio_descricao2: updates.elogioDescricao2 || null, elogio_setor2: updates.elogioSetor2 || null,
+    excluido: !!updates.excluido,
     pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
@@ -6004,6 +6005,11 @@ function applyOverrides(){
     const o = OVERRIDES[d.n];
     if (o) Object.assign(d, o);
   });
+  // Remove definitivamente da lista quem foi marcado como excluído (tombstone),
+  // seja um registro original (seed) ou um adicionado manualmente.
+  for (let i = DATA.length - 1; i >= 0; i--){
+    if (DATA[i].excluido) DATA.splice(i, 1);
+  }
   limparStatusPesquisaAntigos();
   preencherDataPesquisaFaltante();
 }
@@ -7149,7 +7155,7 @@ function render(){
 
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyMsg');
-  document.getElementById('countLineText').textContent = `${filtered.length} de ${DATA.length} condomínios exibidos`;
+  document.getElementById('countLineText').textContent = `${filtered.length} de ${baseFiltered.length} condomínios exibidos`;
 
   listEl.innerHTML = '';
   emptyEl.style.display = filtered.length ? 'none' : 'block';
@@ -7402,7 +7408,7 @@ function generateReport(){
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
-  <p style="font-size:10px;color:#777;margin-top:16px;">${filtered.length} de ${DATA.length} condomínios exibidos neste relatório.</p>
+  <p style="font-size:10px;color:#777;margin-top:16px;">${filtered.length} de ${DATA.filter(d=>getMes(d)===selectedMes).length} condomínios exibidos neste relatório.</p>
   </body></html>`;
 
   const win = window.open('', '_blank');
@@ -7480,7 +7486,7 @@ function exportExcel(){
 document.getElementById('excelBtn').addEventListener('click', exportExcel);
 
 populateFilterOptions();
-document.getElementById('totalCondos').textContent = `${DATA.length} condomínios monitorados`;
+document.getElementById('totalCondos').textContent = `${new Set(DATA.map(d=>d.nome)).size} condomínios monitorados`;
 render();
 // ============================================================================
 // SUB-APLICAÇÃO EMBUTIDA: CADASTRO DE CONDOMÍNIOS
@@ -10989,13 +10995,17 @@ document.getElementById('pqDeleteBtn').addEventListener('click', async ()=>{
   errEl.style.display = 'none';
   try{
     if (sb){
-      const { error } = await sb.from('condo_extra').delete().eq('item_n', item.n);
+      // Tenta remover de condo_extra (caso seja um condomínio adicionado manualmente).
+      await sb.from('condo_extra').delete().eq('item_n', item.n);
+      // Marca como excluído de forma permanente (cobre também os registros originais,
+      // que não existem em condo_extra e por isso "voltavam" depois de recarregar).
+      const { error } = await sb.from('condo_overrides').upsert(updatesToRow(item.n, { excluido: true }));
       if (error) throw error;
     }
+    OVERRIDES[item.n] = Object.assign({}, OVERRIDES[item.n], { excluido: true });
+    persistOverrides(OVERRIDES);
     const idx = DATA.findIndex(d => d.n === item.n);
     if (idx !== -1) DATA.splice(idx, 1);
-    if (OVERRIDES && OVERRIDES[item.n]) delete OVERRIDES[item.n];
-    persistOverrides(OVERRIDES);
     document.getElementById('pesquisaModalOverlay').style.display = 'none';
     populateFilterOptions();
     render();
@@ -12759,15 +12769,16 @@ function renderAnaliseImpactoVisitas(){
 // Executivo.
 // ============================================================================
 function renderPesquisaMiniDash(){
-  const total = DATA.length;
-  const notas = DATA.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const dadosDoCiclo = DATA.filter(d => getMes(d) === selectedMes);
+  const total = dadosDoCiclo.length;
+  const notas = dadosDoCiclo.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
   const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
-  const insatisfeitos = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 8; });
-  const reclamacoesAbertas = DATA.filter(d => d.houveReclamacao && d.statusTratativa && d.statusTratativa !== 'Resolvido');
-  const naoRealizadas = DATA.filter(pesquisaNaoRealizada);
+  const insatisfeitos = dadosDoCiclo.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 8; });
+  const reclamacoesAbertas = dadosDoCiclo.filter(d => d.houveReclamacao && d.statusTratativa && d.statusTratativa !== 'Resolvido');
+  const naoRealizadas = dadosDoCiclo.filter(pesquisaNaoRealizada);
 
   document.getElementById('pqMiniDashStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${total}</div><div class="slbl">Condomínios monitorados</div></div>
+    <div class="stat-box"><div class="snum">${total}</div><div class="slbl">Condomínios monitorados (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${media !== null ? media.toFixed(1) : '—'}</div><div class="slbl">Nota média geral</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${insatisfeitos.length}</div><div class="slbl">Insatisfeitos (nota &lt; 8)</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--atencao);">${reclamacoesAbertas.length}</div><div class="slbl">Reclamações sem resolução</div></div>
@@ -12790,7 +12801,7 @@ function renderPesquisaMiniDash(){
     </div>`;
   }).join('');
 
-  const dist = computeDistribution(DATA, classifyGrupoMotivo);
+  const dist = computeDistribution(dadosDoCiclo, classifyGrupoMotivo);
   const topMotivos = Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('pqMiniDashMotivos').innerHTML = topMotivos.length ? topMotivos.map(([label,n])=>{
     const pct = dist.total ? Math.round(n/dist.total*100) : 0;
