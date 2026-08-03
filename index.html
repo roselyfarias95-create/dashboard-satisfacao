@@ -6065,7 +6065,7 @@ function computeStats(data){
     .map(d => parseFloat(String(d.nota).replace(',', '.')))
     .filter(n => !isNaN(n));
   const media = nums.length ? (nums.reduce((a,b)=>a+b,0) / nums.length) : 0;
-  const realizadas = nums.length;
+  const realizadas = data.filter(d => !pesquisaNaoRealizada(d)).length;
   const pct = data.length ? Math.round((realizadas / data.length) * 100) : 0;
   return { media, mediaCount: nums.length, realizadas, pct, total: data.length };
 }
@@ -7123,13 +7123,19 @@ function renderMiniDash(baseFiltered){
   const reclamacoes = baseFiltered.filter(temReclamacao).length;
   const elogios = baseFiltered.filter(temElogio).length;
 
+  function resetarFiltrosRapidos(){
+    activeCrit = null;
+    activeSubtab = 'todos';
+    selectedStatuses = [];
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='todos'));
+  }
   const chips = [
     { num: s.mediaCount ? s.media.toFixed(1) : '—', lbl: 'Nota média', color:'var(--accent)', action: null },
-    { num: s.realizadas, lbl: `Realizadas (${s.pct}%)`, color:'var(--ok)', action: ()=>{ selectedStatuses=['Concluída']; populateFilterOptions(); render(); } },
-    { num: s.total - s.realizadas, lbl: 'Pendentes', color:'var(--pendente)', action: ()=>{ selectedStatuses=['Pendente','Síndico não atende']; populateFilterOptions(); render(); } },
-    { num: counts.critico, lbl: 'Críticos', color:'var(--critico)', action: ()=>{ activeCrit='critico'; render(); } },
-    { num: reclamacoes, lbl: 'Reclamações', color:'var(--critico)', action: ()=>{ activeSubtab='reclamacoes'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='reclamacoes')); render(); } },
-    { num: elogios, lbl: 'Elogios', color:'var(--ok)', action: ()=>{ activeSubtab='elogios'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='elogios')); render(); } },
+    { num: s.realizadas, lbl: `Realizadas (${s.pct}%)`, color:'var(--ok)', action: ()=>{ resetarFiltrosRapidos(); selectedStatuses=['Concluída']; populateFilterOptions(); render(); } },
+    { num: s.total - s.realizadas, lbl: 'Pendentes', color:'var(--pendente)', action: ()=>{ resetarFiltrosRapidos(); selectedStatuses=['Pendente','Síndico não atende']; populateFilterOptions(); render(); } },
+    { num: counts.critico, lbl: 'Críticos', color:'var(--critico)', action: ()=>{ resetarFiltrosRapidos(); activeCrit='critico'; render(); } },
+    { num: reclamacoes, lbl: 'Reclamações', color:'var(--critico)', action: ()=>{ resetarFiltrosRapidos(); activeSubtab='reclamacoes'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='reclamacoes')); render(); } },
+    { num: elogios, lbl: 'Elogios', color:'var(--ok)', action: ()=>{ resetarFiltrosRapidos(); activeSubtab='elogios'; document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b.dataset.subtab==='elogios')); render(); } },
   ];
 
   el.innerHTML = chips.map((c,i) => `
