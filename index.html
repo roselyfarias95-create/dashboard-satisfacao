@@ -1679,6 +1679,21 @@ CONDOMINIO Y	9	Concluído"></textarea>
 
   <div id="tabPesquisa" class="tab-panel" style="display:none;">
 
+  <div class="chart-panel" id="pqCicloBox" style="margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+      <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="pqCicloMesLabel"></span></p>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <select class="filter-select" id="pqCicloFilialSel" style="padding:6px 10px;"><option value="">Todas as filiais</option></select>
+        <button type="button" class="clearbtn" id="btnConcluirCiclo" style="border-color:var(--ok); color:var(--ok);">🏁 Concluir Ciclo</button>
+      </div>
+    </div>
+    <div style="background:var(--bg-panel-2); border-radius:8px; height:20px; overflow:hidden; position:relative;">
+      <div id="pqCicloBarraFill" style="height:100%; background:linear-gradient(90deg, var(--accent), var(--ok)); border-radius:8px; transition:width .3s ease;"></div>
+      <div id="pqCicloBarraTexto" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);"></div>
+    </div>
+    <div id="pqCicloDetalhe" style="margin-top:8px; font-size:11.5px; color:var(--text-faint);"></div>
+  </div>
+
   <div id="miniDashPesquisa" class="mini-dash-row"></div>
 
   <div class="subtab-nav" id="subtabNav">
@@ -3477,6 +3492,24 @@ CONDOMINIO Y	480	45"></textarea>
     </div>
 
     <div id="atividadesLista"></div>
+  </div>
+
+  <div class="users-modal" id="pqFechamentoModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:680px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3>🏁 Fechamento do Ciclo — <span id="pqFechamentoMesLabel"></span></h3>
+        <button type="button" class="logout-btn" id="pqFechamentoCloseBtn">✕</button>
+      </div>
+      <div class="stats-strip" id="pqFechamentoStats" style="margin-bottom:16px;"></div>
+      <div class="chart-panel" style="border:1px solid var(--accent); background:linear-gradient(135deg, rgba(56,189,248,0.06), var(--bg-panel)); margin-bottom:14px;">
+        <p class="chart-title" style="color:var(--accent);">🧠 Relatório Inteligente de Fechamento</p>
+        <div id="pqFechamentoRelatorio" style="font-size:13px; color:var(--text-dim); line-height:1.7;"></div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="pqFechamentoCancelarBtn">Fechar sem concluir</button>
+        <button type="button" class="login-btn" id="pqFechamentoConfirmarBtn" style="width:auto; margin-top:0; padding:9px 20px; background:linear-gradient(135deg, var(--ok), var(--accent));">✅ Confirmar Conclusão do Ciclo</button>
+      </div>
+    </div>
   </div>
 
   <div class="users-modal" id="lembreteModalOverlay" style="display:none;">
@@ -6452,6 +6485,126 @@ document.addEventListener('click', (e)=>{
   });
 });
 
+// ============================================================================
+// ACOMPANHAMENTO DO CICLO (mês selecionado) + FECHAMENTO INTELIGENTE
+// ============================================================================
+function renderPqCicloProgresso(){
+  const barra = document.getElementById('pqCicloBarraFill');
+  if (!barra) return; // painel ainda não montado
+  const selFilial = document.getElementById('pqCicloFilialSel');
+  if (selFilial.options.length <= 1){
+    const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    selFilial.innerHTML = '<option value="">Todas as filiais</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+  }
+  const filialAlvo = selFilial.value;
+  const doMes = DATA.filter(d => getMes(d) === selectedMes && (!filialAlvo || d.filial === filialAlvo));
+  const total = doMes.length;
+  const realizadas = doMes.filter(d => !pesquisaNaoRealizada(d)).length;
+  const pendentes = total - realizadas;
+  const pct = total ? (realizadas/total*100) : 0;
+  document.getElementById('pqCicloMesLabel').textContent = mesLabelBR(selectedMes) + (filialAlvo ? ` · ${filialAlvo}` : '');
+  barra.style.width = pct.toFixed(0) + '%';
+  document.getElementById('pqCicloBarraTexto').textContent = `${realizadas} de ${total} realizadas (${pct.toFixed(0)}%)`;
+  document.getElementById('pqCicloDetalhe').textContent = `${pendentes} pesquisa(s) ainda pendente(s) nesse ciclo${filialAlvo ? ` em ${filialAlvo}` : ''}.`;
+}
+document.getElementById('pqCicloFilialSel').addEventListener('change', renderPqCicloProgresso);
+
+function montarFechamentoCiclo(){
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const total = doMes.length;
+  const realizadasArr = doMes.filter(d => !pesquisaNaoRealizada(d));
+  const naoRealizadasArr = doMes.filter(d => pesquisaNaoRealizada(d));
+  const notas = realizadasArr.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+  const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
+  const criticos = notas.filter(n=>n<=6).length;
+  const pctCriticos = notas.length ? (criticos/notas.length*100) : 0;
+  const reclamacoes = doMes.filter(temReclamacao).length;
+  const pendencias = doMes.filter(temPendencia).length;
+  const elogios = doMes.filter(temElogio).length;
+
+  document.getElementById('pqFechamentoMesLabel').textContent = mesLabelBR(selectedMes);
+  document.getElementById('pqFechamentoStats').innerHTML = `
+    <div class="stat-box"><div class="snum">${realizadasArr.length}</div><div class="slbl">Realizadas</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${naoRealizadasArr.length}</div><div class="slbl">Não realizadas</div></div>
+    <div class="stat-box"><div class="snum">${media!==null ? media.toFixed(1) : '—'}</div><div class="slbl">Nota média</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${pctCriticos.toFixed(0)}%</div><div class="slbl">Críticos (nota ≤6)</div></div>
+  `;
+
+  const frases = [];
+  frases.push(`O ciclo de <b>${escapeHtml(mesLabelBR(selectedMes))}</b> teve <b>${realizadasArr.length}</b> de <b>${total}</b> pesquisas realizadas (${total ? (realizadasArr.length/total*100).toFixed(0) : 0}%).`);
+  if (naoRealizadasArr.length){
+    const motivos = {};
+    naoRealizadasArr.forEach(d=>{ const m = d.motivoNaoRealizada || d.statusPesquisa || 'Não informado'; motivos[m] = (motivos[m]||0)+1; });
+    const motivoTop = Object.entries(motivos).sort((a,b)=>b[1]-a[1])[0];
+    frases.push(`Ficaram <b>${naoRealizadasArr.length}</b> sem realizar — o motivo mais comum foi "<b>${escapeHtml(motivoTop[0])}</b>" (${motivoTop[1]} caso(s)).`);
+  }
+  if (media !== null){
+    frases.push(`A nota média do ciclo foi <b>${media.toFixed(1)}</b>, com <b>${pctCriticos.toFixed(0)}%</b> dos condomínios respondidos em faixa crítica (nota ≤6).`);
+  }
+  frases.push(`Foram registradas <b>${pendencias}</b> pendência(s), <b>${reclamacoes}</b> reclamação(ões) e <b>${elogios}</b> elogio(s) nesse ciclo.`);
+  const pendenciasAbertas = doMes.filter(d => temPendencia(d) && d.resolvido !== 'true' && d.resolvido !== true).length;
+  if (pendenciasAbertas > 0){
+    frases.push(`⚠️ <b>${pendenciasAbertas}</b> pendência(s) ainda em aberto — recomendo revisar antes de fechar o ciclo, se possível.`);
+  } else {
+    frases.push(`✅ Não há pendências em aberto nesse ciclo no momento.`);
+  }
+  document.getElementById('pqFechamentoRelatorio').innerHTML = frases.map(f=>`<p style="margin:0 0 8px;">${f}</p>`).join('');
+}
+
+document.getElementById('btnConcluirCiclo').addEventListener('click', ()=>{
+  montarFechamentoCiclo();
+  document.getElementById('pqFechamentoModalOverlay').style.display = 'flex';
+});
+document.getElementById('pqFechamentoCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('pqFechamentoModalOverlay').style.display = 'none';
+});
+document.getElementById('pqFechamentoCancelarBtn').addEventListener('click', ()=>{
+  document.getElementById('pqFechamentoModalOverlay').style.display = 'none';
+});
+function mesNomeCompletoBR(mesRef){
+  const meses = {'01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril','05':'Maio','06':'Junho','07':'Julho','08':'Agosto','09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'};
+  const m = /^(\d{4})-(\d{2})/.exec(mesRef || '');
+  return m ? (meses[m[2]] || mesRef) : mesRef;
+}
+
+document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', async ()=>{
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const realizadas = doMes.filter(d => !pesquisaNaoRealizada(d)).length;
+  const btn = document.getElementById('pqFechamentoConfirmarBtn');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Arquivando no Histórico...';
+  try{
+    if (sb){
+      const mesNome = mesNomeCompletoBR(selectedMes);
+      const linhasHistorico = doMes.map(d => ({
+        mes: mesNome,
+        filial: normalizeFilialCanonica(d.filial),
+        condominio: d.nome,
+        nota: (d.nota !== undefined && d.nota !== null && d.nota !== '') ? String(d.nota) : null,
+        resultado: pesquisaNaoRealizada(d) ? 'Cancelou' : 'Concluído',
+      }));
+      // Evita duplicar quem já foi arquivado antes (ex: clicou Concluir Ciclo duas vezes)
+      const { data: existentesData } = await sb.from('historico_pesquisas').select('mes,filial,condominio').eq('mes', mesNome);
+      const existentes = new Set((existentesData||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
+      const novos = linhasHistorico.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
+      if (novos.length){
+        const { error } = await sb.from('historico_pesquisas').insert(novos);
+        if (error) throw error;
+      }
+      await loadHistorico();
+    }
+    if (typeof logActivity === 'function'){
+      logActivity('concluiu', 'ciclo_pesquisa', mesLabelBR(selectedMes), `${realizadas} de ${doMes.length} pesquisas realizadas — arquivado no Histórico`);
+    }
+    document.getElementById('pqFechamentoModalOverlay').style.display = 'none';
+    alert(`✅ Ciclo de ${mesLabelBR(selectedMes)} concluído e arquivado na aba Histórico, dentro da pasta de cada filial. Os dados continuam disponíveis normalmente em "Todos" também.`);
+  }catch(e){
+    alert('Erro ao arquivar o ciclo no Histórico: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+});
+
 function populateMesSelector(){
   const meses = [...new Set(DATA.map(d=>getMes(d)))].sort();
   const sel = document.getElementById('mesSelector');
@@ -6963,6 +7116,7 @@ function renderMiniDash(baseFiltered){
 }
 
 function render(){
+  renderPqCicloProgresso();
   const q = document.getElementById('search').value.trim();
 
   const baseFiltered = DATA.filter(d=>baseMatches(d,q)).filter(d=>{
