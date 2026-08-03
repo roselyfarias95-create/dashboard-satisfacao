@@ -2317,11 +2317,18 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="clearbtn" id="btnExportarVEPDF">🖨️ Relatório PDF</button>
       <button type="button" class="logout-btn" id="btnNovaVisitaEmergencial" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Nova Visita</button>
     </div>
-    <span id="veCount" class="count-line"></span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <span id="veCount" class="count-line"></span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="veSelecionadasContagem" style="font-size:11.5px; color:var(--text-faint);">0 selecionada(s)</span>
+        <button type="button" class="clearbtn" id="btnExcluirVESelecionadas" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir Selecionadas</button>
+      </div>
+    </div>
     <div class="checklist-table-wrap">
       <table class="checklist-table" id="veTable">
         <thead>
           <tr>
+            <th style="width:28px;"><input type="checkbox" id="veSelecionarTodos"></th>
             <th>Realizada</th>
             <th>Filial</th>
             <th>Data da Visita</th>
@@ -2337,7 +2344,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           </tr>
         </thead>
         <tbody id="veBody">
-          <tr><td colspan="12" class="empty">Carregando visitas...</td></tr>
+          <tr><td colspan="13" class="empty">Carregando visitas...</td></tr>
         </tbody>
       </table>
     </div>
@@ -5512,6 +5519,7 @@ let historicoLoaded = false;
 let veData = [];
 let veIgnoradas = new Set();
 let veLoaded = false;
+let veSelecionadas = new Set();
 
 const GRUPOS_MOTIVO = {
   'Portões':'Equipamentos/Sistemas', 'Câmeras':'Equipamentos/Sistemas', 'Interfone':'Equipamentos/Sistemas',
@@ -5977,18 +5985,22 @@ function limparStatusPesquisaAntigos(){
 }
 
 function preencherDataPesquisaFaltante(){
-  const DATA_PADRAO = '2026-07-01';
   const corrigidos = [];
   DATA.forEach(d=>{
     const temNota = d.nota !== null && d.nota !== undefined && String(d.nota).trim() !== '';
     const semData = !d.dataPesquisa || String(d.dataPesquisa).trim() === '';
-    if (temNota && semData){
-      d.dataPesquisa = DATA_PADRAO;
+    const mesRef = getMes(d); // 'YYYY-MM'
+    // Corrige também quem já foi afetado pelo bug antigo (data fixa 01/07/2026
+    // pra todo mundo, mesmo quem é de outro mês de referência).
+    const foiCorrompidoPeloBugAntigo = d.dataPesquisa === '2026-07-01' && mesRef !== '2026-07';
+    if (temNota && (semData || foiCorrompidoPeloBugAntigo)){
+      const dataFallback = /^\d{4}-\d{2}$/.test(mesRef) ? `${mesRef}-01` : '2026-07-01';
+      d.dataPesquisa = dataFallback;
       corrigidos.push(d);
     }
   });
   if (corrigidos.length){
-    console.log(`Preenchendo data da pesquisa (${DATA_PADRAO}) em ${corrigidos.length} condomínio(s) com nota mas sem data.`);
+    console.log(`Ajustando data da pesquisa (pelo mês de referência de cada um) em ${corrigidos.length} condomínio(s).`);
     corrigidos.forEach(item=>{
       const updates = { dataPesquisa: item.dataPesquisa };
       OVERRIDES[item.n] = Object.assign({}, OVERRIDES[item.n], updates);
@@ -6554,6 +6566,9 @@ function montarFechamentoCiclo(){
   } else {
     frases.push(`✅ Não há pendências em aberto nesse ciclo no momento.`);
   }
+  if (naoRealizadasArr.length){
+    frases.push(`📌 Ao confirmar a conclusão, será criada uma Visita Emergencial agendada pra cada uma dessas <b>${naoRealizadasArr.length}</b> pesquisa(s) não realizada(s) (condomínios que já tenham uma visita em aberto não recebem outra duplicada).`);
+  }
   document.getElementById('pqFechamentoRelatorio').innerHTML = frases.map(f=>`<p style="margin:0 0 8px;">${f}</p>`).join('');
 }
 
@@ -6561,6 +6576,7 @@ document.getElementById('btnConcluirCiclo').addEventListener('click', ()=>{
   montarFechamentoCiclo();
   document.getElementById('pqFechamentoModalOverlay').style.display = 'flex';
 });
+
 document.getElementById('pqFechamentoCloseBtn').addEventListener('click', ()=>{
   document.getElementById('pqFechamentoModalOverlay').style.display = 'none';
 });
@@ -6598,6 +6614,13 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
         if (error) throw error;
       }
       await loadHistorico();
+
+      // Só agora, no fechamento do ciclo, cria visita emergencial pra quem ficou
+      // "não realizada" o mês inteiro (antes disso, ainda dava tempo de tentar de novo).
+      const naoRealizadasDoMes = doMes.filter(pesquisaNaoRealizada);
+      for (const item of naoRealizadasDoMes){
+        if (typeof autoCriarVisitaEmergencial === 'function') await autoCriarVisitaEmergencial(item, true);
+      }
     }
     if (typeof logActivity === 'function'){
       logActivity('concluiu', 'ciclo_pesquisa', mesLabelBR(selectedMes), `${realizadas} de ${doMes.length} pesquisas realizadas — arquivado no Histórico`);
@@ -11654,31 +11677,33 @@ async function salvarStatusVisitaEmergencial(itemN, novoStatus){
 }
 
 function renderVisitasEmergenciais(){
-  const itens = DATA.filter(itemEhVisitaEmergencial);
-  const totalRealizadas = DATA.filter(d => !pesquisaNaoRealizada(d)).length;
-  const totalNaoRealizadas = DATA.filter(pesquisaNaoRealizada).length;
-  const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const totalRealizadas = doMes.filter(d => !pesquisaNaoRealizada(d)).length;
+  const totalNaoRealizadas = doMes.filter(pesquisaNaoRealizada).length;
+  const totalNotaBaixa = doMes.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+  const totalVisitasAbertas = (veData||[]).filter(v => v.status !== 'Concluído').length;
 
   document.getElementById('visitasEmergenciaisStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--accent);">${itens.length}</div><div class="slbl">Total de visitas emergenciais</div></div>
+    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9 (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalVisitasAbertas}</div><div class="slbl">Visitas emergenciais em aberto</div></div>
   `;
 }
 
 function renderStatsVisitasEmergenciaisDash(){
   const el = document.getElementById('statsVisitasEmergenciaisDash');
   if (!el) return;
-  const itensEmergenciais = DATA.filter(itemEhVisitaEmergencial);
-  const totalRealizadas = DATA.filter(d => !pesquisaNaoRealizada(d)).length;
-  const totalNaoRealizadas = DATA.filter(pesquisaNaoRealizada).length;
-  const totalNotaBaixa = DATA.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const totalRealizadas = doMes.filter(d => !pesquisaNaoRealizada(d)).length;
+  const totalNaoRealizadas = doMes.filter(pesquisaNaoRealizada).length;
+  const totalNotaBaixa = doMes.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; }).length;
+  const totalVisitasAbertas = (veData||[]).filter(v => v.status !== 'Concluído').length;
   el.innerHTML = `
-    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--accent);">${itensEmergenciais.length}</div><div class="slbl">Total de visitas emergenciais</div></div>
+    <div class="stat-box"><div class="snum">${totalRealizadas}</div><div class="slbl">Pesquisas realizadas (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--critico);">${totalNaoRealizadas}</div><div class="slbl">Pesquisas não realizadas (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${totalNotaBaixa}</div><div class="slbl">Notas abaixo de 9 (${escapeHtml(mesLabelBR(selectedMes))})</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalVisitasAbertas}</div><div class="slbl">Visitas emergenciais em aberto</div></div>
   `;
 }
 
@@ -11729,7 +11754,7 @@ async function registrarVisitaIgnorada(nome){
 async function loadVE(){
   const body = document.getElementById('veBody');
   if (!sb){
-    body.innerHTML = '<tr><td colspan="12" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    body.innerHTML = '<tr><td colspan="13" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
     return;
   }
   try{
@@ -11744,7 +11769,7 @@ async function loadVE(){
     if (typeof renderCalendarioVE === 'function') renderCalendarioVE();
   }catch(e){
     console.error(e);
-    body.innerHTML = `<tr><td colspan="12" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="13" class="empty">Erro ao carregar visitas: ${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -11890,13 +11915,14 @@ function renderVE(){
   const filtered = getFilteredVE();
   document.getElementById('veCount').textContent = `${filtered.length} de ${veData.length} visita(s)`;
   if (!filtered.length){
-    body.innerHTML = '<tr><td colspan="12" class="empty">Nenhuma visita encontrada.</td></tr>';
+    body.innerHTML = '<tr><td colspan="13" class="empty">Nenhuma visita encontrada.</td></tr>';
     return;
   }
   body.innerHTML = filtered.map(v=>{
     const cor = veStatusClass(v.status).cor;
     const nota = notaPesquisaParaCondoVE(v.condominio);
     return `<tr>
+      <td><input type="checkbox" class="ve-row-checkbox" data-ve-checkbox="${v.id}" ${veSelecionadas.has(String(v.id)) ? 'checked' : ''}></td>
       <td>${v.realizada === 'SIM' ? '<span class="rbadge yes">Sim</span>' : '<span class="rbadge no">Não</span>'}</td>
       <td>${escapeHtml(v.filial||'—')}</td>
       <td>${v.data_visita ? formatDateBR(v.data_visita) : '—'}</td>
@@ -11930,7 +11956,56 @@ function renderVE(){
       }catch(e){ alert('Erro ao excluir: ' + e.message); }
     };
   });
+  const idsVisiveisVE = new Set(filtered.map(v=>String(v.id)));
+  veSelecionadas.forEach(id => { if (!idsVisiveisVE.has(id)) veSelecionadas.delete(id); });
+  body.querySelectorAll('[data-ve-checkbox]').forEach(cb=>{
+    cb.onchange = ()=>{
+      const id = cb.getAttribute('data-ve-checkbox');
+      if (cb.checked) veSelecionadas.add(id); else veSelecionadas.delete(id);
+      atualizarContagemSelecaoVE();
+    };
+  });
+  atualizarContagemSelecaoVE();
 }
+
+function atualizarContagemSelecaoVE(){
+  document.getElementById('veSelecionadasContagem').textContent = `${veSelecionadas.size} selecionada(s)`;
+  const headerCb = document.getElementById('veSelecionarTodos');
+  const linhasVisiveis = document.querySelectorAll('[data-ve-checkbox]');
+  headerCb.checked = linhasVisiveis.length > 0 && veSelecionadas.size === linhasVisiveis.length;
+  headerCb.indeterminate = veSelecionadas.size > 0 && veSelecionadas.size < linhasVisiveis.length;
+}
+document.getElementById('veSelecionarTodos').addEventListener('change', function(){
+  const marcarTudo = this.checked;
+  document.querySelectorAll('[data-ve-checkbox]').forEach(cb=>{
+    cb.checked = marcarTudo;
+    const id = cb.getAttribute('data-ve-checkbox');
+    if (marcarTudo) veSelecionadas.add(id); else veSelecionadas.delete(id);
+  });
+  atualizarContagemSelecaoVE();
+});
+document.getElementById('btnExcluirVESelecionadas').addEventListener('click', async ()=>{
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (!veSelecionadas.size){ alert('Selecione pelo menos uma visita na lista (checkbox à esquerda).'); return; }
+  const ids = [...veSelecionadas];
+  const itens = veData.filter(v => ids.includes(String(v.id)));
+  if (!confirm(`Excluir ${itens.length} visita(s) emergencial(is) selecionada(s)? Elas não serão recriadas automaticamente depois.`)) return;
+  const btn = document.getElementById('btnExcluirVESelecionadas');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Excluindo...';
+  try{
+    const { error } = await sb.from('visitas_emergenciais').delete().in('id', itens.map(v=>v.id));
+    if (error) throw error;
+    for (const v of itens){ await registrarVisitaIgnorada(v.condominio); }
+    veSelecionadas.clear();
+    await loadVE();
+    alert(`${itens.length} visita(s) excluída(s).`);
+  }catch(e){
+    alert('Erro ao excluir: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+});
 
 function openVEModal(v){
   document.getElementById('veError').style.display = 'none';
@@ -12089,9 +12164,15 @@ async function sincronizarVisitasComPesquisa(mostrarAlerta){
   }
 }
 
-async function autoCriarVisitaEmergencial(item){
+async function autoCriarVisitaEmergencial(item, permitirPorNaoRealizada){
   if (!item || !sb) return;
   if (!itemEhVisitaEmergencial(item)) return;
+  // Uma pesquisa "não realizada" sozinha só gera visita emergencial no fechamento
+  // do ciclo (Concluir Ciclo) — durante o mês, ainda dá tempo de tentar de novo,
+  // então não faz sentido já agendar visita por causa disso.
+  const n = parseFloat(String(item.nota).replace(',', '.'));
+  const notaBaixa = !isNaN(n) && n < 9;
+  if (!notaBaixa && pesquisaNaoRealizada(item) && !permitirPorNaoRealizada) return;
 
   const nomeAlvo = (item.nome || '').trim().toLowerCase();
   const jaExiste = veData.some(v => (v.condominio || '').trim().toLowerCase() === nomeAlvo);
@@ -12322,7 +12403,7 @@ function gerarRelatorioDiario(){
     <div class="stat-box"><div class="snum">${r.pesquisasPeriodo.length}</div><div class="slbl">Condomínios avaliados</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${r.media !== null ? r.media.toFixed(1) : '—'}</div><div class="slbl">Nota média</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${r.insatisfeitos.length}</div><div class="slbl">Insatisfeitos</div></div>
-    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${r.veAbertas.length}</div><div class="slbl">Pendências em aberto</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${r.veAbertas.length}</div><div class="slbl">Visitas Emergenciais em aberto</div></div>
   `;
 
   document.getElementById('rdResumoExecutivo').innerHTML = montarResumoExecutivo(r, label);
