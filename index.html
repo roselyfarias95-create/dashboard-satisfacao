@@ -1469,7 +1469,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-F</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-H</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1686,6 +1686,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div style="display:flex; align-items:center; gap:8px;">
         <select class="filter-select" id="pqCicloFilialSel" style="padding:6px 10px;"><option value="">Todas as filiais</option></select>
         <button type="button" class="clearbtn" id="btnGerarRelatorioFechamento">📄 Gerar Relatório de Fechamento</button>
+        <button type="button" class="clearbtn" id="btnRestaurarDoHistorico" style="border-color:#E07B2C; color:#E07B2C;">🔧 Restaurar Notas do Histórico</button>
         <button type="button" class="clearbtn" id="btnConcluirCiclo" style="border-color:var(--ok); color:var(--ok);">🏁 Concluir Ciclo</button>
       </div>
     </div>
@@ -2664,6 +2665,17 @@ CONDOMINIO Y	480	45"></textarea>
     <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
       Adesão de cada condomínio às ferramentas digitais (facial, app, I.A., armário inteligente, GPhone).
     </p>
+    <div class="chart-panel" id="adCicloBox" style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+        <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="adCicloMesLabel"></span></p>
+        <button type="button" class="clearbtn" id="btnGerarRelatorioAdocao">📄 Gerar Relatório de Fechamento</button>
+      </div>
+      <div style="background:var(--bg-panel-2); border-radius:8px; height:20px; overflow:hidden; position:relative;">
+        <div id="adCicloBarraFill" style="height:100%; background:linear-gradient(90deg, var(--accent), var(--ok)); border-radius:8px; transition:width .3s ease;"></div>
+        <div id="adCicloBarraTexto" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);"></div>
+      </div>
+      <div id="adCicloDetalhe" style="margin-top:8px; font-size:11.5px; color:var(--text-faint);"></div>
+    </div>
     <div class="stats-strip" id="adStats"></div>
     <div class="toolbar" style="margin:16px 0;">
       <input type="text" class="search" id="adSearch" placeholder="Buscar condomínio...">
@@ -5893,6 +5905,38 @@ async function pushOverrideToSupabase(itemN, updates){
 // (casando pelo nome, já que são duas bases sem ID em comum) e atualiza lá a nota,
 // o mês e o status da pesquisa. Se não achar correspondência clara, não força nada —
 // os nomes entre os dois sistemas nem sempre batem exatamente.
+const SEED_ID_TO_NOME = {"1": "COND ALIPIO BASTOS", "2": "COND CAJUINA", "3": "COND. ANA KARINE", "4": "ASSOCIACAO DO RESIDENCIAL DO TARUMA", "5": "COND. ACORES", "6": "COND JARDIM AMERICA", "7": "COND. ANGELICA", "8": "COND ASTURIAS", "9": "COND. ALDEIA DOS VENTOS", "10": "COND MORENA BRODER PARK", "11": "COND. CIDADE DE LONDRES", "12": "COND KARINE BARRA DE OLIVEIRA", "13": "COND. ALGARVE", "14": "COND. AGENDA 1 RESIDENCE", "15": "COND. COMODORO", "16": "COND. CARLOS DRUMMOND DE ANDRADE", "17": "COND. ANDROS", "18": "COND. AGENDA RESIDENCE 2", "19": "COND. COSTA DO SAUIPE", "20": "COND. ECOLIFE MINDU", "21": "COND. AREZZO", "22": "COND. ANA ROSA", "23": "COND. ERS EVELINE RAQUEL SARA", "24": "COND. GIARDINO DI MILANO", "25": "COND. ARMANDO SABOYA FILHO", "26": "COND. AVALON", "27": "COND. ILHA DO SOL", "28": "COND. GREEN VILLE", "29": "COND. ASTORIA", "30": "COND. BERLIM LISBOA", "31": "COND. JAQUEIRAS 2", "32": "COND. JARDIM DOS EUCALIPTOS", "33": "COND. ATHENAS", "34": "COND. BUGANVILIA", "35": "COND. MAGISTRAL", "36": "COND. JARDIM VIA VENETO", "37": "COND. BAYSIDE", "38": "COND. CANAA", "39": "COND. MARILIA 2", "40": "COND. JARDIM VILA RICA", "41": "COND. BELLE VILLE", "42": "COND. CANELEIRO", "43": "COND. MARSOL", "44": "COND. JARDINS ORQUIDEA E UIRAPURU", "45": "COND. BENE VI", "46": "COND. CASA BLANCA", "47": "COND. MONTE RAINIER", "48": "COND. JOAO PAULO II", "49": "COND. BENE VII", "50": "COND. DAVID CARVALHO", "51": "COND. MONTREAL RESIDENCE", "52": "COND. LE BOULEVARD", "53": "COND. BIENE", "54": "COND. EMANOEL VELOSO", "55": "COND. QUINTA DA BOA VISTA", "56": "COND. LIVERPOOL", "57": "COND. BRISAS DO EUSEBIO", "58": "COND. FLOR DE LIZ", "59": "COND. QUINTAS DO CALHAU", "60": "COND. LONDON", "61": "COND. CANAA", "62": "COND. H DOBAL", "63": "COND. RENATA", "64": "COND. MANAUARA III", "65": "COND. CANTO BELLO", "66": "COND. HELIOPOLIS PARK", "67": "COND. ST STEVAM", "68": "COND. MEDITERRANEE", "69": "COND. CASCAIS DUNAS VILLAGE", "70": "COND. ILHA DOS ACORES", "71": "COND. MORADAS DO PARQUE", "72": "COND. CELSINA", "73": "COND. JACARANDAR", "74": "COND. TRACOA 2", "75": "COND. MURICI", "76": "COND. CONCORD I", "77": "COND. JARDIM DO HORTO", "78": "COND. VALE DO PARAIBA", "79": "COND. OCEAN PARK", "80": "COND. COPENHAGUE", "81": "COND. JARDIM DOS NOIVOS", "82": "COND. VILLAGE DA ILHA", "83": "COND. PARQUE DOS RIOS I", "84": "COND. COSTA AZUL", "85": "COND. KENNEDY", "86": "COND. VILLAGIO JARDINS 1", "87": "COND. RECANTO DAS LARANJEIRAS", "88": "COND. CRUZEIRO DO SUL", "89": "COND. LA MADELEINE", "90": "COND. VILLAGIO JARDINS 2", "91": "COND. RESIDENCIAL JULIANA III", "92": "COND. DO ED MARANATA II", "93": "COND. LE VERT JARDIM", "94": "COND. VILLAGIO JARDINS 3", "95": "COND. RESIDENCIAL POR DO SOL", "96": "COND. DOS ANJOS CORREIA", "97": "COND. MILLENNIUM TOWER", "98": "COND. VILLAGIO JARDINS 4", "99": "COND. RIVIERA FRANCESA", "100": "COND. DUNNAS XXI", "101": "COND. MONTE LIBANO", "102": "COND. YASMIM", "103": "COND. SAND LANE", "104": "COND. EBENÉZER", "105": "COND. MONTESE", "106": "CONDOMINIO VILLAGE ALCANTARA", "107": "COND. SMART LARANJEIRAS", "108": "COND. EDIFICIO ARUA", "109": "COND. RECANTO DAS PALMEIRAS", "110": "EDIFICIO ST JAMES", "111": "COND. SOL NASCENTE II", "112": "COND. EDIFICIO COIMBRA", "113": "COND. RESERVA DO NORTE 2", "114": "LEONARDO DA VINCI", "115": "COND. TOPAZIO", "116": "COND. EDIFICIO DAS AMERICAS", "117": "COND. RESERVA DO NORTE 3", "118": "Marilia 1", "119": "COND. VIDA", "120": "COND. EDIFICIO GUILHERME ROCHA", "121": "COND. RESERVA DO SUL", "122": "CONDOMINIO RESIDENCIAL PALACIO DAS ARTES", "123": "COND. EDIFICIO TURMALINA", "124": "COND. RESERVA DOS SABIAS 1", "125": "COND. EDIFICIO VILLA BORGHESE", "126": "COND. RESIDENCIAL ACONCHEGO", "127": "COND. ELIANE", "128": "COND. RESIDENCIAL BRASILIA I", "129": "COND. EMANUELA", "130": "COND. RESIDENCIAL BRASILIA II", "131": "COND. EUSEBIO PARK", "132": "COND. RESIDENCIAL POLO SUL", "133": "COND. FLORENCA", "134": "COND. RIO DA PRATA", "135": "COND. FREI VICENTE SALVADOR", "136": "COND. RIO DOURADO", "137": "COND. FUNCHAL", "138": "COND. RIO LIMA", "139": "COND. GENESIS", "140": "COND. ROYAL VILLE", "141": "COND. GENTIL CARDOSO LINHARES", "142": "COND. SAO CONRADO", "143": "COND. GOMES I", "144": "COND. SOLAR DE FATIMA", "145": "COND. GOMES II", "146": "COND. SOLAR DO PARNAIBA I", "147": "COND. GRAHAM HILL", "148": "COND. THE OFFICE TOWER", "149": "COND. GRAND CLASSIC", "150": "COND. THERTULIANO MILTOM BRANDAO", "151": "COND. GRAND QUARTIER", "152": "COND. VILA CAMPESTRE", "153": "COND. GRANLARA RESIDENCE", "154": "COND. VILA RICA", "155": "COND. GREEN VISION", "156": "COND. VILLA DE VALEGA", "157": "COND. HARMONY RESIDENCES", "158": "COND. VILLA DO CONDE", "159": "COND. ISLA VERDE", "160": "CONDOMINIO LYON", "161": "COND. ITAPERI", "162": "CONDOMINIO MOINHO DOS VENTOS", "163": "COND. JARDIM BOTANICO II", "164": "CONDOMINIO NOE FORTES", "165": "COND. JARDINS ORQUIDEA E UIRAPURU", "166": "EMPRESA BIO NATURE", "167": "COND. JOAO MESQUITA", "168": "EMPRESA EXTAND", "169": "COND. JOSE MARIA CARDOSO", "170": "COND. JOSE VILAR", "171": "COND. LAJE DE PEDRA", "172": "EMPRESA EPIFANIO JOSE ALMEIDA E SILVA", "173": "COND. LE BETULLE", "174": "COND. LEBLON", "175": "COND. LEODEGARIO PINHO", "176": "COND. LILIAN", "177": "COND. LILIAN LEYNE", "178": "COND. LINHARES", "179": "COND. LIRIDA MATOS", "180": "COND. LISBOA", "181": "COND. LUANA RESIDENCE", "182": "COND. LUCIANO CARNEIRO", "183": "COND. LUMMA", "184": "COND. LUXOR RESIDENCE", "185": "COND. MADRI", "186": "COND. MAGNA VILLARIS I", "187": "COND. MAGNA VILLARIS II", "188": "COND. MAISON NOVA METROPOLE", "189": "COND. MANDACARUS", "190": "COND. MANUEL ISAAC PONTES", "191": "COND. MARAPONGA RESIDENCE CLUB", "192": "COND. MARECHAL RONDON", "193": "COND. MARIA ESTHER", "194": "COND. MARINO BEACH", "195": "COND. MAROQUINHA REBELO", "196": "COND. MARQUES SANTIAGO", "197": "COND. MELBOURNE PLACE", "198": "COND. MIGUEL MACHADO", "199": "COND. MONTE LIBANO", "200": "COND. MONTREAL", "201": "COND. MONTSERRAT", "202": "COND. MONTVERNON", "203": "COND. MORADA BRISA DO MAR", "204": "COND. MORADA DAS GAIVOTAS", "205": "COND. N. SRA. DE GUADALUPE", "206": "COND. NADJA AGUIAR", "207": "COND. NAPOLI CITY", "208": "COND. NATERCIA RIOS", "209": "COND. OASI FELICE", "210": "COND. PACO DE MESSEJANA", "211": "COND. PAGANINI", "212": "COND. PALAIS ROYAL", "213": "COND. PANORAMA", "214": "COND. PARANOA", "215": "COND. PARMA", "216": "COND. PAUL RICHARD", "217": "COND. PETIT TRIANON", "218": "COND. PLAZA VERONNESE", "219": "COND. PORTA ROMANA", "220": "COND. PORTAL DE LION", "221": "COND. PORTAL DE SERRAMBI", "222": "COND. PORTAL DO PASSARE", "223": "COND. PORTO GUILHERME", "224": "COND. PORTO SEGURO", "225": "COND. PRIMAVERA", "226": "COND. QUEBEC", "227": "COND. RAUL FONTENELLE DOUBLE SPACE", "228": "COND. REAL PARK", "229": "COND. RESERVA NATURA", "230": "COND. RESIDENCIAL 3 ESTRELAS", "231": "COND. RESIDENCIAL AIRTON BEZERRA", "232": "COND. RESIDENCIAL DE ASSIS", "233": "COND. RESIDENCIAL SABLES BLANC", "234": "COND. RESIDENCIAL VILA REAL", "235": "COND. RIVIERA DI CAPRI", "236": "COND. ROSA MARIA", "237": "COND. SAN GERARDO", "238": "COND. SAN JULIANO", "239": "COND. SAN MAGNUM", "240": "COND. SAN MICHAEL", "241": "COND. SAN SEBASTIAN", "242": "COND. SANTANA DE PARNAIBA", "243": "COND. SARGITARIUS", "244": "COND. SATURNO", "245": "COND. SINGOLARE", "246": "COND. SOBERANO III", "247": "COND. SOCORRO VILLAGE", "248": "COND. SOLAR DOS VENTOS", "249": "COND. ST MARCOS", "250": "COND. STILO", "251": "COND. TICIANA MENDES", "252": "COND. TM RESIDENCIAL 02", "253": "COND. UIRAPURU", "254": "COND. VALENCIA RESIDENCE", "255": "COND. VENEZA II", "256": "COND. VIA LUMINI", "257": "COND. VILA VERANA", "258": "COND. VILLA BELLAGIO", "259": "COND. VILLA DI FIORI", "260": "COND. VILLA PARADISO", "261": "COND. VILLA SOLARIUM", "262": "COND. VILLAGE DEL MONTE III", "263": "COND. VISCONDE DE MAUA", "264": "COND. VITORIA PARK", "265": "CONDOMINIO AMILCAR ARAUJO", "266": "EDIFICIO ANTONIO FRADIQUE ACCIOLY", "267": "EMPRESA BELECO OCARA", "268": "EMPRESA BELECO SETOR CRISTAIS ARUARU MORADA NOVA", "269": "EMPRESA CARMEHIL ANTONIO SALES", "270": "EMPRESA CARMEHIL BEZERRA DE MENEZES", "271": "EMPRESA CARMEHIL GUSTAVO SAMPAIO", "272": "EMPRESA ECOMAX", "273": "EMPRESA FASTINOX", "274": "EMPRESA FONNET NETWORKS", "275": "EMPRESA LINK LOGISTICS TRANSPORTES", "276": "EMPRESA MARESIA", "277": "EMPRESA PATRAO PARTICIPACOES", "278": "EMPRESA TV JANGADEIRO SOBRAL", "279": "ESCOLA ESTACAO DA LUZ", "280": "HD TROPICAL RESIDENCE", "281": "HELBOR RESERVA DA PRACA", "282": "IRACEMA RESIDENCE", "283": "JARDIM AMERICA", "284": "RESIDENCIAL MORADA DA MESSEJANA", "285": "SINDICATO DOS POLICIAIS PRF", "286": "COND. SUNVILLE RESIDENCE"};
+const SEED_NOME_TO_STATUS = {"COND ALIPIO BASTOS": "Ativo", "COND CAJUINA": "Ativo", "COND. ANA KARINE": "Ativo", "ASSOCIACAO DO RESIDENCIAL DO TARUMA": "Ativo", "COND. ACORES": "Ativo", "COND JARDIM AMERICA": "Ativo", "COND. ANGELICA": "Ativo", "COND ASTURIAS": "Ativo", "COND. ALDEIA DOS VENTOS": "Ativo", "COND MORENA BRODER PARK": "Ativo", "COND. CIDADE DE LONDRES": "Ativo", "COND KARINE BARRA DE OLIVEIRA": "Ativo", "COND. ALGARVE": "Ativo", "COND. AGENDA 1 RESIDENCE": "Ativo", "COND. COMODORO": "Ativo", "COND. CARLOS DRUMMOND DE ANDRADE": "Ativo", "COND. ANDROS": "Ativo", "COND. AGENDA RESIDENCE 2": "Ativo", "COND. COSTA DO SAUIPE": "Ativo", "COND. ECOLIFE MINDU": "Ativo", "COND. AREZZO": "Ativo", "COND. ANA ROSA": "Ativo", "COND. ERS EVELINE RAQUEL SARA": "Ativo", "COND. GIARDINO DI MILANO": "Ativo", "COND. ARMANDO SABOYA FILHO": "Ativo", "COND. AVALON": "Ativo", "COND. ILHA DO SOL": "Ativo", "COND. GREEN VILLE": "Ativo", "COND. ASTORIA": "Ativo", "COND. BERLIM LISBOA": "Ativo", "COND. JAQUEIRAS 2": "Ativo", "COND. JARDIM DOS EUCALIPTOS": "Ativo", "COND. ATHENAS": "Ativo", "COND. BUGANVILIA": "Ativo", "COND. MAGISTRAL": "Ativo", "COND. JARDIM VIA VENETO": "Ativo", "COND. BAYSIDE": "Ativo", "COND. CANAA": "Ativo", "COND. MARILIA 2": "Ativo", "COND. JARDIM VILA RICA": "Ativo", "COND. BELLE VILLE": "Ativo", "COND. CANELEIRO": "Ativo", "COND. MARSOL": "Ativo", "COND. JARDINS ORQUIDEA E UIRAPURU": "Ativo", "COND. BENE VI": "Ativo", "COND. CASA BLANCA": "Ativo", "COND. MONTE RAINIER": "Ativo", "COND. JOAO PAULO II": "Ativo", "COND. BENE VII": "Ativo", "COND. DAVID CARVALHO": "Ativo", "COND. MONTREAL RESIDENCE": "Ativo", "COND. LE BOULEVARD": "Ativo", "COND. BIENE": "Ativo", "COND. EMANOEL VELOSO": "Ativo", "COND. QUINTA DA BOA VISTA": "Ativo", "COND. LIVERPOOL": "Ativo", "COND. BRISAS DO EUSEBIO": "Ativo", "COND. FLOR DE LIZ": "Ativo", "COND. QUINTAS DO CALHAU": "Ativo", "COND. LONDON": "Ativo", "COND. H DOBAL": "Ativo", "COND. RENATA": "Ativo", "COND. MANAUARA III": "Ativo", "COND. CANTO BELLO": "Ativo", "COND. HELIOPOLIS PARK": "Ativo", "COND. ST STEVAM": "Ativo", "COND. MEDITERRANEE": "Ativo", "COND. CASCAIS DUNAS VILLAGE": "Ativo", "COND. ILHA DOS ACORES": "Ativo", "COND. MORADAS DO PARQUE": "Ativo", "COND. CELSINA": "Ativo", "COND. JACARANDAR": "Ativo", "COND. TRACOA 2": "Ativo", "COND. MURICI": "Ativo", "COND. CONCORD I": "Ativo", "COND. JARDIM DO HORTO": "Ativo", "COND. VALE DO PARAIBA": "Ativo", "COND. OCEAN PARK": "Ativo", "COND. COPENHAGUE": "Ativo", "COND. JARDIM DOS NOIVOS": "Ativo", "COND. VILLAGE DA ILHA": "Ativo", "COND. PARQUE DOS RIOS I": "Ativo", "COND. COSTA AZUL": "Ativo", "COND. KENNEDY": "Ativo", "COND. VILLAGIO JARDINS 1": "Ativo", "COND. RECANTO DAS LARANJEIRAS": "Ativo", "COND. CRUZEIRO DO SUL": "Ativo", "COND. LA MADELEINE": "Ativo", "COND. VILLAGIO JARDINS 2": "Ativo", "COND. RESIDENCIAL JULIANA III": "Ativo", "COND. DO ED MARANATA II": "Ativo", "COND. LE VERT JARDIM": "Ativo", "COND. VILLAGIO JARDINS 3": "Ativo", "COND. RESIDENCIAL POR DO SOL": "Ativo", "COND. DOS ANJOS CORREIA": "Ativo", "COND. MILLENNIUM TOWER": "Ativo", "COND. VILLAGIO JARDINS 4": "Ativo", "COND. RIVIERA FRANCESA": "Ativo", "COND. DUNNAS XXI": "Ativo", "COND. MONTE LIBANO": "Ativo", "COND. YASMIM": "Ativo", "COND. SAND LANE": "Ativo", "COND. EBENÉZER": "Ativo", "COND. MONTESE": "Ativo", "CONDOMINIO VILLAGE ALCANTARA": "Ativo", "COND. SMART LARANJEIRAS": "Ativo", "COND. EDIFICIO ARUA": "Ativo", "COND. RECANTO DAS PALMEIRAS": "Ativo", "EDIFICIO ST JAMES": "Ativo", "COND. SOL NASCENTE II": "Ativo", "COND. EDIFICIO COIMBRA": "Ativo", "COND. RESERVA DO NORTE 2": "Ativo", "LEONARDO DA VINCI": "Ativo", "COND. TOPAZIO": "Ativo", "COND. EDIFICIO DAS AMERICAS": "Ativo", "COND. RESERVA DO NORTE 3": "Ativo", "Marilia 1": "Ativo", "COND. VIDA": "Ativo", "COND. EDIFICIO GUILHERME ROCHA": "Ativo", "COND. RESERVA DO SUL": "Ativo", "CONDOMINIO RESIDENCIAL PALACIO DAS ARTES": "Ativo", "COND. EDIFICIO TURMALINA": "Ativo", "COND. RESERVA DOS SABIAS 1": "Ativo", "COND. EDIFICIO VILLA BORGHESE": "Ativo", "COND. RESIDENCIAL ACONCHEGO": "Ativo", "COND. ELIANE": "Ativo", "COND. RESIDENCIAL BRASILIA I": "Ativo", "COND. EMANUELA": "Ativo", "COND. RESIDENCIAL BRASILIA II": "Ativo", "COND. EUSEBIO PARK": "Ativo", "COND. RESIDENCIAL POLO SUL": "Ativo", "COND. FLORENCA": "Ativo", "COND. RIO DA PRATA": "Ativo", "COND. FREI VICENTE SALVADOR": "Ativo", "COND. RIO DOURADO": "Ativo", "COND. FUNCHAL": "Ativo", "COND. RIO LIMA": "Ativo", "COND. GENESIS": "Ativo", "COND. ROYAL VILLE": "Ativo", "COND. GENTIL CARDOSO LINHARES": "Ativo", "COND. SAO CONRADO": "Ativo", "COND. GOMES I": "Ativo", "COND. SOLAR DE FATIMA": "Ativo", "COND. GOMES II": "Ativo", "COND. SOLAR DO PARNAIBA I": "Ativo", "COND. GRAHAM HILL": "Ativo", "COND. THE OFFICE TOWER": "Ativo", "COND. GRAND CLASSIC": "Ativo", "COND. THERTULIANO MILTOM BRANDAO": "Ativo", "COND. GRAND QUARTIER": "Ativo", "COND. VILA CAMPESTRE": "Ativo", "COND. GRANLARA RESIDENCE": "Ativo", "COND. VILA RICA": "Ativo", "COND. GREEN VISION": "Ativo", "COND. VILLA DE VALEGA": "Ativo", "COND. HARMONY RESIDENCES": "Ativo", "COND. VILLA DO CONDE": "Ativo", "COND. ISLA VERDE": "Ativo", "CONDOMINIO LYON": "Ativo", "COND. ITAPERI": "Ativo", "CONDOMINIO MOINHO DOS VENTOS": "Ativo", "COND. JARDIM BOTANICO II": "Ativo", "CONDOMINIO NOE FORTES": "Ativo", "EMPRESA BIO NATURE": "Ativo", "COND. JOAO MESQUITA": "Ativo", "EMPRESA EXTAND": "Ativo", "COND. JOSE MARIA CARDOSO": "Ativo", "COND. JOSE VILAR": "Ativo", "COND. LAJE DE PEDRA": "Ativo", "EMPRESA EPIFANIO JOSE ALMEIDA E SILVA": "Ativo", "COND. LE BETULLE": "Ativo", "COND. LEBLON": "Ativo", "COND. LEODEGARIO PINHO": "Ativo", "COND. LILIAN": "Ativo", "COND. LILIAN LEYNE": "Ativo", "COND. LINHARES": "Ativo", "COND. LIRIDA MATOS": "Ativo", "COND. LISBOA": "Ativo", "COND. LUANA RESIDENCE": "Ativo", "COND. LUCIANO CARNEIRO": "Ativo", "COND. LUMMA": "Ativo", "COND. LUXOR RESIDENCE": "Ativo", "COND. MADRI": "Ativo", "COND. MAGNA VILLARIS I": "Ativo", "COND. MAGNA VILLARIS II": "Ativo", "COND. MAISON NOVA METROPOLE": "Ativo", "COND. MANDACARUS": "Ativo", "COND. MANUEL ISAAC PONTES": "Ativo", "COND. MARAPONGA RESIDENCE CLUB": "Ativo", "COND. MARECHAL RONDON": "Ativo", "COND. MARIA ESTHER": "Ativo", "COND. MARINO BEACH": "Ativo", "COND. MAROQUINHA REBELO": "Ativo", "COND. MARQUES SANTIAGO": "Ativo", "COND. MELBOURNE PLACE": "Ativo", "COND. MIGUEL MACHADO": "Ativo", "COND. MONTREAL": "Ativo", "COND. MONTSERRAT": "Ativo", "COND. MONTVERNON": "Ativo", "COND. MORADA BRISA DO MAR": "Ativo", "COND. MORADA DAS GAIVOTAS": "Ativo", "COND. N. SRA. DE GUADALUPE": "Ativo", "COND. NADJA AGUIAR": "Ativo", "COND. NAPOLI CITY": "Ativo", "COND. NATERCIA RIOS": "Ativo", "COND. OASI FELICE": "Ativo", "COND. PACO DE MESSEJANA": "Ativo", "COND. PAGANINI": "Ativo", "COND. PALAIS ROYAL": "Ativo", "COND. PANORAMA": "Ativo", "COND. PARANOA": "Ativo", "COND. PARMA": "Ativo", "COND. PAUL RICHARD": "Ativo", "COND. PETIT TRIANON": "Ativo", "COND. PLAZA VERONNESE": "Ativo", "COND. PORTA ROMANA": "Ativo", "COND. PORTAL DE LION": "Ativo", "COND. PORTAL DE SERRAMBI": "Ativo", "COND. PORTAL DO PASSARE": "Ativo", "COND. PORTO GUILHERME": "Ativo", "COND. PORTO SEGURO": "Ativo", "COND. PRIMAVERA": "Ativo", "COND. QUEBEC": "Ativo", "COND. RAUL FONTENELLE DOUBLE SPACE": "Ativo", "COND. REAL PARK": "Ativo", "COND. RESERVA NATURA": "Ativo", "COND. RESIDENCIAL 3 ESTRELAS": "Ativo", "COND. RESIDENCIAL AIRTON BEZERRA": "Ativo", "COND. RESIDENCIAL DE ASSIS": "Ativo", "COND. RESIDENCIAL SABLES BLANC": "Ativo", "COND. RESIDENCIAL VILA REAL": "Ativo", "COND. RIVIERA DI CAPRI": "Ativo", "COND. ROSA MARIA": "Ativo", "COND. SAN GERARDO": "Ativo", "COND. SAN JULIANO": "Ativo", "COND. SAN MAGNUM": "Ativo", "COND. SAN MICHAEL": "Ativo", "COND. SAN SEBASTIAN": "Ativo", "COND. SANTANA DE PARNAIBA": "Ativo", "COND. SARGITARIUS": "Ativo", "COND. SATURNO": "Ativo", "COND. SINGOLARE": "Ativo", "COND. SOBERANO III": "Ativo", "COND. SOCORRO VILLAGE": "Ativo", "COND. SOLAR DOS VENTOS": "Ativo", "COND. ST MARCOS": "Ativo", "COND. STILO": "Ativo", "COND. TICIANA MENDES": "Ativo", "COND. TM RESIDENCIAL 02": "Ativo", "COND. UIRAPURU": "Ativo", "COND. VALENCIA RESIDENCE": "Ativo", "COND. VENEZA II": "Ativo", "COND. VIA LUMINI": "Ativo", "COND. VILA VERANA": "Ativo", "COND. VILLA BELLAGIO": "Ativo", "COND. VILLA DI FIORI": "Ativo", "COND. VILLA PARADISO": "Ativo", "COND. VILLA SOLARIUM": "Ativo", "COND. VILLAGE DEL MONTE III": "Ativo", "COND. VISCONDE DE MAUA": "Ativo", "COND. VITORIA PARK": "Ativo", "CONDOMINIO AMILCAR ARAUJO": "Ativo", "EDIFICIO ANTONIO FRADIQUE ACCIOLY": "Ativo", "EMPRESA BELECO OCARA": "Ativo", "EMPRESA BELECO SETOR CRISTAIS ARUARU MORADA NOVA": "Ativo", "EMPRESA CARMEHIL ANTONIO SALES": "Ativo", "EMPRESA CARMEHIL BEZERRA DE MENEZES": "Ativo", "EMPRESA CARMEHIL GUSTAVO SAMPAIO": "Ativo", "EMPRESA ECOMAX": "Ativo", "EMPRESA FASTINOX": "Ativo", "EMPRESA FONNET NETWORKS": "Ativo", "EMPRESA LINK LOGISTICS TRANSPORTES": "Ativo", "EMPRESA MARESIA": "Ativo", "EMPRESA PATRAO PARTICIPACOES": "Ativo", "EMPRESA TV JANGADEIRO SOBRAL": "Ativo", "ESCOLA ESTACAO DA LUZ": "Ativo", "HD TROPICAL RESIDENCE": "Ativo", "HELBOR RESERVA DA PRACA": "Ativo", "IRACEMA RESIDENCE": "Ativo", "JARDIM AMERICA": "Ativo", "RESIDENCIAL MORADA DA MESSEJANA": "Ativo", "SINDICATO DOS POLICIAIS PRF": "Ativo", "COND. SUNVILLE RESIDENCE": "Ativo"};
+
+// Cruza o status (Ativo/Inativo) da base semente do Cadastro com as edições
+// feitas depois (condo_overrides) — assim as outras abas conseguem saber
+// quem está inativo sem precisar acessar o quadro isolado do Cadastro.
+let STATUS_POR_CONDOMINIO = { ...SEED_NOME_TO_STATUS };
+let statusCondominiosCarregado = false;
+async function carregarStatusCondominios(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('condo_overrides').select('item_n,status');
+    if (error) throw error;
+    (data||[]).forEach(row=>{
+      if (!row.status) return;
+      const nome = SEED_ID_TO_NOME[row.item_n];
+      if (nome) STATUS_POR_CONDOMINIO[nome] = row.status;
+    });
+    const { data: extras } = await sb.from('condo_extra').select('nome,status');
+    (extras||[]).forEach(row=>{
+      if (row.nome && row.status) STATUS_POR_CONDOMINIO[row.nome] = row.status;
+    });
+  }catch(e){
+    console.warn('Falha ao carregar status dos condomínios (Ativo/Inativo):', e);
+  }
+  statusCondominiosCarregado = true;
+}
+function condominioEstaAtivo(nome){
+  const status = STATUS_POR_CONDOMINIO[nome];
+  return status !== 'Inativo'; // sem info = trata como ativo, pra nunca escondar por engano
+}
+
 function normalizeNomeCondo(s){
   return String(s || '')
     .toUpperCase()
@@ -11598,6 +11642,48 @@ async function seedHistoricoIfEmpty(){
   }catch(e){ console.error('Falha ao semear histórico:', e); }
 }
 
+async function restaurarNotasDoHistorico(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const mesNome = mesNomeCompletoBR(selectedMes);
+  const btn = document.getElementById('btnRestaurarDoHistorico');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  try{
+    const { data: linhasHistorico, error } = await sb.from('historico_pesquisas').select('*').eq('mes', mesNome);
+    if (error) throw error;
+    if (!linhasHistorico || !linhasHistorico.length){
+      alert(`Não encontrei nenhum registro arquivado no Histórico pro mês de ${mesNome}.`);
+      return;
+    }
+    const doMes = DATA.filter(d => getMes(d) === selectedMes);
+    let restaurados = 0;
+    const faltando = [];
+    for (const h of linhasHistorico){
+      if (!h.nota) continue; // não tem nota lá pra restaurar
+      const alvo = doMes.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(h.condominio));
+      if (!alvo) { faltando.push(h.condominio); continue; }
+      const temNotaAgora = alvo.nota && alvo.nota !== '—';
+      if (temNotaAgora) continue; // já está ok, não precisa restaurar
+      const updates = { nota: h.nota, statusPesquisa: 'Concluída' };
+      alvo.nota = h.nota;
+      alvo.statusPesquisa = 'Concluída';
+      OVERRIDES[alvo.n] = Object.assign({}, OVERRIDES[alvo.n], updates);
+      await pushOverrideToSupabase(alvo.n, Object.assign({}, alvo, updates));
+      restaurados++;
+    }
+    persistOverrides(OVERRIDES);
+    applyOverrides();
+    if (typeof render === 'function') render();
+    if (typeof renderPqCicloProgresso === 'function') renderPqCicloProgresso();
+    alert(`✅ ${restaurados} nota(s) restaurada(s) a partir do Histórico de ${mesNome}.${faltando.length ? `\n\n${faltando.length} condomínio(s) do Histórico não foram encontrados na lista atual (nome pode ter mudado): ${faltando.slice(0,5).join(', ')}${faltando.length>5?'...':''}` : ''}`);
+  }catch(e){
+    alert('Erro ao restaurar: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+document.getElementById('btnRestaurarDoHistorico').addEventListener('click', restaurarNotasDoHistorico);
+
 async function loadHistorico(){
   const el = document.getElementById('historicoFolders');
   if (!sb){
@@ -14399,6 +14485,81 @@ async function seedAdocaoDigitalSeVazio(){
   }catch(e){ console.error('Falha ao trazer condomínios pra Adoção Digital:', e); }
 }
 
+function renderAdCicloProgresso(){
+  const barra = document.getElementById('adCicloBarraFill');
+  if (!barra) return;
+  const ativos = adData.filter(a => condominioEstaAtivo(a.condominio));
+  const total = ativos.length;
+  const preenchidos = ativos.filter(a => (a.apps_cadastrados||0) > 0 || (a.faciais_cadastrados||0) > 0 || a.possui_gphone === 'Sim' || a.possui_armario === 'Sim' || a.possui_ia === 'Sim').length;
+  const pendentes = total - preenchidos;
+  const pct = total ? (preenchidos/total*100) : 0;
+  document.getElementById('adCicloMesLabel').textContent = new Date().toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+  barra.style.width = pct.toFixed(0) + '%';
+  document.getElementById('adCicloBarraTexto').textContent = `${preenchidos} de ${total} com adesão registrada (${pct.toFixed(0)}%)`;
+  document.getElementById('adCicloDetalhe').textContent = `${pendentes} condomínio(s) ativo(s) ainda sem nenhuma ferramenta digital registrada.`;
+}
+
+function gerarRelatorioFechamentoAdocaoDigital(){
+  const ativos = adData.filter(a => condominioEstaAtivo(a.condominio));
+  const total = ativos.length;
+  const comApp = ativos.filter(a => (a.apps_cadastrados||0) > 0);
+  const comGphone = ativos.filter(a => a.possui_gphone === 'Sim');
+  const comArmario = ativos.filter(a => a.possui_armario === 'Sim');
+  const comFacial = ativos.filter(a => (a.faciais_cadastrados||0) > 0);
+  const comIA = ativos.filter(a => a.possui_ia === 'Sim');
+  const semNenhuma = ativos.filter(a => !((a.apps_cadastrados||0)>0 || a.possui_gphone==='Sim' || a.possui_armario==='Sim' || (a.faciais_cadastrados||0)>0 || a.possui_ia==='Sim'));
+  const pct = (n) => total ? Math.round(n/total*100) : 0;
+  const porFilial = [...new Set(ativos.map(a=>a.filial).filter(Boolean))].map(f=>{
+    const doFilial = ativos.filter(a=>a.filial===f);
+    const scoreMedio = doFilial.length ? doFilial.reduce((s,a)=>s+calcScoreDigital(a),0)/doFilial.length : 0;
+    return { filial: f, total: doFilial.length, scoreMedio, semNenhuma: doFilial.filter(a => !((a.apps_cadastrados||0)>0 || a.possui_gphone==='Sim' || a.possui_armario==='Sim' || (a.faciais_cadastrados||0)>0 || a.possui_ia==='Sim')).length };
+  }).sort((a,b)=>a.scoreMedio-b.scoreMedio);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fechamento — Adoção Digital</title>
+  <style>
+    body{ font-family:Arial, sans-serif; color:#1a1a1a; padding:28px; max-width:960px; margin:0 auto; }
+    h1{ font-size:20px; color:#222F59; margin:0 0 2px; }
+    h2{ font-size:14px; color:#222F59; border-bottom:2px solid #E07B2C; padding-bottom:6px; margin:20px 0 10px; }
+    .meta{ font-size:11px; color:#666; margin-bottom:16px; }
+    .kpi-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+    .kpi{ border:1px solid #ddd; border-radius:8px; padding:10px 12px; font-size:10.5px; background:#fafafa; text-align:center; }
+    .kpi b{ display:block; font-size:19px; color:#222F59; }
+    table{ border-collapse:collapse; width:100%; font-size:11px; margin-bottom:8px; }
+    th, td{ border:1px solid #ddd; padding:6px 8px; text-align:left; }
+    th{ background:#222F59; color:#fff; }
+    .exec-text p{ font-size:12px; line-height:1.6; }
+  </style></head><body>
+  <button onclick="window.print()" style="margin-bottom:16px; padding:8px 16px; background:#222F59; color:#fff; border:none; border-radius:6px; cursor:pointer;">🖨️ Imprimir / Salvar como PDF</button>
+  <h1>Relatório de Fechamento — Adoção Digital</h1>
+  <div class="meta">Servis Eletrônica · Sucesso do Cliente<br>Gerado em ${new Date().toLocaleString('pt-BR')} · Considera só condomínios ativos (${total})</div>
+  <div class="kpi-grid">
+    <div class="kpi"><b>${total}</b>Condomínios ativos</div>
+    <div class="kpi"><b>${comApp.length} (${pct(comApp.length)}%)</b>Aplicativo</div>
+    <div class="kpi"><b>${comGphone.length} (${pct(comGphone.length)}%)</b>GPhone</div>
+    <div class="kpi"><b>${comArmario.length} (${pct(comArmario.length)}%)</b>Armário Inteligente</div>
+    <div class="kpi"><b>${comFacial.length} (${pct(comFacial.length)}%)</b>Facial</div>
+    <div class="kpi"><b>${comIA.length} (${pct(comIA.length)}%)</b>I.A.</div>
+  </div>
+  <div class="exec-text">
+    <p>Do total de <b>${total}</b> condomínios ativos monitorados, <b>${semNenhuma.length}</b> (${pct(semNenhuma.length)}%) ainda não possuem nenhuma ferramenta digital registrada — são a prioridade natural pro próximo ciclo de adoção.</p>
+  </div>
+  <h2>Desempenho por Filial (ordenado do menor pro maior score de adoção)</h2>
+  <table>
+    <thead><tr><th>Filial</th><th>Condomínios</th><th>Score médio de adoção</th><th>Sem nenhuma ferramenta</th></tr></thead>
+    <tbody>${porFilial.map(f=>`<tr><td>${escapeHtml(f.filial)}</td><td>${f.total}</td><td>${f.scoreMedio.toFixed(1)} / 4</td><td>${f.semNenhuma}</td></tr>`).join('')}</tbody>
+  </table>
+  <h2>Condomínios sem nenhuma ferramenta digital (${semNenhuma.length})</h2>
+  <table>
+    <thead><tr><th>Condomínio</th><th>Filial</th></tr></thead>
+    <tbody>${semNenhuma.slice(0,60).map(a=>`<tr><td>${escapeHtml(a.condominio)}</td><td>${escapeHtml(a.filial||'—')}</td></tr>`).join('') || '<tr><td colspan="2">Nenhum — todos têm ao menos uma ferramenta.</td></tr>'}</tbody>
+  </table>
+  ${semNenhuma.length>60 ? `<p style="font-size:11px; color:#888;">… e mais ${semNenhuma.length-60} condomínio(s).</p>` : ''}
+  </body></html>`;
+  const win = window.open('', '_blank');
+  win.document.open(); win.document.write(html); win.document.close();
+}
+document.getElementById('btnGerarRelatorioAdocao').addEventListener('click', gerarRelatorioFechamentoAdocaoDigital);
+
 async function loadAdocaoDigital(){
   const body = document.getElementById('adBody');
   if (!sb){
@@ -14406,6 +14567,7 @@ async function loadAdocaoDigital(){
     return;
   }
   try{
+    if (!statusCondominiosCarregado) await carregarStatusCondominios();
     let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
     if (error) throw error;
     adData = data || [];
@@ -14444,6 +14606,7 @@ function getFilteredAdocaoDigital(){
   const fFilial = document.getElementById('adFilterFilial').value;
   const fStatus = document.getElementById('adFilterStatus').value;
   return adData.filter(a=>{
+    if (!condominioEstaAtivo(a.condominio)) return false;
     if (q && !(a.condominio||'').toLowerCase().includes(q)) return false;
     if (fFilial && a.filial !== fFilial) return false;
     if (fStatus && classificarSaude(calcScoreDigital(a), a) !== fStatus) return false;
@@ -14452,8 +14615,9 @@ function getFilteredAdocaoDigital(){
 }
 
 function renderAdocaoDigital(){
+  renderAdCicloProgresso();
   const filtered = getFilteredAdocaoDigital();
-  const totalCondos = [...new Set(DATA.map(d=>d.nome))].length;
+  const totalCondos = [...new Set(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
   const comApp = adData.filter(a => (a.apps_cadastrados||0) > 0).length;
   const comGphone = adData.filter(a => a.possui_gphone === 'Sim').length;
   const comArmario = adData.filter(a => a.possui_armario === 'Sim').length;
@@ -14744,7 +14908,7 @@ async function mesclarDuplicatasAdocao(){
   try{
     const grupos = new Map();
     adData.forEach(a => {
-      const chave = (a.condominio||'').trim().toLowerCase();
+      const chave = normalizeNomeCondo(a.condominio||'');
       if (!chave) return;
       if (!grupos.has(chave)) grupos.set(chave, []);
       grupos.get(chave).push(a);
