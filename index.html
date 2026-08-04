@@ -1469,7 +1469,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-B</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-F</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -5546,10 +5546,11 @@ let veSelecionadas = new Set();
 
 const GRUPOS_MOTIVO = {
   'Portões':'Equipamentos/Sistemas', 'Câmeras':'Equipamentos/Sistemas', 'Interfone':'Equipamentos/Sistemas',
-  'Controle de Acesso':'Equipamentos/Sistemas', 'Aplicativo':'Equipamentos/Sistemas',
-  'Atendimento da Central':'Central', 'Tempo de Atendimento da Central':'Central', 'Falta de Retorno da Central':'Central',
-  'Tempo de Atendimento Técnico':'Técnica', 'Pendência Técnica':'Técnica', 'Qualidade da Equipe Técnica':'Técnica', 'Falta de Retorno da Equipe Técnica':'Técnica',
+  'Controle de Acesso':'Equipamentos/Sistemas', 'Aplicativo':'Equipamentos/Sistemas', 'Cadastro':'Equipamentos/Sistemas',
+  'Atendimento da Central':'Central', 'Tempo de Atendimento da Central':'Central', 'Falta de Retorno da Central':'Central', 'Falta de Retorno':'Central',
+  'Tempo de Atendimento Técnico':'Técnica', 'Pendência Técnica':'Técnica', 'Qualidade da Equipe Técnica':'Técnica', 'Falta de Retorno da Equipe Técnica':'Técnica', 'Equipe Técnica':'Técnica',
   'Falta de Retorno do Comercial':'Outros', 'Falta de Retorno da Coordenação/Gerência':'Outros', 'Comunicação':'Outros',
+  'Financeiro':'Comercial/Financeiro', 'Comercial':'Comercial/Financeiro',
   'Alarmes/Falsos Disparos':'Alarmes/Falsos Disparos',
   'Comercial/Financeiro':'Comercial/Financeiro',
   'Pesquisa não Respondida':'Pesquisa não Respondida',
@@ -6591,8 +6592,13 @@ function gerarRelatorioFechamentoCicloPDF(){
   const naoRealizadasArr = doMes.filter(pesquisaNaoRealizada);
   const notasArr = realizadasArr.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
   const mediaGeral = notasArr.length ? (notasArr.reduce((a,b)=>a+b,0)/notasArr.length) : null;
+  const reclamacoesArr = doMes.filter(temReclamacao);
+  const pendenciasArr = doMes.filter(temPendencia);
+  const elogiosArr = doMes.filter(temElogio);
+  const pendenciasResolvidasQtd = pendenciasArr.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
+  const pendenciasAbertasQtd = pendenciasArr.length - pendenciasResolvidasQtd;
 
-  // ---- Mês anterior, pra comparação (item 4) ----
+  // ---- Mês anterior, pra comparação ----
   const meses6 = getUltimosMeses(6);
   const idxMesAtualNaLista = meses6.indexOf(selectedMes);
   const mesAnteriorRef = idxMesAtualNaLista > 0 ? meses6[idxMesAtualNaLista - 1] : null;
@@ -6606,27 +6612,8 @@ function gerarRelatorioFechamentoCicloPDF(){
     return { media, pctRealizadas, reclamacoes };
   }
   const statsAnteriorGeral = mesAnteriorRef ? statsDoConjunto(doMesAnterior) : null;
-  function variacaoHtml(atual, anterior, sufixo, inverterCor){
-    if (atual === null || atual === undefined || !anterior || anterior.valor === null || anterior.valor === undefined) return '';
-    const diff = atual - anterior.valor;
-    if (Math.abs(diff) < 0.05) return ` <span class="varneutra">(≈ estável vs. ${anterior.label})</span>`;
-    const subiu = diff > 0;
-    const bom = inverterCor ? !subiu : subiu;
-    const seta = subiu ? '▲' : '▼';
-    return ` <span class="${bom ? 'varpos' : 'varneg'}">(${seta}${Math.abs(diff).toFixed(1)}${sufixo||''} vs. ${anterior.label})</span>`;
-  }
+  function seta(diff){ return diff > 0 ? '▲' : (diff < 0 ? '▼' : '●'); }
 
-  const faixasNota = [
-    { label:'9 – 10 (Excelente)', min:9, max:10 },
-    { label:'7 – 8 (Boa)', min:7, max:8.999 },
-    { label:'5 – 6 (Regular)', min:5, max:6.999 },
-    { label:'0 – 4 (Ruim)', min:0, max:4.999 },
-  ];
-  function distribuicaoNotas(notas){
-    return faixasNota.map(f => ({ label:f.label, n: notas.filter(n=>n>=f.min && n<=f.max).length }));
-  }
-  // Item 1 — resumo curto em vez do texto bruto completo, e filtra anotações
-  // que parecem ser nota interna de atendimento (não reclamação do síndico).
   function pareceAnotacaoInterna(texto){
     return /\b(central realizou|opera(dor|dora)|teste realizado|nota interna|obs interna|acompanhamento operacional|verificado pel[ao] (central|t[ée]cnic[ao]))\b/i.test(texto);
   }
@@ -6636,65 +6623,41 @@ function gerarRelatorioFechamentoCicloPDF(){
     if (limpo.length <= limite) return limpo;
     return limpo.slice(0, limite).replace(/\s+\S*$/, '') + '…';
   }
+  function classifyGrupoMotivoComSetor(item){
+    const grupos = classifyGrupoMotivo(item);
+    if (grupos.length === 1 && grupos[0] === 'Outros'){
+      const setor = (item.setor || '').trim();
+      return [setor ? `Outros (${setor})` : 'Outros (setor não informado)'];
+    }
+    return grupos;
+  }
   function topMotivos(itens, limite){
-    const dist = computeDistribution(itens, classifyGrupoMotivo);
-    return Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]).slice(0, limite||6).map(([label,n])=>{
-      let exemplos = [];
-      if (label === 'Outros'){
-        exemplos = itens
-          .filter(d => classifyGrupoMotivo(d).includes('Outros') && d.pend && d.pend.trim() && !pareceAnotacaoInterna(d.pend))
-          .map(d => `${d.nome} (${d.filial||'—'}): "${resumoCurto(d.pend)}"`);
-      }
-      return { label, n, pct: dist.total ? Math.round(n/dist.total*100) : 0, exemplos };
+    const porCategoria = {};
+    let totalCat = 0;
+    itens.forEach(item=>{
+      const cats = classifyGrupoMotivoComSetor(item);
+      if (!cats.length) return;
+      const principal = cats[0];
+      if (!porCategoria[principal]) porCategoria[principal] = [];
+      porCategoria[principal].push(item);
+      totalCat++;
     });
+    return Object.entries(porCategoria)
+      .sort((a,b)=> b[1].length - a[1].length)
+      .slice(0, limite||6)
+      .map(([label, ns])=>{
+        const exemplos = ns
+          .filter(d => d.pend && d.pend.trim() && !pareceAnotacaoInterna(d.pend))
+          .map(d => `${d.nome} (${d.filial||'—'})`);
+        return { label, n: ns.length, pct: totalCat ? Math.round(ns.length/totalCat*100) : 0, exemplos };
+      });
   }
 
-  // Item 3 — classe de urgência pela nota (reaproveita a paleta crítico/atenção/ok do app)
-  function classeUrgenciaNota(media){
-    if (media === null) return '';
-    if (media < 7) return 'nota-critica';
-    if (media < 8) return 'nota-atencao';
-    return 'nota-ok';
-  }
+  const META_NOTA_REL = (typeof META_NOTA !== 'undefined') ? META_NOTA : 8;
 
-  // Item 2 — filiais ordenadas da pior nota pra melhor (não mais alfabética)
+  // ---- Monta um objeto de estatísticas por filial (reaproveitado nas seções 3 e 4) ----
   const filiaisBrutas = [...new Set(doMes.map(d => normalizeFilialCanonica(d.filial)))].filter(Boolean);
-  const filiaisComNota = filiaisBrutas.map(f=>{
-    const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
-    const notasF = doFilial.filter(d=>!pesquisaNaoRealizada(d)).map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
-    const mediaF = notasF.length ? (notasF.reduce((a,b)=>a+b,0)/notasF.length) : 99; // sem nota vai pro fim
-    return { filial: f, mediaOrdenacao: mediaF };
-  });
-  const filiais = filiaisComNota.sort((a,b)=>a.mediaOrdenacao-b.mediaOrdenacao).map(x=>x.filial);
-
-  const pendenciasGeralTodas = doMes.filter(temPendencia);
-  const pendenciasGeralResolvidas = pendenciasGeralTodas.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
-  const pendenciasGeralAbertas = pendenciasGeralTodas.length - pendenciasGeralResolvidas;
-
-  const blocoGeral = `
-    <div class="filial-block">
-      <h2>📊 Resumo Geral — Todas as Filiais</h2>
-      <div class="summary">
-        <div class="sbox"><b>${total}</b><span>Condomínios no ciclo</span></div>
-        <div class="sbox ok"><b>${realizadasArr.length}</b><span>Pesquisas realizadas (${total?Math.round(realizadasArr.length/total*100):0}%)${variacaoHtml(total?realizadasArr.length/total*100:null, statsAnteriorGeral?{valor:statsAnteriorGeral.pctRealizadas, label:mesLabelBR(mesAnteriorRef)}:null, 'pp')}</span></div>
-        <div class="sbox crit"><b>${naoRealizadasArr.length}</b><span>Não realizadas</span></div>
-        <div class="sbox ${classeUrgenciaNota(mediaGeral)}"><b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b><span>Nota média geral${variacaoHtml(mediaGeral, statsAnteriorGeral?{valor:statsAnteriorGeral.media, label:mesLabelBR(mesAnteriorRef)}:null, '')}</span></div>
-        <div class="sbox" title="Pendências resolvidas não aparecem na tabela de 'em andamento' mais abaixo"><b>${pendenciasGeralTodas.length}</b><span>Pendências (${pendenciasGeralResolvidas} resolvidas, ${pendenciasGeralAbertas} em aberto)</span></div>
-        <div class="sbox crit"><b>${doMes.filter(temReclamacao).length}</b><span>Reclamações${variacaoHtml(doMes.filter(temReclamacao).length, statsAnteriorGeral?{valor:statsAnteriorGeral.reclamacoes, label:mesLabelBR(mesAnteriorRef)}:null, '', true)}</span></div>
-        <div class="sbox ok"><b>${doMes.filter(temElogio).length}</b><span>Elogios</span></div>
-      </div>
-      <table class="mini-table">
-        <thead><tr><th>Faixa de Nota</th><th>Quantidade</th><th>%</th></tr></thead>
-        <tbody>${distribuicaoNotas(notasArr).map(f=>`<tr class="${f.label.includes('Ruim') && f.n>0 ? 'linha-ruim' : ''}"><td>${f.label}</td><td>${f.n}</td><td>${notasArr.length?Math.round(f.n/notasArr.length*100):0}%</td></tr>`).join('')}</tbody>
-      </table>
-      <p class="subtitle">Principais motivos de reclamação (todas as filiais)</p>
-      <table class="mini-table">
-        <thead><tr><th>Motivo</th><th>Ocorrências</th><th>%</th></tr></thead>
-        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Exemplos (${m.exemplos.length} caso(s), resumidos):</b><br>${m.exemplos.slice(0,10).map(e=>escapeHtml(e)).join('<br>')}${m.exemplos.length>10 ? `<br>… e mais ${m.exemplos.length-10}.` : ''}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
-      </table>
-    </div>`;
-
-  const blocosFilial = filiais.map(f=>{
+  const statsPorFilial = filiaisBrutas.map(f=>{
     const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
     const doFilialAnterior = doMesAnterior.filter(d => normalizeFilialCanonica(d.filial) === f);
     const statsAnteriorF = mesAnteriorRef ? statsDoConjunto(doFilialAnterior) : null;
@@ -6705,92 +6668,319 @@ function gerarRelatorioFechamentoCicloPDF(){
     const reclamacoesF = doFilial.filter(temReclamacao);
     const pendenciasF = doFilial.filter(temPendencia);
     const elogiosF = doFilial.filter(temElogio);
-    const naoRealizadasMotivos = {};
-    naoRealizadasF.forEach(d=>{ const m = d.motivoNaoRealizada || d.statusPesquisa || 'Não informado'; naoRealizadasMotivos[m] = (naoRealizadasMotivos[m]||0)+1; });
-    const naoRealizadasMotivosOrdenados = Object.entries(naoRealizadasMotivos).sort((a,b)=>b[1]-a[1]);
-
-    const pendenciasResolvidasF = pendenciasF.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
     const pendenciasAbertasF = pendenciasF.filter(d => d.resolvido !== 'true' && d.resolvido !== true);
+    const pctRealizadasF = doFilial.length ? (realizadasF.length/doFilial.length*100) : 0;
+    return {
+      filial: f, doFilial, statsAnteriorF, realizadasF, naoRealizadasF, notasF, mediaF,
+      reclamacoesF, pendenciasF, elogiosF, pendenciasAbertasF, pctRealizadasF,
+      topMotivosF: topMotivos(doFilial, 5),
+    };
+  }).sort((a,b)=>{
+    const ma = a.mediaF===null?99:a.mediaF, mb = b.mediaF===null?99:b.mediaF;
+    return ma - mb; // pior nota primeiro, pra chamar atenção logo de cara
+  });
 
+  // ============================================================================
+  // SEÇÃO 1 — RESUMO EXECUTIVO
+  // ============================================================================
+  const pctRealizadasGeral = total ? (realizadasArr.length/total*100) : 0;
+  const melhorFilialObj = [...statsPorFilial].filter(f=>f.mediaF!==null).sort((a,b)=>b.mediaF-a.mediaF)[0];
+  const piorFilialObj = statsPorFilial.filter(f=>f.mediaF!==null)[0]; // já vem ordenado do pior pro melhor
+  const filiaisAbaixoMeta = statsPorFilial.filter(f=>f.mediaF!==null && f.mediaF < META_NOTA_REL);
+  const filiaisAcimaMeta = statsPorFilial.filter(f=>f.mediaF!==null && f.mediaF >= META_NOTA_REL);
+
+  const variacaoNota = (mediaGeral!==null && statsAnteriorGeral && statsAnteriorGeral.media!==null) ? mediaGeral - statsAnteriorGeral.media : null;
+  const variacaoReclamacoes = statsAnteriorGeral ? reclamacoesArr.length - statsAnteriorGeral.reclamacoes : null;
+
+  const resumoExecutivoTexto = [
+    `O ciclo de <b>${mesLabelBR(selectedMes)}</b> avaliou <b>${total}</b> condomínio(s), com <b>${realizadasArr.length}</b> pesquisa(s) respondida(s) (${pctRealizadasGeral.toFixed(0)}%) e <b>${naoRealizadasArr.length}</b> ainda sem retorno do síndico.`,
+    `A nota média geral ficou em <b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b>${variacaoNota!==null ? `, ${seta(variacaoNota)} ${Math.abs(variacaoNota).toFixed(1)} ponto(s) em relação a ${mesLabelBR(mesAnteriorRef)}` : ''}, ${mediaGeral!==null && mediaGeral>=META_NOTA_REL ? `acima da meta de ${META_NOTA_REL}` : `abaixo da meta de ${META_NOTA_REL}`}.`,
+    `Das ${statsPorFilial.length} filial(is) avaliada(s), <b>${filiaisAcimaMeta.length}</b> está(ão) dentro da meta e <b>${filiaisAbaixoMeta.length}</b> precisa(m) de atenção${piorFilialObj ? `, com destaque para <b>${escapeHtml(piorFilialObj.filial)}</b> (nota ${piorFilialObj.mediaF.toFixed(1)})` : ''}.`,
+    `Foram registradas <b>${reclamacoesArr.length}</b> reclamação(ões)${variacaoReclamacoes!==null ? ` (${seta(variacaoReclamacoes)} ${Math.abs(variacaoReclamacoes)} vs. mês anterior)` : ''} e <b>${elogiosArr.length}</b> elogio(s) no período.`,
+    `Das <b>${pendenciasArr.length}</b> pendência(s) abertas ao longo do ciclo, <b>${pendenciasResolvidasQtd}</b> já foram solucionadas e <b>${pendenciasAbertasQtd}</b> permanecem em aberto.`,
+    `Em síntese, a satisfação dos clientes está ${mediaGeral!==null && mediaGeral>=META_NOTA_REL ? '<b style="color:#27ae60;">dentro do esperado</b>' : '<b style="color:#c0392b;">abaixo do ideal</b>'} no agregado, com ${filiaisAbaixoMeta.length ? `oportunidades claras de melhoria concentradas em ${filiaisAbaixoMeta.map(f=>escapeHtml(f.filial)).join(', ')}` : 'desempenho equilibrado entre as filiais'}.`,
+  ].map(p=>`<p>${p}</p>`).join('');
+
+  // Destaques Positivos e Pontos de Atenção (regras simples sobre os números already calculados)
+  const destaquesPositivos = [];
+  const pontosAtencao = [];
+  if (mediaGeral!==null && mediaGeral >= META_NOTA_REL) destaquesPositivos.push(`Nota média geral (${mediaGeral.toFixed(1)}) dentro da meta de ${META_NOTA_REL}.`);
+  if (variacaoNota!==null && variacaoNota > 0.1) destaquesPositivos.push(`Nota média subiu ${variacaoNota.toFixed(1)} ponto(s) em relação a ${mesLabelBR(mesAnteriorRef)}.`);
+  if (melhorFilialObj) destaquesPositivos.push(`${escapeHtml(melhorFilialObj.filial)} é a filial com melhor desempenho no ciclo (nota ${melhorFilialObj.mediaF.toFixed(1)}).`);
+  if (pctRealizadasGeral >= 90) destaquesPositivos.push(`Alto índice de pesquisas realizadas (${pctRealizadasGeral.toFixed(0)}%).`);
+  if (elogiosArr.length > 0) destaquesPositivos.push(`${elogiosArr.length} elogio(s) espontâneo(s) registrado(s) pelos síndicos.`);
+  if (variacaoReclamacoes!==null && variacaoReclamacoes < 0) destaquesPositivos.push(`Reclamações caíram ${Math.abs(variacaoReclamacoes)} em relação ao mês anterior.`);
+  if (!destaquesPositivos.length) destaquesPositivos.push('Nenhum destaque relevante identificado neste ciclo.');
+
+  if (filiaisAbaixoMeta.length) pontosAtencao.push(`${filiaisAbaixoMeta.length} filial(is) abaixo da meta de nota (${filiaisAbaixoMeta.map(f=>escapeHtml(f.filial)+' '+f.mediaF.toFixed(1)).join(', ')}).`);
+  if (naoRealizadasArr.length > 0) pontosAtencao.push(`${naoRealizadasArr.length} pesquisa(s) ainda não realizada(s) (${(100-pctRealizadasGeral).toFixed(0)}% do ciclo).`);
+  if (pendenciasAbertasQtd > 0) pontosAtencao.push(`${pendenciasAbertasQtd} pendência(s) em aberto sem solução até o fechamento do ciclo.`);
+  if (variacaoReclamacoes!==null && variacaoReclamacoes > 0) pontosAtencao.push(`Reclamações subiram ${variacaoReclamacoes} em relação ao mês anterior.`);
+  if (mediaGeral!==null && mediaGeral < META_NOTA_REL) pontosAtencao.push(`Nota média geral (${mediaGeral.toFixed(1)}) abaixo da meta de ${META_NOTA_REL}.`);
+  if (!pontosAtencao.length) pontosAtencao.push('Nenhum ponto crítico identificado neste ciclo.');
+
+  const secao1 = `
+    <div class="exec-block">
+      <h1>Relatório de Fechamento do Ciclo</h1>
+      <div class="meta">Servis Eletrônica · Sucesso do Cliente — Pesquisa de Satisfação<br>Período: <b>${mesLabelBR(selectedMes)}</b> · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+      <h2>1. Resumo Executivo</h2>
+      <div class="kpi-grid">
+        <div class="kpi"><b>${total}</b><span>Condomínios do ciclo</span></div>
+        <div class="kpi ok"><b>${pctRealizadasGeral.toFixed(0)}%</b><span>Pesquisas realizadas</span></div>
+        <div class="kpi crit"><b>${naoRealizadasArr.length}</b><span>Não realizadas</span></div>
+        <div class="kpi ${mediaGeral!==null && mediaGeral<META_NOTA_REL?'crit':'ok'}"><b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b><span>Nota média</span></div>
+        <div class="kpi crit"><b>${reclamacoesArr.length}</b><span>Reclamações</span></div>
+        <div class="kpi ok"><b>${elogiosArr.length}</b><span>Elogios</span></div>
+        <div class="kpi"><b>${pendenciasAbertasQtd}</b><span>Pendências abertas</span></div>
+        <div class="kpi ok"><b>${pendenciasResolvidasQtd}</b><span>Pendências resolvidas</span></div>
+      </div>
+      <div class="exec-text">${resumoExecutivoTexto}</div>
+      <div class="cols2">
+        <div class="callout callout-ok">
+          <p class="subtitle">✅ Destaques Positivos</p>
+          <ul>${destaquesPositivos.map(t=>`<li>${t}</li>`).join('')}</ul>
+        </div>
+        <div class="callout callout-crit">
+          <p class="subtitle">⚠️ Pontos de Atenção</p>
+          <ul>${pontosAtencao.map(t=>`<li>${t}</li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>`;
+
+  // ============================================================================
+  // SEÇÃO 2 — ANÁLISE GERAL DAS RECLAMAÇÕES
+  // ============================================================================
+  const rankingMotivosGeral = topMotivos(doMes, 8);
+  const motivoTop = rankingMotivosGeral[0];
+  const setoresImpactados = [...new Set(reclamacoesArr.map(d=>d.setor).filter(s=>s && s!=='—'))];
+  const analiseReclamacoesTexto = rankingMotivosGeral.length ? `
+    <p>O motivo que mais gerou reclamação no ciclo foi <b>${escapeHtml(motivoTop.label)}</b>, respondendo por <b>${motivoTop.pct}%</b> dos casos (${motivoTop.n} ocorrência(s)). Os setores mais impactados foram: <b>${setoresImpactados.slice(0,4).map(escapeHtml).join(', ')||'não informado'}</b>.
+    Observa-se que os ${Math.min(3, rankingMotivosGeral.length)} principais motivos concentram <b>${rankingMotivosGeral.slice(0,3).reduce((a,m)=>a+m.pct,0)}%</b> de todas as reclamações do ciclo, indicando que ações direcionadas a esses pontos específicos têm potencial de reduzir significativamente o volume total de insatisfação.</p>
+  ` : `<p>Não houve reclamações registradas neste ciclo.</p>`;
+
+  // ---- Motivos classificados como "Outros" — descrição objetiva, nunca só "Outros" ----
+  function descreverMotivoOutros(item){
+    const t = (item.pend || '').toLowerCase();
+    if (!t.trim()) return 'Assunto não detalhado na pesquisa';
+    if (/treinamento/.test(t)) return 'Solicitação de treinamento';
+    if (/d[uú]vida.{0,20}(sistema|aplicativo|app|utiliza)/.test(t)) return 'Dúvidas sobre utilização do sistema';
+    if (/sugest[ãa]o/.test(t)) return 'Sugestão de melhoria';
+    if (/comunica[çc][ãa]o.{0,20}morador|morador.{0,20}comunica/.test(t)) return 'Comunicação com moradores';
+    if (/administrativ/.test(t)) return 'Reclamação administrativa';
+    if (/visita preventiva|manuten[çc][ãa]o preventiva/.test(t)) return 'Solicitação de visita preventiva';
+    if (/orienta[çc][ãa]o.{0,20}funcion|funcion[áa]rio/.test(t)) return 'Orientação aos funcionários';
+    if (/processo interno|interno da (empresa|administra)/.test(t)) return 'Processo interno';
+    if (/contrato|financeiro|boleto|cobran[çc]a/.test(t)) return 'Assunto comercial/financeiro';
+    if (/s[íi]ndic[ao]|conselho/.test(t)) return 'Assunto relacionado à gestão do condomínio';
+    return resumoCurto(item.pend, 90);
+  }
+  const outrosDoMes = doMes.filter(d => { const cats = classifyGrupoMotivoComSetor(d); return cats.length && cats[0].startsWith('Outros'); });
+  const outrosPorCondo = {};
+  outrosDoMes.forEach(d=>{
+    if (!outrosPorCondo[d.nome]) outrosPorCondo[d.nome] = { nome: d.nome, descricoes: [], atendimento: d.responsavelPesquisa || '—' };
+    outrosPorCondo[d.nome].descricoes.push(descreverMotivoOutros(d));
+  });
+  const outrosConsolidados = Object.values(outrosPorCondo).map(o => ({
+    nome: o.nome,
+    descricao: [...new Set(o.descricoes)].join('; '),
+    atendimento: o.atendimento,
+  }));
+  const secaoOutros = outrosConsolidados.length ? `
+    <h2>Motivos classificados como "Outros"</h2>
+    <p style="font-size:11.5px; color:#555; margin:0 0 8px;">Detalhamento de cada caso que não se encaixou nas categorias principais, pra diretoria não precisar consultar a pesquisa original.</p>
+    <table class="mini-table">
+      <thead><tr><th>Condomínio</th><th>Motivo "Outros"</th><th>Atendimento I.S.</th></tr></thead>
+      <tbody>${outrosConsolidados.map(o=>`<tr><td>${escapeHtml(o.nome)}</td><td>${escapeHtml(o.descricao)}</td><td>${escapeHtml(o.atendimento)}</td></tr>`).join('')}</tbody>
+    </table>` : '';
+
+  const secao2 = `
+    <div class="exec-block">
+      <h2>2. Análise Geral das Reclamações</h2>
+      <table class="mini-table">
+        <thead><tr><th>#</th><th>Motivo</th><th>Ocorrências</th><th>%</th><th>Exemplos (condomínios)</th></tr></thead>
+        <tbody>${rankingMotivosGeral.map((m,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td><td class="exemplos-cell">${m.exemplos.slice(0,5).map(escapeHtml).join(', ')||'—'}</td></tr>`).join('') || '<tr><td colspan="5">Sem reclamações registradas.</td></tr>'}</tbody>
+      </table>
+      ${analiseReclamacoesTexto}
+      ${secaoOutros}
+    </div>`;
+
+  // ============================================================================
+  // SEÇÃO 3 — DESEMPENHO POR FILIAL
+  // ============================================================================
+  const secoesFilial = statsPorFilial.map(f=>{
+    const pendenciasTabela = f.pendenciasAbertasF.slice(0, 8).map(d=>`
+      <tr>
+        <td>${escapeHtml(d.nome)}</td>
+        <td>${escapeHtml(resumoCurto(d.pendenciaDescricao || d.pend || d.motivo || 'Não informado', 140))}</td>
+        <td>${escapeHtml(d.setorPendencia || d.setor || '—')}</td>
+        <td><span class="status-tag status-aberto">Em aberto</span></td>
+      </tr>`).join('');
     return `
     <div class="filial-block">
-      <h2>🏢 ${escapeHtml(f)} ${mediaF!==null && mediaF<7 ? '<span class="badge-alerta">⚠️ Abaixo da meta</span>' : ''}</h2>
-      <div class="summary">
-        <div class="sbox"><b>${doFilial.length}</b><span>Condomínios</span></div>
-        <div class="sbox ok"><b>${realizadasF.length}</b><span>Realizadas (${doFilial.length?Math.round(realizadasF.length/doFilial.length*100):0}%)${variacaoHtml(doFilial.length?realizadasF.length/doFilial.length*100:null, statsAnteriorF?{valor:statsAnteriorF.pctRealizadas, label:mesLabelBR(mesAnteriorRef)}:null, 'pp')}</span></div>
-        <div class="sbox crit"><b>${naoRealizadasF.length}</b><span>Não realizadas</span></div>
-        <div class="sbox ${classeUrgenciaNota(mediaF)}"><b>${mediaF!==null?mediaF.toFixed(1):'—'}</b><span>Nota média${variacaoHtml(mediaF, statsAnteriorF?{valor:statsAnteriorF.media, label:mesLabelBR(mesAnteriorRef)}:null, '')}</span></div>
-        <div class="sbox" title="Pendências resolvidas não aparecem na tabela de 'em andamento' abaixo"><b>${pendenciasF.length}</b><span>Pendências (${pendenciasResolvidasF} resolvidas, ${pendenciasAbertasF.length} em aberto)</span></div>
-        <div class="sbox crit"><b>${reclamacoesF.length}</b><span>Reclamações${variacaoHtml(reclamacoesF.length, statsAnteriorF?{valor:statsAnteriorF.reclamacoes, label:mesLabelBR(mesAnteriorRef)}:null, '', true)}</span></div>
-        <div class="sbox ok"><b>${elogiosF.length}</b><span>Elogios</span></div>
+      <h2>🏢 ${escapeHtml(f.filial)} ${f.mediaF!==null && f.mediaF<META_NOTA_REL ? '<span class="badge-alerta">⚠️ Abaixo da meta</span>' : ''}</h2>
+      <div class="kpi-grid kpi-grid-filial">
+        <div class="kpi"><b>${f.doFilial.length}</b><span>Condomínios</span></div>
+        <div class="kpi ok"><b>${f.doFilial.length?Math.round(f.realizadasF.length/f.doFilial.length*100):0}%</b><span>Pesquisas realizadas</span></div>
+        <div class="kpi ${f.mediaF!==null && f.mediaF<META_NOTA_REL?'crit':'ok'}"><b>${f.mediaF!==null?f.mediaF.toFixed(1):'—'}</b><span>Nota média</span></div>
+        <div class="kpi crit"><b>${f.reclamacoesF.length}</b><span>Reclamações</span></div>
+        <div class="kpi"><b>${f.pendenciasF.length}</b><span>Pendências</span></div>
+        <div class="kpi ok"><b>${f.elogiosF.length}</b><span>Elogios</span></div>
       </div>
-      <div class="cols2">
-        <div>
-          <p class="subtitle">Distribuição de notas (boas x ruins)</p>
-          <table class="mini-table">
-            <thead><tr><th>Faixa</th><th>Qtd</th><th>%</th></tr></thead>
-            <tbody>${distribuicaoNotas(notasF).map(fx=>`<tr class="${fx.label.includes('Ruim') && fx.n>0 ? 'linha-ruim' : ''}"><td>${fx.label}</td><td>${fx.n}</td><td>${notasF.length?Math.round(fx.n/notasF.length*100):0}%</td></tr>`).join('')}</tbody>
-          </table>
-        </div>
-        <div>
-          <p class="subtitle">Principais motivos de reclamação</p>
-          <table class="mini-table">
-            <thead><tr><th>Motivo</th><th>Qtd</th><th>%</th></tr></thead>
-            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Exemplos (${m.exemplos.length}, resumidos):</b><br>${m.exemplos.slice(0,8).map(e=>escapeHtml(e)).join('<br>')}${m.exemplos.length>8 ? `<br>… e mais ${m.exemplos.length-8}.` : ''}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
-          </table>
-        </div>
-      </div>
-      ${pendenciasAbertasF.length ? `
-      <p class="subtitle">⚠️ Pendências em andamento (${pendenciasAbertasF.length} em aberto de ${pendenciasF.length} no total — as demais já foram resolvidas)</p>
+      <p class="subtitle">Principais Reclamações</p>
       <table class="mini-table">
-        <thead><tr><th>Condomínio</th><th>Motivo / Descrição</th><th>Setor</th></tr></thead>
-        <tbody>${pendenciasAbertasF.map(d=>`<tr><td>${escapeHtml(d.nome)}</td><td>${escapeHtml(resumoCurto(d.pendenciaDescricao || d.pend || d.motivo || 'Não informado', 220))}</td><td>${escapeHtml(d.setorPendencia || d.setor || '—')}</td></tr>`).join('')}</tbody>
-      </table>` : ''}
-      ${naoRealizadasMotivosOrdenados.length ? `
-      <p class="subtitle">Motivos das pesquisas não realizadas</p>
+        <thead><tr><th>Motivo</th><th>Qtd</th><th>%</th></tr></thead>
+        <tbody>${f.topMotivosF.map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
+      </table>
+      ${f.pendenciasAbertasF.length ? `
+      <p class="subtitle">Pendências Prioritárias (${f.pendenciasAbertasF.length} em aberto)</p>
       <table class="mini-table">
-        <thead><tr><th>Motivo</th><th>Qtd</th></tr></thead>
-        <tbody>${naoRealizadasMotivosOrdenados.map(([m,n])=>`<tr><td>${escapeHtml(m)}</td><td>${n}</td></tr>`).join('')}</tbody>
-      </table>` : ''}
+        <thead><tr><th>Condomínio</th><th>Problema</th><th>Responsável</th><th>Status</th></tr></thead>
+        <tbody>${pendenciasTabela}</tbody>
+      </table>${f.pendenciasAbertasF.length>8?`<p class="nota-rodape">… e mais ${f.pendenciasAbertasF.length-8} pendência(s) em aberto.</p>`:''}` : '<p class="nota-rodape">Nenhuma pendência em aberto nesta filial.</p>'}
     </div>`;
   }).join('');
+
+  const secao3 = `<div class="exec-block"><h2 class="section-title">3. Desempenho por Filial</h2></div>${secoesFilial}`;
+
+  // ============================================================================
+  // SEÇÃO 4 — COMPARATIVO ENTRE FILIAIS
+  // ============================================================================
+  const porNota = [...statsPorFilial].filter(f=>f.mediaF!==null).sort((a,b)=>b.mediaF-a.mediaF);
+  const porReclamacoes = [...statsPorFilial].sort((a,b)=>b.reclamacoesF.length-a.reclamacoesF.length);
+  const melhorSatisfacao = porNota[0];
+  const maiorAtencaoF = porNota[porNota.length-1];
+  const maiorReclamacoesF = porReclamacoes[0];
+
+  const secao4 = `
+    <div class="exec-block">
+      <h2>4. Comparativo entre Filiais</h2>
+      <table class="mini-table">
+        <thead><tr><th>Filial</th><th>Nota Média</th><th>% Realizadas</th><th>Reclamações</th><th>Pendências</th></tr></thead>
+        <tbody>${statsPorFilial.map(f=>`<tr class="${f.mediaF!==null && f.mediaF<META_NOTA_REL?'linha-ruim':''}"><td>${escapeHtml(f.filial)}</td><td>${f.mediaF!==null?f.mediaF.toFixed(1):'—'}</td><td>${f.doFilial.length?Math.round(f.realizadasF.length/f.doFilial.length*100):0}%</td><td>${f.reclamacoesF.length}</td><td>${f.pendenciasF.length}</td></tr>`).join('')}</tbody>
+      </table>
+      <ul class="conclusao-comparativo">
+        ${melhorSatisfacao ? `<li>🏆 <b>Melhor desempenho / melhor satisfação:</b> ${escapeHtml(melhorSatisfacao.filial)} (nota ${melhorSatisfacao.mediaF.toFixed(1)}).</li>` : ''}
+        ${maiorAtencaoF ? `<li>⚠️ <b>Filial com maior atenção:</b> ${escapeHtml(maiorAtencaoF.filial)} (nota ${maiorAtencaoF.mediaF.toFixed(1)}).</li>` : ''}
+        ${maiorReclamacoesF && maiorReclamacoesF.reclamacoesF.length>0 ? `<li>📣 <b>Maior índice de reclamações:</b> ${escapeHtml(maiorReclamacoesF.filial)} (${maiorReclamacoesF.reclamacoesF.length} caso(s)).</li>` : ''}
+      </ul>
+    </div>`;
+
+  // ============================================================================
+  // SEÇÃO 5 — PLANO DE AÇÃO (gerado a partir dos pontos de atenção identificados)
+  // ============================================================================
+  const planoAcao = [];
+  filiaisAbaixoMeta.forEach(f=>{
+    planoAcao.push({
+      problema: `Nota média de ${escapeHtml(f.filial)} (${f.mediaF.toFixed(1)}) abaixo da meta`,
+      impacto: 'Risco de insatisfação e evasão de clientes',
+      acao: 'Revisar atendimento e principais motivos de reclamação da filial com a equipe responsável',
+      responsavel: 'Coordenação Sucesso do Cliente',
+      prioridade: f.mediaF < 6 ? 'Alta' : 'Média',
+    });
+  });
+  if (motivoTop && motivoTop.n > 0){
+    planoAcao.push({
+      problema: `"${escapeHtml(motivoTop.label)}" é o principal motivo de reclamação do ciclo (${motivoTop.pct}%)`,
+      impacto: 'Impacto direto na nota média e na percepção do cliente',
+      acao: 'Plano de ação específico com o setor responsável para reduzir a recorrência',
+      responsavel: setoresImpactados[0] ? escapeHtml(setoresImpactados[0]) : 'Setor responsável',
+      prioridade: 'Alta',
+    });
+  }
+  if (naoRealizadasArr.length > 0){
+    planoAcao.push({
+      problema: `${naoRealizadasArr.length} pesquisa(s) não realizada(s) no ciclo`,
+      impacto: 'Perda de visibilidade sobre a satisfação real da base',
+      acao: 'Intensificar tentativas de contato antes do fechamento do próximo ciclo',
+      responsavel: 'Equipe de Pesquisa',
+      prioridade: naoRealizadasArr.length > total*0.2 ? 'Alta' : 'Média',
+    });
+  }
+  if (pendenciasAbertasQtd > 0){
+    planoAcao.push({
+      problema: `${pendenciasAbertasQtd} pendência(s) seguem em aberto no fechamento do ciclo`,
+      impacto: 'Acúmulo de insatisfação não tratada',
+      acao: 'Priorizar resolução das pendências mais antigas antes do próximo ciclo',
+      responsavel: 'Setores responsáveis por cada pendência',
+      prioridade: 'Média',
+    });
+  }
+  if (!planoAcao.length){
+    planoAcao.push({ problema:'Nenhum problema crítico identificado', impacto:'—', acao:'Manter o padrão de acompanhamento atual', responsavel:'Sucesso do Cliente', prioridade:'Baixa' });
+  }
+  const secao5 = `
+    <div class="exec-block">
+      <h2>5. Plano de Ação</h2>
+      <table class="mini-table">
+        <thead><tr><th>Problema</th><th>Impacto</th><th>Ação</th><th>Responsável</th><th>Prioridade</th></tr></thead>
+        <tbody>${planoAcao.map(p=>`<tr><td>${p.problema}</td><td>${p.impacto}</td><td>${p.acao}</td><td>${p.responsavel}</td><td><span class="prio-tag prio-${p.prioridade.toLowerCase()}">${p.prioridade}</span></td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+
+  // ============================================================================
+  // SEÇÃO 6 — CONCLUSÃO FINAL
+  // ============================================================================
+  const conclusaoFinal = [
+    `A satisfação geral dos clientes no ciclo de ${mesLabelBR(selectedMes)} está ${mediaGeral!==null && mediaGeral>=META_NOTA_REL ? 'dentro da meta estabelecida' : 'abaixo da meta estabelecida'}, com nota média de <b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b>.`,
+    variacaoNota!==null ? `Em relação ao ciclo anterior, houve ${variacaoNota>=0?'evolução':'retração'} de <b>${Math.abs(variacaoNota).toFixed(1)} ponto(s)</b>.` : `Ainda não há histórico suficiente pra comparar com o ciclo anterior.`,
+    `Os principais desafios para o próximo ciclo são: ${pontosAtencao.slice(0,3).map(p=>p.replace(/<[^>]+>/g,'')).join('; ')}.`,
+    `Recomenda-se priorizar ações junto às filiais e motivos de reclamação listados na Seção 5, com acompanhamento próximo da Coordenação de Sucesso do Cliente até o próximo fechamento de ciclo.`,
+  ].map(p=>`<p>${p}</p>`).join('');
+
+  const secao6 = `
+    <div class="exec-block">
+      <h2>6. Conclusão Final</h2>
+      <div class="exec-text">${conclusaoFinal}</div>
+    </div>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Relatório de Fechamento — ${mesLabelBR(selectedMes)}</title>
   <style>
     body{ font-family:Arial, sans-serif; color:#1a1a1a; padding:28px; max-width:1000px; margin:0 auto; }
-    h1{ font-size:21px; margin:0 0 2px; color:#222F59; }
-    h2{ font-size:15px; margin:0 0 10px; color:#222F59; border-bottom:2px solid #E07B2C; padding-bottom:6px; }
-    .meta{ font-size:11px; color:#666; margin-bottom:20px; }
+    h1{ font-size:22px; margin:0 0 2px; color:#222F59; }
+    h2{ font-size:15px; margin:18px 0 10px; color:#222F59; border-bottom:2px solid #E07B2C; padding-bottom:6px; }
+    h2.section-title{ font-size:17px; }
+    .meta{ font-size:11px; color:#666; margin-bottom:16px; }
+    .exec-block{ margin-bottom:10px; }
     .filial-block{ margin-bottom:26px; page-break-inside:avoid; }
-    .summary{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
-    .sbox{ border:1px solid #ddd; border-radius:6px; padding:8px 12px; font-size:10.5px; min-width:100px; background:#fafafa; }
-    .sbox b{ display:block; font-size:17px; color:#222F59; }
-    .sbox.crit b{ color:#c0392b; }
-    .sbox.ok b{ color:#27ae60; }
-    .sbox.nota-critica b{ color:#c0392b; }
-    .sbox.nota-atencao b{ color:#E07B2C; }
-    .sbox.nota-ok b{ color:#27ae60; }
-    .badge-alerta{ display:inline-block; font-size:11px; font-weight:normal; color:#c0392b; background:#fdecea; border:1px solid #c0392b; border-radius:20px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
-    .varpos{ color:#27ae60; font-weight:bold; font-size:10px; }
-    .varneg{ color:#c0392b; font-weight:bold; font-size:10px; }
-    .varneutra{ color:#888; font-size:10px; }
-    .cols2{ display:flex; gap:20px; }
+    .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+    .kpi-grid-filial{ grid-template-columns:repeat(6,1fr); }
+    .kpi{ border:1px solid #ddd; border-radius:8px; padding:10px 12px; font-size:10.5px; background:#fafafa; text-align:center; }
+    .kpi b{ display:block; font-size:19px; color:#222F59; }
+    .kpi.crit b{ color:#c0392b; }
+    .kpi.ok b{ color:#27ae60; }
+    .exec-text p{ font-size:12px; line-height:1.6; margin:0 0 6px; }
+    .cols2{ display:flex; gap:16px; margin-top:14px; }
     .cols2>div{ flex:1; }
+    .callout{ border-radius:8px; padding:12px 14px; }
+    .callout ul{ margin:0; padding-left:18px; font-size:11.5px; line-height:1.6; }
+    .callout-ok{ background:#eefaf1; border:1px solid #27ae60; }
+    .callout-crit{ background:#fdecea; border:1px solid #c0392b; }
+    .badge-alerta{ display:inline-block; font-size:11px; font-weight:normal; color:#c0392b; background:#fdecea; border:1px solid #c0392b; border-radius:20px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
     .subtitle{ font-size:11.5px; font-weight:bold; color:#444; margin:10px 0 6px; }
     table.mini-table{ border-collapse:collapse; width:100%; font-size:10.5px; margin-bottom:8px; }
-    table.mini-table th, table.mini-table td{ border:1px solid #ddd; padding:5px 7px; text-align:left; }
+    table.mini-table th, table.mini-table td{ border:1px solid #ddd; padding:6px 8px; text-align:left; vertical-align:top; }
     table.mini-table th{ background:#222F59; color:#fff; }
-    table.mini-table td.exemplos{ background:#fff8ee; font-style:italic; font-size:9.5px; color:#555; }
+    table.mini-table td.exemplos-cell{ font-style:italic; color:#555; font-size:10px; }
     table.mini-table tr.linha-ruim{ background:#fdecea; }
     table.mini-table tr.linha-ruim td{ font-weight:bold; color:#c0392b; }
+    .status-tag{ font-size:9.5px; font-weight:bold; padding:2px 8px; border-radius:20px; }
+    .status-aberto{ background:#fdecea; color:#c0392b; }
+    .prio-tag{ font-size:9.5px; font-weight:bold; padding:2px 8px; border-radius:20px; }
+    .prio-alta{ background:#fdecea; color:#c0392b; }
+    .prio-média{ background:#fff4e5; color:#b06a00; }
+    .prio-baixa{ background:#eefaf1; color:#27ae60; }
+    .conclusao-comparativo{ margin:10px 0 0; padding-left:18px; font-size:12px; line-height:1.7; }
+    .nota-rodape{ font-size:10.5px; color:#888; font-style:italic; }
     @media print{ button{ display:none; } .filial-block{ page-break-after:auto; } }
   </style></head><body>
   <button onclick="window.print()" style="margin-bottom:16px; padding:8px 16px; background:#222F59; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">🖨️ Imprimir / Salvar como PDF</button>
-  <h1>Relatório de Fechamento do Ciclo</h1>
-  <div class="meta">Servis Eletrônica · Sucesso do Cliente — Pesquisa de Satisfação<br>Período: <b>${mesLabelBR(selectedMes)}</b> · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
-  ${blocoGeral}
-  ${blocosFilial}
+  ${secao1}
+  ${secao2}
+  ${secao3}
+  ${secao4}
+  ${secao5}
+  ${secao6}
   </body></html>`;
 
   const win = window.open('', '_blank');
@@ -7559,7 +7749,6 @@ function render(){
             </div>
             ${item.houvePendencia ? `
               <p class="blk-title" style="margin-top:14px;">⚠️ Pendência</p>
-              <p class="blk-text">${item.pendenciaDescricao ? escapeHtml(item.pendenciaDescricao) : '<span style="color:var(--text-faint);">Sem descrição registrada.</span>'}</p>
               <div class="meta-row">
                 ${item.setorPendencia ? `<span class="pill">Setor Responsável: ${escapeHtml(item.setorPendencia)}</span>` : ''}
               </div>
@@ -7567,7 +7756,6 @@ function render(){
             ` : ''}
             ${item.houveReclamacao ? `
               <p class="blk-title" style="margin-top:14px;">📣 Reclamação</p>
-              <p class="blk-text">${item.pend ? escapeHtml(item.pend) : '<span style="color:var(--text-faint);">Sem descrição registrada.</span>'}</p>
               <div class="meta-row">
                 ${item.motivo && item.motivo !== '—' ? `<span class="pill">Motivo: ${escapeHtml(item.motivo)}</span>` : ''}
                 ${item.setor && item.setor !== '—' ? `<span class="pill">Setor: ${escapeHtml(item.setor)}</span>` : ''}
