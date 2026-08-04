@@ -1469,7 +1469,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-A</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-B</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6592,6 +6592,30 @@ function gerarRelatorioFechamentoCicloPDF(){
   const notasArr = realizadasArr.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
   const mediaGeral = notasArr.length ? (notasArr.reduce((a,b)=>a+b,0)/notasArr.length) : null;
 
+  // ---- Mês anterior, pra comparação (item 4) ----
+  const meses6 = getUltimosMeses(6);
+  const idxMesAtualNaLista = meses6.indexOf(selectedMes);
+  const mesAnteriorRef = idxMesAtualNaLista > 0 ? meses6[idxMesAtualNaLista - 1] : null;
+  const doMesAnterior = mesAnteriorRef ? DATA.filter(d => getMes(d) === mesAnteriorRef) : [];
+  function statsDoConjunto(itens){
+    const realizadas = itens.filter(d => !pesquisaNaoRealizada(d));
+    const notas = realizadas.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const media = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) : null;
+    const pctRealizadas = itens.length ? (realizadas.length/itens.length*100) : null;
+    const reclamacoes = itens.filter(temReclamacao).length;
+    return { media, pctRealizadas, reclamacoes };
+  }
+  const statsAnteriorGeral = mesAnteriorRef ? statsDoConjunto(doMesAnterior) : null;
+  function variacaoHtml(atual, anterior, sufixo, inverterCor){
+    if (atual === null || atual === undefined || !anterior || anterior.valor === null || anterior.valor === undefined) return '';
+    const diff = atual - anterior.valor;
+    if (Math.abs(diff) < 0.05) return ` <span class="varneutra">(≈ estável vs. ${anterior.label})</span>`;
+    const subiu = diff > 0;
+    const bom = inverterCor ? !subiu : subiu;
+    const seta = subiu ? '▲' : '▼';
+    return ` <span class="${bom ? 'varpos' : 'varneg'}">(${seta}${Math.abs(diff).toFixed(1)}${sufixo||''} vs. ${anterior.label})</span>`;
+  }
+
   const faixasNota = [
     { label:'9 – 10 (Excelente)', min:9, max:10 },
     { label:'7 – 8 (Boa)', min:7, max:8.999 },
@@ -6601,46 +6625,79 @@ function gerarRelatorioFechamentoCicloPDF(){
   function distribuicaoNotas(notas){
     return faixasNota.map(f => ({ label:f.label, n: notas.filter(n=>n>=f.min && n<=f.max).length }));
   }
+  // Item 1 — resumo curto em vez do texto bruto completo, e filtra anotações
+  // que parecem ser nota interna de atendimento (não reclamação do síndico).
+  function pareceAnotacaoInterna(texto){
+    return /\b(central realizou|opera(dor|dora)|teste realizado|nota interna|obs interna|acompanhamento operacional|verificado pel[ao] (central|t[ée]cnic[ao]))\b/i.test(texto);
+  }
+  function resumoCurto(texto, limite){
+    limite = limite || 180;
+    const limpo = (texto || '').trim();
+    if (limpo.length <= limite) return limpo;
+    return limpo.slice(0, limite).replace(/\s+\S*$/, '') + '…';
+  }
   function topMotivos(itens, limite){
     const dist = computeDistribution(itens, classifyGrupoMotivo);
     return Object.entries(dist.counts).sort((a,b)=>b[1]-a[1]).slice(0, limite||6).map(([label,n])=>{
       let exemplos = [];
       if (label === 'Outros'){
         exemplos = itens
-          .filter(d => classifyGrupoMotivo(d).includes('Outros') && d.pend && d.pend.trim())
-          .map(d => `${d.nome} (${d.filial||'—'}): "${(d.pend||'').trim()}"`);
+          .filter(d => classifyGrupoMotivo(d).includes('Outros') && d.pend && d.pend.trim() && !pareceAnotacaoInterna(d.pend))
+          .map(d => `${d.nome} (${d.filial||'—'}): "${resumoCurto(d.pend)}"`);
       }
       return { label, n, pct: dist.total ? Math.round(n/dist.total*100) : 0, exemplos };
     });
   }
 
-  const filiais = [...new Set(doMes.map(d => normalizeFilialCanonica(d.filial)))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  // Item 3 — classe de urgência pela nota (reaproveita a paleta crítico/atenção/ok do app)
+  function classeUrgenciaNota(media){
+    if (media === null) return '';
+    if (media < 7) return 'nota-critica';
+    if (media < 8) return 'nota-atencao';
+    return 'nota-ok';
+  }
+
+  // Item 2 — filiais ordenadas da pior nota pra melhor (não mais alfabética)
+  const filiaisBrutas = [...new Set(doMes.map(d => normalizeFilialCanonica(d.filial)))].filter(Boolean);
+  const filiaisComNota = filiaisBrutas.map(f=>{
+    const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
+    const notasF = doFilial.filter(d=>!pesquisaNaoRealizada(d)).map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
+    const mediaF = notasF.length ? (notasF.reduce((a,b)=>a+b,0)/notasF.length) : 99; // sem nota vai pro fim
+    return { filial: f, mediaOrdenacao: mediaF };
+  });
+  const filiais = filiaisComNota.sort((a,b)=>a.mediaOrdenacao-b.mediaOrdenacao).map(x=>x.filial);
+
+  const pendenciasGeralTodas = doMes.filter(temPendencia);
+  const pendenciasGeralResolvidas = pendenciasGeralTodas.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
+  const pendenciasGeralAbertas = pendenciasGeralTodas.length - pendenciasGeralResolvidas;
 
   const blocoGeral = `
     <div class="filial-block">
       <h2>📊 Resumo Geral — Todas as Filiais</h2>
       <div class="summary">
         <div class="sbox"><b>${total}</b><span>Condomínios no ciclo</span></div>
-        <div class="sbox ok"><b>${realizadasArr.length}</b><span>Pesquisas realizadas (${total?Math.round(realizadasArr.length/total*100):0}%)</span></div>
+        <div class="sbox ok"><b>${realizadasArr.length}</b><span>Pesquisas realizadas (${total?Math.round(realizadasArr.length/total*100):0}%)${variacaoHtml(total?realizadasArr.length/total*100:null, statsAnteriorGeral?{valor:statsAnteriorGeral.pctRealizadas, label:mesLabelBR(mesAnteriorRef)}:null, 'pp')}</span></div>
         <div class="sbox crit"><b>${naoRealizadasArr.length}</b><span>Não realizadas</span></div>
-        <div class="sbox"><b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b><span>Nota média geral</span></div>
-        <div class="sbox"><b>${doMes.filter(temPendencia).length}</b><span>Pendências</span></div>
-        <div class="sbox crit"><b>${doMes.filter(temReclamacao).length}</b><span>Reclamações</span></div>
+        <div class="sbox ${classeUrgenciaNota(mediaGeral)}"><b>${mediaGeral!==null?mediaGeral.toFixed(1):'—'}</b><span>Nota média geral${variacaoHtml(mediaGeral, statsAnteriorGeral?{valor:statsAnteriorGeral.media, label:mesLabelBR(mesAnteriorRef)}:null, '')}</span></div>
+        <div class="sbox" title="Pendências resolvidas não aparecem na tabela de 'em andamento' mais abaixo"><b>${pendenciasGeralTodas.length}</b><span>Pendências (${pendenciasGeralResolvidas} resolvidas, ${pendenciasGeralAbertas} em aberto)</span></div>
+        <div class="sbox crit"><b>${doMes.filter(temReclamacao).length}</b><span>Reclamações${variacaoHtml(doMes.filter(temReclamacao).length, statsAnteriorGeral?{valor:statsAnteriorGeral.reclamacoes, label:mesLabelBR(mesAnteriorRef)}:null, '', true)}</span></div>
         <div class="sbox ok"><b>${doMes.filter(temElogio).length}</b><span>Elogios</span></div>
       </div>
       <table class="mini-table">
         <thead><tr><th>Faixa de Nota</th><th>Quantidade</th><th>%</th></tr></thead>
-        <tbody>${distribuicaoNotas(notasArr).map(f=>`<tr><td>${f.label}</td><td>${f.n}</td><td>${notasArr.length?Math.round(f.n/notasArr.length*100):0}%</td></tr>`).join('')}</tbody>
+        <tbody>${distribuicaoNotas(notasArr).map(f=>`<tr class="${f.label.includes('Ruim') && f.n>0 ? 'linha-ruim' : ''}"><td>${f.label}</td><td>${f.n}</td><td>${notasArr.length?Math.round(f.n/notasArr.length*100):0}%</td></tr>`).join('')}</tbody>
       </table>
       <p class="subtitle">Principais motivos de reclamação (todas as filiais)</p>
       <table class="mini-table">
         <thead><tr><th>Motivo</th><th>Ocorrências</th><th>%</th></tr></thead>
-        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Todos os ${m.exemplos.length} casos (${escapeHtml(m.label)}):</b><br>${m.exemplos.map(e=>escapeHtml(e)).join('<br>')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
+        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Exemplos (${m.exemplos.length} caso(s), resumidos):</b><br>${m.exemplos.slice(0,10).map(e=>escapeHtml(e)).join('<br>')}${m.exemplos.length>10 ? `<br>… e mais ${m.exemplos.length-10}.` : ''}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
       </table>
     </div>`;
 
   const blocosFilial = filiais.map(f=>{
     const doFilial = doMes.filter(d => normalizeFilialCanonica(d.filial) === f);
+    const doFilialAnterior = doMesAnterior.filter(d => normalizeFilialCanonica(d.filial) === f);
+    const statsAnteriorF = mesAnteriorRef ? statsDoConjunto(doFilialAnterior) : null;
     const realizadasF = doFilial.filter(d => !pesquisaNaoRealizada(d));
     const naoRealizadasF = doFilial.filter(pesquisaNaoRealizada);
     const notasF = realizadasF.map(d => parseFloat(String(d.nota).replace(',','.'))).filter(n=>!isNaN(n));
@@ -6652,18 +6709,19 @@ function gerarRelatorioFechamentoCicloPDF(){
     naoRealizadasF.forEach(d=>{ const m = d.motivoNaoRealizada || d.statusPesquisa || 'Não informado'; naoRealizadasMotivos[m] = (naoRealizadasMotivos[m]||0)+1; });
     const naoRealizadasMotivosOrdenados = Object.entries(naoRealizadasMotivos).sort((a,b)=>b[1]-a[1]);
 
+    const pendenciasResolvidasF = pendenciasF.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
     const pendenciasAbertasF = pendenciasF.filter(d => d.resolvido !== 'true' && d.resolvido !== true);
 
     return `
     <div class="filial-block">
-      <h2>🏢 ${escapeHtml(f)}</h2>
+      <h2>🏢 ${escapeHtml(f)} ${mediaF!==null && mediaF<7 ? '<span class="badge-alerta">⚠️ Abaixo da meta</span>' : ''}</h2>
       <div class="summary">
         <div class="sbox"><b>${doFilial.length}</b><span>Condomínios</span></div>
-        <div class="sbox ok"><b>${realizadasF.length}</b><span>Realizadas (${doFilial.length?Math.round(realizadasF.length/doFilial.length*100):0}%)</span></div>
+        <div class="sbox ok"><b>${realizadasF.length}</b><span>Realizadas (${doFilial.length?Math.round(realizadasF.length/doFilial.length*100):0}%)${variacaoHtml(doFilial.length?realizadasF.length/doFilial.length*100:null, statsAnteriorF?{valor:statsAnteriorF.pctRealizadas, label:mesLabelBR(mesAnteriorRef)}:null, 'pp')}</span></div>
         <div class="sbox crit"><b>${naoRealizadasF.length}</b><span>Não realizadas</span></div>
-        <div class="sbox"><b>${mediaF!==null?mediaF.toFixed(1):'—'}</b><span>Nota média</span></div>
-        <div class="sbox"><b>${pendenciasF.length}</b><span>Pendências</span></div>
-        <div class="sbox crit"><b>${reclamacoesF.length}</b><span>Reclamações</span></div>
+        <div class="sbox ${classeUrgenciaNota(mediaF)}"><b>${mediaF!==null?mediaF.toFixed(1):'—'}</b><span>Nota média${variacaoHtml(mediaF, statsAnteriorF?{valor:statsAnteriorF.media, label:mesLabelBR(mesAnteriorRef)}:null, '')}</span></div>
+        <div class="sbox" title="Pendências resolvidas não aparecem na tabela de 'em andamento' abaixo"><b>${pendenciasF.length}</b><span>Pendências (${pendenciasResolvidasF} resolvidas, ${pendenciasAbertasF.length} em aberto)</span></div>
+        <div class="sbox crit"><b>${reclamacoesF.length}</b><span>Reclamações${variacaoHtml(reclamacoesF.length, statsAnteriorF?{valor:statsAnteriorF.reclamacoes, label:mesLabelBR(mesAnteriorRef)}:null, '', true)}</span></div>
         <div class="sbox ok"><b>${elogiosF.length}</b><span>Elogios</span></div>
       </div>
       <div class="cols2">
@@ -6671,22 +6729,22 @@ function gerarRelatorioFechamentoCicloPDF(){
           <p class="subtitle">Distribuição de notas (boas x ruins)</p>
           <table class="mini-table">
             <thead><tr><th>Faixa</th><th>Qtd</th><th>%</th></tr></thead>
-            <tbody>${distribuicaoNotas(notasF).map(fx=>`<tr><td>${fx.label}</td><td>${fx.n}</td><td>${notasF.length?Math.round(fx.n/notasF.length*100):0}%</td></tr>`).join('')}</tbody>
+            <tbody>${distribuicaoNotas(notasF).map(fx=>`<tr class="${fx.label.includes('Ruim') && fx.n>0 ? 'linha-ruim' : ''}"><td>${fx.label}</td><td>${fx.n}</td><td>${notasF.length?Math.round(fx.n/notasF.length*100):0}%</td></tr>`).join('')}</tbody>
           </table>
         </div>
         <div>
           <p class="subtitle">Principais motivos de reclamação</p>
           <table class="mini-table">
             <thead><tr><th>Motivo</th><th>Qtd</th><th>%</th></tr></thead>
-            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Todos os ${m.exemplos.length} casos:</b><br>${m.exemplos.map(e=>escapeHtml(e)).join('<br>')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
+            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Exemplos (${m.exemplos.length}, resumidos):</b><br>${m.exemplos.slice(0,8).map(e=>escapeHtml(e)).join('<br>')}${m.exemplos.length>8 ? `<br>… e mais ${m.exemplos.length-8}.` : ''}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
           </table>
         </div>
       </div>
       ${pendenciasAbertasF.length ? `
-      <p class="subtitle">⚠️ Pendências em andamento (${pendenciasAbertasF.length})</p>
+      <p class="subtitle">⚠️ Pendências em andamento (${pendenciasAbertasF.length} em aberto de ${pendenciasF.length} no total — as demais já foram resolvidas)</p>
       <table class="mini-table">
         <thead><tr><th>Condomínio</th><th>Motivo / Descrição</th><th>Setor</th></tr></thead>
-        <tbody>${pendenciasAbertasF.map(d=>`<tr><td>${escapeHtml(d.nome)}</td><td>${escapeHtml(d.pendenciaDescricao || d.pend || d.motivo || 'Não informado')}</td><td>${escapeHtml(d.setorPendencia || d.setor || '—')}</td></tr>`).join('')}</tbody>
+        <tbody>${pendenciasAbertasF.map(d=>`<tr><td>${escapeHtml(d.nome)}</td><td>${escapeHtml(resumoCurto(d.pendenciaDescricao || d.pend || d.motivo || 'Não informado', 220))}</td><td>${escapeHtml(d.setorPendencia || d.setor || '—')}</td></tr>`).join('')}</tbody>
       </table>` : ''}
       ${naoRealizadasMotivosOrdenados.length ? `
       <p class="subtitle">Motivos das pesquisas não realizadas</p>
@@ -6710,6 +6768,13 @@ function gerarRelatorioFechamentoCicloPDF(){
     .sbox b{ display:block; font-size:17px; color:#222F59; }
     .sbox.crit b{ color:#c0392b; }
     .sbox.ok b{ color:#27ae60; }
+    .sbox.nota-critica b{ color:#c0392b; }
+    .sbox.nota-atencao b{ color:#E07B2C; }
+    .sbox.nota-ok b{ color:#27ae60; }
+    .badge-alerta{ display:inline-block; font-size:11px; font-weight:normal; color:#c0392b; background:#fdecea; border:1px solid #c0392b; border-radius:20px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
+    .varpos{ color:#27ae60; font-weight:bold; font-size:10px; }
+    .varneg{ color:#c0392b; font-weight:bold; font-size:10px; }
+    .varneutra{ color:#888; font-size:10px; }
     .cols2{ display:flex; gap:20px; }
     .cols2>div{ flex:1; }
     .subtitle{ font-size:11.5px; font-weight:bold; color:#444; margin:10px 0 6px; }
@@ -6717,6 +6782,8 @@ function gerarRelatorioFechamentoCicloPDF(){
     table.mini-table th, table.mini-table td{ border:1px solid #ddd; padding:5px 7px; text-align:left; }
     table.mini-table th{ background:#222F59; color:#fff; }
     table.mini-table td.exemplos{ background:#fff8ee; font-style:italic; font-size:9.5px; color:#555; }
+    table.mini-table tr.linha-ruim{ background:#fdecea; }
+    table.mini-table tr.linha-ruim td{ font-weight:bold; color:#c0392b; }
     @media print{ button{ display:none; } .filial-block{ page-break-after:auto; } }
   </style></head><body>
   <button onclick="window.print()" style="margin-bottom:16px; padding:8px 16px; background:#222F59; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">🖨️ Imprimir / Salvar como PDF</button>
@@ -11559,6 +11626,19 @@ function classifyMotivosDetalhado(item){
   return base;
 }
 function classifyGrupoMotivo(item){
+  // Prioriza o que a pessoa escolheu manualmente no formulário (checkboxes de
+  // motivo da reclamação) — MAS só quando é uma categoria específica de verdade.
+  // Se a escolha manual foi só "Outros" (ou seja, ninguém marcou nada específico),
+  // ainda tentamos adivinhar pelo texto, porque "Outros" sozinho não é uma
+  // classificação real — é a ausência de uma.
+  const manual = (item.motivo || '').trim();
+  if (manual && manual !== '—'){
+    const partes = manual.split(' / ').map(m => m.replace(/^Outros:.*/,'Outros').trim());
+    const soTemOutros = partes.length === 1 && partes[0] === 'Outros';
+    if (!soTemOutros){
+      return [...new Set(partes.map(m => GRUPOS_MOTIVO[m] || (m === 'Outros' ? 'Outros' : m)))];
+    }
+  }
   const detalhado = classifyMotivosDetalhado(item);
   return [...new Set(detalhado.map(m => GRUPOS_MOTIVO[m] || 'Outros'))];
 }
