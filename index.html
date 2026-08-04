@@ -1469,6 +1469,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-A</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1681,9 +1682,10 @@ CONDOMINIO Y	9	Concluído"></textarea>
 
   <div class="chart-panel" id="pqCicloBox" style="margin-bottom:14px;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
-      <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="pqCicloMesLabel"></span></p>
+      <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="pqCicloMesLabel"></span> <span id="pqCicloBadgeConcluido" style="display:none; font-size:11px; color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid var(--ok); border-radius:20px; padding:3px 10px; margin-left:6px; vertical-align:middle;">✅ Ciclo Concluído</span></p>
       <div style="display:flex; align-items:center; gap:8px;">
         <select class="filter-select" id="pqCicloFilialSel" style="padding:6px 10px;"><option value="">Todas as filiais</option></select>
+        <button type="button" class="clearbtn" id="btnGerarRelatorioFechamento">📄 Gerar Relatório de Fechamento</button>
         <button type="button" class="clearbtn" id="btnConcluirCiclo" style="border-color:var(--ok); color:var(--ok);">🏁 Concluir Ciclo</button>
       </div>
     </div>
@@ -3504,7 +3506,7 @@ CONDOMINIO Y	480	45"></textarea>
   <div class="users-modal" id="pqFechamentoModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:960px; max-height:88vh; overflow-y:auto;">
       <div class="users-head">
-        <h3>🏁 Fechamento do Ciclo — <span id="pqFechamentoMesLabel"></span> <span id="pqFechamentoBadgeConcluido" style="display:none; font-size:11px; color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid var(--ok); border-radius:20px; padding:3px 10px; margin-left:8px; vertical-align:middle;">✅ Ciclo Concluído</span></h3>
+        <h3><span id="pqFechamentoIcone">🏁</span> <span id="pqFechamentoTitulo">Fechamento do Ciclo</span> — <span id="pqFechamentoMesLabel"></span> <span id="pqFechamentoBadgeConcluido" style="display:none; font-size:11px; color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid var(--ok); border-radius:20px; padding:3px 10px; margin-left:8px; vertical-align:middle;">✅ Ciclo Concluído</span></h3>
         <button type="button" class="logout-btn" id="pqFechamentoCloseBtn">✕</button>
       </div>
       <div class="stats-strip" id="pqFechamentoStats" style="margin-bottom:16px;"></div>
@@ -4347,7 +4349,7 @@ const DATA = [
 
 {n:517, filial:"Ceará", nome:"Condomínio Edifício Arezzo", nota:"9", statusPesquisa:"Concluída", crit:"ok",
  pend:"Dificuldade para salvar os contatos da empresa em aparelhos iPhone, gerando reclamações de moradores sobre ligações sem identificação.",
- setor:"Técnica / TI", resolvido:true,
+ setor:"Central", resolvido:true,
  resolucao:"Refeito o vCard para GPhone e reenviado ao síndico, que conseguiu salvar normalmente."},
 
 {n:518, filial:"Ceará", nome:"Condomínio Costa Azul", nota:"Pendente", statusPesquisa:"Pendente", crit:"critico",
@@ -4362,12 +4364,12 @@ const DATA = [
 
 {n:520, filial:"Amazonas", nome:"Condomínio do Edifício Mediterranee", nota:"7", statusPesquisa:"Concluída", crit:"atencao",
  pend:"Síndica insatisfeita com a recorrência de problemas no condomínio, sem percepção de manutenção definitiva.",
- setor:"Técnica / Comercial", resolvido:false,
+ setor:"Técnica", resolvido:false,
  resolucao:"Aguardando assinatura do aditivo do motor para execução das melhorias necessárias."},
 
 {n:521, filial:"Amazonas", nome:"Condomínio Liverpool", nota:"7", statusPesquisa:"Concluída", crit:"atencao",
  pend:"Registro de ocorrências de acesso de pessoas não moradoras ao condomínio, gerando preocupação da síndica.",
- setor:"Operacional / Segurança", resolvido:true,
+ setor:"Técnica", resolvido:true,
  resolucao:"Situação já tratada pela colaboradora Tayane e normalizada, seguindo em acompanhamento."},
 
 {n:522, filial:"Amazonas", nome:"Condomínio Residencial Juliana III - 2ª Etapa", nota:"7", statusPesquisa:"Concluída", crit:"atencao",
@@ -4407,7 +4409,7 @@ const DATA = [
 
 {n:529, filial:"Ceará", nome:"Condomínio Villa Paradiso", nota:"8", statusPesquisa:"Concluída", crit:"atencao",
  pend:"Durante o contato, o síndico repassou que há uma pendência, registrada desde a semana passada, relacionada ao novo sistema implantado no condomínio.",
- setor:"Sucesso do Cliente", resolvido:true,
+ setor:"Técnica", resolvido:true,
  resolucao:"Mantido contato com o síndico; após as manutenções e retirada da autorização rápida, assim como retirada da IA de atendimento, não houve mais reclamações."},
 
 {n:530, filial:"Ceará", nome:"Condomínio Edifício Natércia Rios", nota:"8", statusPesquisa:"Concluída", crit:"ok",
@@ -5407,7 +5409,7 @@ const DATA = [
 
 {n:730, filial:"SECOPI", nome:"Cond. Ana Rosa - José Augusto Guimarães Carvalho", nota:"8", statusPesquisa:"Concluída", crit:"ok",
  pend:"Não possui pendências em aberto; relatou instabilidade pontual na internet, que impactou momentaneamente a operação do condomínio; demais serviços atendem às expectativas.",
- setor:"T.I.", resolvido:true,
+ setor:"Técnica", resolvido:true,
  resolucao:""},
 
 {n:731, filial:"SECOPI", nome:"Condomínio do Edifício Casa Blanca", nota:"—", statusPesquisa:"Síndico não atende", crit:"pendente",
@@ -5567,6 +5569,17 @@ const GRUPOS_MOTIVO_LEGENDA = {
 const OUTROS_SUBMOTIVOS = {
   501:'Alarmes/Falsos Disparos', 514:'Alarmes/Falsos Disparos', 551:'Alarmes/Falsos Disparos', 635:'Alarmes/Falsos Disparos',
   513:'Comercial/Financeiro', 537:'Comercial/Financeiro', 538:'Comercial/Financeiro', 549:'Comercial/Financeiro', 669:'Comercial/Financeiro',
+  // Reclassificados em 03/08 — caíam em "Outros" genérico mas tinham um padrão claro no texto.
+  502:'Pendência Técnica',        // furto/segurança — cobrança de reforço de segurança
+  511:'Comunicação',              // dificuldade recorrente na liberação de visitantes
+  517:'Comunicação',              // contatos não salvos / ligações sem identificação
+  520:'Pendência Técnica',        // recorrência de problemas sem manutenção definitiva
+  521:'Controle de Acesso',       // acesso de pessoas não moradoras
+  522:'Portões',                  // luz da cancela piscando após manutenção
+  527:'Tempo de Atendimento da Central', // demora no atendimento via WhatsApp
+  529:'Pendência Técnica',        // pendência do novo sistema implantado
+  687:'Controle de Acesso',       // dificuldade de acesso ao sistema por senha
+  730:'Pendência Técnica',        // instabilidade pontual na internet
 };
 
 const META_NOTA = 8.0;
@@ -5629,12 +5642,15 @@ function classifyMotivos(item){
   if (raw === 'pesquisa registrada como não realizada.') return [];
   const t = (item.pend || '').toLowerCase();
   const cats = [];
-  if (/port[ãa]/.test(t)) cats.push('Portões');
+  if (/port[ãa]|cancela/.test(t)) cats.push('Portões');
   if (/c[âa]mera/.test(t)) cats.push('Câmeras');
   if (/interfone/.test(t)) cats.push('Interfone');
   if (/\baplicativo\b|\bapp\b/.test(t)) cats.push('Aplicativo');
-  if (/central/.test(t)) cats.push('Atendimento da Central');
-  if (/controle de acesso|\btag\b|facial|carona|placa/.test(t)) cats.push('Controle de Acesso');
+  if (/central|whatsapp/.test(t)) cats.push('Atendimento da Central');
+  if (/controle de acesso|\btag\b|facial|carona|placa|pessoas? n[ãa]o morador|acesso (de|a) (pessoa|visitante)|senha de acesso|acesso ao sistema/.test(t)) cats.push('Controle de Acesso');
+  if (/comunica[çc][ãa]o|identifica[çc][ãa]o de (chamada|liga[çc][ãa]o)|liga[çc][ãa]o sem identifica|contato.{0,30}salv|salv.{0,30}contato|\biphone\b|\bandroid\b|libera[çc][ãa]o de visitante/.test(t)) cats.push('Comunicação');
+  if (/manuten[çc][ãa]o|recorr[êe]ncia de problema|instabilidade|novo sistema|sistema implantad|\binternet\b|conex[ãa]o|wi-?fi|\bfurto\b|\broubo\b|seguran[çc]a/.test(t)) cats.push('Pendência Técnica');
+  if (/tempo de resposta|demorad|demora no atendimento|demora para (responder|atender)|whatsapp/.test(t)) cats.push('Tempo de Atendimento da Central');
   (EXTRA_MOTIVOS[item.n] || []).forEach(m => cats.push(m));
   if (cats.length === 0) cats.push('Outros');
   return [...new Set(cats)];
@@ -6527,9 +6543,29 @@ document.addEventListener('click', (e)=>{
 // ============================================================================
 // ACOMPANHAMENTO DO CICLO (mês selecionado) + FECHAMENTO INTELIGENTE
 // ============================================================================
+let _cicloConcluidoCache = {}; // { 'Jul/2026': true/false } — evita reconsultar toda hora
+async function verificarCicloConcluido(mesRef){
+  const label = mesLabelBR(mesRef);
+  if (_cicloConcluidoCache[label] !== undefined) return _cicloConcluidoCache[label];
+  if (!sb) return false;
+  try{
+    const { data, error } = await sb.from('activity_log').select('id')
+      .eq('entidade_tipo', 'ciclo_pesquisa').eq('acao', 'concluiu').eq('entidade_nome', label).limit(1);
+    if (error) throw error;
+    _cicloConcluidoCache[label] = !!(data && data.length);
+  }catch(e){
+    console.warn('Falha ao verificar se o ciclo já foi concluído:', e);
+    _cicloConcluidoCache[label] = false;
+  }
+  return _cicloConcluidoCache[label];
+}
+
 function renderPqCicloProgresso(){
   const barra = document.getElementById('pqCicloBarraFill');
   if (!barra) return; // painel ainda não montado
+  verificarCicloConcluido(selectedMes).then(concluido=>{
+    document.getElementById('pqCicloBadgeConcluido').style.display = concluido ? 'inline-block' : 'none';
+  });
   const selFilial = document.getElementById('pqCicloFilialSel');
   if (selFilial.options.length <= 1){
     const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
@@ -6572,8 +6608,7 @@ function gerarRelatorioFechamentoCicloPDF(){
       if (label === 'Outros'){
         exemplos = itens
           .filter(d => classifyGrupoMotivo(d).includes('Outros') && d.pend && d.pend.trim())
-          .slice(0, 4)
-          .map(d => `${d.nome}: "${(d.pend||'').trim().slice(0,110)}${(d.pend||'').trim().length>110?'…':''}"`);
+          .map(d => `${d.nome} (${d.filial||'—'}): "${(d.pend||'').trim()}"`);
       }
       return { label, n, pct: dist.total ? Math.round(n/dist.total*100) : 0, exemplos };
     });
@@ -6600,7 +6635,7 @@ function gerarRelatorioFechamentoCicloPDF(){
       <p class="subtitle">Principais motivos de reclamação (todas as filiais)</p>
       <table class="mini-table">
         <thead><tr><th>Motivo</th><th>Ocorrências</th><th>%</th></tr></thead>
-        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos">Exemplos: ${m.exemplos.map(escapeHtml).join(' · ')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
+        <tbody>${topMotivos(doMes, 8).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Todos os ${m.exemplos.length} casos (${escapeHtml(m.label)}):</b><br>${m.exemplos.map(e=>escapeHtml(e)).join('<br>')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações registradas.</td></tr>'}</tbody>
       </table>
     </div>`;
 
@@ -6643,7 +6678,7 @@ function gerarRelatorioFechamentoCicloPDF(){
           <p class="subtitle">Principais motivos de reclamação</p>
           <table class="mini-table">
             <thead><tr><th>Motivo</th><th>Qtd</th><th>%</th></tr></thead>
-            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos">Exemplos: ${m.exemplos.map(escapeHtml).join(' · ')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
+            <tbody>${topMotivos(doFilial, 5).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.n}</td><td>${m.pct}%</td></tr>${m.exemplos.length ? `<tr><td colspan="3" class="exemplos"><b>Todos os ${m.exemplos.length} casos:</b><br>${m.exemplos.map(e=>escapeHtml(e)).join('<br>')}</td></tr>` : ''}`).join('') || '<tr><td colspan="3">Sem reclamações.</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -6698,10 +6733,12 @@ function gerarRelatorioFechamentoCicloPDF(){
 }
 document.getElementById('btnGerarRelatorioPDFCiclo').addEventListener('click', gerarRelatorioFechamentoCicloPDF);
 
-function montarFechamentoCiclo(){
+function montarFechamentoCiclo(somentePreview){
+  document.getElementById('pqFechamentoIcone').textContent = somentePreview ? '📄' : '🏁';
+  document.getElementById('pqFechamentoTitulo').textContent = somentePreview ? 'Relatório de Fechamento (Prévia)' : 'Fechamento do Ciclo';
   document.getElementById('pqFechamentoBadgeConcluido').style.display = 'none';
-  document.getElementById('pqFechamentoConfirmarBtn').style.display = '';
-  document.getElementById('pqFechamentoCancelarBtn').textContent = 'Fechar sem concluir';
+  document.getElementById('pqFechamentoConfirmarBtn').style.display = somentePreview ? 'none' : '';
+  document.getElementById('pqFechamentoCancelarBtn').textContent = somentePreview ? 'Fechar' : 'Fechar sem concluir';
   const doMes = DATA.filter(d => getMes(d) === selectedMes);
   const total = doMes.length;
   const realizadasArr = doMes.filter(d => !pesquisaNaoRealizada(d));
@@ -6790,7 +6827,11 @@ function montarFechamentoCiclo(){
 }
 
 document.getElementById('btnConcluirCiclo').addEventListener('click', ()=>{
-  montarFechamentoCiclo();
+  montarFechamentoCiclo(false);
+  document.getElementById('pqFechamentoModalOverlay').style.display = 'flex';
+});
+document.getElementById('btnGerarRelatorioFechamento').addEventListener('click', ()=>{
+  montarFechamentoCiclo(true);
   document.getElementById('pqFechamentoModalOverlay').style.display = 'flex';
 });
 
@@ -6834,13 +6875,23 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
 
       // Só agora, no fechamento do ciclo, cria visita emergencial pra quem ficou
       // "não realizada" o mês inteiro (antes disso, ainda dava tempo de tentar de novo).
+      // Recarrega antes, pra não confundir "já existe visita" com dados velhos na memória.
+      await carregarVisitasIgnoradas();
+      await loadVE();
       const naoRealizadasDoMes = doMes.filter(pesquisaNaoRealizada);
+      let visitasCriadas = 0;
       for (const item of naoRealizadasDoMes){
-        if (typeof autoCriarVisitaEmergencial === 'function') await autoCriarVisitaEmergencial(item, true);
+        if (typeof autoCriarVisitaEmergencial === 'function'){
+          const antesQtd = veData.length;
+          await autoCriarVisitaEmergencial(item, true);
+          if (veData.length > antesQtd) visitasCriadas++;
+        }
       }
     }
     if (typeof logActivity === 'function'){
       logActivity('concluiu', 'ciclo_pesquisa', mesLabelBR(selectedMes), `${realizadas} de ${doMes.length} pesquisas realizadas — arquivado no Histórico`);
+      _cicloConcluidoCache[mesLabelBR(selectedMes)] = true;
+      renderPqCicloProgresso();
     }
     document.getElementById('pqFechamentoBadgeConcluido').style.display = 'inline-block';
     btn.style.display = 'none';
@@ -16334,6 +16385,9 @@ function gerarRelatorioDemandas(){
     <h2>Ranking de Produtividade</h2>
     <table><thead><tr><th>Responsável</th><th>Abertas</th><th>Em andamento</th><th>Concluídas</th><th>% Conclusão</th><th>SLA vencido</th><th>TMR</th></tr></thead>
     <tbody>${ranking.filter(r=>r.total>0).map(r=>`<tr><td>${r.responsavel}</td><td>${r.abertas}</td><td>${r.emAndamento}</td><td>${r.concluidas}</td><td>${r.pctConclusao.toFixed(0)}%</td><td>${r.slaVencido}</td><td>${r.tmr!==null?r.tmr.toFixed(1)+'d':'—'}</td></tr>`).join('')}</tbody></table>
+    <h2>Demandas Em Andamento — Retorno do Setor Responsável</h2>
+    <table><thead><tr><th>Condomínio</th><th>Responsável</th><th>Retorno / Descrição completa</th><th>Aberta em</th></tr></thead>
+    <tbody>${filtradas.filter(d=>d.status==='Em andamento').map(d=>`<tr><td>${d.condominio}</td><td>${d.responsavel||'—'}</td><td>${d.descricao||'—'}</td><td>${d.data_abertura?new Date(d.data_abertura).toLocaleDateString('pt-BR'):'—'}</td></tr>`).join('') || '<tr><td colspan="4">Nenhuma demanda em andamento no recorte.</td></tr>'}</tbody></table>
     <h2>Relatório Inteligente</h2>
     <div>${document.getElementById('demRelatorio').innerHTML}</div>
     <h2>Demandas do recorte (${filtradas.length})</h2>
