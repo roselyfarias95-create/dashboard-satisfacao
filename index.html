@@ -6274,14 +6274,14 @@ function buildKpis(data){
 }
 
 const NOTA_FAIXAS = [
-  { label:'9 – 10',    min:9,  max:10, color:'var(--ok)' },
-  { label:'7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
-  { label:'5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
-  { label:'3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
-  { label:'Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
-  { label:'Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
-  { label:'Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
-  { label:'Sem nota',  min:null, max:null, color:'var(--pendente)' },
+  { label:'🤩 9 – 10',    min:9,  max:10, color:'var(--ok)' },
+  { label:'🙂 7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
+  { label:'😡 5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
+  { label:'😡 3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
+  { label:'😡 Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
+  { label:'😡 Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
+  { label:'😡 Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
+  { label:'⚪ Sem nota',  min:null, max:null, color:'var(--pendente)' },
 ];
 function notaFaixaIndex(item){
   const n = parseFloat(String(item.nota).replace(',', '.'));
@@ -6293,16 +6293,18 @@ function notaFaixaIndex(item){
 // Nota 2 (pesquisa de recuperação) — mesmas faixas, mais "Não realizada" (motivo
 // registrado) e "Sem nota 2" (ainda pendente de retorno, ou nota 1 já era alta).
 const NOTA2_FAIXAS = [
-  { label:'9 – 10',    min:9,  max:10, color:'var(--ok)' },
-  { label:'7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
-  { label:'5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
-  { label:'3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
-  { label:'Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
-  { label:'Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
-  { label:'Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
+  { label:'🤩 9 – 10',    min:9,  max:10, color:'var(--ok)' },
+  { label:'🙂 7 – 8',     min:7,  max:8.999, color:'var(--moderado)' },
+  { label:'😡 5 – 6',     min:5,  max:6.999, color:'var(--atencao)' },
+  { label:'😡 3 – 4',     min:3,  max:4.999, color:'var(--critico)' },
+  { label:'😡 Nota 2',    min:2,  max:2.999, color:'#a30d1f' },
+  { label:'😡 Nota 1',    min:1,  max:1.999, color:'#a30d1f' },
+  { label:'😡 Nota 0',    min:0,  max:0.999, color:'#a30d1f' },
   { label:'Não realizada', min:null, max:null, special:'nao_realizada', color:'var(--critico)' },
-  { label:'Sem nota 2',    min:null, max:null, special:'sem_nota', color:'var(--pendente)' },
+  { label:'⭐ Sem nota (1ª já era 9-10)', min:null, max:null, special:'estrela', color:'var(--ok)' },
+  { label:'⚪ Sem nota (pendente)',    min:null, max:null, special:'sem_nota', color:'var(--pendente)' },
 ];
+
 function notaFaixaIndex2(item){
   if (item.pesquisa2NaoRealizada) return NOTA2_FAIXAS.findIndex(f=>f.special==='nao_realizada');
   const n = parseFloat(String(item.notaPosResolucao).replace(',', '.'));
@@ -6310,6 +6312,8 @@ function notaFaixaIndex2(item){
     const idx = NOTA2_FAIXAS.findIndex(f => f.min !== null && n >= f.min && n <= f.max);
     if (idx !== -1) return idx;
   }
+  const n1 = parseFloat(String(item.nota).replace(',', '.'));
+  if (!isNaN(n1) && n1 >= 9) return NOTA2_FAIXAS.findIndex(f=>f.special==='estrela');
   return NOTA2_FAIXAS.findIndex(f=>f.special==='sem_nota');
 }
 function emojiParaNota(notaRaw){
@@ -7881,7 +7885,7 @@ function render(){
           ${item.motivoNaoRealizada ? `— ${escapeHtml(item.motivoNaoRealizada)}` : ''}
         </div>
         ` : `
-        <div class="motivo">${escapeHtml(item.motivo || '—')}</div>
+        <div class="motivo">${escapeHtml(item.motivo || (item.houveReclamacao ? '—' : 'Não teve reclamação'))}</div>
         <div class="nota">${notaMedia(item)} ${emojiParaNota(notaMedia(item))}<span class="nlabel">média</span></div>
         <div class="nota2col">${escapeHtml(item.nota)}</div>
         <div class="nota2col">${nota2Display(item)}</div>
@@ -7976,7 +7980,7 @@ function generateReport(){
         <td>${escapeHtml(item.nome)}</td>
         <td>${escapeHtml(item.nota)}</td>
         <td>${c ? c.label : ''}</td>
-        <td>${escapeHtml(item.motivo || '—')}</td>
+        <td>${escapeHtml(item.motivo || (item.houveReclamacao ? '—' : 'Não teve reclamação'))}</td>
         <td>${escapeHtml(item.setor)}</td>
         <td>${item.resolvido===true?'Resolvido':(item.resolvido===false?'Em andamento':'—')}</td>
         <td>${escapeHtml(item.pend)}</td>
@@ -8083,7 +8087,7 @@ function exportExcel(){
       'Condomínio': item.nome,
       'Nota': item.nota,
       'Criticidade': c ? c.label : '',
-      'Motivo': item.motivo || '—',
+      'Motivo': item.motivo || (item.houveReclamacao ? '—' : 'Não teve reclamação'),
       'Setor': item.setor,
       'Resolvido': item.resolvido===true ? 'Resolvido' : (item.resolvido===false ? 'Em andamento' : '—'),
       'Pendências/Reclamações': item.pend,
