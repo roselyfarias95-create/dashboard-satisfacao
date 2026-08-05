@@ -1276,6 +1276,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <label class="pq-label">Status da Tratativa <span class="pq-required">*</span></label>
         <select id="pqStatusTratativa">
           <option value="Em andamento">Em andamento</option>
+          <option value="Em acompanhamento">Em acompanhamento</option>
           <option value="Aguardando Cliente">Aguardando Cliente</option>
           <option value="Resolvido">Resolvido</option>
           <option value="Improcedente">Improcedente</option>
@@ -11517,7 +11518,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
   const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
   const statusTratativa = (usaPendencia || usaReclamacao) ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
-  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
+  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Em acompanhamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
 
   const dados = {
     nota: pqNotaSelecionada,
