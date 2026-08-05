@@ -1469,7 +1469,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-H</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-J</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -2496,6 +2496,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
         <button type="button" class="clearbtn" id="btnLimparFiltrosFluxo">Limpar filtros</button>
         <button type="button" class="clearbtn" id="btnImportarPlanilhaFluxo">📥 Importar Planilha (Jan–Abr)</button>
         <button type="button" class="clearbtn" id="btnNovaRodadaFluxo">🔄 Nova Rodada do Mês</button>
+        <button type="button" class="clearbtn" id="btnExcluirRodadaFluxo" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir Rodada</button>
         <button type="button" class="logout-btn" id="btnNovoFluxoAtendimento" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
       </div>
       <span id="faCount" class="count-line"></span>
@@ -2669,6 +2670,7 @@ CONDOMINIO Y	480	45"></textarea>
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
         <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="adCicloMesLabel"></span></p>
         <button type="button" class="clearbtn" id="btnGerarRelatorioAdocao">📄 Gerar Relatório de Fechamento</button>
+        <button type="button" class="clearbtn" id="btnDiagnosticoNomes" style="border-color:var(--atencao); color:var(--atencao);">🔍 Ver Nomes Duplicados</button>
       </div>
       <div style="background:var(--bg-panel-2); border-radius:8px; height:20px; overflow:hidden; position:relative;">
         <div id="adCicloBarraFill" style="height:100%; background:linear-gradient(90deg, var(--accent), var(--ok)); border-radius:8px; transition:width .3s ease;"></div>
@@ -5931,9 +5933,17 @@ async function carregarStatusCondominios(){
     console.warn('Falha ao carregar status dos condomínios (Ativo/Inativo):', e);
   }
   statusCondominiosCarregado = true;
+  STATUS_POR_CONDOMINIO_NORMALIZADO = null; // força reconstruir o índice com os dados atualizados
 }
+let STATUS_POR_CONDOMINIO_NORMALIZADO = null;
 function condominioEstaAtivo(nome){
-  const status = STATUS_POR_CONDOMINIO[nome];
+  if (!STATUS_POR_CONDOMINIO_NORMALIZADO){
+    STATUS_POR_CONDOMINIO_NORMALIZADO = {};
+    Object.entries(STATUS_POR_CONDOMINIO).forEach(([n, status])=>{
+      STATUS_POR_CONDOMINIO_NORMALIZADO[normalizeNomeCondo(n)] = status;
+    });
+  }
+  const status = STATUS_POR_CONDOMINIO_NORMALIZADO[normalizeNomeCondo(nome)];
   return status !== 'Inativo'; // sem info = trata como ativo, pra nunca escondar por engano
 }
 
@@ -6642,6 +6652,14 @@ function gerarRelatorioFechamentoCicloPDF(){
   const pendenciasResolvidasQtd = pendenciasArr.filter(d => d.resolvido === 'true' || d.resolvido === true).length;
   const pendenciasAbertasQtd = pendenciasArr.length - pendenciasResolvidasQtd;
 
+  // ---- Pesquisa de Recuperação (Nota 2) — quem precisava de retorno e como foi ----
+  const precisavamRecuperacao = realizadasArr.filter(d => { const n = parseFloat(String(d.nota).replace(',','.')); return !isNaN(n) && n < 9; });
+  const comNota2 = precisavamRecuperacao.filter(d => d.notaPosResolucao !== undefined && d.notaPosResolucao !== null && String(d.notaPosResolucao).trim() !== '');
+  const nota2NaoRealizada = precisavamRecuperacao.filter(d => d.pesquisa2NaoRealizada);
+  const nota2Pendente = precisavamRecuperacao.length - comNota2.length - nota2NaoRealizada.length;
+  const notas2Numeros = comNota2.map(d => parseFloat(String(d.notaPosResolucao).replace(',','.'))).filter(n=>!isNaN(n));
+  const mediaNota2 = notas2Numeros.length ? (notas2Numeros.reduce((a,b)=>a+b,0)/notas2Numeros.length) : null;
+
   // ---- Mês anterior, pra comparação ----
   const meses6 = getUltimosMeses(6);
   const idxMesAtualNaLista = meses6.indexOf(selectedMes);
@@ -6742,8 +6760,9 @@ function gerarRelatorioFechamentoCicloPDF(){
     `Das ${statsPorFilial.length} filial(is) avaliada(s), <b>${filiaisAcimaMeta.length}</b> está(ão) dentro da meta e <b>${filiaisAbaixoMeta.length}</b> precisa(m) de atenção${piorFilialObj ? `, com destaque para <b>${escapeHtml(piorFilialObj.filial)}</b> (nota ${piorFilialObj.mediaF.toFixed(1)})` : ''}.`,
     `Foram registradas <b>${reclamacoesArr.length}</b> reclamação(ões)${variacaoReclamacoes!==null ? ` (${seta(variacaoReclamacoes)} ${Math.abs(variacaoReclamacoes)} vs. mês anterior)` : ''} e <b>${elogiosArr.length}</b> elogio(s) no período.`,
     `Das <b>${pendenciasArr.length}</b> pendência(s) abertas ao longo do ciclo, <b>${pendenciasResolvidasQtd}</b> já foram solucionadas e <b>${pendenciasAbertasQtd}</b> permanecem em aberto.`,
+    precisavamRecuperacao.length ? `Das <b>${precisavamRecuperacao.length}</b> pesquisa(s) com nota abaixo de 9 (que precisam de uma 2ª ligação de recuperação), <b>${comNota2.length}</b> já tiveram retorno (nota 2 média de ${mediaNota2!==null?mediaNota2.toFixed(1):'—'}), <b>${nota2NaoRealizada.length}</b> não foram realizadas e <b>${nota2Pendente}</b> ainda estão pendentes de contato.` : '',
     `Em síntese, a satisfação dos clientes está ${mediaGeral!==null && mediaGeral>=META_NOTA_REL ? '<b style="color:#27ae60;">dentro do esperado</b>' : '<b style="color:#c0392b;">abaixo do ideal</b>'} no agregado, com ${filiaisAbaixoMeta.length ? `oportunidades claras de melhoria concentradas em ${filiaisAbaixoMeta.map(f=>escapeHtml(f.filial)).join(', ')}` : 'desempenho equilibrado entre as filiais'}.`,
-  ].map(p=>`<p>${p}</p>`).join('');
+  ].filter(Boolean).map(p=>`<p>${p}</p>`).join('');
 
   // Destaques Positivos e Pontos de Atenção (regras simples sobre os números already calculados)
   const destaquesPositivos = [];
@@ -7652,12 +7671,14 @@ document.getElementById('viewListBtn').addEventListener('click', ()=>setView('li
 document.getElementById('viewKanbanBtn').addEventListener('click', ()=>setView('kanban'));
 
 function temReclamacao(item){
-  if (typeof item.houveReclamacao === 'boolean') return item.houveReclamacao;
-  return classifyMotivos(item).length > 0;
+  if (item.houveReclamacao === true || item.houveReclamacao === 'true') return true;
+  if (item.houveReclamacao === false || item.houveReclamacao === 'false') return false;
+  return classifyMotivos(item).length > 0 || !!(item.pend && item.pend.trim());
 }
 function temPendencia(item){
-  if (typeof item.houvePendencia === 'boolean') return item.houvePendencia;
-  return classifyMotivos(item).length > 0;
+  if (item.houvePendencia === true || item.houvePendencia === 'true') return true;
+  if (item.houvePendencia === false || item.houvePendencia === 'false') return false;
+  return !!(item.pendenciaDescricao && item.pendenciaDescricao.trim());
 }
 let activePeriodo = 'all';
 function hojeReferencia(){
@@ -8084,7 +8105,7 @@ function exportExcel(){
 document.getElementById('excelBtn').addEventListener('click', exportExcel);
 
 populateFilterOptions();
-document.getElementById('totalCondos').textContent = `${new Set(DATA.map(d=>d.nome)).size} condomínios monitorados`;
+document.getElementById('totalCondos').textContent = `${new Set(DATA.map(d=>normalizeNomeCondo(d.nome))).size} condomínios monitorados`;
 render();
 // ============================================================================
 // SUB-APLICAÇÃO EMBUTIDA: CADASTRO DE CONDOMÍNIOS
@@ -13698,6 +13719,7 @@ async function loadFluxoAtendimento(){
     return;
   }
   try{
+    if (!statusCondominiosCarregado) await carregarStatusCondominios();
     let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).limit(5000);
     if (error) throw error;
     faData = data || [];
@@ -13735,7 +13757,7 @@ function getFilteredFluxoAtendimento(){
 
 function renderFluxoAtendimento(){
   const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && String(faData[0].mes_referencia).slice(0,7)) || '';
-  const totalCondos = [...new Set(DATA.map(d=>d.nome))].length;
+  const totalCondos = [...new Set(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
   const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual);
   const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
   const pendentes = Math.max(0, totalCondos - preenchidos);
@@ -13816,9 +13838,9 @@ async function criarNovaRodadaFluxo(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
   if (!confirm(`Criar registros pendentes de Fluxo de Atendimento para todos os condomínios ativos no mês ${mesLabelBR(mes)}?`)) return;
-  const condosAtivos = [...new Map(DATA.map(d=>[d.nome.trim().toLowerCase(), d])).values()];
-  const jaExistentes = new Set(faData.filter(f=>String(f.mes_referencia||'').slice(0,7)===mes).map(f=>(f.condominio||'').trim().toLowerCase()));
-  const faltando = condosAtivos.filter(c => !jaExistentes.has(c.nome.trim().toLowerCase()));
+  const condosAtivos = [...new Map(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>[normalizeNomeCondo(d.nome), d])).values()];
+  const jaExistentes = new Set(faData.filter(f=>String(f.mes_referencia||'').slice(0,7)===mes).map(f=>normalizeNomeCondo(f.condominio||'')));
+  const faltando = condosAtivos.filter(c => !jaExistentes.has(normalizeNomeCondo(c.nome)));
   if (!faltando.length){ alert('Todos os condomínios já têm registro nesse mês.'); return; }
   const rows = faltando.map(c => ({ condominio: c.nome, filial: c.filial || null, mes_referencia: mes }));
   try{
@@ -13834,6 +13856,32 @@ async function criarNovaRodadaFluxo(){
   }catch(e){ alert('Erro ao criar rodada: ' + e.message); }
 }
 document.getElementById('btnNovaRodadaFluxo').addEventListener('click', criarNovaRodadaFluxo);
+
+async function excluirRodadaFluxo(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
+  const doMes = faData.filter(f => String(f.mes_referencia||'').slice(0,7) === mes);
+  if (!doMes.length){ alert(`Não há registros de Fluxo de Atendimento em ${mesLabelBR(mes)} pra excluir.`); return; }
+  if (!confirm(`Excluir TODOS os ${doMes.length} registro(s) de Fluxo de Atendimento de ${mesLabelBR(mes)}? Isso não afeta outros meses, e não pode ser desfeito. Depois disso você pode clicar em "Nova Rodada do Mês" pra gerar de novo do zero.`)) return;
+  const btn = document.getElementById('btnExcluirRodadaFluxo');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Excluindo...';
+  try{
+    const { error } = await sb.from('fluxo_atendimento').delete().eq('mes_referencia', doMes[0].mes_referencia);
+    // fallback: se mes_referencia não for uma string exatamente igual em todos os registros
+    // (ex: formatos de data levemente diferentes), apaga um por um pelos ids coletados.
+    if (error){
+      for (const f of doMes){ await sb.from('fluxo_atendimento').delete().eq('id', f.id); }
+    }
+    await loadFluxoAtendimento();
+    alert(`${doMes.length} registro(s) de ${mesLabelBR(mes)} excluído(s). Pode gerar a rodada de novo.`);
+  }catch(e){
+    alert('Erro ao excluir rodada: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+document.getElementById('btnExcluirRodadaFluxo').addEventListener('click', excluirRodadaFluxo);
 
 document.getElementById('btnNovoFluxoAtendimento').addEventListener('click', ()=>{
   if (!sb){ alert('Sem conexão com o servidor — não é possível criar registros agora.'); return; }
@@ -13922,8 +13970,8 @@ async function seedFluxoDaPlanilhaSeVazio(){
   if (!sb) return;
   if (localStorage.getItem('seedFluxoPlanilhaAplicado_v1') === '1') return;
   try{
-    const existentes = new Set(faData.map(f => `${(f.condominio||'').trim().toLowerCase()}|||${f.mes_referencia}`));
-    const faltando = SEED_FLUXO.filter(r => !existentes.has(`${r.condominio.trim().toLowerCase()}|||${r.mes_referencia}`));
+    const existentes = new Set(faData.map(f => `${normalizeNomeCondo(f.condominio)}|||${f.mes_referencia}`));
+    const faltando = SEED_FLUXO.filter(r => !existentes.has(`${normalizeNomeCondo(r.condominio)}|||${r.mes_referencia}`));
     if (faltando.length){
       const rows = faltando.map(r => ({ condominio: r.condominio, filial: r.filial, mes_referencia: r.mes_referencia, atendimentos: r.atendimentos, tma: r.tma }));
       await sb.from('fluxo_atendimento').insert(rows);
@@ -13940,7 +13988,7 @@ async function seedHistoricoFluxoSeVazio(){
   try{
     const { data, error } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
     if (error) throw error;
-    const existentes = new Set((data||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
+    const existentes = new Set((data||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     const candidatos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
       mes: MES_REF_LABEL[r.mes_referencia] || r.mes_referencia,
       filial: r.filial,
@@ -13948,7 +13996,7 @@ async function seedHistoricoFluxoSeVazio(){
       atendimentos: r.atendimentos,
       tma: r.tma,
     }));
-    const novos = candidatos.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${r.condominio.trim().toLowerCase()}`));
+    const novos = candidatos.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     if (novos.length){
       await sb.from('historico_fluxo').insert(novos);
     }
@@ -13965,15 +14013,15 @@ async function importarPlanilhaFluxo(){
   try{
     const { data: existentesData, error: errSel } = await sb.from('fluxo_atendimento').select('id,condominio,mes_referencia').limit(5000);
     if (errSel) throw errSel;
-    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
+    const existentes = new Map((existentesData||[]).map(r => [`${normalizeNomeCondo(r.condominio)}|||${String(r.mes_referencia||'').slice(0,7)}`, r]));
 
     const paraInserir = [];
     const paraAtualizar = [];
     SEED_FLUXO.forEach(r => {
-      const chave = `${r.condominio.trim().toLowerCase()}|||${r.mes_referencia}`;
-      const idExistente = existentes.get(chave);
-      if (idExistente){
-        paraAtualizar.push({ id: idExistente, atendimentos: r.atendimentos, tma: r.tma });
+      const chave = `${normalizeNomeCondo(r.condominio)}|||${r.mes_referencia}`;
+      const existente = existentes.get(chave);
+      if (existente){
+        paraAtualizar.push({ id: existente.id, atendimentos: r.atendimentos, tma: r.tma });
       } else {
         paraInserir.push({ condominio: r.condominio, filial: r.filial, mes_referencia: r.mes_referencia, atendimentos: r.atendimentos, tma: r.tma });
       }
@@ -13992,14 +14040,14 @@ async function importarPlanilhaFluxo(){
     // Arquiva a mesma leva no Histórico (não duplica se a pasta já existir)
     const { data: histExistData, error: errHist } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
     if (errHist) throw errHist;
-    const histExist = new Set((histExistData||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
+    const histExist = new Set((histExistData||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     const histNovos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
       mes: MES_REF_LABEL[r.mes_referencia] || r.mes_referencia,
       filial: r.filial,
       condominio: r.condominio,
       atendimentos: r.atendimentos,
       tma: r.tma,
-    })).filter(r => !histExist.has(`${r.mes}|||${r.filial}|||${r.condominio.trim().toLowerCase()}`));
+    })).filter(r => !histExist.has(`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     if (histNovos.length){
       const { error } = await sb.from('historico_fluxo').insert(histNovos);
       if (error) throw error;
@@ -14559,6 +14607,28 @@ function gerarRelatorioFechamentoAdocaoDigital(){
   win.document.open(); win.document.write(html); win.document.close();
 }
 document.getElementById('btnGerarRelatorioAdocao').addEventListener('click', gerarRelatorioFechamentoAdocaoDigital);
+document.getElementById('btnDiagnosticoNomes').addEventListener('click', ()=>{
+  const grupos = new Map();
+  DATA.forEach(d=>{
+    const chave = normalizeNomeCondo(d.nome);
+    if (!chave) return;
+    if (!grupos.has(chave)) grupos.set(chave, new Set());
+    grupos.get(chave).add(d.nome);
+  });
+  const comMaisDeUmNome = [...grupos.entries()].filter(([,nomes]) => nomes.size > 1);
+  const totalChaves = grupos.size;
+  const linhas = comMaisDeUmNome.map(([chave, nomes]) => `<tr><td>${escapeHtml(chave)}</td><td>${[...nomes].map(escapeHtml).join('<br>')}</td></tr>`).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Diagnóstico de nomes duplicados</title>
+  <style>body{font-family:Arial,sans-serif; padding:24px; max-width:900px; margin:0 auto;} table{border-collapse:collapse; width:100%; font-size:12px;} th,td{border:1px solid #ccc; padding:6px 10px; text-align:left; vertical-align:top;} th{background:#222F59; color:#fff;}</style>
+  </head><body>
+  <h2>Diagnóstico — Nomes que ainda contam como condomínios diferentes</h2>
+  <p>Total de condomínios únicos (depois da normalização): <b>${totalChaves}</b> · Grupos com grafias diferentes: <b>${comMaisDeUmNome.length}</b></p>
+  <table><thead><tr><th>Nome normalizado</th><th>Grafias diferentes encontradas</th></tr></thead>
+  <tbody>${linhas || '<tr><td colspan="2">Nenhum grupo com mais de uma grafia — a normalização está pegando tudo.</td></tr>'}</tbody></table>
+  </body></html>`;
+  const win = window.open('', '_blank');
+  win.document.open(); win.document.write(html); win.document.close();
+});
 
 async function loadAdocaoDigital(){
   const body = document.getElementById('adBody');
@@ -14867,13 +14937,13 @@ async function seedAdocaoDaPlanilhaSeVazio(){
   try{
     const porCondo = new Map();
     adData.forEach(a => {
-      const chave = (a.condominio||'').trim().toLowerCase();
+      const chave = normalizeNomeCondo(a.condominio);
       if (!porCondo.has(chave)) porCondo.set(chave, a);
     });
     const paraInserir = [];
     const paraAtualizar = [];
     SEED_ADOCAO.forEach(r => {
-      const chave = r.condominio.trim().toLowerCase();
+      const chave = normalizeNomeCondo(r.condominio);
       const existente = porCondo.get(chave);
       const pctApp = calcPctAdocao(r.apps_cadastrados, r.moradores);
       if (!existente){
@@ -14957,12 +15027,12 @@ async function importarPlanilhaAdocao(){
   try{
     const { data: existentesData, error: errSel } = await sb.from('adocao_digital').select('id,condominio,mes_referencia').limit(5000);
     if (errSel) throw errSel;
-    const existentes = new Map((existentesData||[]).map(r => [`${(r.condominio||'').trim().toLowerCase()}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
+    const existentes = new Map((existentesData||[]).map(r => [`${normalizeNomeCondo(r.condominio)}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
 
     const paraInserir = [];
     const paraAtualizar = [];
     SEED_ADOCAO.forEach(r => {
-      const chave = `${r.condominio.trim().toLowerCase()}|||${r.mes_referencia}`;
+      const chave = `${normalizeNomeCondo(r.condominio)}|||${r.mes_referencia}`;
       const idExistente = existentes.get(chave);
       const pctApp = calcPctAdocao(r.apps_cadastrados, r.moradores);
       if (idExistente){
@@ -17646,7 +17716,12 @@ function mostrarViewKanbanVida(){
 }
 
 function renderVidaCondominioKanban(){
-  const nomes = [...new Set(DATA.map(d=>d.nome))];
+  const nomesVistos = new Set();
+  const nomes = [];
+  DATA.forEach(d=>{
+    const norm = normalizeNomeCondo(d.nome);
+    if (norm && !nomesVistos.has(norm)){ nomesVistos.add(norm); nomes.push(d.nome); }
+  });
   const linhas = nomes.map(nome => {
     const nomeNorm = normalizeNomeCondo(nome);
     const item = DATA.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
