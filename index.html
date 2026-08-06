@@ -1279,6 +1279,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <option value="Em acompanhamento">Em acompanhamento</option>
           <option value="Aguardando Cliente">Aguardando Cliente</option>
           <option value="Resolvido">Resolvido</option>
+          <option value="Concluído mas em acompanhamento">Concluído mas em acompanhamento</option>
           <option value="Improcedente">Improcedente</option>
         </select>
       </div>
@@ -7336,16 +7337,29 @@ function matches(item, q){
 // ============================================================================
 // BADGES E CÉLULAS DA LISTA
 // ============================================================================
-function resolvedPill(r){
-  if (r === true) return `<span class="pill resolved-yes">✓ Resolvido</span>`;
-  if (r === false) return `<span class="pill resolved-no">⟳ Em andamento</span>`;
-  return `<span class="pill">— Não se aplica</span>`;
+const STATUS_TRATATIVA_VISUAL = {
+  'Resolvido':                          { icon:'✓', cls:'yes' },
+  'Concluído mas em acompanhamento':    { icon:'✓👀', cls:'yes' },
+  'Improcedente':                       { icon:'✕', cls:'yes' },
+  'Em acompanhamento':                  { icon:'👀', cls:'no' },
+  'Aguardando Cliente':                 { icon:'⏳', cls:'no' },
+  'Em andamento':                       { icon:'⟳', cls:'no' },
+};
+function statusTratativaVisual(st){
+  return STATUS_TRATATIVA_VISUAL[st] || { icon:'⟳', cls:'no' };
+}
+function resolvedPill(item){
+  const st = item && item.statusTratativa;
+  if (!st) return `<span class="pill">— Não se aplica</span>`;
+  const v = statusTratativaVisual(st);
+  return `<span class="pill ${v.cls === 'yes' ? 'resolved-yes' : 'resolved-no'}">${v.icon} ${escapeHtml(st)}</span>`;
 }
 
-function resolvedBadge(r){
-  if (r === true) return `<span class="rbadge yes">✓ Resolvido</span>`;
-  if (r === false) return `<span class="rbadge no">⟳ Andamento</span>`;
-  return `<span class="rbadge">—</span>`;
+function resolvedBadge(item){
+  const st = item && item.statusTratativa;
+  if (!st) return `<span class="rbadge">—</span>`;
+  const v = statusTratativaVisual(st);
+  return `<span class="rbadge ${v.cls}">${v.icon} ${escapeHtml(st)}</span>`;
 }
 
 function nota2Display(item){
@@ -7842,7 +7856,7 @@ function render(){
           </div>
           <div>
             <p class="blk-title">Encaminhamento</p>
-            <div class="meta-row">${resolvedPill(item.resolvido)}${OVERRIDES[item.n] ? '<span class="edited-tag">editado manualmente</span>' : ''}</div>
+            <div class="meta-row">${resolvedPill(item)}${OVERRIDES[item.n] ? '<span class="edited-tag">editado manualmente</span>' : ''}</div>
             <p class="blk-text">${item.resolucao ? escapeHtml(item.resolucao) : 'Sem detalhamento de resolução registrado.'}</p>
             ${item.notaPosResolucao ? `
               <p class="blk-title" style="margin-top:14px;">Pesquisa de Recuperação (Nota 2)</p>
@@ -7894,7 +7908,7 @@ function render(){
         <div class="datacol">${item.dataPesquisa ? formatDateBR(item.dataPesquisa) : '—'}</div>
         <div class="tag">${c.label}</div>
         <div class="humorcol">${humorCell(item)}</div>
-        <div class="rescol">${resolvedBadge(item.resolvido)}</div>
+        <div class="rescol">${resolvedBadge(item)}</div>
         <div class="status">${escapeHtml(item.statusPesquisa)}</div>
         <div class="chev">▶</div>
       </div>
@@ -11518,7 +11532,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
   const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
   const statusTratativa = (usaPendencia || usaReclamacao) ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
-  const resolvidoMap = { 'Resolvido': true, 'Em andamento': false, 'Em acompanhamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
+  const resolvidoMap = { 'Resolvido': true, 'Concluído mas em acompanhamento': true, 'Em andamento': false, 'Em acompanhamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
 
   const dados = {
     nota: pqNotaSelecionada,
