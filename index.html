@@ -1241,7 +1241,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="pq-field">
         <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
         <select id="pqSetorPendencia"><option value="">Selecione...</option></select>
-        <input type="text" id="pqSetorPendenciaOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
+        <input type="text" id="pqSetorPendenciaOutro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
       </div>
       <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Observações <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
@@ -1254,15 +1254,15 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="pq-field">
         <label class="pq-label">Motivo da Reclamação <span class="pq-required">*</span> <span style="font-weight:400; text-transform:none;">(pode marcar mais de um)</span></label>
         <div class="pq-checklist" id="pqMotivoChecklist"></div>
-        <div id="pqMotivoOutroWrap" style="display:none; margin-top:8px;">
-          <label class="pq-label" style="margin-bottom:6px;">Descreva o motivo</label>
+        <div id="pqMotivoOutroWrap" style="margin-top:8px;">
+          <label class="pq-label" style="margin-bottom:6px;">Outro motivo (não listado acima) <span style="font-weight:400; text-transform:none;">(opcional)</span></label>
           <input type="text" id="pqMotivoOutro" placeholder="Descreva o motivo em detalhe...">
         </div>
       </div>
       <div class="pq-field">
         <label class="pq-label">Setor Responsável <span class="pq-required">*</span></label>
         <select id="pqSetorReclamacao"><option value="">Selecione...</option></select>
-        <input type="text" id="pqSetorReclamacaoOutro" placeholder="Digite o setor..." style="display:none; margin-top:8px;">
+        <input type="text" id="pqSetorReclamacaoOutro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
       </div>
       <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Descrição da Situação <span class="pq-required">*</span></label>
@@ -1298,6 +1298,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div class="pq-field">
         <label class="pq-label">Quem foi elogiado? <span class="pq-required">*</span></label>
         <select id="pqSetorElogio"><option value="">Selecione...</option></select>
+        <input type="text" id="pqSetorElogioOutro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
       </div>
       <div class="pq-field" style="margin-bottom:0;">
         <label class="pq-label">Descrição do elogio <span class="pq-required">*</span></label>
@@ -1360,16 +1361,19 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <p class="pq-label" style="margin-bottom:8px;">⚠️ Pendência (2ª ligação)</p>
           <textarea id="pqDescricaoPendencia2" placeholder="Descreva a pendência relatada..." style="margin-bottom:8px;"></textarea>
           <select id="pqSetorPendencia2"><option value="">Setor Responsável...</option></select>
+          <input type="text" id="pqSetorPendencia2Outro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
         </div>
         <div id="pqCardReclamacao2" style="display:none; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;">
           <p class="pq-label" style="margin-bottom:8px;">📣 Reclamação (2ª ligação)</p>
           <textarea id="pqDescricaoReclamacao2" placeholder="Descreva a reclamação relatada..." style="margin-bottom:8px;"></textarea>
           <select id="pqSetorReclamacao2"><option value="">Setor Responsável...</option></select>
+          <input type="text" id="pqSetorReclamacao2Outro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
         </div>
         <div id="pqCardElogio2" style="display:none; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px;">
           <p class="pq-label" style="margin-bottom:8px;">⭐ Elogio (2ª ligação)</p>
           <textarea id="pqDescricaoElogio2" placeholder="Descreva o elogio recebido..." style="margin-bottom:8px;"></textarea>
           <select id="pqSetorElogio2"><option value="">Setor...</option></select>
+          <input type="text" id="pqSetorElogio2Outro" placeholder="Ou digite um setor não listado (opcional)" style="margin-top:8px;">
         </div>
       </div>
       <div id="pqRecNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-top:8px;">
@@ -7191,8 +7195,8 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
       }));
       // Evita duplicar quem já foi arquivado antes (ex: clicou Concluir Ciclo duas vezes)
       const { data: existentesData } = await sb.from('historico_pesquisas').select('mes,filial,condominio').eq('mes', mesNome);
-      const existentes = new Set((existentesData||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
-      const novos = linhasHistorico.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
+      const existentes = new Set((existentesData||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
+      const novos = linhasHistorico.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
       if (novos.length){
         const { error } = await sb.from('historico_pesquisas').insert(novos);
         if (error) throw error;
@@ -11190,10 +11194,10 @@ const pqToggleState = {}; // { pqRealizada:'sim'|'nao', pqPendencia:..., pqRecla
 let pqNotaSelecionada = null;
 
 const PQ_RESPONSAVEIS = ['Rosely - Analista de Qualidade', 'Josy', 'Geovana - Aprendiz'];
-const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial','Outros'];
-const PQ_SETORES_PENDENCIA = ['Síndico','Zeladoria','Portaria','Financeiro','Manutenção','Administração','Outro'];
-const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Outro'];
-const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial','Outro'];
+const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial'];
+const PQ_SETORES_PENDENCIA = ['Síndico','Zeladoria','Portaria','Financeiro','Manutenção','Administração'];
+const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações'];
+const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial'];
 
 function pqBuildNotaRow(){
   const row = document.getElementById('pqNotaRow');
@@ -11293,12 +11297,6 @@ function pqPopulateDropdowns(){
   document.getElementById('pqMotivoChecklist').innerHTML = PQ_MOTIVOS_RECLAMACAO.map(m =>
     `<label><input type="checkbox" class="pq-motivo-cb" value="${m}"><span>${m}</span></label>`
   ).join('');
-  document.querySelectorAll('.pq-motivo-cb').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      const outrosOn = [...document.querySelectorAll('.pq-motivo-cb:checked')].some(c=>c.value==='Outros');
-      document.getElementById('pqMotivoOutroWrap').style.display = outrosOn ? 'block' : 'none';
-    });
-  });
 
   document.getElementById('pq-condominio-list').innerHTML =
     [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
@@ -11328,11 +11326,14 @@ function openPesquisaModal(item){
   pqSetToggle('pqReclamacao2', item && item.houveReclamacao2 ? 'sim' : 'nao');
   pqSetToggle('pqElogio2', item && item.houveElogio2 ? 'sim' : 'nao');
   document.getElementById('pqDescricaoPendencia2').value = item ? (item.pendenciaDescricao2 || '') : '';
-  document.getElementById('pqSetorPendencia2').value = item ? (item.setorPendencia2 || '') : '';
+  document.getElementById('pqSetorPendencia2').value = item && PQ_SETORES_RESPONSAVEL.includes(item.setorPendencia2) ? item.setorPendencia2 : '';
+  document.getElementById('pqSetorPendencia2Outro').value = item && item.setorPendencia2 && !PQ_SETORES_RESPONSAVEL.includes(item.setorPendencia2) ? item.setorPendencia2 : '';
   document.getElementById('pqDescricaoReclamacao2').value = item ? (item.reclamacaoDescricao2 || '') : '';
-  document.getElementById('pqSetorReclamacao2').value = item ? (item.setorReclamacao2 || '') : '';
+  document.getElementById('pqSetorReclamacao2').value = item && PQ_SETORES_RESPONSAVEL.includes(item.setorReclamacao2) ? item.setorReclamacao2 : '';
+  document.getElementById('pqSetorReclamacao2Outro').value = item && item.setorReclamacao2 && !PQ_SETORES_RESPONSAVEL.includes(item.setorReclamacao2) ? item.setorReclamacao2 : '';
   document.getElementById('pqDescricaoElogio2').value = item ? (item.elogioDescricao2 || '') : '';
-  document.getElementById('pqSetorElogio2').value = item ? (item.elogioSetor2 || '') : '';
+  document.getElementById('pqSetorElogio2').value = item && PQ_SETORES_ELOGIO.includes(item.elogioSetor2) ? item.elogioSetor2 : '';
+  document.getElementById('pqSetorElogio2Outro').value = item && item.elogioSetor2 && !PQ_SETORES_ELOGIO.includes(item.elogioSetor2) ? item.elogioSetor2 : '';
   document.getElementById('pqMotivoNaoRealizada2').value = item ? (item.motivoNaoRealizada2 || '') : '';
   document.getElementById('pqObservacaoNaoRealizada2').value = item ? (item.observacaoNaoRealizada2 || '') : '';
   pqSetToggle('pqRecRealizada', item && item.pesquisa2NaoRealizada ? 'nao' : 'sim');
@@ -11359,20 +11360,16 @@ function openPesquisaModal(item){
 
   const motivoParts = item && item.motivo ? item.motivo.split(' / ') : [];
   document.querySelectorAll('.pq-motivo-cb').forEach(cb=>{
-    cb.checked = cb.value === 'Outros'
-      ? motivoParts.some(p=>p.trim().toLowerCase().startsWith('outros'))
-      : motivoParts.includes(cb.value);
+    cb.checked = motivoParts.includes(cb.value);
   });
   const outroTxt = motivoParts.find(p=>p.trim().toLowerCase().startsWith('outros')) || '';
   document.getElementById('pqMotivoOutro').value = outroTxt.replace(/^outros\s*:?\s*/i,'');
-  document.getElementById('pqMotivoOutroWrap').style.display = outroTxt ? 'block' : 'none';
 
   {
     const setorRecValor = item ? (item.setor && item.setor !== '—' ? item.setor.split('/')[0].trim() : '') : '';
     const ehPadraoRec = PQ_SETORES_RESPONSAVEL.includes(setorRecValor);
-    document.getElementById('pqSetorReclamacao').value = ehPadraoRec ? setorRecValor : (setorRecValor ? 'Outro' : '');
+    document.getElementById('pqSetorReclamacao').value = ehPadraoRec ? setorRecValor : '';
     document.getElementById('pqSetorReclamacaoOutro').value = ehPadraoRec ? '' : setorRecValor;
-    document.getElementById('pqSetorReclamacaoOutro').style.display = (!ehPadraoRec && setorRecValor) ? 'block' : 'none';
   }
   document.getElementById('pqDescricaoSituacao').value = item ? (item.pend || '') : '';
   document.getElementById('pqComentarioContato').value = item ? (item.comentarioContato || '') : '';
@@ -11383,16 +11380,16 @@ function openPesquisaModal(item){
   {
     const setorPendValor = item ? (item.setorPendencia || '') : '';
     const ehPadraoPend = PQ_SETORES_RESPONSAVEL.includes(setorPendValor);
-    document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : (setorPendValor ? 'Outro' : '');
+    document.getElementById('pqSetorPendencia').value = ehPadraoPend ? setorPendValor : '';
     document.getElementById('pqSetorPendenciaOutro').value = ehPadraoPend ? '' : setorPendValor;
-    document.getElementById('pqSetorPendenciaOutro').style.display = (!ehPadraoPend && setorPendValor) ? 'block' : 'none';
   }
 
   document.getElementById('pqDataRemarcada').value = item ? (item.dataRemarcada || '') : '';
   document.getElementById('pqRetornoVisitaRemarcada').value = item ? (item.retornoVisitaRemarcada || '') : '';
   pqSetToggle('pqRemarcada', item && item.pesquisaRemarcada ? 'sim' : 'nao');
 
-  document.getElementById('pqSetorElogio').value = item ? (item.elogioSetor || '') : '';
+  document.getElementById('pqSetorElogio').value = item && PQ_SETORES_ELOGIO.includes(item.elogioSetor) ? item.elogioSetor : '';
+  document.getElementById('pqSetorElogioOutro').value = item && item.elogioSetor && !PQ_SETORES_ELOGIO.includes(item.elogioSetor) ? item.elogioSetor : '';
   document.getElementById('pqDescricaoElogio').value = item ? (item.elogioDescricao || '') : '';
   document.getElementById('pqComentarioSindico').value = item ? (item.comentarioSindico || '') : '';
   document.getElementById('pqResponsavel').value = item ? (item.responsavelPesquisa || '') : '';
@@ -11417,12 +11414,6 @@ function pqAtualizarVisibilidadeRecuperacao(){
   }
 }
 
-document.getElementById('pqSetorReclamacao').addEventListener('change', (e)=>{
-  document.getElementById('pqSetorReclamacaoOutro').style.display = e.target.value === 'Outro' ? 'block' : 'none';
-});
-document.getElementById('pqSetorPendencia').addEventListener('change', (e)=>{
-  document.getElementById('pqSetorPendenciaOutro').style.display = e.target.value === 'Outro' ? 'block' : 'none';
-});
 
 document.getElementById('pqCondominio').addEventListener('input', ()=>{
   if (pqEditingItem) return; // ao editar, o nome já vem fixo
@@ -11530,7 +11521,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
 
   const motivoVals = [...document.querySelectorAll('.pq-motivo-cb:checked')].map(cb=>cb.value);
   const outroTexto = document.getElementById('pqMotivoOutro').value.trim();
-  const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+  const motivoFinal = outroTexto ? [...motivoVals, `Outros: ${outroTexto}`] : motivoVals;
   const statusTratativa = (usaPendencia || usaReclamacao) ? document.getElementById('pqStatusTratativa').value : (pqEditingItem ? pqEditingItem.statusTratativa : '');
   const resolvidoMap = { 'Resolvido': true, 'Concluído mas em acompanhamento': true, 'Em andamento': false, 'Em acompanhamento': false, 'Aguardando Cliente': false, 'Improcedente': true };
 
@@ -11545,21 +11536,17 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
     pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
     setorPendencia: usaPendencia
-      ? (document.getElementById('pqSetorPendencia').value === 'Outro'
-          ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || 'Outro')
-          : document.getElementById('pqSetorPendencia').value)
+      ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || document.getElementById('pqSetorPendencia').value)
       : '',
-    setor: usaReclamacao && document.getElementById('pqSetorReclamacao').value
-      ? (document.getElementById('pqSetorReclamacao').value === 'Outro'
-          ? (document.getElementById('pqSetorReclamacaoOutro').value.trim() || 'Outro')
-          : document.getElementById('pqSetorReclamacao').value)
+    setor: usaReclamacao && (document.getElementById('pqSetorReclamacaoOutro').value.trim() || document.getElementById('pqSetorReclamacao').value)
+      ? (document.getElementById('pqSetorReclamacaoOutro').value.trim() || document.getElementById('pqSetorReclamacao').value)
       : (pqEditingItem ? pqEditingItem.setor : '—'),
     motivo: usaReclamacao && motivoFinal.length ? motivoFinal.join(' / ') : '—',
     pend: usaReclamacao ? document.getElementById('pqDescricaoSituacao').value.trim() : '',
     resolucao: (usaPendencia || usaReclamacao) ? document.getElementById('pqRetornoSetor').value.trim() : '',
     statusTratativa,
     resolvido: statusTratativa ? resolvidoMap[statusTratativa] : null,
-    elogioSetor: usaElogio ? document.getElementById('pqSetorElogio').value : '',
+    elogioSetor: usaElogio ? (document.getElementById('pqSetorElogioOutro').value.trim() || document.getElementById('pqSetorElogio').value) : '',
     elogioDescricao: usaElogio ? document.getElementById('pqDescricaoElogio').value.trim() : '',
     comentarioSindico: document.getElementById('pqComentarioSindico').value.trim(),
     comentarioContato: document.getElementById('pqComentarioContato').value.trim(),
@@ -11569,13 +11556,13 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     comentarioContato2: pqToggleState.pqRecRealizada === 'nao' ? '' : document.getElementById('pqComentarioContato2').value.trim(),
     houvePendencia2: pqToggleState.pqPendencia2 === 'sim',
     pendenciaDescricao2: pqToggleState.pqPendencia2 === 'sim' ? document.getElementById('pqDescricaoPendencia2').value.trim() : '',
-    setorPendencia2: pqToggleState.pqPendencia2 === 'sim' ? document.getElementById('pqSetorPendencia2').value : '',
+    setorPendencia2: pqToggleState.pqPendencia2 === 'sim' ? (document.getElementById('pqSetorPendencia2Outro').value.trim() || document.getElementById('pqSetorPendencia2').value) : '',
     houveReclamacao2: pqToggleState.pqReclamacao2 === 'sim',
     reclamacaoDescricao2: pqToggleState.pqReclamacao2 === 'sim' ? document.getElementById('pqDescricaoReclamacao2').value.trim() : '',
-    setorReclamacao2: pqToggleState.pqReclamacao2 === 'sim' ? document.getElementById('pqSetorReclamacao2').value : '',
+    setorReclamacao2: pqToggleState.pqReclamacao2 === 'sim' ? (document.getElementById('pqSetorReclamacao2Outro').value.trim() || document.getElementById('pqSetorReclamacao2').value) : '',
     houveElogio2: pqToggleState.pqElogio2 === 'sim',
     elogioDescricao2: pqToggleState.pqElogio2 === 'sim' ? document.getElementById('pqDescricaoElogio2').value.trim() : '',
-    elogioSetor2: pqToggleState.pqElogio2 === 'sim' ? document.getElementById('pqSetorElogio2').value : '',
+    elogioSetor2: pqToggleState.pqElogio2 === 'sim' ? (document.getElementById('pqSetorElogio2Outro').value.trim() || document.getElementById('pqSetorElogio2').value) : '',
     pesquisa2NaoRealizada: pqToggleState.pqRecRealizada === 'nao',
     motivoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqMotivoNaoRealizada2').value : '',
     observacaoNaoRealizada2: pqToggleState.pqRecRealizada === 'nao' ? document.getElementById('pqObservacaoNaoRealizada2').value.trim() : '',
