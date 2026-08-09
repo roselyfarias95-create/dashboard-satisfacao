@@ -8393,6 +8393,7 @@ tbody tr:hover{background:var(--slate-soft);}
 .tag.mod-autonomo{background:#EAF3FB; color:#1E6FA8;}
 .tag.mod-controle{background:#FFF1E3; color:#B5691C;}
 .tag.mod-assistida{background:#EAF8EF; color:#2C8A4E;}
+.tag.mod-empresa{background:#F1EAFB; color:#6C3FA8;}
 .badge-pesq-concluida{background:#E5F6EE; color:#1D8A57;}
 .badge-pesq-concluida::before{background:#1D8A57;}
 .badge-pesq-pendente{background:var(--amber-soft); color:var(--amber);}
@@ -8592,6 +8593,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <option value="Autônomo">Autônomo</option>
       <option value="Controle de Acesso">Controle de Acesso</option>
       <option value="Assistida">Assistida</option>
+      <option value="Empresa">Empresa</option>
     </select>
     <select class="filter-select" id="filterArmario">
       <option value="">Armário: todos</option>
@@ -8751,6 +8753,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
           <div class="seg-opt" data-val="Autônomo">Autônomo</div>
           <div class="seg-opt" data-val="Controle de Acesso">Controle de Acesso</div>
           <div class="seg-opt" data-val="Assistida">Assistida</div>
+          <div class="seg-opt" data-val="Empresa">Empresa</div>
         </div>
       </div>
       <div class="field" style="border-top:1px solid var(--line); padding-top:14px;">
@@ -9057,6 +9060,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     if(m === "Autônomo") return '<span class="tag mod-autonomo">Autônomo</span>';
     if(m === "Controle de Acesso") return '<span class="tag mod-controle">Controle de Acesso</span>';
     if(m === "Assistida") return '<span class="tag mod-assistida">Assistida</span>';
+    if(m === "Empresa") return '<span class="tag mod-empresa">Empresa</span>';
     return '<span class="tag">Não definida</span>';
   }
   function tagSimNao(v){
