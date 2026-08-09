@@ -1475,7 +1475,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-04-J</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-A (com Fundo Fixo)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -2273,6 +2273,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
     <div class="subtab-nav" id="veSubtabNav">
       <button type="button" class="subtab-btn active" data-ve-subtab="lista">📋 Lista de Visitas</button>
       <button type="button" class="subtab-btn" data-ve-subtab="minidash">📊 Mini Dashboard</button>
+      <button type="button" class="subtab-btn" data-ve-subtab="fundoFixo">💰 Fundo Fixo</button>
     </div>
 
     <div id="veViewMiniDash" style="display:none;">
@@ -2362,6 +2363,42 @@ CONDOMINIO Y	9	Concluído"></textarea>
         </tbody>
       </table>
     </div>
+    </div>
+    </div>
+
+    <div id="veViewFundoFixo" style="display:none;">
+      <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+        Seus gastos de visitas (Uber, gasolina, etc.) com comprovante anexado — só as visitas feitas por você aparecem aqui, pra facilitar a prestação de contas do fundo fixo.
+      </p>
+
+      <div class="stats-strip" id="ffStats"></div>
+
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="month" class="search" id="ffFilterMes" style="max-width:160px;">
+        <input type="text" class="search" id="ffSearch" placeholder="Buscar condomínio...">
+        <select class="filter-select" id="ffFilterTipo">
+          <option value="">Tipo: todos</option>
+          <option value="Uber Ida">Uber Ida</option>
+          <option value="Uber Volta">Uber Volta</option>
+          <option value="Gasolina">Gasolina</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <button type="button" class="clearbtn" id="btnLimparFiltrosFF">Limpar filtros</button>
+        <button type="button" class="clearbtn" id="btnExportarFF">📤 Exportar Planilha</button>
+        <button type="button" class="logout-btn" id="btnNovoGastoFF" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Gasto</button>
+      </div>
+      <span id="ffCount" class="count-line"></span>
+      <div class="checklist-table-wrap">
+        <table class="checklist-table" id="ffTable">
+          <thead>
+            <tr>
+              <th>Data</th><th class="ck-name">Condomínio</th><th>Endereço</th><th>Tipo</th>
+              <th>Valor</th><th>Comprovante</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="ffBody"><tr><td colspan="7" class="empty">Carregando...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -3363,6 +3400,55 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="login-btn" id="demSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">💾 Salvar</button>
       </div>
       <p class="users-error" id="demError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="ffModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="ffModalTitle">Novo Gasto — Fundo Fixo</h3>
+        <button type="button" class="logout-btn" id="ffModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="ffId">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data e Hora
+          <input type="datetime-local" id="ffDataHora" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tipo de Gasto
+          <select id="ffTipoGasto" style="width:100%; margin-top:4px;">
+            <option value="Uber Ida">Uber Ida</option>
+            <option value="Uber Volta">Uber Volta</option>
+            <option value="Gasolina">Gasolina</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
+          <input type="text" id="ffCondominio" list="fa-condo-list" placeholder="Nome do condomínio (ou deixe em branco p/ gasolina, sede, etc.)" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Endereço
+          <input type="text" id="ffEndereco" placeholder="Endereço da visita" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor (R$)
+          <input type="number" id="ffValor" min="0" step="0.01" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observação
+          <textarea id="ffObs" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+        <div style="grid-column:1 / -1;">
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:6px;">📎 Comprovante(s)</label>
+          <div id="ffAnexosBox" style="margin-bottom:8px;"></div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="file" id="ffAnexoInput" accept="image/*,application/pdf" style="flex:1; font-size:11.5px;">
+            <button type="button" class="clearbtn" id="ffAnexoUploadBtn">Anexar</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="ffDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="ffCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="ffSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="ffError" style="display:none;"></p>
     </div>
   </div>
 
@@ -10018,6 +10104,217 @@ function wireAnexoUpload(inputId, btnId, containerId, tipo, idGetter){
     }
   });
 }
+
+// ============================================================================
+// FUNDO FIXO — controle mensal de gastos de visitas (Uber, gasolina, etc.)
+// com comprovante anexado (reaproveita o sistema de anexos acima) e
+// exportação pra planilha no mesmo formato usado pra prestar contas.
+// ============================================================================
+let ffData = [];
+let ffConfig = {};
+let ffLoaded = false;
+let ffEditingId = null;
+
+async function loadFundoFixo(){
+  const body = document.getElementById('ffBody');
+  if (!sb){
+    body.innerHTML = '<tr><td colspan="8" class="empty">Sem conexão com o Supabase — não é possível carregar agora.</td></tr>';
+    return;
+  }
+  try{
+    const [r1, r2] = await Promise.all([
+      sb.from('fundo_fixo_gastos').select('*').eq('responsavel', 'Rosely - Analista de Qualidade').order('data_hora', { ascending:false }),
+      sb.from('fundo_fixo_config').select('*'),
+    ]);
+    if (r1.error) throw r1.error;
+    ffData = r1.data || [];
+    ffConfig = {};
+    (r2.data||[]).forEach(c=>{ ffConfig[c.mes_referencia] = c.valor_fundo; });
+    ffLoaded = true;
+    if (!document.getElementById('ffFilterMes').value){
+      const meses = [...new Set(ffData.map(g=>g.mes_referencia))].sort();
+      document.getElementById('ffFilterMes').value = meses.length ? meses[meses.length-1] : new Date().toISOString().slice(0,7);
+    }
+    renderFundoFixo();
+  }catch(e){
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="8" class="empty">Erro ao carregar: ${escapeHtml(e.message)} — confira se as tabelas "fundo_fixo_gastos" e "fundo_fixo_config" já foram criadas no Supabase.</td></tr>`;
+  }
+}
+
+function getFilteredFundoFixo(){
+  const q = (document.getElementById('ffSearch').value || '').trim().toLowerCase();
+  const fMes = document.getElementById('ffFilterMes').value;
+  const fTipo = document.getElementById('ffFilterTipo').value;
+  return ffData.filter(g=>{
+    if (fMes && g.mes_referencia !== fMes) return false;
+    if (fTipo && g.tipo_gasto !== fTipo) return false;
+    if (q && !(g.condominio||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderFundoFixo(){
+  const mesAtual = document.getElementById('ffFilterMes').value;
+  const doMes = ffData.filter(g=>g.mes_referencia === mesAtual);
+  const utilizado = doMes.reduce((a,g)=>a+(Number(g.valor)||0),0);
+  const fundoFixoVal = ffConfig[mesAtual] != null ? Number(ffConfig[mesAtual]) : 500;
+  const restante = fundoFixoVal - utilizado;
+  document.getElementById('ffStats').innerHTML = `
+    <div class="stat-box">
+      <div class="snum" style="color:var(--accent); cursor:text;" contenteditable="true" id="ffFundoFixoEdit" title="Clique pra editar o valor do fundo fixo desse mês">${fundoFixoVal.toFixed(2)}</div>
+      <div class="slbl">Fundo Fixo (R$)</div>
+    </div>
+    <div class="stat-box"><div class="snum" style="color:var(--atencao);">${utilizado.toFixed(2)}</div><div class="slbl">Utilizado (R$)</div></div>
+    <div class="stat-box"><div class="snum" style="color:${restante < 0 ? 'var(--critico)' : 'var(--ok)'};">${restante.toFixed(2)}</div><div class="slbl">Restante (R$)</div></div>
+    <div class="stat-box"><div class="snum">${doMes.length}</div><div class="slbl">Lançamentos no mês</div></div>
+  `;
+  const editEl = document.getElementById('ffFundoFixoEdit');
+  editEl.addEventListener('blur', async ()=>{
+    const novo = parseFloat(editEl.textContent.replace(',','.'));
+    if (isNaN(novo)){ renderFundoFixo(); return; }
+    try{
+      const { error } = await sb.from('fundo_fixo_config').upsert({ mes_referencia: mesAtual, valor_fundo: novo });
+      if (error) throw error;
+      ffConfig[mesAtual] = novo;
+      renderFundoFixo();
+    }catch(e){ alert('Erro ao salvar fundo fixo: ' + e.message); renderFundoFixo(); }
+  });
+
+  const filtrados = getFilteredFundoFixo();
+  document.getElementById('ffCount').textContent = `${filtrados.length} registro(s)`;
+  const tbody = document.getElementById('ffBody');
+  if (!filtrados.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum gasto encontrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtrados.map(g=>{
+    const dataFmt = g.data_hora ? new Date(g.data_hora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td>${dataFmt}</td>
+      <td class="ck-name">${escapeHtml(g.condominio || '—')}</td>
+      <td>${escapeHtml(g.endereco || '—')}</td>
+      <td>${escapeHtml(g.tipo_gasto || '—')}</td>
+      <td>R$ ${(Number(g.valor)||0).toFixed(2)}</td>
+      <td><span id="ffAnexoCount_${g.id}" style="font-size:11px; color:var(--text-faint);">…</span></td>
+      <td><button type="button" class="clearbtn" data-ff-edit="${g.id}" style="padding:3px 8px; font-size:11px;">Editar</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('[data-ff-edit]').forEach(btn=>{
+    btn.onclick = ()=> ffAbrirModal(ffData.find(g=>g.id === btn.getAttribute('data-ff-edit')));
+  });
+  filtrados.forEach(async g=>{
+    const anexos = await carregarAnexos('fundo_fixo_gasto', g.id);
+    const el = document.getElementById(`ffAnexoCount_${g.id}`);
+    if (el) el.textContent = anexos.length ? `📎 ${anexos.length}` : '— sem anexo';
+  });
+}
+
+function ffAbrirModal(item){
+  ffEditingId = item ? item.id : null;
+  document.getElementById('ffModalTitle').textContent = item ? 'Editar Gasto — Fundo Fixo' : 'Novo Gasto — Fundo Fixo';
+  document.getElementById('ffId').value = item ? item.id : '';
+  document.getElementById('ffDataHora').value = item && item.data_hora ? item.data_hora.slice(0,16) : new Date().toISOString().slice(0,16);
+  document.getElementById('ffTipoGasto').value = item ? item.tipo_gasto : 'Uber Ida';
+  document.getElementById('ffCondominio').value = item ? (item.condominio||'') : '';
+  document.getElementById('ffEndereco').value = item ? (item.endereco||'') : '';
+  document.getElementById('ffValor').value = item ? item.valor : '';
+  document.getElementById('ffObs').value = item ? (item.obs||'') : '';
+  document.getElementById('ffDeleteBtn').style.display = item ? '' : 'none';
+  document.getElementById('ffError').style.display = 'none';
+  document.getElementById('ffModalOverlay').style.display = 'flex';
+  renderAnexosBox('ffAnexosBox', 'fundo_fixo_gasto', item ? item.id : null);
+}
+
+async function ffSalvar(){
+  const condominio = document.getElementById('ffCondominio').value.trim();
+  const dataHora = document.getElementById('ffDataHora').value;
+  const valor = parseFloat(document.getElementById('ffValor').value);
+  const errEl = document.getElementById('ffError');
+  if (!dataHora){ errEl.textContent = 'Informe a data e hora.'; errEl.style.display='block'; return; }
+  if (isNaN(valor) || valor <= 0){ errEl.textContent = 'Informe um valor válido.'; errEl.style.display='block'; return; }
+  const payload = {
+    data_hora: new Date(dataHora).toISOString(),
+    condominio: condominio || null,
+    endereco: document.getElementById('ffEndereco').value.trim() || null,
+    tipo_gasto: document.getElementById('ffTipoGasto').value,
+    valor: valor,
+    mes_referencia: dataHora.slice(0,7),
+    responsavel: 'Rosely - Analista de Qualidade',
+    obs: document.getElementById('ffObs').value.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+  const saveBtn = document.getElementById('ffSaveBtn');
+  saveBtn.disabled = true;
+  try{
+    const result = ffEditingId
+      ? await sb.from('fundo_fixo_gastos').update(payload).eq('id', ffEditingId)
+      : await sb.from('fundo_fixo_gastos').insert(payload);
+    if (result.error) throw result.error;
+    document.getElementById('ffModalOverlay').style.display = 'none';
+    await loadFundoFixo();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message;
+    errEl.style.display = 'block';
+  }finally{
+    saveBtn.disabled = false;
+  }
+}
+
+async function ffExcluir(){
+  if (!ffEditingId) return;
+  if (!confirm('Excluir esse gasto? Os comprovantes anexados também serão perdidos. Não pode ser desfeito.')) return;
+  try{
+    const anexos = await carregarAnexos('fundo_fixo_gasto', ffEditingId);
+    for (const a of anexos){
+      await sb.storage.from('anexos').remove([a.caminho_storage]);
+      await sb.from('anexos').delete().eq('id', a.id);
+    }
+    await sb.from('fundo_fixo_gastos').delete().eq('id', ffEditingId);
+    document.getElementById('ffModalOverlay').style.display = 'none';
+    await loadFundoFixo();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+}
+
+function ffExportarExcel(){
+  const mesAtual = document.getElementById('ffFilterMes').value;
+  const doMes = ffData.filter(g=>g.mes_referencia === mesAtual).sort((a,b)=> new Date(a.data_hora) - new Date(b.data_hora));
+  if (!doMes.length){ alert('Não há gastos nesse mês para exportar.'); return; }
+  const linhas = doMes.map(g=>({
+    'DATA': g.data_hora ? new Date(g.data_hora).toLocaleString('pt-BR') : '',
+    'CONDOMINIO': g.condominio || '',
+    'ENDEREÇO': g.endereco || '',
+    'GASTO': g.tipo_gasto || '',
+    'VALOR': Number(g.valor)||0,
+  }));
+  const utilizado = doMes.reduce((a,g)=>a+(Number(g.valor)||0),0);
+  const fundoFixoVal = ffConfig[mesAtual] != null ? Number(ffConfig[mesAtual]) : 500;
+  linhas.push({ 'DATA':'', 'CONDOMINIO':'', 'ENDEREÇO':'', 'GASTO':'', 'VALOR':'' });
+  linhas.push({ 'DATA':'', 'CONDOMINIO':'', 'ENDEREÇO':'', 'GASTO':'FUNDO FIXO', 'VALOR': fundoFixoVal });
+  linhas.push({ 'DATA':'', 'CONDOMINIO':'', 'ENDEREÇO':'', 'GASTO':'ULTILIZADO', 'VALOR': utilizado });
+  linhas.push({ 'DATA':'', 'CONDOMINIO':'', 'ENDEREÇO':'', 'GASTO':'RESTANTE', 'VALOR': fundoFixoVal - utilizado });
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wb = XLSX.utils.book_new();
+  const nomeAba = (typeof mesLabelBR === 'function' ? mesLabelBR(mesAtual) : mesAtual).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28) || 'GASTOS';
+  XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+  XLSX.writeFile(wb, `gastos_fundo_fixo_${mesAtual}.xlsx`);
+}
+
+document.getElementById('ffFilterMes').addEventListener('change', renderFundoFixo);
+document.getElementById('ffSearch').addEventListener('input', renderFundoFixo);
+document.getElementById('ffFilterTipo').addEventListener('change', renderFundoFixo);
+document.getElementById('btnLimparFiltrosFF').addEventListener('click', ()=>{
+  document.getElementById('ffSearch').value = '';
+  document.getElementById('ffFilterTipo').value = '';
+  renderFundoFixo();
+});
+document.getElementById('btnNovoGastoFF').addEventListener('click', ()=> ffAbrirModal(null));
+document.getElementById('btnExportarFF').addEventListener('click', ffExportarExcel);
+document.getElementById('ffModalClose').addEventListener('click', ()=>{ document.getElementById('ffModalOverlay').style.display = 'none'; });
+document.getElementById('ffCancelBtn').addEventListener('click', ()=>{ document.getElementById('ffModalOverlay').style.display = 'none'; });
+document.getElementById('ffSaveBtn').addEventListener('click', ffSalvar);
+document.getElementById('ffDeleteBtn').addEventListener('click', ffExcluir);
+wireAnexoUpload('ffAnexoInput', 'ffAnexoUploadBtn', 'ffAnexosBox', 'fundo_fixo_gasto', ()=> ffEditingId);
 wireAnexoUpload('negAnexoInput', 'negAnexoUploadBtn', 'negAnexosBox', 'negociacao', () => negociacaoEditingId);
 wireAnexoUpload('veAnexoInput', 'veAnexoUploadBtn', 'veAnexosBox', 'visita', () => document.getElementById('veId').value || null);
 
@@ -13703,7 +14000,9 @@ document.querySelectorAll('[data-ve-subtab]').forEach(btn=>{
     const alvo = btn.getAttribute('data-ve-subtab');
     document.getElementById('veViewLista').style.display = alvo === 'lista' ? 'block' : 'none';
     document.getElementById('veViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
+    document.getElementById('veViewFundoFixo').style.display = alvo === 'fundoFixo' ? 'block' : 'none';
     if (alvo === 'minidash') renderVeMiniDash();
+    if (alvo === 'fundoFixo' && typeof loadFundoFixo === 'function') loadFundoFixo();
   });
 });
 
