@@ -5926,6 +5926,31 @@ const SEED_NOME_TO_STATUS = {"COND ALIPIO BASTOS": "Ativo", "COND CAJUINA": "Ati
 // quem está inativo sem precisar acessar o quadro isolado do Cadastro.
 let STATUS_POR_CONDOMINIO = { ...SEED_NOME_TO_STATUS };
 let statusCondominiosCarregado = false;
+let CADASTRO_LIVE = [];
+let cadastroLiveCarregado = false;
+async function carregarCadastroLive(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status');
+    if (error) throw error;
+    CADASTRO_LIVE = data || [];
+    cadastroLiveCarregado = true;
+  }catch(e){
+    console.warn('Falha ao carregar cadastro_condominios ao vivo (usando dados congelados como respaldo):', e);
+  }
+}
+function totalCondominiosAtivos(){
+  if (cadastroLiveCarregado && CADASTRO_LIVE.length){
+    return [...new Set(CADASTRO_LIVE.filter(d=>d.status !== 'Inativo').map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
+  }
+  return [...new Set(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
+}
+function condominiosAtivosObjetos(){
+  if (cadastroLiveCarregado && CADASTRO_LIVE.length){
+    return [...new Map(CADASTRO_LIVE.filter(d=>d.status !== 'Inativo').map(d=>[normalizeNomeCondo(d.nome), d])).values()];
+  }
+  return [...new Map(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>[normalizeNomeCondo(d.nome), d])).values()];
+}
 async function carregarStatusCondominios(){
   if (!sb) return;
   try{
@@ -13727,8 +13752,7 @@ let faLoaded = false;
 
 function corTMA(tma){
   if (tma === null || tma === undefined) return 'var(--text-faint)';
-  if (tma <= 300) return 'var(--ok)';
-  if (tma <= 600) return 'var(--atencao)';
+  if (tma <= 6) return 'var(--ok)';
   return 'var(--critico)';
 }
 function corPortaViolada(n){
@@ -13746,7 +13770,7 @@ function corPortaAberta(n){
 function faStatus(registro){
   if (!registro) return 'Pendente';
   if (registro.atendimentos === null || registro.atendimentos === undefined) return 'Pendente';
-  if (registro.tma !== null && registro.tma !== undefined && registro.tma > 300) return 'Fora da Meta';
+  if (registro.tma !== null && registro.tma !== undefined && registro.tma > 6) return 'Fora da Meta';
   return 'Preenchido';
 }
 
@@ -13758,6 +13782,7 @@ async function loadFluxoAtendimento(){
   }
   try{
     if (!statusCondominiosCarregado) await carregarStatusCondominios();
+    await carregarCadastroLive();
     let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).limit(5000);
     if (error) throw error;
     faData = data || [];
@@ -13795,11 +13820,11 @@ function getFilteredFluxoAtendimento(){
 
 function renderFluxoAtendimento(){
   const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && String(faData[0].mes_referencia).slice(0,7)) || '';
-  const totalCondos = [...new Set(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
+  const totalCondos = totalCondominiosAtivos();
   const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual);
   const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
   const pendentes = Math.max(0, totalCondos - preenchidos);
-  const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 300).length;
+  const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 6).length;
   const tmas = doMes.map(f=>f.tma).filter(n=>n !== null && n !== undefined);
   const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
   const pctPreenchido = totalCondos ? Math.round(preenchidos/totalCondos*100) : 0;
@@ -13876,7 +13901,7 @@ async function criarNovaRodadaFluxo(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
   if (!confirm(`Criar registros pendentes de Fluxo de Atendimento para todos os condomínios ativos no mês ${mesLabelBR(mes)}?`)) return;
-  const condosAtivos = [...new Map(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>[normalizeNomeCondo(d.nome), d])).values()];
+  const condosAtivos = condominiosAtivosObjetos();
   const jaExistentes = new Set(faData.filter(f=>String(f.mes_referencia||'').slice(0,7)===mes).map(f=>normalizeNomeCondo(f.condominio||'')));
   const faltando = condosAtivos.filter(c => !jaExistentes.has(normalizeNomeCondo(c.nome)));
   if (!faltando.length){ alert('Todos os condomínios já têm registro nesse mês.'); return; }
@@ -14676,6 +14701,7 @@ async function loadAdocaoDigital(){
   }
   try{
     if (!statusCondominiosCarregado) await carregarStatusCondominios();
+    await carregarCadastroLive();
     let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
     if (error) throw error;
     adData = data || [];
@@ -14725,7 +14751,7 @@ function getFilteredAdocaoDigital(){
 function renderAdocaoDigital(){
   renderAdCicloProgresso();
   const filtered = getFilteredAdocaoDigital();
-  const totalCondos = [...new Set(DATA.filter(d=>condominioEstaAtivo(d.nome)).map(d=>normalizeNomeCondo(d.nome)))].filter(Boolean).length;
+  const totalCondos = totalCondominiosAtivos();
   const comApp = adData.filter(a => (a.apps_cadastrados||0) > 0).length;
   const comGphone = adData.filter(a => a.possui_gphone === 'Sim').length;
   const comArmario = adData.filter(a => a.possui_armario === 'Sim').length;
@@ -17144,7 +17170,7 @@ function coletarDadosRiscoCondominio(nomeAlvoNorm){
   const reclamacoesSemResolucao = reclamacoesCondo.filter(d => d.statusTratativa && d.statusTratativa !== 'Resolvido').length;
   const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).sort((a,b)=>String(a.mes_referencia||'').localeCompare(String(b.mes_referencia||'')));
   const fluxoRecente = fluxoCondo[fluxoCondo.length-1] || null;
-  const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 300);
+  const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 6);
   const mesAtualFluxo = hojeISO().slice(0,7);
   const fluxoPendente = !fluxoCondo.some(f => String(f.mes_referencia||'').slice(0,7) === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
   const demandasCondo = (typeof demData !== 'undefined' ? demData : []).filter(d => normalizeNomeCondo(d.condominio) === nomeAlvoNorm);
@@ -17266,14 +17292,14 @@ function renderVidaAtendimentoBloco(nomeAlvoNorm, periodo){
   const ultimoEvento = mensalEventos[mensalEventos.length-1];
   const mediaEventosAnteriores = mensalEventos.length > 1 ? mensalEventos.slice(0,-1).reduce((a,b)=>a+b,0)/(mensalEventos.length-1) : 0;
   const eventosRuim = ultimoEvento > mediaEventosAnteriores && ultimoEvento > 0;
-  const tmaRuim = tmaMedio !== null && tmaMedio > 300;
+  const tmaRuim = tmaMedio !== null && tmaMedio > 6;
   const ultimoIncidente = mensalIncidentes[mensalIncidentes.length-1];
   const incidentesRuim = ultimoIncidente > 0;
 
   document.getElementById('vidaAtendimentoStats').innerHTML = `
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalLigacoes.toLocaleString('pt-BR')}</div><div class="slbl">Total de ligações</div>${barChartMini(mesesLabel, mensalLigacoes, {corNeutra:'var(--accent)', destacarUltimoRuim:ligacoesRuim, onClickTipo:'ligacoes'})}</div>
     <div class="stat-box"><div class="snum" style="color:var(--atencao);">${(totalPortaAberta+totalPortaViolada).toLocaleString('pt-BR')}</div><div class="slbl">Eventos (${totalPortaAberta} aberta · ${totalPortaViolada} violada)</div>${barChartMini(mesesLabel, mensalEventos, {corNeutra:'var(--atencao)', destacarUltimoRuim:eventosRuim, onClickTipo:'eventos'})}</div>
-    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 300s)</div>${barChartMini(mesesLabel, mensalTma, {corNeutra:'var(--text-faint)', destacarUltimoRuim:tmaRuim, onClickTipo:'tma', sufixo:'s'})}</div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 6s)</div>${barChartMini(mesesLabel, mensalTma, {corNeutra:'var(--text-faint)', destacarUltimoRuim:tmaRuim, onClickTipo:'tma', sufixo:'s'})}</div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${incidentesCondo.length}</div><div class="slbl">Incidentes</div>${barChartMini(mesesLabel, mensalIncidentes, {corNeutra:'var(--text-faint)', destacarUltimoRuim:incidentesRuim, onClickTipo:'incidentes'})}</div>
   `;
   vidaConectarCliqueMiniGraficos(document.getElementById('vidaAtendimentoStats'));
