@@ -573,6 +573,57 @@
     padding:16px 18px; margin-bottom:16px;
     box-shadow:var(--shadow-panel);
   }
+
+  /* ---------- ORGANOGRAMA (Equipe & Metas) ---------- */
+  .orgchart, .orgchart ul, .orgchart li{ list-style:none; margin:0; padding:0; position:relative; }
+  .orgchart{ text-align:center; overflow-x:auto; padding:10px 0 6px; }
+  .orgchart ul{ padding-top:26px; position:relative; display:flex; justify-content:center; }
+  .orgchart li{ display:inline-flex; flex-direction:column; align-items:center; padding:26px 14px 0; position:relative; }
+  .orgchart li::before, .orgchart li::after{
+    content:''; position:absolute; top:0; right:50%; border-top:2px solid var(--line); width:50%; height:26px;
+  }
+  .orgchart li::after{ right:auto; left:50%; border-left:2px solid var(--line); }
+  .orgchart li:only-child{ padding-top:0; }
+  .orgchart li:only-child::after, .orgchart li:only-child::before{ display:none; }
+  .orgchart > ul > li::before, .orgchart > ul > li::after{ border-top:0; }
+  .orgchart > ul > li{ padding-top:0; }
+  .orgchart li:first-child::before, .orgchart li:last-child::after{ border:0 none; }
+  .orgchart li:last-child::before{ border-right:2px solid var(--line); border-radius:0 6px 0 0; }
+  .orgchart li:first-child::after{ border-radius:6px 0 0 0; }
+  .orgchart ul ul::before{
+    content:''; position:absolute; top:-26px; left:50%; border-left:2px solid var(--line); width:0; height:26px;
+  }
+  .org-box{
+    display:inline-block; background:var(--bg-panel-2); border:1px solid var(--line);
+    border-radius:10px; padding:12px 16px; min-width:150px;
+  }
+  .org-box .org-nome{ font-size:13px; font-weight:700; color:var(--text); }
+  .org-box .org-cargo{ font-size:10.5px; color:var(--accent); margin-top:2px; font-weight:600; }
+  .org-box .org-info{ font-size:10px; color:var(--text-faint); margin-top:4px; line-height:1.4; }
+  .org-box.org-root{ background:linear-gradient(135deg, var(--accent), var(--accent-2)); border:none; }
+  .org-box.org-root .org-nome, .org-box.org-root .org-cargo{ color:#fff; }
+
+  /* ---------- METAS POR MEMBRO ---------- */
+  .metas-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; }
+  .meta-card{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .meta-card .meta-nome{ font-size:13px; font-weight:700; color:var(--text); }
+  .meta-card .meta-cargo{ font-size:10.5px; color:var(--text-faint); margin:1px 0 10px; }
+  .meta-card ul{ list-style:none; margin:0; padding:0; }
+  .meta-card li{ font-size:11.5px; color:var(--text-dim); padding:4px 0; border-bottom:1px dashed var(--line); display:flex; justify-content:space-between; gap:8px; }
+  .meta-card li:last-child{ border-bottom:none; }
+  .meta-card li b{ color:var(--accent); font-family:"IBM Plex Mono",monospace; white-space:nowrap; }
+
+  /* ---------- FLUXO DE RECLAMAÇÕES ---------- */
+  .fluxo-etapas{ display:flex; gap:10px; overflow-x:auto; padding:6px 2px 10px; }
+  .fluxo-etapa{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:170px; flex-shrink:0; position:relative; }
+  .fluxo-etapa .fluxo-num{
+    width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin-bottom:8px;
+  }
+  .fluxo-etapa .fluxo-titulo{ font-size:12px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .fluxo-etapa .fluxo-desc{ font-size:10.5px; color:var(--text-faint); line-height:1.4; }
+  .fluxo-etapa.fluxo-sla .fluxo-num{ background:var(--critico); }
+  .fluxo-etapa.fluxo-sla .fluxo-titulo{ color:var(--critico); }
   .chart-title{
     font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint);
     margin:0 0 14px; font-family:"IBM Plex Mono",monospace; font-weight:600;
@@ -1066,6 +1117,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="incidentes" checked> Incidentes</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="demandas" checked> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="vidaCondominio" checked> Vida do Condomínio</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="equipeMetas" checked> Equipe & Metas</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1103,6 +1155,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="incidentes"> Incidentes</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="demandas"> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="vidaCondominio"> Vida do Condomínio</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="equipeMetas"> Equipe & Metas</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1475,7 +1528,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-A (com Fundo Fixo)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-D (corrigida permissão de abas)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1514,6 +1567,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="incidentes"><span class="tab-icon">🛑</span><span class="tab-label">Incidentes</span></button>
       <button type="button" class="tab-btn" data-tab="demandas"><span class="tab-icon">🗂️</span><span class="tab-label">Demandas</span></button>
       <button type="button" class="tab-btn" data-tab="vidaCondominio"><span class="tab-icon">🕓</span><span class="tab-label">Vida do Condomínio</span></button>
+      <button type="button" class="tab-btn" data-tab="equipeMetas"><span class="tab-icon">👥</span><span class="tab-label">Equipe & Metas</span></button>
       <button type="button" class="tab-btn" data-tab="atividades" id="tabBtnAtividades" style="display:none;"><span class="tab-icon">🕵️</span><span class="tab-label">Atividades da Equipe</span></button>
     </nav>
 
@@ -3578,6 +3632,174 @@ CONDOMINIO Y	480	45"></textarea>
     <div id="vidaCondoVazio" class="empty" style="display:none;">Busque um condomínio acima pra ver o histórico completo.</div>
   </div>
 
+  <!-- ==================== EQUIPE & METAS (ORGANOGRAMA) ==================== -->
+  <div id="tabEquipeMetas" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Estrutura da equipe, divisão de carteira por área e metas diárias de cada membro.
+    </p>
+
+    <div class="stats-strip">
+      <div class="stat-box"><div class="snum">287</div><div class="slbl">Condomínios (total)</div></div>
+      <div class="stat-box"><div class="snum">4</div><div class="slbl">Filiais · AM · CE · MA · PI</div></div>
+      <div class="stat-box"><div class="snum" style="color:var(--accent);">50</div><div class="slbl">Pesquisas/dia (meta)</div></div>
+      <div class="stat-box"><div class="snum" style="color:var(--ok);">1.100</div><div class="slbl">Pesquisas/mês (meta)</div></div>
+    </div>
+
+    <div class="chart-panel" style="margin:16px 0;">
+      <p class="chart-title">🧭 Organograma da Equipe</p>
+      <div class="orgchart">
+        <ul>
+          <li>
+            <div class="org-box org-root">
+              <div class="org-nome">Equipe Customer Success</div>
+              <div class="org-cargo">Servis Tecnologia em Segurança</div>
+            </div>
+            <ul>
+              <li>
+                <div class="org-box">
+                  <div class="org-nome">Rosely</div>
+                  <div class="org-cargo">Analista de CS</div>
+                  <div class="org-info">CE · MA — 201 condomínios<br>Lidera a equipe</div>
+                </div>
+                <ul>
+                  <li><div class="org-box"><div class="org-nome">Aprendiz Manhã</div><div class="org-cargo">Jovem Aprendiz</div><div class="org-info">Apoio CE · MA</div></div></li>
+                  <li><div class="org-box"><div class="org-nome">Aprendiz Tarde</div><div class="org-cargo">Jovem Aprendiz</div><div class="org-info">Apoio CE · MA</div></div></li>
+                </ul>
+              </li>
+              <li>
+                <div class="org-box">
+                  <div class="org-nome">Josiane</div>
+                  <div class="org-cargo">Assistente de CS</div>
+                  <div class="org-info">AM · PI (SECOPI) — 86 condomínios<br>Lidera AM e PI diretamente</div>
+                </div>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="charts-grid charts-grid-2">
+      <div class="chart-panel">
+        <p class="chart-title">🟢 Área Rosely — 201 condomínios</p>
+        <p style="font-size:12px; color:var(--text-dim); margin:0 0 10px;">CE: 170 condomínios · MA: 31 condomínios</p>
+        <ul style="list-style:none; margin:0; padding:0; font-size:12px; color:var(--text-dim); line-height:2;">
+          <li>✅ Rosely lidera CE e MA diretamente</li>
+          <li>✅ Aprendizes atuam no CE e MA</li>
+          <li>✅ Parceria com Coordenador Jhon (MA)</li>
+          <li>✅ Foco em retenção e aditivos</li>
+          <li>✅ Auditoria de faciais/app</li>
+          <li>✅ Pesquisas mensais · Retorno de O.S e preventivas</li>
+          <li>✅ Visitas, entregas de condomínios e assembleias</li>
+          <li>✅ Atendimento via WhatsApp, Blip e SAC Gear</li>
+        </ul>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">🔵 Área Josiane — 86 condomínios</p>
+        <p style="font-size:12px; color:var(--text-dim); margin:0 0 10px;">AM: 31 condomínios · SECOPI (PI): 55 condomínios</p>
+        <ul style="list-style:none; margin:0; padding:0; font-size:12px; color:var(--text-dim); line-height:2;">
+          <li>✅ Josiane lidera / dá suporte à Tayanne (AM)</li>
+          <li>✅ Auditoria de faciais/app/token</li>
+          <li>✅ Pesquisas mensais · Retorno de O.S</li>
+          <li>✅ Foco em retenção e aditivos</li>
+          <li>✅ Atendimento via WhatsApp, Blip e SAC Gear</li>
+          <li>✅ Parceria com Coordenadora Juliana e assistente Paula (SECOPI)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-top:16px;">
+      <p class="chart-title">🎯 Metas Diárias por Membro <span style="text-transform:none; letter-spacing:0; font-weight:400;">· auditoria de cadastros: 1 condomínio/semana por membro</span></p>
+      <div class="metas-grid">
+        <div class="meta-card">
+          <div class="meta-nome">Rosely</div>
+          <div class="meta-cargo">Analista de CS · CE · MA</div>
+          <ul>
+            <li>Pesquisas de satisfação <b>10/dia</b></li>
+            <li>Reclamações críticas <b>5/dia</b></li>
+            <li>O.S. verificadas <b>10/dia</b></li>
+            <li>Preventivas verificadas <b>5/dia</b></li>
+            <li>Renovações/aditivos <b>2/dia</b></li>
+            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
+          </ul>
+        </div>
+        <div class="meta-card">
+          <div class="meta-nome">Josiane</div>
+          <div class="meta-cargo">Assistente de CS · AM · PI</div>
+          <ul>
+            <li>Pesquisas de satisfação <b>10/dia</b></li>
+            <li>Faciais auditados <b>15/dia</b></li>
+            <li>Apps auditados <b>15/dia</b></li>
+            <li>Tokens auditados <b>15/dia</b></li>
+            <li>Retornos cobrados <b>10/dia</b></li>
+            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
+          </ul>
+        </div>
+        <div class="meta-card">
+          <div class="meta-nome">Aprendiz Manhã</div>
+          <div class="meta-cargo">Jovem Aprendiz · Apoio CE · MA</div>
+          <ul>
+            <li>Pesquisas de satisfação <b>15/dia</b></li>
+            <li>Contatos atualizados <b>10/dia</b></li>
+            <li>Reclamações acompanhadas <b>10/dia</b></li>
+            <li>Atualização do sistema <b>—</b></li>
+            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
+          </ul>
+        </div>
+        <div class="meta-card">
+          <div class="meta-nome">Aprendiz Tarde</div>
+          <div class="meta-cargo">Jovem Aprendiz · Apoio CE · MA</div>
+          <ul>
+            <li>Pesquisas de satisfação <b>15/dia</b></li>
+            <li>Agendamentos realizados <b>10/dia</b></li>
+            <li>Pendências verificadas <b>10/dia</b></li>
+            <li>Reclamações acompanhadas <b>10/dia</b></li>
+            <li>Status atualizados <b>10/dia</b></li>
+            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-grid charts-grid-2" style="margin-top:16px;">
+      <div class="chart-panel">
+        <p class="chart-title">📊 Distribuição por Filial</p>
+        <div class="checklist-table-wrap">
+          <table class="checklist-table">
+            <thead><tr><th>Filial</th><th style="text-align:center;">Condomínios</th><th>Responsável</th></tr></thead>
+            <tbody>
+              <tr><td class="ck-name">Ceará (CE)</td><td style="text-align:center;">170</td><td>Rosely</td></tr>
+              <tr><td class="ck-name">Maranhão (MA)</td><td style="text-align:center;">31</td><td>Rosely</td></tr>
+              <tr><td class="ck-name">Amazonas (AM)</td><td style="text-align:center;">31</td><td>Josiane</td></tr>
+              <tr><td class="ck-name">SECOPI (PI)</td><td style="text-align:center;">55</td><td>Josiane</td></tr>
+              <tr style="font-weight:700;"><td class="ck-name">Total</td><td style="text-align:center;">287</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <p class="chart-title">📋 Distribuição Diária de Pesquisas (meta: 50/dia)</p>
+        <div id="equipeMetasBarras"></div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-top:16px;">
+      <p class="chart-title">🔄 Fluxo de Reclamações — SLA 48h, tratativa padronizada</p>
+      <div class="fluxo-etapas">
+        <div class="fluxo-etapa"><div class="fluxo-num">1</div><div class="fluxo-titulo">Pesquisa Realizada</div><div class="fluxo-desc">Coleta feita pela equipe no condomínio.</div></div>
+        <div class="fluxo-etapa"><div class="fluxo-num">2</div><div class="fluxo-titulo">Identificação</div><div class="fluxo-desc">Reclamação identificada e registrada no sistema.</div></div>
+        <div class="fluxo-etapa"><div class="fluxo-num">3</div><div class="fluxo-titulo">Encaminhamento</div><div class="fluxo-desc">Envio ao setor responsável para resolução.</div></div>
+        <div class="fluxo-etapa fluxo-sla"><div class="fluxo-num">4</div><div class="fluxo-titulo">Cobrança de Retorno</div><div class="fluxo-desc">SLA 48h — Equipe CS monitora prazo e cobra feedback.</div></div>
+        <div class="fluxo-etapa"><div class="fluxo-num">5</div><div class="fluxo-titulo">Validação da Solução</div><div class="fluxo-desc">Confirma se o problema foi resolvido.</div></div>
+        <div class="fluxo-etapa"><div class="fluxo-num">6</div><div class="fluxo-titulo">Retorno ao Síndico</div><div class="fluxo-desc">Comunicação formal da resolução ao síndico.</div></div>
+        <div class="fluxo-etapa"><div class="fluxo-num">7</div><div class="fluxo-titulo">Encerramento</div><div class="fluxo-desc">Registro do encerramento e fechamento no sistema.</div></div>
+      </div>
+    </div>
+  </div>
+
   <div id="tabAtividades" class="tab-panel" style="display:none;">
     <header>
       <div>
@@ -3995,7 +4217,7 @@ document.getElementById('btnAtividadesOntem').addEventListener('click', ()=>{
   carregarRelatorioAtividades();
 });
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -11493,6 +11715,7 @@ function initTabs(){
       document.getElementById('tabIncidentes').style.display = tab === 'incidentes' ? 'block' : 'none';
       document.getElementById('tabDemandas').style.display = tab === 'demandas' ? 'block' : 'none';
       document.getElementById('tabVidaCondominio').style.display = tab === 'vidaCondominio' ? 'block' : 'none';
+      document.getElementById('tabEquipeMetas').style.display = tab === 'equipeMetas' ? 'block' : 'none';
       document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
@@ -11534,6 +11757,9 @@ function initTabs(){
       }
       if (tab === 'vidaCondominio'){
         if (typeof popularSeletorVidaCondominio === 'function') popularSeletorVidaCondominio();
+      }
+      if (tab === 'equipeMetas'){
+        if (typeof renderEquipeMetasBarras === 'function') renderEquipeMetasBarras();
       }
       if (tab === 'atividades'){
         if (typeof carregarRelatorioAtividades === 'function') carregarRelatorioAtividades();
@@ -14616,6 +14842,20 @@ function barraHorizontal(label, valor, valorMax, cor, sufixo){
       <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-faint); margin-bottom:3px;"><span>${escapeHtml(label)}</span><span>${valor}${sufixo||''}</span></div>
       <div style="background:var(--bg-panel-2); border-radius:4px; height:8px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:${cor};"></div></div>
     </div>`;
+}
+
+// ============================================================================
+// EQUIPE & METAS — organograma estático + distribuição diária de pesquisas
+// ============================================================================
+function renderEquipeMetasBarras(){
+  const el = document.getElementById('equipeMetasBarras');
+  if (!el) return;
+  el.innerHTML =
+    barraHorizontal('Rosely', 10, 50, 'var(--accent)', '/dia') +
+    barraHorizontal('Josiane', 10, 50, 'var(--accent)', '/dia') +
+    barraHorizontal('Aprendiz Manhã', 15, 50, 'var(--ok)', '/dia') +
+    barraHorizontal('Aprendiz Tarde', 15, 50, 'var(--ok)', '/dia') +
+    barraHorizontal('TOTAL', 50, 50, 'var(--accent-2)', '/dia');
 }
 
 function renderFaMiniDash(){
