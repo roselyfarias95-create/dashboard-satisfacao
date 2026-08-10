@@ -6239,13 +6239,20 @@ let cadastroLiveCarregado = false;
 async function carregarCadastroLive(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status');
+    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco');
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
   }catch(e){
     console.warn('Falha ao carregar cadastro_condominios ao vivo (usando dados congelados como respaldo):', e);
   }
+}
+function buscarEnderecoPorNomeCondo(nome){
+  if (!nome) return '';
+  const norm = normalizeNomeCondo(nome);
+  const fonte = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE : DATA;
+  const achado = fonte.find(d => normalizeNomeCondo(d.nome) === norm);
+  return achado ? (achado.endereco || '') : '';
 }
 function totalCondominiosAtivos(){
   if (cadastroLiveCarregado && CADASTRO_LIVE.length){
@@ -10344,6 +10351,9 @@ async function loadFundoFixo(){
     return;
   }
   try{
+    if (!cadastroLiveCarregado) await carregarCadastroLive();
+    const listaNomes = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.map(d=>d.nome) : DATA.map(d=>d.nome);
+    document.getElementById('fa-condo-list').innerHTML = [...new Set(listaNomes)].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
     const [r1, r2] = await Promise.all([
       sb.from('fundo_fixo_gastos').select('*').eq('responsavel', 'Maria Rosely (Analista)').order('data_hora', { ascending:false }),
       sb.from('fundo_fixo_config').select('*'),
@@ -10523,6 +10533,11 @@ function ffExportarExcel(){
 }
 
 document.getElementById('ffFilterMes').addEventListener('change', renderFundoFixo);
+document.getElementById('ffCondominio').addEventListener('input', ()=>{
+  const nome = document.getElementById('ffCondominio').value.trim();
+  const endereco = buscarEnderecoPorNomeCondo(nome);
+  if (endereco) document.getElementById('ffEndereco').value = endereco;
+});
 document.getElementById('ffSearch').addEventListener('input', renderFundoFixo);
 document.getElementById('ffFilterTipo').addEventListener('change', renderFundoFixo);
 document.getElementById('btnLimparFiltrosFF').addEventListener('click', ()=>{
@@ -14330,7 +14345,8 @@ function faPopularFiltros(){
   const filiais = [...new Set(faData.map(f=>f.filial))].filter(Boolean).sort();
   sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
   if (filiais.includes(atual)) sel.value = atual;
-  document.getElementById('fa-condo-list').innerHTML = [...new Set(DATA.map(d=>d.nome))].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
+  const listaNomes = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.map(d=>d.nome) : DATA.map(d=>d.nome);
+  document.getElementById('fa-condo-list').innerHTML = [...new Set(listaNomes)].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
 }
 
 function getFilteredFluxoAtendimento(){
