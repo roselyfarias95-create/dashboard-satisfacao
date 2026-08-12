@@ -235,6 +235,33 @@
     margin-right:20px;
     box-shadow:var(--shadow-panel);
   }
+
+  /* ---------- EXPORTAR RELATÓRIO (botão flutuante + impressão) ---------- */
+  .export-float{
+    position:fixed; bottom:22px; right:22px; z-index:500;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .export-float button{
+    display:flex; align-items:center; gap:7px; padding:10px 16px; border-radius:999px;
+    border:1px solid var(--line); background:var(--bg-panel); color:var(--text);
+    font-size:12.5px; font-weight:600; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  .export-float button:hover{ background:var(--bg-panel-2); }
+  .export-float .export-excel{ border-color:#1e7e42; color:#3ecf7a; }
+  .export-float .export-pdf{ border-color:#b5691c; color:#f0a24a; }
+  @media print{
+    body.modo-impressao .sidebar, body.modo-impressao .subtab-nav, body.modo-impressao .toolbar,
+    body.modo-impressao button, body.modo-impressao select, body.modo-impressao input,
+    body.modo-impressao .export-float, body.modo-impressao header .logout-btn,
+    body.modo-impressao #headerRightBox { display:none !important; }
+    body.modo-impressao .main-layout{ display:block !important; }
+    body.modo-impressao{ background:#fff !important; color:#000 !important; }
+    body.modo-impressao .tab-panel, body.modo-impressao .chart-panel, body.modo-impressao .stat-box{
+      background:#fff !important; border-color:#ccc !important; color:#000 !important; box-shadow:none !important;
+    }
+    body.modo-impressao .snum, body.modo-impressao .slbl, body.modo-impressao *{ color:#000 !important; }
+  }
+
   .sidebar-brand{
     display:flex; flex-direction:column; align-items:center; gap:10px;
     text-align:center;
@@ -1528,7 +1555,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-D (corrigida permissão de abas)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-E (com botão Exportar)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -14625,7 +14652,12 @@ async function importarPlanilhaFluxo(){
 
     const paraInserir = [];
     const paraAtualizar = [];
+    let puladosSemNome = 0;
     SEED_FLUXO.forEach(r => {
+      if (!r.condominio || !String(r.condominio).trim()){
+        puladosSemNome++;
+        return;
+      }
       const chave = `${normalizeNomeCondo(r.condominio)}|||${r.mes_referencia}`;
       const existente = existentes.get(chave);
       if (existente){
@@ -14649,7 +14681,7 @@ async function importarPlanilhaFluxo(){
     const { data: histExistData, error: errHist } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
     if (errHist) throw errHist;
     const histExist = new Set((histExistData||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
-    const histNovos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
+    const histNovos = SEED_FLUXO.filter(r => r.condominio && String(r.condominio).trim() && (r.atendimentos !== null || r.tma !== null)).map(r => ({
       mes: MES_REF_LABEL[r.mes_referencia] || r.mes_referencia,
       filial: r.filial,
       condominio: r.condominio,
@@ -14661,7 +14693,7 @@ async function importarPlanilhaFluxo(){
       if (error) throw error;
     }
 
-    alert(`Importação concluída: ${paraInserir.length} novo(s), ${paraAtualizar.length} atualizado(s) no Fluxo. ${histNovos.length} registro(s) arquivado(s) no Histórico.`);
+    alert(`Importação concluída: ${paraInserir.length} novo(s), ${paraAtualizar.length} atualizado(s) no Fluxo. ${histNovos.length} registro(s) arquivado(s) no Histórico.${puladosSemNome ? `\n\n⚠️ ${puladosSemNome} linha(s) da planilha não tinham nome de condomínio e foram ignoradas.` : ''}`);
     await loadFluxoAtendimento();
     faHistLoaded = false;
   }catch(e){
@@ -18577,6 +18609,57 @@ document.addEventListener('click', function(e){
 initTabs();
 
 initAuth();
+</script>
+
+<div class="export-float">
+  <button type="button" class="export-excel" id="btnExportarExcelFlutuante" title="Exportar as tabelas visíveis desta aba">📊 Excel</button>
+  <button type="button" class="export-pdf" id="btnExportarPdfFlutuante" title="Gerar PDF desta aba (via impressão)">📄 PDF</button>
+</div>
+<script>
+function getAbaAtivaVisivel(){
+  const paineis = [...document.querySelectorAll('.tab-panel')];
+  return paineis.find(p => getComputedStyle(p).display !== 'none') || null;
+}
+function elementoVisivel(el){
+  return !!(el.offsetParent !== null || el.offsetWidth || el.offsetHeight);
+}
+function exportarRelatorioExcel(){
+  const painel = getAbaAtivaVisivel();
+  if (!painel){ alert('Não encontrei nenhuma aba ativa pra exportar.'); return; }
+  const tabelas = [...painel.querySelectorAll('table')].filter(elementoVisivel);
+  if (!tabelas.length){
+    alert('Essa aba não tem uma tabela pra exportar em Excel. Use a opção PDF pra levar o conteúdo dela (cards, gráficos, organograma, etc.).');
+    return;
+  }
+  try{
+    const wb = XLSX.utils.book_new();
+    const nomesUsados = new Set();
+    tabelas.forEach((t, i)=>{
+      const ws = XLSX.utils.table_to_sheet(t);
+      let base = (t.id || (t.closest('[id]') && t.closest('[id]').id) || ('Tabela' + (i+1)));
+      base = base.replace(/[^A-Za-z0-9]/g, '').slice(0, 28) || ('Tabela' + (i+1));
+      let nome = base, n = 2;
+      while (nomesUsados.has(nome)){ nome = (base + n).slice(0,31); n++; }
+      nomesUsados.add(nome);
+      XLSX.utils.book_append_sheet(wb, ws, nome);
+    });
+    const tituloAba = (painel.querySelector('h1,h2,h3,.chart-title') || {}).textContent || painel.id || 'relatorio';
+    const nomeArquivo = `relatorio_${tituloAba.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,40)}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
+  }catch(e){
+    console.error(e);
+    alert('Erro ao gerar o Excel: ' + e.message);
+  }
+}
+function exportarRelatorioPDF(){
+  document.body.classList.add('modo-impressao');
+  const limpar = ()=>{ document.body.classList.remove('modo-impressao'); window.removeEventListener('afterprint', limpar); };
+  window.addEventListener('afterprint', limpar);
+  setTimeout(()=> window.print(), 60);
+  setTimeout(limpar, 5000); // respaldo, caso o navegador não dispare afterprint
+}
+document.getElementById('btnExportarExcelFlutuante').addEventListener('click', exportarRelatorioExcel);
+document.getElementById('btnExportarPdfFlutuante').addEventListener('click', exportarRelatorioPDF);
 </script>
 </body>
 </html>
