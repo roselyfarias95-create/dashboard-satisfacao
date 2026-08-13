@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-F (Nota 2 no Histórico + Backup diário)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-G (Fluxo sem Autônomo/Controle/Empresa)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6267,7 +6267,7 @@ let cadastroLiveCarregado = false;
 async function carregarCadastroLive(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco');
+    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade');
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
@@ -6281,6 +6281,15 @@ function buscarEnderecoPorNomeCondo(nome){
   const fonte = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE : DATA;
   const achado = fonte.find(d => normalizeNomeCondo(d.nome) === norm);
   return achado ? (achado.endereco || '') : '';
+}
+const MODALIDADES_FORA_DO_FLUXO = ['Autônomo', 'Controle de Acesso', 'Empresa'];
+function nomesForaDoFluxoAtendimento(){
+  if (!cadastroLiveCarregado || !CADASTRO_LIVE.length) return new Set();
+  return new Set(
+    CADASTRO_LIVE
+      .filter(d => MODALIDADES_FORA_DO_FLUXO.includes(d.modalidade))
+      .map(d => normalizeNomeCondo(d.nome))
+  );
 }
 function totalCondominiosAtivos(){
   if (cadastroLiveCarregado && CADASTRO_LIVE.length){
@@ -14407,7 +14416,9 @@ function getFilteredFluxoAtendimento(){
   const fFilial = document.getElementById('faFilterFilial').value;
   const fMes = document.getElementById('faFilterMes').value;
   const fStatus = document.getElementById('faFilterStatus').value;
+  const excluidos = nomesForaDoFluxoAtendimento();
   return faData.filter(f=>{
+    if (excluidos.has(normalizeNomeCondo(f.condominio))) return false;
     if (q && !(f.condominio||'').toLowerCase().includes(q)) return false;
     if (fFilial && f.filial !== fFilial) return false;
     if (fMes && String(f.mes_referencia||'').slice(0,7) !== fMes) return false;
@@ -14416,10 +14427,23 @@ function getFilteredFluxoAtendimento(){
   });
 }
 
+function totalCondominiosFluxo(){
+  const excluidos = nomesForaDoFluxoAtendimento();
+  if (cadastroLiveCarregado && CADASTRO_LIVE.length){
+    return [...new Set(
+      CADASTRO_LIVE
+        .filter(d => d.status !== 'Inativo' && !excluidos.has(normalizeNomeCondo(d.nome)))
+        .map(d => normalizeNomeCondo(d.nome))
+    )].filter(Boolean).length;
+  }
+  return totalCondominiosAtivos();
+}
+
 function renderFluxoAtendimento(){
   const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && String(faData[0].mes_referencia).slice(0,7)) || '';
-  const totalCondos = totalCondominiosAtivos();
-  const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual);
+  const totalCondos = totalCondominiosFluxo();
+  const excluidosFluxo = nomesForaDoFluxoAtendimento();
+  const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual && !excluidosFluxo.has(normalizeNomeCondo(f.condominio)));
   const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
   const pendentes = Math.max(0, totalCondos - preenchidos);
   const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 6).length;
@@ -14499,7 +14523,8 @@ async function criarNovaRodadaFluxo(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const mes = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
   if (!confirm(`Criar registros pendentes de Fluxo de Atendimento para todos os condomínios ativos no mês ${mesLabelBR(mes)}?`)) return;
-  const condosAtivos = condominiosAtivosObjetos();
+  const excluidosFluxo = nomesForaDoFluxoAtendimento();
+  const condosAtivos = condominiosAtivosObjetos().filter(c => !excluidosFluxo.has(normalizeNomeCondo(c.nome)));
   const jaExistentes = new Set(faData.filter(f=>String(f.mes_referencia||'').slice(0,7)===mes).map(f=>normalizeNomeCondo(f.condominio||'')));
   const faltando = condosAtivos.filter(c => !jaExistentes.has(normalizeNomeCondo(c.nome)));
   if (!faltando.length){ alert('Todos os condomínios já têm registro nesse mês.'); return; }
@@ -14895,12 +14920,15 @@ document.querySelectorAll('[data-fa-subtab]').forEach(btn=>{
 const MES_ORDEM_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function coletarFluxoUnificado(){
+  const excluidosFluxo = nomesForaDoFluxoAtendimento();
   const porChave = new Map();
   faHistData.forEach(r=>{
+    if (excluidosFluxo.has(normalizeNomeCondo(r.condominio))) return;
     const chave = `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`;
     porChave.set(chave, { mes: r.mes, filial: r.filial, condominio: r.condominio, atendimentos: r.atendimentos, tma: r.tma });
   });
   faData.forEach(f=>{
+    if (excluidosFluxo.has(normalizeNomeCondo(f.condominio))) return;
     const mesLabel = MES_REF_LABEL[f.mes_referencia] || f.mes_referencia;
     const chave = `${mesLabel}|||${f.filial}|||${(f.condominio||'').trim().toLowerCase()}`;
     if (!porChave.has(chave)){
