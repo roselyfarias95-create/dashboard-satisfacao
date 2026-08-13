@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-G (Fluxo sem Autônomo/Controle/Empresa)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-H (filtro de Motivo + expandir no Dashboard)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1623,6 +1623,10 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="msf-btn" id="setorFilterBtn">Setor: todos</button>
       <div class="msf-panel" id="setorFilterPanel"></div>
     </div>
+    <div class="msf" id="motivoFilterWrap">
+      <button type="button" class="msf-btn" id="motivoFilterBtn">Motivo: todos</button>
+      <div class="msf-panel" id="motivoFilterPanel"></div>
+    </div>
     <div class="msf" id="resolvidoFilterWrap">
       <button type="button" class="msf-btn" id="resolvidoFilterBtn">Resolução: todos</button>
       <div class="msf-panel" id="resolvidoFilterPanel"></div>
@@ -1679,6 +1683,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <p class="chart-title">% de reclamações por motivo — Top causas</p>
         <div id="motivoChart"></div>
         <p class="exec-chart-caption" id="motivoCaption"></p>
+        <div id="motivoCondominiosExpandido" style="display:none; margin-top:10px; border-top:1px solid var(--line); padding-top:10px;"></div>
         <div id="motivoLegenda" style="margin-top:8px; border-top:1px solid var(--line); padding-top:8px;"></div>
       </div>
       <div class="chart-panel">
@@ -6626,6 +6631,7 @@ let selectedMes = null; // mês da rodada exibida — null até populateMesSelec
 let selectedStatuses = [];  // multi-select: vazio = todos
 let selectedFiliais = [];
 let selectedSetores = [];
+let selectedMotivos = [];
 let selectedResolvidos = []; // valores: 'true' | 'false' | 'null'
 let selectedPendencias = []; // valores: 'true' | 'false' — tem diagnóstico/pendência registrado ou não
 let selectedNotaFaixas = []; // índices de NOTA_FAIXAS selecionados (como string)
@@ -6896,6 +6902,43 @@ function renderMotivoChart(data){
     render();
   }, activeMotivoBar);
 
+  const expandEl = document.getElementById('motivoCondominiosExpandido');
+  if (expandEl){
+    if (activeMotivoBar){
+      const condsComEsseMotivo = data.filter(d => classifyGrupoMotivo(d).includes(activeMotivoBar));
+      expandEl.style.display = 'block';
+      expandEl.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <p style="font-size:12px; font-weight:700; color:var(--text); margin:0;">📍 ${condsComEsseMotivo.length} condomínio(s) com "${escapeHtml(activeMotivoBar)}"</p>
+          <button type="button" class="clearbtn" id="motivoExpandidoFechar" style="padding:3px 10px; font-size:11px;">Fechar ✕</button>
+        </div>
+        <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;">
+          ${condsComEsseMotivo.map(d => `
+            <div style="display:flex; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--text-dim); padding:5px 8px; background:var(--bg-panel-2); border-radius:6px;">
+              <span style="cursor:pointer; text-decoration:underline;" data-motivo-ir-condo="${escapeHtml(d.nome)}">${escapeHtml(d.nome)}</span>
+              <span style="color:var(--text-faint); white-space:nowrap;">${escapeHtml(d.filial||'')} · Nota ${escapeHtml(String(d.nota||'—'))}</span>
+            </div>
+          `).join('')}
+        </div>`;
+      const fecharBtn = document.getElementById('motivoExpandidoFechar');
+      if (fecharBtn) fecharBtn.addEventListener('click', ()=>{ activeMotivoBar = null; render(); });
+      expandEl.querySelectorAll('[data-motivo-ir-condo]').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const nomeCondo = el.getAttribute('data-motivo-ir-condo');
+          const btnPesquisas = document.querySelector('.tab-btn[data-tab="pesquisa"]');
+          if (btnPesquisas) btnPesquisas.click();
+          setTimeout(()=>{
+            const searchEl = document.getElementById('search');
+            if (searchEl){ searchEl.value = nomeCondo; render(); }
+          }, 60);
+        });
+      });
+    } else {
+      expandEl.style.display = 'none';
+      expandEl.innerHTML = '';
+    }
+  }
+
   // Legenda explicando a composição de cada grupo
   const legendEl = document.getElementById('motivoLegenda');
   if (legendEl){
@@ -6981,7 +7024,7 @@ function updateMultiFilterLabel(btnId, selected, options, prefixLabel){
   else btn.textContent = `${prefixLabel}: ${selected.length} selecionados`;
 }
 document.addEventListener('click', (e)=>{
-  ['filialFilterWrap','statusFilterWrap','setorFilterWrap','resolvidoFilterWrap'].forEach(id=>{
+  ['filialFilterWrap','statusFilterWrap','setorFilterWrap','motivoFilterWrap','resolvidoFilterWrap'].forEach(id=>{
     const wrap = document.getElementById(id);
     if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
   });
@@ -7679,6 +7722,17 @@ function populateFilterOptions(){
     options: setores.map(s=>({value:s,label:s})), prefixLabel:'Setor',
   });
 
+  const motivosMap = new Map();
+  DATA.filter(d=>getMes(d)===selectedMes).forEach(d => {
+    classifyGrupoMotivo(d).forEach(m => { if (m) motivosMap.set(m.toLowerCase(), m); });
+  });
+  const motivos = [...motivosMap.values()].sort();
+  setupMultiFilter({
+    btnId:'motivoFilterBtn', panelId:'motivoFilterPanel', wrapId:'motivoFilterWrap',
+    getSelected:()=>selectedMotivos, setSelected:(v)=>{selectedMotivos=v;},
+    options: motivos.map(m=>({value:m,label:m})), prefixLabel:'Motivo',
+  });
+
   const resolvidoOptions = [
     {value:'true', label:'Resolvido'},
     {value:'false', label:'Em andamento'},
@@ -7721,6 +7775,7 @@ function baseMatches(item, q){
   }
   if (activeSetorBar && !(item.setor && item.setor.split('/').map(s=>{ const t=s.trim(); return t.toUpperCase()==='TI' ? 'T.I.' : t; }).includes(activeSetorBar))) return false;
   if (activeMotivoBar && !classifyGrupoMotivo(item).includes(activeMotivoBar)) return false;
+  if (selectedMotivos.length && !classifyGrupoMotivo(item).some(m => selectedMotivos.includes(m))) return false;
   if (q){
     const hay = (item.nome+' '+item.pend+' '+item.resolucao+' '+item.setor+' '+item.filial+' '+(item.motivo||'')).toLowerCase();
     if (!hay.includes(q.toLowerCase())) return false;
@@ -8004,7 +8059,7 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
       progEl.textContent = `Salvando... ${Math.min(i+chunkSize, rows.length)} de ${rows.length}`;
     }
     selectedMes = novoMes;
-    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
+    selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedMotivos = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
     activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
     populateFilterOptions();
     render();
@@ -8409,6 +8464,7 @@ function generateReport(){
     selectedNota2Faixas.length ? `Nota 2: ${selectedNota2Faixas.map(i=>NOTA2_FAIXAS[+i].label).join(', ')}` : null,
     selectedStatuses.length ? `Status da pesquisa: ${selectedStatuses.map(escapeHtml).join(', ')}` : null,
     selectedSetores.length ? `Setor: ${selectedSetores.map(escapeHtml).join(', ')}` : null,
+    selectedMotivos.length ? `Motivo: ${selectedMotivos.map(escapeHtml).join(', ')}` : null,
     selectedResolvidos.length ? `Resolução: ${selectedResolvidos.map(v=>v==='true'?'Resolvido':(v==='false'?'Em andamento':'Não se aplica')).join(', ')}` : null,
     activeSetorBar ? `Setor (gráfico): ${escapeHtml(activeSetorBar)}` : null,
     activeMotivoBar ? `Motivo (gráfico): ${escapeHtml(activeMotivoBar)}` : null,
@@ -8458,7 +8514,7 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('mesSelector').addEventListener('change', (e)=>{
   selectedMes = e.target.value;
   document.getElementById('refMes').textContent = mesLabelBR(selectedMes);
-  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
+  selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedMotivos = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
   activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
   populateFilterOptions();
   render();
