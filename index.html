@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-H (filtro de Motivo + expandir no Dashboard)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-I (mês atual real como padrão)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6142,7 +6142,11 @@ function itemToExtraRow(item){
     created_by: currentUsername || 'desconhecido',
   };
 }
-function getMes(item){ return item.mesReferencia || '2026-07'; }
+function getMes(item){ return item.mesReferencia || mesAtualReal(); }
+function mesAtualReal(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
 function mesLabelBR(mes){
   const meses = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
   const m = /^(\d{4})-(\d{2})/.exec(mes || '');
@@ -7673,10 +7677,15 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
 });
 
 function populateMesSelector(){
-  const meses = [...new Set(DATA.map(d=>getMes(d)))].sort();
+  const meses = new Set(DATA.map(d=>getMes(d)));
+  meses.add(mesAtualReal()); // garante que o mês atual sempre apareça na lista, mesmo sem pesquisas ainda
+  const mesesOrdenados = [...meses].sort();
   const sel = document.getElementById('mesSelector');
-  const current = selectedMes && meses.includes(selectedMes) ? selectedMes : meses[meses.length - 1];
-  sel.innerHTML = meses.map(m => `<option value="${m}" ${m===current?'selected':''}>📅 ${mesLabelBR(m)}</option>`).join('');
+  // Prioridade: 1) mês já escolhido manualmente antes (se ainda existir), 2) mês atual real, 3) último disponível
+  const current = (selectedMes && mesesOrdenados.includes(selectedMes))
+    ? selectedMes
+    : (mesesOrdenados.includes(mesAtualReal()) ? mesAtualReal() : mesesOrdenados[mesesOrdenados.length - 1]);
+  sel.innerHTML = mesesOrdenados.map(m => `<option value="${m}" ${m===current?'selected':''}>📅 ${mesLabelBR(m)}</option>`).join('');
   selectedMes = current;
   const ref = document.getElementById('refMes');
   if (ref) ref.textContent = mesLabelBR(current);
@@ -10470,8 +10479,7 @@ async function loadFundoFixo(){
     (r2.data||[]).forEach(c=>{ ffConfig[c.mes_referencia] = c.valor_fundo; });
     ffLoaded = true;
     if (!document.getElementById('ffFilterMes').value){
-      const meses = [...new Set(ffData.map(g=>g.mes_referencia))].sort();
-      document.getElementById('ffFilterMes').value = meses.length ? meses[meses.length-1] : new Date().toISOString().slice(0,7);
+      document.getElementById('ffFilterMes').value = mesAtualReal();
     }
     renderFundoFixo();
   }catch(e){
@@ -14449,6 +14457,9 @@ async function loadFluxoAtendimento(){
     if (error) throw error;
     faData = data || [];
     faLoaded = true;
+    if (!document.getElementById('faFilterMes').value){
+      document.getElementById('faFilterMes').value = mesAtualReal();
+    }
     faPopularFiltros();
     renderFluxoAtendimento();
   }catch(e){
@@ -14496,7 +14507,7 @@ function totalCondominiosFluxo(){
 }
 
 function renderFluxoAtendimento(){
-  const mesAtual = document.getElementById('faFilterMes').value || (faData[0] && String(faData[0].mes_referencia).slice(0,7)) || '';
+  const mesAtual = document.getElementById('faFilterMes').value || mesAtualReal();
   const totalCondos = totalCondominiosFluxo();
   const excluidosFluxo = nomesForaDoFluxoAtendimento();
   const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual && !excluidosFluxo.has(normalizeNomeCondo(f.condominio)));
