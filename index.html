@@ -1217,9 +1217,9 @@
       <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Filial
         <input type="text" id="historicoPastaFilial" placeholder="Ex: Ceará" style="width:100%; margin-top:4px; box-sizing:border-box;">
       </label>
-      <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Dados (colar da planilha)
-        <textarea id="historicoPastaDados" rows="8" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:'IBM Plex Mono',monospace; font-size:11.5px; resize:vertical;" placeholder="CONDOMINIO X	8	Concluído
-CONDOMINIO Y	9	Concluído"></textarea>
+      <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Dados (colar da planilha — Condomínio, Nota 1, Nota 2, Resultado)
+        <textarea id="historicoPastaDados" rows="8" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:'IBM Plex Mono',monospace; font-size:11.5px; resize:vertical;" placeholder="CONDOMINIO X	8		Concluído
+CONDOMINIO Y	5	9	Concluído"></textarea>
       </label>
     </div>
     <div style="display:flex; gap:10px; justify-content:flex-end;">
@@ -1555,7 +1555,7 @@ CONDOMINIO Y	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-E (com botão Exportar)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-F (Nota 2 no Histórico + Backup diário)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1862,7 +1862,8 @@ CONDOMINIO Y	9	Concluído"></textarea>
           <thead>
             <tr>
               <th class="ck-name">Condomínio</th>
-              <th style="text-align:center;">Nota</th>
+              <th style="text-align:center;">Nota 1</th>
+              <th style="text-align:center;">Nota 2</th>
               <th>Resultado</th>
             </tr>
           </thead>
@@ -7563,15 +7564,28 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
         filial: normalizeFilialCanonica(d.filial),
         condominio: d.nome,
         nota: (d.nota !== undefined && d.nota !== null && d.nota !== '') ? String(d.nota) : null,
+        nota2: (d.notaPosResolucao !== undefined && d.notaPosResolucao !== null && d.notaPosResolucao !== '') ? String(d.notaPosResolucao) : null,
         resultado: pesquisaNaoRealizada(d) ? 'Cancelou' : 'Concluído',
       }));
-      // Evita duplicar quem já foi arquivado antes (ex: clicou Concluir Ciclo duas vezes)
-      const { data: existentesData } = await sb.from('historico_pesquisas').select('mes,filial,condominio').eq('mes', mesNome);
-      const existentes = new Set((existentesData||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
-      const novos = linhasHistorico.filter(r => !existentes.has(`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
+      // Evita duplicar quem já foi arquivado antes (ex: clicou Concluir Ciclo duas vezes),
+      // mas atualiza a nota 2 de quem já foi arquivado sem ela (bug corrigido em 09/08/2026).
+      const { data: existentesData } = await sb.from('historico_pesquisas').select('id,mes,filial,condominio,nota2').eq('mes', mesNome);
+      const existentesMap = new Map((existentesData||[]).map(r => [`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`, r]));
+      const novos = linhasHistorico.filter(r => !existentesMap.has(`${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
       if (novos.length){
         const { error } = await sb.from('historico_pesquisas').insert(novos);
         if (error) throw error;
+      }
+      // Corrige retroativamente quem já estava arquivado sem nota 2 (só se a nota 2 ainda
+      // existir na pesquisa atual — se já tiver sido perdida antes disso, não há como recuperar).
+      let corrigidos = 0;
+      for (const r of linhasHistorico){
+        const chave = `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`;
+        const existente = existentesMap.get(chave);
+        if (existente && !existente.nota2 && r.nota2){
+          const { error: errUpd } = await sb.from('historico_pesquisas').update({ nota2: r.nota2 }).eq('id', existente.id);
+          if (!errUpd) corrigidos++;
+        }
       }
       await loadHistorico();
 
@@ -7598,7 +7612,7 @@ document.getElementById('pqFechamentoConfirmarBtn').addEventListener('click', as
     document.getElementById('pqFechamentoBadgeConcluido').style.display = 'inline-block';
     btn.style.display = 'none';
     document.getElementById('pqFechamentoCancelarBtn').textContent = 'Fechar';
-    alert(`✅ Ciclo Concluído! ${mesLabelBR(selectedMes)} foi arquivado na aba Histórico, dentro da pasta de cada filial. Os dados continuam disponíveis normalmente em "Todos" também.`);
+    alert(`✅ Ciclo Concluído! ${mesLabelBR(selectedMes)} foi arquivado na aba Histórico, dentro da pasta de cada filial. Os dados continuam disponíveis normalmente em "Todos" também.${corrigidos ? `\n\n🔧 ${corrigidos} registro(s) do histórico tiveram a Nota 2 corrigida/preenchida retroativamente.` : ''}`);
   }catch(e){
     alert('Erro ao arquivar o ciclo no Histórico: ' + e.message);
   }finally{
@@ -12310,25 +12324,36 @@ async function restaurarNotasDoHistorico(){
     }
     const doMes = DATA.filter(d => getMes(d) === selectedMes);
     let restaurados = 0;
+    let restauradosNota2 = 0;
     const faltando = [];
     for (const h of linhasHistorico){
-      if (!h.nota) continue; // não tem nota lá pra restaurar
+      if (!h.nota && !h.nota2) continue; // não tem nada lá pra restaurar
       const alvo = doMes.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(h.condominio));
       if (!alvo) { faltando.push(h.condominio); continue; }
+      const updates = {};
       const temNotaAgora = alvo.nota && alvo.nota !== '—';
-      if (temNotaAgora) continue; // já está ok, não precisa restaurar
-      const updates = { nota: h.nota, statusPesquisa: 'Concluída' };
-      alvo.nota = h.nota;
-      alvo.statusPesquisa = 'Concluída';
+      if (h.nota && !temNotaAgora){
+        updates.nota = h.nota;
+        updates.statusPesquisa = 'Concluída';
+        alvo.nota = h.nota;
+        alvo.statusPesquisa = 'Concluída';
+        restaurados++;
+      }
+      const temNota2Agora = alvo.notaPosResolucao && alvo.notaPosResolucao !== '—';
+      if (h.nota2 && !temNota2Agora){
+        updates.notaPosResolucao = h.nota2;
+        alvo.notaPosResolucao = h.nota2;
+        restauradosNota2++;
+      }
+      if (Object.keys(updates).length === 0) continue; // já estava tudo ok
       OVERRIDES[alvo.n] = Object.assign({}, OVERRIDES[alvo.n], updates);
       await pushOverrideToSupabase(alvo.n, Object.assign({}, alvo, updates));
-      restaurados++;
     }
     persistOverrides(OVERRIDES);
     applyOverrides();
     if (typeof render === 'function') render();
     if (typeof renderPqCicloProgresso === 'function') renderPqCicloProgresso();
-    alert(`✅ ${restaurados} nota(s) restaurada(s) a partir do Histórico de ${mesNome}.${faltando.length ? `\n\n${faltando.length} condomínio(s) do Histórico não foram encontrados na lista atual (nome pode ter mudado): ${faltando.slice(0,5).join(', ')}${faltando.length>5?'...':''}` : ''}`);
+    alert(`✅ ${restaurados} nota(s) 1 e ${restauradosNota2} nota(s) 2 restaurada(s) a partir do Histórico de ${mesNome}.${faltando.length ? `\n\n${faltando.length} condomínio(s) do Histórico não foram encontrados na lista atual (nome pode ter mudado): ${faltando.slice(0,5).join(', ')}${faltando.length>5?'...':''}` : ''}`);
   }catch(e){
     alert('Erro ao restaurar: ' + e.message);
   }finally{
@@ -12462,6 +12487,7 @@ function abrirHistoricoDetail(filial, mes){
     <tr>
       <td class="ck-name">${escapeHtml(r.condominio)}</td>
       <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${r.nota ? escapeHtml(r.nota) : '—'}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${r.nota2 ? escapeHtml(r.nota2) : '—'}</td>
       <td>${r.resultado === 'Concluído' ? '<span class="rbadge yes">Concluído</span>' : r.resultado === 'Cancelou' ? '<span class="rbadge no">Cancelou</span>' : '—'}</td>
     </tr>
   `).join('');
@@ -12505,10 +12531,10 @@ document.getElementById('historicoPastaSaveBtn').addEventListener('click', async
   const linhas = raw.split('\n').map(l=>l.trim()).filter(Boolean);
   const rows = linhas.map(l=>{
     const partes = l.split('\t');
-    return { mes, filial, condominio: (partes[0]||'').trim(), nota: (partes[1]||'').trim() || null, resultado: (partes[2]||'').trim() || null };
+    return { mes, filial, condominio: (partes[0]||'').trim(), nota: (partes[1]||'').trim() || null, nota2: (partes[2]||'').trim() || null, resultado: (partes[3]||'').trim() || null };
   }).filter(r => r.condominio && r.condominio.toUpperCase() !== 'TOTAL DE CONDOMÍNIOS' && !r.condominio.toUpperCase().startsWith('CONDOMÍNIOS'));
   if (!rows.length){
-    errEl.textContent = 'Cole pelo menos uma linha de dados (Condomínio, Nota, Resultado separados por Tab).';
+    errEl.textContent = 'Cole pelo menos uma linha de dados (Condomínio, Nota 1, Nota 2, Resultado separados por Tab).';
     errEl.style.display = 'block';
     return;
   }
@@ -18609,11 +18635,57 @@ document.addEventListener('click', function(e){
 initTabs();
 
 initAuth();
+
+// ============================================================================
+// BACKUP DIÁRIO — salva uma "foto" de tudo que importa (principalmente as
+// pesquisas/condo_extra) uma vez por dia, pra nunca mais perder dados como
+// aconteceu com as notas 2. Roda automático ao abrir o sistema (se ainda não
+// rodou hoje) e também pode ser disparado manualmente pelo botão flutuante.
+// ============================================================================
+const TABELAS_BACKUP_DIARIO = [
+  'condo_extra', 'cadastro_condominios', 'fluxo_atendimento', 'historico_pesquisas',
+  'adocao_digital', 'incidentes', 'demandas', 'fundo_fixo_gastos', 'visitas_emergenciais',
+];
+
+async function fazerBackupDiario(forcarHoje){
+  if (!sb) return { ok:false, motivo:'sem-conexao' };
+  const hoje = new Date().toISOString().slice(0,10);
+  if (!forcarHoje){
+    const jaFeito = localStorage.getItem('ultimoBackupDiario');
+    if (jaFeito === hoje) return { ok:true, motivo:'ja-feito-hoje' };
+  }
+  const resultados = [];
+  for (const tabela of TABELAS_BACKUP_DIARIO){
+    try{
+      const { data, error } = await sb.from(tabela).select('*');
+      if (error) throw error;
+      const { error: erroSalvar } = await sb.from('backups_diarios').upsert({
+        data_backup: hoje,
+        tabela: tabela,
+        conteudo: data || [],
+        quantidade_registros: (data || []).length,
+      }, { onConflict: 'data_backup,tabela' });
+      if (erroSalvar) throw erroSalvar;
+      resultados.push({ tabela, ok:true, quantidade: (data||[]).length });
+    }catch(e){
+      console.error(`Falha no backup de ${tabela}:`, e);
+      resultados.push({ tabela, ok:false, erro: e.message });
+    }
+  }
+  localStorage.setItem('ultimoBackupDiario', hoje);
+  return { ok:true, resultados };
+}
+
+// Roda automaticamente, em segundo plano, uns segundos depois de abrir o app
+// (sem travar o carregamento inicial, e sem incomodar com alerta).
+setTimeout(()=>{ fazerBackupDiario(false).catch(e=>console.error('Backup automático falhou:', e)); }, 8000);
+
 </script>
 
 <div class="export-float">
   <button type="button" class="export-excel" id="btnExportarExcelFlutuante" title="Exportar as tabelas visíveis desta aba">📊 Excel</button>
   <button type="button" class="export-pdf" id="btnExportarPdfFlutuante" title="Gerar PDF desta aba (via impressão)">📄 PDF</button>
+  <button type="button" id="btnBackupManual" title="Salvar uma cópia de segurança de tudo agora" style="border-color:#2563eb; color:#60a5fa;">🗄️ Backup</button>
 </div>
 <script>
 function getAbaAtivaVisivel(){
@@ -18660,6 +18732,25 @@ function exportarRelatorioPDF(){
 }
 document.getElementById('btnExportarExcelFlutuante').addEventListener('click', exportarRelatorioExcel);
 document.getElementById('btnExportarPdfFlutuante').addEventListener('click', exportarRelatorioPDF);
+document.getElementById('btnBackupManual').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnBackupManual');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '🗄️ Salvando...';
+  try{
+    const r = await fazerBackupDiario(true);
+    if (!r.ok){ alert('Não consegui fazer o backup: sem conexão com o Supabase.'); return; }
+    const falhas = (r.resultados||[]).filter(x=>!x.ok);
+    const okList = (r.resultados||[]).filter(x=>x.ok);
+    let msg = `✅ Backup salvo com sucesso (${new Date().toLocaleString('pt-BR')}):\n\n`;
+    msg += okList.map(x=>`• ${x.tabela}: ${x.quantidade} registro(s)`).join('\n');
+    if (falhas.length) msg += `\n\n⚠️ Falhou em: ${falhas.map(x=>x.tabela).join(', ')}`;
+    alert(msg);
+  }catch(e){
+    alert('Erro ao fazer backup: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = original;
+  }
+});
 </script>
 </body>
 </html>
