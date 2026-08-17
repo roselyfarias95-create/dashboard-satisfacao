@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-K (Histórico combinado ao filtro de mês)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-O (TMA fora da meta acima de 8s)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -2638,8 +2638,12 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <table class="checklist-table" id="faTable">
           <thead>
             <tr>
-              <th class="ck-name">Condomínio</th><th>Filial</th><th>Mês</th><th>Atendimentos</th>
-              <th>Porta Aberta</th><th>Porta Violada</th><th>TMA</th><th>Status</th><th>Responsável</th><th>Ações</th>
+              <th class="ck-name">Condomínio</th><th>Filial</th><th>Mês</th>
+              <th class="fa-sortable" data-fa-sort="atendimentos" style="cursor:pointer; user-select:none;">Atendimentos <span class="fa-sort-arrow"></span></th>
+              <th class="fa-sortable" data-fa-sort="porta_aberta" style="cursor:pointer; user-select:none;">Porta Aberta <span class="fa-sort-arrow"></span></th>
+              <th class="fa-sortable" data-fa-sort="porta_violada" style="cursor:pointer; user-select:none;">Porta Violada <span class="fa-sort-arrow"></span></th>
+              <th class="fa-sortable" data-fa-sort="tma" style="cursor:pointer; user-select:none;">TMA <span class="fa-sort-arrow"></span></th>
+              <th>Status</th><th>Responsável</th><th>Ações</th>
             </tr>
           </thead>
           <tbody id="faBody"><tr><td colspan="10" class="empty">Carregando...</td></tr></tbody>
@@ -2835,11 +2839,16 @@ CONDOMINIO Y	480	45"></textarea>
       <table class="checklist-table" id="adTable">
         <thead>
           <tr>
-            <th class="ck-name">Condomínio</th><th>Filial</th><th>% Facial</th><th>% App</th>
-            <th>I.A.</th><th>Armário</th><th>GPhone</th><th>Status/Score</th><th>Ações</th>
+            <th class="ck-name">Condomínio</th><th>Filial</th>
+            <th class="ad-sortable" data-ad-sort="pct_facial" style="cursor:pointer; user-select:none;">% Facial <span class="ad-sort-arrow"></span></th>
+            <th class="ad-sortable" data-ad-sort="pct_app" style="cursor:pointer; user-select:none;">% App <span class="ad-sort-arrow"></span></th>
+            <th class="ad-sortable" data-ad-sort="possui_armario" style="cursor:pointer; user-select:none;">Armário <span class="ad-sort-arrow"></span></th>
+            <th class="ad-sortable" data-ad-sort="possui_gphone" style="cursor:pointer; user-select:none;">GPhone <span class="ad-sort-arrow"></span></th>
+            <th class="ad-sortable" data-ad-sort="score" style="cursor:pointer; user-select:none;">Status/Score <span class="ad-sort-arrow"></span></th>
+            <th>Ações</th>
           </tr>
         </thead>
-        <tbody id="adBody"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
+        <tbody id="adBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -2908,8 +2917,8 @@ CONDOMINIO Y	480	45"></textarea>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
           <p class="pq-label" style="margin-bottom:8px;">📦 Armário Inteligente</p>
         </div>
-        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui Armário?
-          <select id="adPossuiArmario" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui Armário? <span style="font-weight:400; text-transform:none; letter-spacing:0;">(vem do Cadastro)</span>
+          <select id="adPossuiArmario" disabled style="width:100%; margin-top:4px; opacity:0.7; cursor:not-allowed;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Quantidade de Armários
           <input type="number" id="adQtdArmarios" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
@@ -2921,8 +2930,8 @@ CONDOMINIO Y	480	45"></textarea>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px;">
           <p class="pq-label" style="margin-bottom:8px;">📞 GPhone / Interfone Digital</p>
         </div>
-        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui GPhone?
-          <select id="adPossuiGphone" style="width:100%; margin-top:4px;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Possui GPhone? <span style="font-weight:400; text-transform:none; letter-spacing:0;">(vem do Cadastro)</span>
+          <select id="adPossuiGphone" disabled style="width:100%; margin-top:4px; opacity:0.7; cursor:not-allowed;"><option value="Não">Não</option><option value="Sim">Sim</option></select>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status do GPhone
           <input type="text" id="adStatusGphone" placeholder="Ex: Não possui, Instalado..." style="width:100%; margin-top:4px; box-sizing:border-box;">
@@ -6306,7 +6315,7 @@ let cadastroLiveCarregado = false;
 async function carregarCadastroLive(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade');
+    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade,possui_armario,possui_gphone');
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
@@ -14452,7 +14461,7 @@ let faLoaded = false;
 
 function corTMA(tma){
   if (tma === null || tma === undefined) return 'var(--text-faint)';
-  if (tma <= 6) return 'var(--ok)';
+  if (tma <= 8) return 'var(--ok)';
   return 'var(--critico)';
 }
 function corPortaViolada(n){
@@ -14470,7 +14479,7 @@ function corPortaAberta(n){
 function faStatus(registro){
   if (!registro) return 'Pendente';
   if (registro.atendimentos === null || registro.atendimentos === undefined) return 'Pendente';
-  if (registro.tma !== null && registro.tma !== undefined && registro.tma > 6) return 'Fora da Meta';
+  if (registro.tma !== null && registro.tma !== undefined && registro.tma > 8) return 'Fora da Meta';
   return 'Preenchido';
 }
 
@@ -14536,20 +14545,62 @@ function totalCondominiosFluxo(){
   return totalCondominiosAtivos();
 }
 
+let faSortCol = null;
+let faSortDir = 'desc';
+
+function ordenarFluxoAtendimento(lista){
+  if (!faSortCol) return lista;
+  const copia = [...lista];
+  const valor = (f) => {
+    const n = Number(f[faSortCol]);
+    return isNaN(n) ? -1 : n;
+  };
+  copia.sort((a,b) => faSortDir === 'desc' ? (valor(b) - valor(a)) : (valor(a) - valor(b)));
+  return copia;
+}
+
+function atualizarSetasOrdenacaoFa(){
+  document.querySelectorAll('.fa-sortable').forEach(th=>{
+    const col = th.getAttribute('data-fa-sort');
+    const seta = th.querySelector('.fa-sort-arrow');
+    if (col === faSortCol){
+      seta.textContent = faSortDir === 'desc' ? '▼' : '▲';
+      th.style.color = 'var(--accent)';
+    } else {
+      seta.textContent = '⇅';
+      th.style.color = '';
+    }
+  });
+}
+
+document.querySelectorAll('.fa-sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const col = th.getAttribute('data-fa-sort');
+    if (faSortCol === col){
+      faSortDir = faSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      faSortCol = col;
+      faSortDir = 'desc';
+    }
+    atualizarSetasOrdenacaoFa();
+    renderFluxoAtendimento();
+  });
+});
+
 function renderFluxoAtendimento(){
+  atualizarSetasOrdenacaoFa();
   const mesAtual = document.getElementById('faFilterMes').value || mesAtualReal();
-  const totalCondos = totalCondominiosFluxo();
-  const excluidosFluxo = nomesForaDoFluxoAtendimento();
-  const doMes = faData.filter(f=>String(f.mes_referencia||'').slice(0,7) === mesAtual && !excluidosFluxo.has(normalizeNomeCondo(f.condominio)));
-  const preenchidos = doMes.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
-  const pendentes = Math.max(0, totalCondos - preenchidos);
-  const foraDaMeta = doMes.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 6).length;
-  const tmas = doMes.map(f=>f.tma).filter(n=>n !== null && n !== undefined);
+  const filtered = ordenarFluxoAtendimento(getFilteredFluxoAtendimento());
+  const totalCondos = filtered.length;
+  const preenchidos = filtered.filter(f => f.atendimentos !== null && f.atendimentos !== undefined).length;
+  const pendentes = totalCondos - preenchidos;
+  const foraDaMeta = filtered.filter(f => f.tma !== null && f.tma !== undefined && f.tma > 8).length;
+  const tmas = filtered.map(f=>f.tma).filter(n=>n !== null && n !== undefined);
   const tmaMedio = tmas.length ? Math.round(tmas.reduce((a,b)=>a+b,0)/tmas.length) : null;
   const pctPreenchido = totalCondos ? Math.round(preenchidos/totalCondos*100) : 0;
 
   document.getElementById('faStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (filtro atual)</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--ok);">${preenchidos}</div><div class="slbl">Preenchidos (${pctPreenchido}%)</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--pendente);">${pendentes}</div><div class="slbl">Pendentes</div></div>
     <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio !== null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio</div></div>
@@ -14560,7 +14611,6 @@ function renderFluxoAtendimento(){
   document.getElementById('faProgressoBar').style.background = corBarra;
   document.getElementById('faProgressoTexto').textContent = `${preenchidos} de ${totalCondos} condomínios com registro no mês ${mesAtual ? mesLabelBR(mesAtual) : 'selecionado'} (${pctPreenchido}%)`;
 
-  const filtered = getFilteredFluxoAtendimento();
   document.getElementById('faCount').textContent = `${filtered.length} de ${faData.length} registro(s)`;
   const tbody = document.getElementById('faBody');
   if (!filtered.length){
@@ -15486,6 +15536,21 @@ document.getElementById('btnDiagnosticoNomes').addEventListener('click', ()=>{
   win.document.open(); win.document.write(html); win.document.close();
 });
 
+// Faz o campo Armário e Gphone da Adoção Digital sempre refletir o que está
+// cadastrado no Cadastro de Condomínios (fonte única da verdade) — em vez de
+// serem preenchidos manualmente e separadamente aqui.
+function sincronizarArmarioGphoneComCadastro(lista){
+  if (!cadastroLiveCarregado || !CADASTRO_LIVE.length) return;
+  const mapaCadastro = new Map(CADASTRO_LIVE.map(c => [normalizeNomeCondo(c.nome), c]));
+  lista.forEach(a => {
+    const c = mapaCadastro.get(normalizeNomeCondo(a.condominio));
+    if (c){
+      a.possui_armario = c.possui_armario || 'Não';
+      a.possui_gphone = c.possui_gphone || 'Não';
+    }
+  });
+}
+
 async function loadAdocaoDigital(){
   const body = document.getElementById('adBody');
   if (!sb){
@@ -15498,10 +15563,12 @@ async function loadAdocaoDigital(){
     let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
     if (error) throw error;
     adData = data || [];
+    sincronizarArmarioGphoneComCadastro(adData);
     const houveMerge = await mesclarDuplicatasAdocao();
     if (houveMerge){
       const r3 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
       if (!r3.error) adData = r3.data || [];
+      sincronizarArmarioGphoneComCadastro(adData);
     }
     adLoaded = true;
     adPopularFiltros();
@@ -15541,19 +15608,69 @@ function getFilteredAdocaoDigital(){
   });
 }
 
+let adSortCol = null;
+let adSortDir = 'desc'; // 'desc' = maior pra menor primeiro
+
+function ordenarAdocaoDigital(lista){
+  if (!adSortCol) return lista;
+  const copia = [...lista];
+  const valor = (a) => {
+    if (adSortCol === 'possui_armario' || adSortCol === 'possui_gphone'){
+      return a[adSortCol] === 'Sim' ? 1 : 0;
+    }
+    if (adSortCol === 'score'){
+      return calcScoreDigital(a);
+    }
+    const n = Number(a[adSortCol]);
+    return isNaN(n) ? -1 : n;
+  };
+  copia.sort((a,b) => adSortDir === 'desc' ? (valor(b) - valor(a)) : (valor(a) - valor(b)));
+  return copia;
+}
+
+function atualizarSetasOrdenacaoAd(){
+  document.querySelectorAll('.ad-sortable').forEach(th=>{
+    const col = th.getAttribute('data-ad-sort');
+    const seta = th.querySelector('.ad-sort-arrow');
+    if (col === adSortCol){
+      seta.textContent = adSortDir === 'desc' ? '▼' : '▲';
+      th.style.color = 'var(--accent)';
+    } else {
+      seta.textContent = '⇅';
+      th.style.color = '';
+    }
+  });
+}
+
+document.querySelectorAll('.ad-sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const col = th.getAttribute('data-ad-sort');
+    if (adSortCol === col){
+      adSortDir = adSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      adSortCol = col;
+      adSortDir = 'desc';
+    }
+    atualizarSetasOrdenacaoAd();
+    renderAdocaoDigital();
+  });
+});
+
 function renderAdocaoDigital(){
   renderAdCicloProgresso();
+  atualizarSetasOrdenacaoAd();
   const filtered = getFilteredAdocaoDigital();
-  const totalCondos = totalCondominiosAtivos();
-  const comApp = adData.filter(a => (a.apps_cadastrados||0) > 0).length;
-  const comGphone = adData.filter(a => a.possui_gphone === 'Sim').length;
-  const comArmario = adData.filter(a => a.possui_armario === 'Sim').length;
-  const comFacial = adData.filter(a => (a.faciais_cadastrados||0) > 0).length;
-  const totalFaces = adData.reduce((s,a)=>s+(a.faciais_cadastrados||0), 0);
+  const ordenados = ordenarAdocaoDigital(filtered);
+  const totalCondos = filtered.length;
+  const comApp = filtered.filter(a => (a.apps_cadastrados||0) > 0).length;
+  const comGphone = filtered.filter(a => a.possui_gphone === 'Sim').length;
+  const comArmario = filtered.filter(a => a.possui_armario === 'Sim').length;
+  const comFacial = filtered.filter(a => (a.faciais_cadastrados||0) > 0).length;
+  const totalFaces = filtered.reduce((s,a)=>s+(a.faciais_cadastrados||0), 0);
   const pct = (n) => totalCondos ? Math.round(n/totalCondos*100) : 0;
 
   document.getElementById('adStats').innerHTML = `
-    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum">${totalCondos}</div><div class="slbl">Condomínios (filtro atual)</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${comApp} (${pct(comApp)}%)</div><div class="slbl">📱 Aplicativo</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${comGphone} (${pct(comGphone)}%)</div><div class="slbl">📞 GPhone</div></div>
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${comArmario} (${pct(comArmario)}%)</div><div class="slbl">📦 Armário Inteligente</div></div>
@@ -15562,11 +15679,11 @@ function renderAdocaoDigital(){
 
   document.getElementById('adCount').textContent = `${filtered.length} de ${adData.length} registro(s)`;
   const tbody = document.getElementById('adBody');
-  if (!filtered.length){
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">Nenhum registro encontrado.</td></tr>';
+  if (!ordenados.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum registro encontrado.</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map(a=>{
+  tbody.innerHTML = ordenados.map(a=>{
     const score = calcScoreDigital(a);
     const status = classificarSaude(score, a);
     const cor = corSaude(status);
@@ -15575,9 +15692,8 @@ function renderAdocaoDigital(){
       <td>${escapeHtml(a.filial||'—')}</td>
       <td style="text-align:center;">${a.pct_facial ?? '—'}${a.pct_facial!=null?'%':''}</td>
       <td style="text-align:center;">${a.pct_app ?? '—'}${a.pct_app!=null?'%':''}</td>
-      <td style="text-align:center;">${a.possui_ia === 'Sim' ? '✅' : '—'}</td>
-      <td style="text-align:center;">${a.possui_armario === 'Sim' ? '✅' : '—'}</td>
-      <td style="text-align:center;">${a.possui_gphone === 'Sim' ? '✅' : '—'}</td>
+      <td style="text-align:center; color:${a.possui_armario === 'Sim' ? 'var(--ok)' : 'var(--critico)'};">${a.possui_armario === 'Sim' ? '✅' : '✕'}</td>
+      <td style="text-align:center; color:${a.possui_gphone === 'Sim' ? 'var(--ok)' : 'var(--critico)'};">${a.possui_gphone === 'Sim' ? '✅' : '✕'}</td>
       <td><span class="tag" style="color:${cor}; border:1px solid ${cor}; background:transparent;">${status} (${score}/4)</span></td>
       <td>
         <button type="button" class="renov-action-btn" data-edit-ad="${a.id}">Editar</button>
@@ -17963,7 +18079,7 @@ function coletarDadosRiscoCondominio(nomeAlvoNorm){
   const reclamacoesSemResolucao = reclamacoesCondo.filter(d => d.statusTratativa && d.statusTratativa !== 'Resolvido').length;
   const fluxoCondo = (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).sort((a,b)=>String(a.mes_referencia||'').localeCompare(String(b.mes_referencia||'')));
   const fluxoRecente = fluxoCondo[fluxoCondo.length-1] || null;
-  const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 6);
+  const tmaForaDaMeta = !!(fluxoRecente && fluxoRecente.tma !== null && fluxoRecente.tma !== undefined && fluxoRecente.tma > 8);
   const mesAtualFluxo = hojeISO().slice(0,7);
   const fluxoPendente = !fluxoCondo.some(f => String(f.mes_referencia||'').slice(0,7) === mesAtualFluxo && f.atendimentos !== null && f.atendimentos !== undefined);
   const demandasCondo = (typeof demData !== 'undefined' ? demData : []).filter(d => normalizeNomeCondo(d.condominio) === nomeAlvoNorm);
@@ -18092,7 +18208,7 @@ function renderVidaAtendimentoBloco(nomeAlvoNorm, periodo){
   document.getElementById('vidaAtendimentoStats').innerHTML = `
     <div class="stat-box"><div class="snum" style="color:var(--accent);">${totalLigacoes.toLocaleString('pt-BR')}</div><div class="slbl">Total de ligações</div>${barChartMini(mesesLabel, mensalLigacoes, {corNeutra:'var(--accent)', destacarUltimoRuim:ligacoesRuim, onClickTipo:'ligacoes'})}</div>
     <div class="stat-box"><div class="snum" style="color:var(--atencao);">${(totalPortaAberta+totalPortaViolada).toLocaleString('pt-BR')}</div><div class="slbl">Eventos (${totalPortaAberta} aberta · ${totalPortaViolada} violada)</div>${barChartMini(mesesLabel, mensalEventos, {corNeutra:'var(--atencao)', destacarUltimoRuim:eventosRuim, onClickTipo:'eventos'})}</div>
-    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 6s)</div>${barChartMini(mesesLabel, mensalTma, {corNeutra:'var(--text-faint)', destacarUltimoRuim:tmaRuim, onClickTipo:'tma', sufixo:'s'})}</div>
+    <div class="stat-box"><div class="snum" style="color:${corTMA(tmaMedio)};">${tmaMedio!==null ? tmaMedio+'s' : '—'}</div><div class="slbl">TMA médio (meta: 8s)</div>${barChartMini(mesesLabel, mensalTma, {corNeutra:'var(--text-faint)', destacarUltimoRuim:tmaRuim, onClickTipo:'tma', sufixo:'s'})}</div>
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${incidentesCondo.length}</div><div class="slbl">Incidentes</div>${barChartMini(mesesLabel, mensalIncidentes, {corNeutra:'var(--text-faint)', destacarUltimoRuim:incidentesRuim, onClickTipo:'incidentes'})}</div>
   `;
   vidaConectarCliqueMiniGraficos(document.getElementById('vidaAtendimentoStats'));
