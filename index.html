@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-Q (unificado comparativo mensal por filial)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-R (filtro de filial do Fluxo unificado)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -14534,7 +14534,7 @@ async function loadFluxoAtendimento(){
 function faPopularFiltros(){
   const sel = document.getElementById('faFilterFilial');
   const atual = sel.value;
-  const filiais = [...new Set(faData.map(f=>f.filial))].filter(Boolean).sort();
+  const filiais = [...new Set(faData.map(f=>normalizeFilialCanonica(f.filial)))].filter(Boolean).sort();
   sel.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
   if (filiais.includes(atual)) sel.value = atual;
   const listaNomes = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.map(d=>d.nome) : DATA.map(d=>d.nome);
@@ -14550,7 +14550,7 @@ function getFilteredFluxoAtendimento(){
   return faData.filter(f=>{
     if (excluidos.has(normalizeNomeCondo(f.condominio))) return false;
     if (q && !(f.condominio||'').toLowerCase().includes(q)) return false;
-    if (fFilial && f.filial !== fFilial) return false;
+    if (fFilial && normalizeFilialCanonica(f.filial) !== fFilial) return false;
     if (fMes && String(f.mes_referencia||'').slice(0,7) !== fMes) return false;
     if (fStatus && faStatus(f) !== fStatus) return false;
     return true;
