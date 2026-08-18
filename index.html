@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-P (corrigido: notas de julho não somem mais)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-Q (unificado comparativo mensal por filial)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -14349,7 +14349,9 @@ function renderPesquisaComparativoFilial(){
   const tabelaEl = document.getElementById('pqCompFilialMensal');
   const narrEl = document.getElementById('pqCompNarrativa');
   const meses = getUltimosMeses(6);
-  const filiais = [...new Set(DATA.map(d=>d.filial))].filter(Boolean).sort();
+  const filiaisVivo = [...new Set(DATA.map(d=>normalizeFilialCanonica(d.filial)))];
+  const filiaisHistorico = [...new Set((historicoData||[]).map(h=>normalizeFilialCanonica(h.filial)))];
+  const filiais = [...new Set([...filiaisVivo, ...filiaisHistorico])].filter(Boolean).sort();
 
   if (!meses.length || !filiais.length){
     tabelaEl.innerHTML = '<p class="empty">Sem dados suficientes ainda.</p>';
