@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-O (TMA fora da meta acima de 8s)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-P (corrigido: notas de julho não somem mais)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6167,12 +6167,34 @@ function nomeMesPT(mesRef){
 // (ciclo em aberto ou já concluído) sem precisar entrar na aba Histórico à parte.
 function dadosCombinadosDoMes(mesRef){
   const doVivo = DATA.filter(d => getMes(d) === mesRef);
-  const nomesVivos = new Set(doVivo.map(d => normalizeNomeCondo(d.nome)));
   const nomeMes = nomeMesPT(mesRef).toLowerCase();
-  const doHistorico = (typeof historicoData !== 'undefined' ? historicoData : [])
+  const historicoPorNome = new Map();
+  (typeof historicoData !== 'undefined' ? historicoData : [])
     .filter(h => nomeMes && String(h.mes||'').toLowerCase().startsWith(nomeMes))
-    .filter(h => !nomesVivos.has(normalizeNomeCondo(h.condominio)))
-    .map(h => ({
+    .forEach(h => historicoPorNome.set(normalizeNomeCondo(h.condominio), h));
+
+  // Mescla: pega os registros vivos e, se a nota 1 e/ou nota 2 estiverem
+  // vazias neles, completa com o que já está arquivado no Histórico pro
+  // mesmo condomínio+mês — nunca descarta a nota real do Histórico.
+  const nomesVivos = new Set();
+  const combinadoVivo = doVivo.map(d => {
+    const chave = normalizeNomeCondo(d.nome);
+    nomesVivos.add(chave);
+    const h = historicoPorNome.get(chave);
+    if (!h) return d;
+    const notaVazia = d.nota === undefined || d.nota === null || d.nota === '';
+    const nota2Vazia = d.notaPosResolucao === undefined || d.notaPosResolucao === null || d.notaPosResolucao === '';
+    if (!notaVazia && !nota2Vazia) return d;
+    return Object.assign({}, d, {
+      nota: notaVazia ? (h.nota || d.nota) : d.nota,
+      notaPosResolucao: nota2Vazia ? (h.nota2 || d.notaPosResolucao) : d.notaPosResolucao,
+    });
+  });
+
+  // Condomínios que só existem no Histórico (não aparecem mais no ciclo vivo)
+  const doHistorico = [...historicoPorNome.entries()]
+    .filter(([chave]) => !nomesVivos.has(chave))
+    .map(([chave, h]) => ({
       n: `hist-${h.id}`,
       nome: h.condominio,
       filial: h.filial,
@@ -6184,7 +6206,7 @@ function dadosCombinadosDoMes(mesRef){
       resultado: h.resultado,
       __doHistorico: true, // marca que veio do arquivo (somente leitura)
     }));
-  return [...doVivo, ...doHistorico];
+  return [...combinadoVivo, ...doHistorico];
 }
 function mesLabelBR(mes){
   const meses = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
