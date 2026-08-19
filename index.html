@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-R (filtro de filial do Fluxo unificado)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-W (Kanban Vida do Condomínio corrigido)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -3669,6 +3669,40 @@ CONDOMINIO Y	480	45"></textarea>
           </select>
           <button type="button" class="clearbtn" id="btnLimparFiltrosTimeline">Limpar filtros</button>
         </div>
+
+        <!-- ===== NOVO: KPIs + gráficos do período filtrado ===== -->
+        <div class="stats-strip" id="vidaTimelineKpis" style="margin-bottom:14px;"></div>
+        <div class="charts-grid charts-grid-2" style="margin-bottom:16px;">
+          <div class="chart-panel">
+            <p class="chart-title">📈 Evolução da Nota das Pesquisas</p>
+            <div id="vidaTimelineGraficoNota"></div>
+          </div>
+          <div class="chart-panel">
+            <p class="chart-title">📞 Volume de Atendimento e TMA</p>
+            <div id="vidaTimelineGraficoAtendimento"></div>
+          </div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:16px;">
+          <p class="chart-title">🚪 Eventos de Porta (Aberta / Violada) — Fluxo de Atendimento</p>
+          <div id="vidaTimelineGraficoPortas"></div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:16px; border-left:3px solid var(--accent);">
+          <p class="chart-title">🤖 Parecer da I.A.</p>
+          <div id="vidaTimelineParecerIA" style="font-size:12.5px; color:var(--text-dim); line-height:1.6;"></div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:16px;">
+          <p class="chart-title">🔧 Melhorias Realizadas (Renovação de Contrato)</p>
+          <div id="vidaTimelineMelhorias"></div>
+        </div>
+        <div class="checklist-table-wrap" style="margin-bottom:16px;">
+          <table class="checklist-table" id="vidaTimelineTabelaMensal">
+            <thead>
+              <tr><th>Mês</th><th style="text-align:center;">Nota Média</th><th style="text-align:center;">Atendimentos</th><th style="text-align:center;">TMA Médio</th><th style="text-align:center;">Incidentes Graves</th></tr>
+            </thead>
+            <tbody id="vidaTimelineTabelaMensalBody"></tbody>
+          </table>
+        </div>
+
         <div id="vidaCondoTimeline" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
     </div>
@@ -11948,6 +11982,13 @@ function initTabs(){
       }
       if (tab === 'vidaCondominio'){
         if (typeof popularSeletorVidaCondominio === 'function') popularSeletorVidaCondominio();
+        if (!cadastroLiveCarregado && typeof carregarCadastroLive === 'function'){
+          carregarCadastroLive().then(()=>{
+            if (document.getElementById('vidaCondoKanbanView').style.display !== 'none'){
+              renderVidaCondominioKanban();
+            }
+          });
+        }
       }
       if (tab === 'equipeMetas'){
         if (typeof renderEquipeMetasBarras === 'function') renderEquipeMetasBarras();
@@ -17987,7 +18028,7 @@ function coletarEventosCondominio(nomeAlvoNorm){
       if (pesquisaNaoRealizada(p)){
         eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa não realizada', categoria:'pesquisas', icone:'⚪', cor:'var(--text-faint)', desc: p.motivoNaoRealizada || 'Motivo não informado.' });
       } else {
-        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa realizada', categoria:'pesquisas', icone:'📋', cor: corPorNota(p.nota), desc: `Nota atribuída: ${p.nota ?? '—'}` });
+        eventos.push({ data: p.dataPesquisa, tipo:'Pesquisa realizada', categoria:'pesquisas', icone:'📋', cor: corPorNota(p.nota), desc: `Nota atribuída: ${p.nota ?? '—'}`, valor: notaNumerica(p) });
       }
     }
     if (p.houvePendencia){
@@ -18001,7 +18042,7 @@ function coletarEventosCondominio(nomeAlvoNorm){
       eventos.push({ data: p.dataPesquisa || '', tipo:'Elogio', categoria:'pesquisas', icone:'⭐', cor:'var(--ok)', desc: p.elogioDescricao || 'Elogio registrado.', setor: p.elogioSetor });
     }
     if (p.dataPesquisa2 && p.notaPosResolucao){
-      eventos.push({ data: p.dataPesquisa2, tipo:'Pesquisa de Recuperação', categoria:'pesquisas', icone:'🔄', cor: corPorNota(p.notaPosResolucao), desc: `Nota 2 (pós-tratativa): ${p.notaPosResolucao}` });
+      eventos.push({ data: p.dataPesquisa2, tipo:'Pesquisa de Recuperação', categoria:'pesquisas', icone:'🔄', cor: corPorNota(p.notaPosResolucao), desc: `Nota 2 (pós-tratativa): ${p.notaPosResolucao}`, valor: notaNumerica({nota:p.notaPosResolucao}) });
     }
     if (p.pesquisa2NaoRealizada){
       eventos.push({ data: p.dataPesquisa || '', tipo:'Pesquisa de Recuperação não realizada', categoria:'pesquisas', icone:'⚪', cor:'var(--text-faint)', desc: p.motivoNaoRealizada2 || 'Motivo não informado.' });
@@ -18015,19 +18056,19 @@ function coletarEventosCondominio(nomeAlvoNorm){
 
   (incData||[]).filter(i => normalizeNomeCondo(i.condominio) === nomeAlvoNorm).forEach(i=>{
     const aberta = i.status !== 'Resolvido';
-    eventos.push({ data: i.data_hora ? i.data_hora.slice(0,10) : '', tipo:`Incidente (${i.tipo||'—'})`, categoria:'incidentes', icone:'🛑', cor: corGravidade(i.gravidade), desc: i.descricao || '', status: i.status, setor: i.setor, critico: (i.gravidade === 'Alta' && aberta), ref:{tipo:'incidente', id:i.id} });
+    eventos.push({ data: i.data_hora ? i.data_hora.slice(0,10) : '', tipo:`Incidente (${i.tipo||'—'})`, categoria:'incidentes', icone:'🛑', cor: corGravidade(i.gravidade), desc: i.descricao || '', status: i.status, setor: i.setor, critico: (i.gravidade === 'Alta' && aberta), gravidade: i.gravidade, ref:{tipo:'incidente', id:i.id} });
   });
 
   (faData||[]).filter(f => normalizeNomeCondo(f.condominio) === nomeAlvoNorm).forEach(f=>{
     const dataRef = String(f.mes_referencia||'').slice(0,7);
     if (f.atendimentos !== null && f.atendimentos !== undefined){
-      eventos.push({ data: dataRef, tipo:'Ligações do Mês', categoria:'ligacoes', icone:'📞', cor: corTMA(f.tma), desc: `${f.atendimentos} atendimento(s) em ${mesLabelBR(dataRef)}${f.tma!=null ? ` · TMA de ${f.tma}s` : ''}.` });
+      eventos.push({ data: dataRef, tipo:'Ligações do Mês', categoria:'ligacoes', icone:'📞', cor: corTMA(f.tma), desc: `${f.atendimentos} atendimento(s) em ${mesLabelBR(dataRef)}${f.tma!=null ? ` · TMA de ${f.tma}s` : ''}.`, valor: f.atendimentos, tma: f.tma });
     }
     if (f.porta_aberta){
-      eventos.push({ data: dataRef, tipo:'Evento de Porta Aberta', categoria:'portas', icone:'🚪', cor:'var(--atencao)', desc: `${f.porta_aberta} evento(s) de porta aberta em ${mesLabelBR(dataRef)}.` });
+      eventos.push({ data: dataRef, tipo:'Evento de Porta Aberta', categoria:'portas', icone:'🚪', cor:'var(--atencao)', desc: `${f.porta_aberta} evento(s) de porta aberta em ${mesLabelBR(dataRef)}.`, valor: f.porta_aberta, subtipo: 'aberta' });
     }
     if (f.porta_violada){
-      eventos.push({ data: dataRef, tipo:'Evento de Porta Violada', categoria:'portas', icone:'🚪', cor:'var(--critico)', desc: `${f.porta_violada} evento(s) de porta violada em ${mesLabelBR(dataRef)}.`, critico: f.porta_violada > 0 });
+      eventos.push({ data: dataRef, tipo:'Evento de Porta Violada', categoria:'portas', icone:'🚪', cor:'var(--critico)', desc: `${f.porta_violada} evento(s) de porta violada em ${mesLabelBR(dataRef)}.`, critico: f.porta_violada > 0, valor: f.porta_violada, subtipo: 'violada' });
     }
   });
 
@@ -18288,6 +18329,307 @@ let vidaPeriodoAtendimento = 'mes';
 let vidaTimelineCategoriaAtiva = 'todos';
 let vidaEventosCache = [];
 
+// Aplica busca/status/críticos/período num array de eventos — usado tanto
+// pro período "atual" quanto pro período "anterior" (comparação dos KPIs).
+function vidaFiltrarEventos(baseEventos, { busca, status, somenteCriticos, diasMin, diasMax }){
+  const hoje = new Date();
+  let eventos = baseEventos;
+  if (busca){
+    eventos = eventos.filter(e => (e.tipo||'').toLowerCase().includes(busca) || (e.desc||'').toLowerCase().includes(busca) || (e.setor||'').toLowerCase().includes(busca));
+  }
+  if (status === 'aberto'){
+    eventos = eventos.filter(e => e.status && !['Concluído','Resolvido'].includes(e.status));
+  } else if (status === 'resolvido'){
+    eventos = eventos.filter(e => e.status && ['Concluído','Resolvido'].includes(e.status));
+  }
+  if (somenteCriticos){
+    eventos = eventos.filter(e => e.critico);
+  }
+  if (diasMin !== undefined || diasMax !== undefined){
+    eventos = eventos.filter(e => {
+      if (!e.data) return false;
+      const dataEv = new Date(e.data.length === 7 ? e.data + '-01' : e.data + 'T00:00:00');
+      const diffDias = (hoje - dataEv) / 86400000;
+      if (diasMax !== undefined && diffDias > diasMax) return false;
+      if (diasMin !== undefined && diffDias <= diasMin) return false;
+      return true;
+    });
+  }
+  return eventos;
+}
+
+function vidaMesDoEvento(dataStr){
+  if (!dataStr) return null;
+  return dataStr.length >= 7 ? dataStr.slice(0,7) : null;
+}
+
+// ============================================================================
+// KPIs + gráficos agregados do período filtrado (topo da Linha do Tempo)
+// ============================================================================
+function renderVidaTimelineKpisEGraficos(){
+  const kpisEl = document.getElementById('vidaTimelineKpis');
+  const graficoNotaEl = document.getElementById('vidaTimelineGraficoNota');
+  const graficoAtendEl = document.getElementById('vidaTimelineGraficoAtendimento');
+  if (!kpisEl || !graficoNotaEl || !graficoAtendEl) return;
+
+  const busca = (document.getElementById('vidaTimelineBusca').value || '').trim().toLowerCase();
+  const status = document.getElementById('vidaTimelineStatus').value;
+  const periodo = document.getElementById('vidaTimelinePeriodo').value;
+  const somenteCriticos = document.getElementById('vidaTimelineCriticoBtn').classList.contains('active');
+
+  const dias = periodo ? parseInt(periodo, 10) : undefined;
+  const atuais = vidaFiltrarEventos(vidaEventosCache, { busca, status, somenteCriticos, diasMax: dias });
+  const anteriores = dias !== undefined
+    ? vidaFiltrarEventos(vidaEventosCache, { busca, status, somenteCriticos, diasMin: dias, diasMax: dias*2 })
+    : null;
+
+  // ---------- KPIs ----------
+  const mediaValor = (lista) => lista.length ? lista.reduce((a,b)=>a+b,0)/lista.length : null;
+
+  const notasAtuais = atuais.filter(e => e.categoria==='pesquisas' && typeof e.valor === 'number').map(e=>e.valor);
+  const notaMediaAtual = mediaValor(notasAtuais);
+  const notasAnteriores = anteriores ? anteriores.filter(e => e.categoria==='pesquisas' && typeof e.valor === 'number').map(e=>e.valor) : [];
+  const notaMediaAnterior = anteriores ? mediaValor(notasAnteriores) : null;
+  const deltaNota = (notaMediaAtual!==null && notaMediaAnterior!==null) ? notaMediaAtual - notaMediaAnterior : null;
+
+  const incidentesAtuais = atuais.filter(e => e.categoria==='incidentes');
+  const incidentesAbertos = incidentesAtuais.filter(e => e.status && !['Concluído','Resolvido'].includes(e.status)).length;
+
+  const ligacoesAtuais = atuais.filter(e => e.categoria==='ligacoes' && typeof e.valor === 'number');
+  const totalAtendimentosAtual = ligacoesAtuais.reduce((a,e)=>a+e.valor,0);
+  const ligacoesAnteriores = anteriores ? anteriores.filter(e => e.categoria==='ligacoes' && typeof e.valor === 'number') : [];
+  const totalAtendimentosAnterior = anteriores ? ligacoesAnteriores.reduce((a,e)=>a+e.valor,0) : null;
+  const deltaAtendimentos = (totalAtendimentosAnterior!==null) ? totalAtendimentosAtual - totalAtendimentosAnterior : null;
+
+  const tmasAtuais = ligacoesAtuais.map(e=>e.tma).filter(v=>v!==null && v!==undefined);
+  const tmaMedioAtual = tmasAtuais.length ? Math.round(tmasAtuais.reduce((a,b)=>a+b,0)/tmasAtuais.length) : null;
+
+  const fmtDelta = (v, sufixo, positivoBom) => {
+    if (v === null || v === undefined) return '<span style="color:var(--text-faint);">— vs. período anterior</span>';
+    const bom = positivoBom ? v >= 0 : v <= 0;
+    const seta = v >= 0 ? '▲' : '▼';
+    return `<span style="color:${bom ? 'var(--ok)' : 'var(--critico)'};">${seta} ${Math.abs(v).toFixed(sufixo==='pontos'?1:0)}${sufixo==='%'?'':''} vs. período anterior</span>`;
+  };
+
+  kpisEl.innerHTML = `
+    <div class="stat-box">
+      <div class="snum" style="color:${notaMediaAtual===null?'var(--text-faint)':corPorNota(notaMediaAtual)};">${notaMediaAtual===null?'—':notaMediaAtual.toFixed(1)}</div>
+      <div class="slbl">Nota média das pesquisas</div>
+      <div style="font-size:10.5px; margin-top:4px;">${fmtDelta(deltaNota, 'pontos', true)}</div>
+    </div>
+    <div class="stat-box">
+      <div class="snum" style="color:${incidentesAtuais.length>0?'var(--critico)':'var(--ok)'};">${incidentesAtuais.length}</div>
+      <div class="slbl">Incidentes no período</div>
+      <div style="font-size:10.5px; margin-top:4px; color:${incidentesAbertos>0?'var(--critico)':'var(--text-faint)'};">${incidentesAbertos} em aberto</div>
+    </div>
+    <div class="stat-box">
+      <div class="snum" style="color:var(--accent);">${totalAtendimentosAtual.toLocaleString('pt-BR')}</div>
+      <div class="slbl">Total de atendimentos</div>
+      <div style="font-size:10.5px; margin-top:4px;">${fmtDelta(deltaAtendimentos, '', true)}</div>
+    </div>
+    <div class="stat-box">
+      <div class="snum" style="color:${corTMA(tmaMedioAtual)};">${tmaMedioAtual!==null?tmaMedioAtual+'s':'—'}</div>
+      <div class="slbl">TMA médio</div>
+    </div>
+  `;
+
+  // ---------- Séries mensais (mesmos eventos, agrupados por mês) ----------
+  const porMes = new Map();
+  const getBucket = (mes) => {
+    if (!porMes.has(mes)) porMes.set(mes, { notas:[], atendimentos:0, tmas:[], incidentesGraves:0, portaAberta:0, portaViolada:0 });
+    return porMes.get(mes);
+  };
+  atuais.forEach(e => {
+    const mes = vidaMesDoEvento(e.data);
+    if (!mes) return;
+    if (e.categoria === 'pesquisas' && typeof e.valor === 'number') getBucket(mes).notas.push(e.valor);
+    if (e.categoria === 'ligacoes' && typeof e.valor === 'number'){
+      const b = getBucket(mes);
+      b.atendimentos += e.valor;
+      if (e.tma !== null && e.tma !== undefined) b.tmas.push(e.tma);
+    }
+    if (e.categoria === 'incidentes' && e.gravidade === 'Alta') getBucket(mes).incidentesGraves++;
+    if (e.categoria === 'portas' && typeof e.valor === 'number'){
+      const b = getBucket(mes);
+      if (e.subtipo === 'aberta') b.portaAberta += e.valor;
+      if (e.subtipo === 'violada') b.portaViolada += e.valor;
+    }
+  });
+  const meses = [...porMes.keys()].sort();
+
+  const tbodyMensal = document.getElementById('vidaTimelineTabelaMensalBody');
+  if (tbodyMensal){
+    if (!meses.length){
+      tbodyMensal.innerHTML = '<tr><td colspan="5" class="empty">Sem dados no período selecionado.</td></tr>';
+    } else {
+      tbodyMensal.innerHTML = meses.map(m => {
+        const b = porMes.get(m);
+        const notaMedia = b.notas.length ? (b.notas.reduce((a,c)=>a+c,0)/b.notas.length) : null;
+        const tmaMedia = b.tmas.length ? Math.round(b.tmas.reduce((a,c)=>a+c,0)/b.tmas.length) : null;
+        return `<tr>
+          <td class="ck-name">${escapeHtml(mesLabelBR(m))}</td>
+          <td style="text-align:center; color:${notaMedia===null?'var(--text-faint)':corPorNota(notaMedia)};">${notaMedia===null?'—':notaMedia.toFixed(1)}</td>
+          <td style="text-align:center;">${b.atendimentos.toLocaleString('pt-BR')}</td>
+          <td style="text-align:center; color:${corTMA(tmaMedia)};">${tmaMedia!==null?tmaMedia+'s':'—'}</td>
+          <td style="text-align:center; color:${b.incidentesGraves>0?'var(--critico)':'var(--text-faint)'};">${b.incidentesGraves}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // ---------- Gráfico 1 — Evolução da nota, com marcação de incidentes graves ----------
+  if (!meses.length || !meses.some(m => porMes.get(m).notas.length)){
+    graficoNotaEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Sem pesquisas no período selecionado.</p>';
+  } else {
+    const w = 480, h = 160, padL = 28, padR = 16, padT = 14, padB = 24;
+    const plotW = w-padL-padR, plotH = h-padT-padB;
+    const xToPx = (i) => meses.length>1 ? padL + (i/(meses.length-1))*plotW : padL + plotW/2;
+    const yToPx = (v) => padT + plotH - (v/10)*plotH;
+    const comNota = meses.map((m,i) => {
+      const notas = porMes.get(m).notas;
+      const media = notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null;
+      return { m, i, media };
+    });
+    const pontosValidos = comNota.filter(p=>p.media!==null);
+    const dPath = pontosValidos.map((p,idx) => (idx===0?'M':'L')+xToPx(p.i).toFixed(1)+','+yToPx(p.media).toFixed(1)).join(' ');
+    const circulos = pontosValidos.map(p => {
+      const cor = corPorNota(p.media);
+      return `<circle cx="${xToPx(p.i).toFixed(1)}" cy="${yToPx(p.media).toFixed(1)}" r="4" fill="${cor}"><title>${escapeHtml(mesLabelBR(p.m))}: nota ${p.media.toFixed(1)}</title></circle>`;
+    }).join('');
+    const marcadoresIncidente = meses.map((m,i) => {
+      const graves = porMes.get(m).incidentesGraves;
+      if (!graves) return '';
+      return `<text x="${xToPx(i).toFixed(1)}" y="${padT-2}" font-size="11" text-anchor="middle"><title>${graves} incidente(s) grave(s) em ${escapeHtml(mesLabelBR(m))}</title>🛑</text>`;
+    }).join('');
+    const labelsX = meses.map((m,i) => `<text x="${xToPx(i).toFixed(1)}" y="${h-6}" font-size="9" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('');
+    graficoNotaEl.innerHTML = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      <path d="${dPath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${circulos}${marcadoresIncidente}${labelsX}
+    </svg>
+    <p style="font-size:10px; color:var(--text-faint); margin-top:4px;">🛑 marca meses com incidente grave — pra visualizar correlação com queda de nota.</p>`;
+  }
+
+  // ---------- Gráfico 2 — Volume de atendimento (barras) + TMA (linha) ----------
+  if (!meses.length || !meses.some(m => porMes.get(m).atendimentos>0)){
+    graficoAtendEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Sem atendimentos no período selecionado.</p>';
+  } else {
+    const w = 480, h = 160, padL = 32, padR = 32, padT = 14, padB = 24;
+    const plotW = w-padL-padR, plotH = h-padT-padB;
+    const maxAtend = Math.max(...meses.map(m=>porMes.get(m).atendimentos), 1);
+    const tmasValidosPorMes = meses.map(m => { const t=porMes.get(m).tmas; return t.length ? t.reduce((a,b)=>a+b,0)/t.length : null; });
+    const maxTma = Math.max(...tmasValidosPorMes.filter(v=>v!==null), 1);
+    const xToPx = (i) => meses.length>1 ? padL + (i/(meses.length-1))*plotW : padL + plotW/2;
+    const barW = Math.min(28, plotW/meses.length*0.5);
+    const yBarras = (v) => padT + plotH - (v/maxAtend)*plotH;
+    const yLinha = (v) => padT + plotH - (v/maxTma)*plotH;
+
+    const barras = meses.map((m,i) => {
+      const val = porMes.get(m).atendimentos;
+      const x = (xToPx(i)-barW/2).toFixed(1);
+      const y = yBarras(val).toFixed(1);
+      const alturaB = (plotH - (yBarras(val)-padT)).toFixed(1);
+      return `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${alturaB}" fill="var(--accent)" opacity="0.55"><title>${escapeHtml(mesLabelBR(m))}: ${val} atendimento(s)</title></rect>`;
+    }).join('');
+
+    const pontosTma = tmasValidosPorMes.map((v,i) => v===null ? null : [xToPx(i), yLinha(v)]).filter(Boolean);
+    const dTma = pontosTma.map((p,idx) => (idx===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    const circulosTma = tmasValidosPorMes.map((v,i) => v===null ? '' : `<circle cx="${xToPx(i).toFixed(1)}" cy="${yLinha(v).toFixed(1)}" r="3.5" fill="${corTMA(v)}"><title>${escapeHtml(mesLabelBR(meses[i]))}: TMA ${Math.round(v)}s</title></circle>`).join('');
+    const labelsX = meses.map((m,i) => `<text x="${xToPx(i).toFixed(1)}" y="${h-6}" font-size="9" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('');
+
+    graficoAtendEl.innerHTML = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      ${barras}
+      <path d="${dTma}" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${circulosTma}${labelsX}
+    </svg>
+    <p style="font-size:10px; color:var(--text-faint); margin-top:4px;"><span style="color:var(--accent);">■</span> Atendimentos (barras) &nbsp; <span style="color:var(--ok);">●</span> TMA em segundos (linha)</p>`;
+  }
+
+  // ---------- Gráfico 3 — Eventos de Porta (Aberta / Violada), do Fluxo de Atendimento ----------
+  const graficoPortasEl = document.getElementById('vidaTimelineGraficoPortas');
+  if (graficoPortasEl){
+    const temPortas = meses.some(m => porMes.get(m).portaAberta > 0 || porMes.get(m).portaViolada > 0);
+    if (!meses.length || !temPortas){
+      graficoPortasEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Sem eventos de porta no período selecionado.</p>';
+    } else {
+      const w = 960, h = 150, padL = 32, padR = 32, padT = 14, padB = 24;
+      const plotW = w-padL-padR, plotH = h-padT-padB;
+      const maxVal = Math.max(...meses.map(m => porMes.get(m).portaAberta + porMes.get(m).portaViolada), 1);
+      const xToPx = (i) => meses.length>1 ? padL + (i/(meses.length-1))*plotW : padL + plotW/2;
+      const barW = Math.min(30, plotW/meses.length*0.55);
+      const yToPx = (v) => padT + plotH - (v/maxVal)*plotH;
+
+      const barras = meses.map((m,i) => {
+        const b = porMes.get(m);
+        const x = (xToPx(i)-barW/2).toFixed(1);
+        const yAberta = yToPx(b.portaAberta).toFixed(1);
+        const altAberta = (plotH - (yToPx(b.portaAberta)-padT)).toFixed(1);
+        const yViolada = yToPx(b.portaAberta + b.portaViolada).toFixed(1);
+        const altViolada = (plotH - (yToPx(b.portaAberta+b.portaViolada)-padT) - Number(altAberta)).toFixed(1);
+        return `
+          <rect x="${x}" y="${yAberta}" width="${barW.toFixed(1)}" height="${altAberta}" fill="var(--atencao)" opacity="0.7"><title>${escapeHtml(mesLabelBR(m))}: ${b.portaAberta} porta(s) aberta</title></rect>
+          <rect x="${x}" y="${yViolada}" width="${barW.toFixed(1)}" height="${altViolada}" fill="var(--critico)" opacity="0.8"><title>${escapeHtml(mesLabelBR(m))}: ${b.portaViolada} porta(s) violada</title></rect>
+        `;
+      }).join('');
+      const labelsX = meses.map((m,i) => `<text x="${xToPx(i).toFixed(1)}" y="${h-6}" font-size="9.5" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('');
+
+      graficoPortasEl.innerHTML = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+        ${barras}${labelsX}
+      </svg>
+      <p style="font-size:10px; color:var(--text-faint); margin-top:4px;"><span style="color:var(--atencao);">■</span> Porta aberta &nbsp; <span style="color:var(--critico);">■</span> Porta violada — empilhado por mês.</p>`;
+    }
+  }
+
+  // ---------- Parecer da I.A. (texto explicativo, regras — mesmo padrão do Relatório I.A.) ----------
+  const parecerEl = document.getElementById('vidaTimelineParecerIA');
+  if (parecerEl){
+    const partes = [];
+    if (notaMediaAtual !== null){
+      partes.push(`A <b>nota média</b> das pesquisas no período foi <b>${notaMediaAtual.toFixed(1)}</b>${deltaNota!==null ? (deltaNota>=0 ? `, uma <b style="color:var(--ok);">alta de ${deltaNota.toFixed(1)} ponto(s)</b> em relação ao período anterior` : `, uma <b style="color:var(--critico);">queda de ${Math.abs(deltaNota).toFixed(1)} ponto(s)</b> em relação ao período anterior`) : '.'}`);
+      const mesesComIncidenteGrave = meses.filter(m => porMes.get(m).incidentesGraves > 0);
+      if (mesesComIncidenteGrave.length){
+        partes.push(`Houve incidente(s) grave(s) em ${mesesComIncidenteGrave.map(m=>mesLabelBR(m)).join(', ')} — vale conferir no gráfico de nota se esses meses coincidem com queda de satisfação.`);
+      }
+    } else {
+      partes.push('Não há pesquisas respondidas no período selecionado pra avaliar a nota.');
+    }
+    if (totalAtendimentosAtual > 0){
+      partes.push(`Foram <b>${totalAtendimentosAtual.toLocaleString('pt-BR')}</b> atendimentos no período${deltaAtendimentos!==null ? (deltaAtendimentos>=0 ? `, um aumento de ${deltaAtendimentos.toLocaleString('pt-BR')} em relação ao período anterior` : `, uma redução de ${Math.abs(deltaAtendimentos).toLocaleString('pt-BR')} em relação ao período anterior`) : ''}, com TMA médio de <b>${tmaMedioAtual!==null?tmaMedioAtual+'s':'—'}</b>${tmaMedioAtual!==null && tmaMedioAtual>8 ? ' <span style="color:var(--critico);">(acima da meta de 8s)</span>' : (tmaMedioAtual!==null ? ' <span style="color:var(--ok);">(dentro da meta)</span>' : '')}.`);
+    }
+    const totalPortaViolada = meses.reduce((a,m)=>a+porMes.get(m).portaViolada, 0);
+    const totalPortaAberta = meses.reduce((a,m)=>a+porMes.get(m).portaAberta, 0);
+    if (totalPortaAberta > 0 || totalPortaViolada > 0){
+      partes.push(`Foram registrados <b>${totalPortaAberta}</b> evento(s) de porta aberta e <b>${totalPortaViolada}</b> de porta violada no período${totalPortaViolada>0 ? ' — <span style="color:var(--critico);">porta violada merece atenção</span>, pode indicar falha de equipamento ou tentativa de acesso indevido.' : '.'}`);
+    }
+    if (incidentesAtuais.length > 0){
+      partes.push(`Registrados <b>${incidentesAtuais.length}</b> incidente(s) no período, dos quais <b>${incidentesAbertos}</b> ainda em aberto.`);
+    }
+    parecerEl.innerHTML = partes.length ? partes.map(p=>`<p style="margin:0 0 8px;">${p}</p>`).join('') : '<p>Sem dados suficientes no período selecionado pra gerar um parecer.</p>';
+  }
+
+  // ---------- Melhorias realizadas, com base na Renovação de Contrato ----------
+  const melhoriasEl = document.getElementById('vidaTimelineMelhorias');
+  if (melhoriasEl){
+    const nomeCondoAtual = vidaCondoAtual.nome;
+    const negociacoesCondo = (typeof renovNegociacoes !== 'undefined' ? renovNegociacoes : [])
+      .filter(n => normalizeNomeCondo(n.condo_nome) === (vidaCondoAtual.normNome || ''))
+      .sort((a,b) => (b.data_negociacao||'').localeCompare(a.data_negociacao||''));
+    if (!negociacoesCondo.length){
+      melhoriasEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Nenhuma negociação de renovação registrada pra esse condomínio ainda.</p>';
+    } else {
+      melhoriasEl.innerHTML = negociacoesCondo.map(n => {
+        const ampliacoes = [n.ampliacao_material, n.ampliacao_pedido, n.ampliacao_os, n.ampliacao_requisicao].filter(Boolean);
+        const corStatus = n.status === 'Renovado' ? 'var(--ok)' : n.status === 'Em negociação' ? 'var(--atencao)' : 'var(--text-faint)';
+        return `<div style="border-left:3px solid ${corStatus}; padding:8px 12px; margin-bottom:8px; background:var(--bg-panel-2); border-radius:0 6px 6px 0;">
+          <div style="font-size:11px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">${n.data_negociacao ? formatDateBR(n.data_negociacao) : 'Sem data'} · <b style="color:${corStatus};">${escapeHtml(n.status||'—')}</b>${n.tempo_renovado_meses ? ` · ${n.tempo_renovado_meses} meses renovados` : ''}</div>
+          ${n.tratativa ? `<div style="font-size:12px; margin-top:4px;">${escapeHtml(n.tratativa)}</div>` : ''}
+          ${ampliacoes.length ? `<div style="font-size:11.5px; margin-top:4px; color:var(--ok);">🔧 ${ampliacoes.map(escapeHtml).join(' · ')}</div>` : ''}
+          ${n.obs ? `<div style="font-size:11px; margin-top:4px; color:var(--text-faint);">${escapeHtml(n.obs)}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
 function renderVidaTimeline(){
   const tl = document.getElementById('vidaCondoTimeline');
   const busca = (document.getElementById('vidaTimelineBusca').value || '').trim().toLowerCase();
@@ -18295,6 +18637,8 @@ function renderVidaTimeline(){
   const periodo = document.getElementById('vidaTimelinePeriodo').value;
   const somenteCriticos = document.getElementById('vidaTimelineCriticoBtn').classList.contains('active');
   const hoje = new Date();
+
+  renderVidaTimelineKpisEGraficos();
 
   let eventos = vidaTimelineCategoriaAtiva === 'todos' ? vidaEventosCache : vidaEventosCache.filter(e => e.categoria === vidaTimelineCategoriaAtiva);
   if (busca){
@@ -18475,6 +18819,12 @@ function exportarVidaCondominioPDF(){
   const conteudoStats = document.getElementById('vidaCondoStats').innerHTML;
   const conteudoAtendStats = document.getElementById('vidaAtendimentoStats').innerHTML;
   const conteudoSaude = document.getElementById('vidaSaudeDimensoes').innerHTML;
+  const conteudoTimelineKpis = document.getElementById('vidaTimelineKpis').innerHTML;
+  const conteudoGraficoNota = document.getElementById('vidaTimelineGraficoNota').innerHTML;
+  const conteudoGraficoAtend = document.getElementById('vidaTimelineGraficoAtendimento').innerHTML;
+  const conteudoGraficoPortas = document.getElementById('vidaTimelineGraficoPortas').innerHTML;
+  const conteudoParecerIA = document.getElementById('vidaTimelineParecerIA').innerHTML;
+  const conteudoMelhorias = document.getElementById('vidaTimelineMelhorias').innerHTML;
   const timelineHtml = vidaEventosCache.slice(0, 40).map(e => `
     <div style="border:1px solid #d1d5db; border-left:${e.critico ? '4px solid #b91c1c' : '1px solid #d1d5db'}; border-radius:6px; padding:10px 12px; margin-bottom:8px; page-break-inside:avoid;">
       <div style="font-size:11px; color:#6b7280; font-family:monospace;">${e.data ? formatDateBR(e.data) : 'Data não informada'} · <b>${e.tipo}</b>${e.status ? ' · '+e.status : ''}</div>
@@ -18485,6 +18835,10 @@ function exportarVidaCondominioPDF(){
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Vida do Condomínio — ${nomeCondo}</title>
   <style>
+    :root{
+      --accent:#38bdf8; --ok:#22c55e; --critico:#ff4d5e; --atencao:#f59e0b;
+      --pendente:#3b82f6; --text-faint:#5c6680; --bg-panel-2:#f3f4f6; --line:#d1d5db;
+    }
     body{font-family:Arial,Helvetica,sans-serif; color:#1a2333; padding:32px; max-width:960px; margin:0 auto;}
     h1{font-size:22px; margin:4px 0 0;}
     h2{font-size:15px; margin:22px 0 10px; border-bottom:1px solid #d1d5db; padding-bottom:6px;}
@@ -18506,6 +18860,19 @@ function exportarVidaCondominioPDF(){
     </div>
     <h2>Resumo</h2>
     <div class="stats-strip">${conteudoStats}</div>
+    <h2>KPIs do Período (Linha do Tempo)</h2>
+    <div class="stats-strip">${conteudoTimelineKpis}</div>
+    <h2>Evolução da Nota e Volume de Atendimento</h2>
+    <div class="charts-grid">
+      <div class="chart-panel">${conteudoGraficoNota}</div>
+      <div class="chart-panel">${conteudoGraficoAtend}</div>
+    </div>
+    <h2>Eventos de Porta (Fluxo de Atendimento)</h2>
+    <div class="chart-panel">${conteudoGraficoPortas}</div>
+    <h2>Parecer da I.A.</h2>
+    <div>${conteudoParecerIA}</div>
+    <h2>Melhorias Realizadas (Renovação de Contrato)</h2>
+    <div>${conteudoMelhorias}</div>
     <h2>Atendimento</h2>
     <div class="stats-strip">${conteudoAtendStats}</div>
     <h2>Saúde por Dimensão</h2>
@@ -18713,18 +19080,21 @@ function mostrarViewKanbanVida(){
 }
 
 function renderVidaCondominioKanban(){
+  const fonteCondos = (cadastroLiveCarregado && CADASTRO_LIVE.length)
+    ? CADASTRO_LIVE.filter(c => c.status !== 'Inativo')
+    : DATA;
   const nomesVistos = new Set();
   const nomes = [];
-  DATA.forEach(d=>{
+  fonteCondos.forEach(d=>{
     const norm = normalizeNomeCondo(d.nome);
     if (norm && !nomesVistos.has(norm)){ nomesVistos.add(norm); nomes.push(d.nome); }
   });
   const linhas = nomes.map(nome => {
     const nomeNorm = normalizeNomeCondo(nome);
-    const item = DATA.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
+    const item = fonteCondos.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
     const dadosRisco = coletarDadosRiscoCondominio(nomeNorm);
     const risco = calcularNivelRisco(dadosRisco);
-    return { nome, filial: item ? item.filial : '—', ...dadosRisco, risco };
+    return { nome, filial: item ? normalizeFilialCanonica(item.filial) : '—', ...dadosRisco, risco };
   });
 
   // Popula o seletor de filial uma vez só (ou atualiza se mudou algo)
