@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-Z (melhorias usam Tratativa/Observação)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-Z2 (botão Realizar Tratativa no Fluxo)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -2794,6 +2794,35 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="login-btn" id="faSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
       </div>
       <p class="users-error" id="faError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="faTratativaModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:520px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3>📝 Tratativa — Fluxo de Atendimento</h3>
+        <button type="button" class="logout-btn" id="faTratativaModalClose">✕</button>
+      </div>
+      <p id="faTratativaContexto" style="font-size:12px; color:var(--text-faint); margin:-6px 0 14px;"></p>
+      <div class="users-form" style="margin-bottom:14px; grid-template-columns:1fr;">
+        <input type="hidden" id="faTratativaId">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">O que foi feito / tratativa realizada
+          <textarea id="faTratativaTexto" rows="5" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Ex: contato feito com o síndico, equipamento verificado, técnico agendado, etc."></textarea>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
+          <select id="faTratativaResponsavel" style="width:100%; margin-top:4px;">
+            <option value="Maria Rosely (Analista)">Maria Rosely (Analista)</option>
+            <option value="Josiane Alves (Assistente)">Josiane Alves (Assistente)</option>
+            <option value="Nicole (Aprendiz Manhã)">Nicole (Aprendiz Manhã)</option>
+            <option value="Geovanna (Aprendiz Tarde)">Geovanna (Aprendiz Tarde)</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="faTratativaCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="faTratativaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Tratativa</button>
+      </div>
+      <p class="users-error" id="faTratativaError" style="display:none;"></p>
     </div>
   </div>
 
@@ -14555,6 +14584,51 @@ function faStatus(registro){
   return 'Preenchido';
 }
 
+// ============================================================================
+// TRATATIVA — Fluxo de Atendimento (registro de acompanhamento manual)
+// ============================================================================
+let faTratativaEditandoId = null;
+
+function abrirTratativaFluxoModal(registro){
+  if (!registro) return;
+  faTratativaEditandoId = registro.id;
+  document.getElementById('faTratativaId').value = registro.id;
+  document.getElementById('faTratativaContexto').textContent = `${registro.condominio} · ${registro.filial || '—'} · ${mesLabelBR(String(registro.mes_referencia||'').slice(0,7))}`;
+  document.getElementById('faTratativaTexto').value = registro.tratativa || '';
+  document.getElementById('faTratativaResponsavel').value = registro.tratativa_responsavel || 'Maria Rosely (Analista)';
+  document.getElementById('faTratativaError').style.display = 'none';
+  document.getElementById('faTratativaModalOverlay').style.display = 'flex';
+}
+
+async function salvarTratativaFluxo(){
+  const id = document.getElementById('faTratativaId').value;
+  const texto = document.getElementById('faTratativaTexto').value.trim();
+  const errEl = document.getElementById('faTratativaError');
+  if (!texto){ errEl.textContent = 'Escreva a tratativa antes de salvar.'; errEl.style.display = 'block'; return; }
+  const payload = {
+    tratativa: texto,
+    tratativa_responsavel: document.getElementById('faTratativaResponsavel').value,
+    tratativa_data: new Date().toISOString(),
+  };
+  const btn = document.getElementById('faTratativaSaveBtn');
+  btn.disabled = true;
+  try{
+    const { error } = await sb.from('fluxo_atendimento').update(payload).eq('id', id);
+    if (error) throw error;
+    document.getElementById('faTratativaModalOverlay').style.display = 'none';
+    await loadFluxoAtendimento();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('tratativa') ? ' — confira se as colunas de tratativa já foram criadas no Supabase.' : '');
+    errEl.style.display = 'block';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('faTratativaModalClose').addEventListener('click', ()=>{ document.getElementById('faTratativaModalOverlay').style.display = 'none'; });
+document.getElementById('faTratativaCancelBtn').addEventListener('click', ()=>{ document.getElementById('faTratativaModalOverlay').style.display = 'none'; });
+document.getElementById('faTratativaSaveBtn').addEventListener('click', salvarTratativaFluxo);
+
 async function loadFluxoAtendimento(){
   const body = document.getElementById('faBody');
   if (!sb){
@@ -14702,11 +14776,17 @@ function renderFluxoAtendimento(){
       <td style="text-align:center; color:${corTMA(f.tma)};">${f.tma ?? '—'}${f.tma!==null&&f.tma!==undefined?'s':''}</td>
       <td><span class="tag" style="color:${corStatus}; border:1px solid ${corStatus}; background:transparent;">${status}</span></td>
       <td>${escapeHtml(f.responsavel||'—')}</td>
-      <td><button type="button" class="renov-action-btn" data-edit-fa="${f.id}">Editar</button></td>
+      <td>
+        <button type="button" class="renov-action-btn" data-edit-fa="${f.id}">Editar</button>
+        <button type="button" class="renov-action-btn" data-tratativa-fa="${f.id}" style="${f.tratativa ? 'border-color:var(--ok); color:var(--ok);' : 'border-color:var(--atencao); color:var(--atencao);'}" title="${f.tratativa ? 'Tratativa já registrada — clique pra ver/editar' : 'Nenhuma tratativa registrada ainda'}">${f.tratativa ? '✅ Tratativa' : '📝 Realizar Tratativa'}</button>
+      </td>
     </tr>`;
   }).join('');
   tbody.querySelectorAll('[data-edit-fa]').forEach(btn=>{
     btn.onclick = ()=> abrirFluxoAtendimentoModal(faData.find(f=>String(f.id)===btn.getAttribute('data-edit-fa')));
+  });
+  tbody.querySelectorAll('[data-tratativa-fa]').forEach(btn=>{
+    btn.onclick = ()=> abrirTratativaFluxoModal(faData.find(f=>String(f.id)===btn.getAttribute('data-tratativa-fa')));
   });
 }
 
