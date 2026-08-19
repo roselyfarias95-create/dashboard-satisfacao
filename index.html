@@ -1555,7 +1555,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-W (Kanban Vida do Condomínio corrigido)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-Z (melhorias usam Tratativa/Observação)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -11989,6 +11989,13 @@ function initTabs(){
             }
           });
         }
+        if (!renovLoaded && typeof loadRenovacaoData === 'function'){
+          loadRenovacaoData().then(()=>{
+            // se um condomínio já estiver aberto na tela de Detalhes, atualiza a
+            // seção de Melhorias com as negociações que acabaram de carregar
+            if (vidaCondoAtual.nome && typeof renderVidaTimeline === 'function') renderVidaTimeline();
+          });
+        }
       }
       if (tab === 'equipeMetas'){
         if (typeof renderEquipeMetasBarras === 'function') renderEquipeMetasBarras();
@@ -18610,20 +18617,29 @@ function renderVidaTimelineKpisEGraficos(){
   const melhoriasEl = document.getElementById('vidaTimelineMelhorias');
   if (melhoriasEl){
     const nomeCondoAtual = vidaCondoAtual.nome;
-    const negociacoesCondo = (typeof renovNegociacoes !== 'undefined' ? renovNegociacoes : [])
-      .filter(n => normalizeNomeCondo(n.condo_nome) === (vidaCondoAtual.normNome || ''))
-      .sort((a,b) => (b.data_negociacao||'').localeCompare(a.data_negociacao||''));
+    const normAlvo = vidaCondoAtual.normNome || '';
+    let negociacoesCondo = (typeof renovNegociacoes !== 'undefined' ? renovNegociacoes : [])
+      .filter(n => normalizeNomeCondo(n.condo_nome) === normAlvo);
+    if (!negociacoesCondo.length && normAlvo.length > 4){
+      // fallback: correspondência parcial, caso o nome esteja gravado um pouco diferente
+      negociacoesCondo = (typeof renovNegociacoes !== 'undefined' ? renovNegociacoes : [])
+        .filter(n => {
+          const nn = normalizeNomeCondo(n.condo_nome);
+          return nn.length > 4 && (nn.includes(normAlvo) || normAlvo.includes(nn));
+        });
+    }
+    negociacoesCondo = negociacoesCondo.sort((a,b) => (b.data_negociacao||'').localeCompare(a.data_negociacao||''));
     if (!negociacoesCondo.length){
       melhoriasEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Nenhuma negociação de renovação registrada pra esse condomínio ainda.</p>';
+    } else if (!negociacoesCondo.some(n => n.tratativa || n.obs)){
+      melhoriasEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Esse condomínio tem negociação registrada, mas nenhuma tratativa ou observação foi preenchida nela ainda.</p>';
     } else {
-      melhoriasEl.innerHTML = negociacoesCondo.map(n => {
-        const ampliacoes = [n.ampliacao_material, n.ampliacao_pedido, n.ampliacao_os, n.ampliacao_requisicao].filter(Boolean);
+      melhoriasEl.innerHTML = negociacoesCondo.filter(n => n.tratativa || n.obs).map(n => {
         const corStatus = n.status === 'Renovado' ? 'var(--ok)' : n.status === 'Em negociação' ? 'var(--atencao)' : 'var(--text-faint)';
         return `<div style="border-left:3px solid ${corStatus}; padding:8px 12px; margin-bottom:8px; background:var(--bg-panel-2); border-radius:0 6px 6px 0;">
           <div style="font-size:11px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">${n.data_negociacao ? formatDateBR(n.data_negociacao) : 'Sem data'} · <b style="color:${corStatus};">${escapeHtml(n.status||'—')}</b>${n.tempo_renovado_meses ? ` · ${n.tempo_renovado_meses} meses renovados` : ''}</div>
           ${n.tratativa ? `<div style="font-size:12px; margin-top:4px;">${escapeHtml(n.tratativa)}</div>` : ''}
-          ${ampliacoes.length ? `<div style="font-size:11.5px; margin-top:4px; color:var(--ok);">🔧 ${ampliacoes.map(escapeHtml).join(' · ')}</div>` : ''}
-          ${n.obs ? `<div style="font-size:11px; margin-top:4px; color:var(--text-faint);">${escapeHtml(n.obs)}</div>` : ''}
+          ${n.obs ? `<div style="font-size:12px; margin-top:4px; color:var(--ok);">🔧 ${escapeHtml(n.obs)}</div>` : ''}
         </div>`;
       }).join('');
     }
