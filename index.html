@@ -1578,7 +1578,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZB (filiais padronizadas em todos os filtros)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZC (cores de vencimento + sub-aba Vencendo em Breve)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1916,6 +1916,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
 
     <div class="subtab-nav" id="renovSubtabNav">
       <button type="button" class="subtab-btn active" data-renov-subtab="vencidos">⚠️ Vencidos</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="vencendobreve">⏰ Vencendo em Breve</button>
       <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
@@ -2012,6 +2013,48 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         </thead>
         <tbody id="renovVencidosBody">
           <tr><td colspan="13" class="empty">Carregando condomínios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+
+    <div id="renovViewVencendoBreve" style="display:none;">
+    <div class="toolbar" style="margin-bottom:16px;">
+      <button type="button" class="clearbtn" id="btnExportarRenovBreveExcel">📊 Exportar Excel</button>
+    </div>
+
+    <div class="checklist-toolbar">
+      <strong style="color:var(--text); font-size:13px;">⏰ Vencendo em até 12 meses</strong>
+      <span id="renovBreveCount" class="count-line" style="margin:0;"></span>
+    </div>
+    <div class="stats-strip" id="renovBrevePorFilial" style="margin-bottom:14px;"></div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <input type="text" class="search" id="renovBreveSearch" placeholder="Buscar por nome do condomínio...">
+      <select class="filter-select" id="renovBreveFilterFilial"><option value="">Filial: todas</option></select>
+      <select class="filter-select" id="renovBreveFilterResponsavel"><option value="">Responsável: todos</option></select>
+      <select class="filter-select" id="renovBreveFilterFaixa">
+        <option value="">Prazo: todos</option>
+        <option value="6">Até 6 meses</option>
+        <option value="12">Entre 6 e 12 meses</option>
+      </select>
+      <button type="button" class="clearbtn" id="btnLimparFiltrosRenovBreve">Limpar filtros</button>
+    </div>
+    <div class="checklist-table-wrap" style="margin-bottom:22px;">
+      <table class="checklist-table" id="renovBreveTable">
+        <thead>
+          <tr>
+            <th class="ck-name">Condomínio</th>
+            <th>Filial</th>
+            <th>Responsável</th>
+            <th>Fim do Contrato</th>
+            <th>Faltam</th>
+            <th>Mensalidade</th>
+            <th>Unidades</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="renovBreveBody">
+          <tr><td colspan="8" class="empty">Carregando condomínios...</td></tr>
         </tbody>
       </table>
     </div>
@@ -9200,6 +9243,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <option value="MIP 1000">MIP 1000</option>
       <option value="Módulo Guarita">Módulo Guarita</option>
     </select>
+    <button class="btn btn-ghost" id="btnLimparFiltrosCadastro" type="button">Limpar filtros</button>
     <button class="btn btn-ghost" id="btnExport">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
       Exportar CSV
@@ -9691,6 +9735,17 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     if(!m) return iso;
     return m[3]+"/"+m[2]+"/"+m[1];
   }
+  function corVencimentoContrato(contratoFim){
+    if(!contratoFim) return null;
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var fim = new Date(contratoFim+"T00:00:00");
+    var diasRestantes = Math.round((fim - hoje) / 86400000);
+    var mesesRestantes = diasRestantes / 30;
+    if(diasRestantes < 0) return "#ff4d5e";       // vencido — vermelho
+    if(mesesRestantes <= 6) return "#f5b942";      // até 6 meses — amarelo
+    if(mesesRestantes <= 12) return "#3b82f6";     // até 12 meses — azul
+    return "#22c55e";                              // acima de 12 meses — verde
+  }
   function pesquisaCell(c){
     var status = c.pesquisaStatus || "";
     var badge;
@@ -9754,7 +9809,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     empty.style.display = "none";
     tbody.innerHTML = list.map(function(c){
       return '<tr>'+
-        '<td class="cell-nome">'+esc(c.nome)+(c.responsavel? '<span class="resp">'+esc(c.responsavel)+'</span>':'')+(c.contratoFim? '<span class="resp contrato-fim-tag">Fim do contrato: '+fmtDataBR(c.contratoFim)+'</span>':'')+'</td>'+
+        '<td class="cell-nome">'+esc(c.nome)+(c.responsavel? '<span class="resp">'+esc(c.responsavel)+'</span>':'')+(c.contratoFim? '<span class="resp contrato-fim-tag" style="color:'+corVencimentoContrato(c.contratoFim)+';">Fim do contrato: '+fmtDataBR(c.contratoFim)+'</span>':'')+'</td>'+
         '<td>'+esc(c.filial)+'</td>'+
         '<td>'+badgeStatus(c.status)+'</td>'+
         '<td>'+tagSindico(c.sindico)+'</td>'+
@@ -10164,6 +10219,13 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     document.getElementById(id).addEventListener("change", renderTable);
   });
 
+  document.getElementById("btnLimparFiltrosCadastro").addEventListener("click", function(){
+    ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema"].forEach(function(id){
+      document.getElementById(id).value = "";
+    });
+    renderTable();
+  });
+
   // ==========================================================================
   // AUTOCOMPLETE: SUGESTÕES DE CONDOMÍNIO NO CAMPO DE BUSCA
   // ==========================================================================
@@ -10440,6 +10502,7 @@ initChecklistUI();
 // RENOVAÇÃO DE CONTRATOS
 // ============================================================================
 let renovVencidos = [];      // condomínios com contrato_fim < hoje
+let renovVencendoBreve = []; // condomínios com contrato_fim entre hoje e +12 meses
 let renovNegociacoes = [];   // negociações registradas manualmente
 let renovAllCondos = [];     // lista completa p/ preencher o select do modal
 let renovLoaded = false;
@@ -10455,6 +10518,18 @@ function diasVencido(iso){
   const fim = new Date(iso+"T00:00:00");
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   return Math.max(0, Math.round((hoje - fim) / 86400000));
+}
+
+function diasParaVencer(iso){
+  const fim = new Date(iso+"T00:00:00");
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return Math.round((fim - hoje) / 86400000);
+}
+
+function faltamLabel(dias){
+  const meses = dias / 30;
+  if (meses < 1) return `${dias} dia(s)`;
+  return `${Math.round(meses)} mês(es)`;
 }
 
 async function loadRenovacaoData(){
@@ -10476,6 +10551,10 @@ async function loadRenovacaoData(){
       (c.status || 'Ativo') !== 'Inativo' && c.contrato_fim && c.contrato_fim < hojeStr
     ).sort((a,b) => a.contrato_fim.localeCompare(b.contrato_fim));
 
+    renovVencendoBreve = renovAllCondos.filter(c =>
+      (c.status || 'Ativo') !== 'Inativo' && c.contrato_fim && c.contrato_fim >= hojeStr && diasParaVencer(c.contrato_fim) <= 365
+    ).sort((a,b) => a.contrato_fim.localeCompare(b.contrato_fim));
+
     // Tabela de negociações pode ainda não existir no banco.
     const { data: negs, error: e2 } = await sb.from('negociacoes_contrato').select('*');
     if (!e2 && negs){
@@ -10490,6 +10569,8 @@ async function loadRenovacaoData(){
     populateRenovFiltros();
     renderRenovVencidos();
     renderRenovVencidosPorFilial();
+    renderRenovVencendoBreve();
+    renderRenovBrevePorFilial();
     renderRenovNegociacoes();
     renovLoaded = true;
   }catch(e){
@@ -10850,6 +10931,8 @@ function populateRenovFiltros(){
   fillSelect('renovFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel).concat(renovNegociacoes.map(n => n.responsavel))));
   fillSelect('renovNegFilterFilial', uniq(renovAllCondos.map(c => normalizeFilialCanonica(c.filial))));
   fillSelect('renovNegFilterResponsavel', uniq(renovNegociacoes.map(n => n.responsavel)));
+  fillSelect('renovBreveFilterFilial', uniq(renovAllCondos.map(c => normalizeFilialCanonica(c.filial))));
+  fillSelect('renovBreveFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel)));
 }
 
 const NEG_STATUS_FINALIZADOS = ['Renovado', 'Renovado - Aguardando Cronograma Técnico', 'Renovado - Obra Iniciada', 'Renovado - Obra Finalizada', 'Não renovado', 'Cancelado'];
@@ -10872,6 +10955,72 @@ function getFilteredRenovVencidos(){
     if (q && !(c.nome && c.nome.toLowerCase().includes(q))) return false;
     return true;
   });
+}
+
+function getFilteredRenovBreve(){
+  const fFilial = document.getElementById('renovBreveFilterFilial').value;
+  const fResp = document.getElementById('renovBreveFilterResponsavel').value;
+  const fFaixa = document.getElementById('renovBreveFilterFaixa').value;
+  const q = (document.getElementById('renovBreveSearch').value || '').trim().toLowerCase();
+  const condosComNegociacao = new Set(renovNegociacoes.filter(negociacaoEmAndamento).map(n => String(n.condo_id)));
+  return renovVencendoBreve.filter(c=>{
+    if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
+    if (fFilial && normalizeFilialCanonica(c.filial) !== fFilial) return false;
+    if (fResp && c.responsavel !== fResp) return false;
+    if (q && !(c.nome && c.nome.toLowerCase().includes(q))) return false;
+    if (fFaixa){
+      const dias = diasParaVencer(c.contrato_fim);
+      if (fFaixa === '6' && dias > 180) return false;
+      if (fFaixa === '12' && (dias <= 180 || dias > 365)) return false;
+    }
+    return true;
+  });
+}
+
+function renderRenovBrevePorFilial(){
+  const el = document.getElementById('renovBrevePorFilial');
+  if (!el) return;
+  const counts = {};
+  renovVencendoBreve.forEach(c => { const f = normalizeFilialCanonica(c.filial) || 'Sem filial'; counts[f] = (counts[f]||0) + 1; });
+  const filiais = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  if (!filiais.length){
+    el.innerHTML = '<div class="stat-box"><div class="snum">0</div><div class="slbl">Nenhum contrato vencendo em breve</div></div>';
+    return;
+  }
+  el.innerHTML = filiais.map(f => `
+    <div class="stat-box">
+      <div class="snum">${counts[f]}</div>
+      <div class="slbl">${escapeHtml(f)}</div>
+    </div>
+  `).join('');
+}
+
+function renderRenovVencendoBreve(){
+  const body = document.getElementById('renovBreveBody');
+  if (!body) return;
+  const filtered = getFilteredRenovBreve();
+  document.getElementById('renovBreveCount').textContent = `${filtered.length} de ${renovVencendoBreve.length} condomínio(s) vencendo em até 12 meses`;
+  if (!filtered.length){
+    body.innerHTML = '<tr><td colspan="8" class="empty">Nenhum condomínio encontrado com esses filtros.</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(c => {
+    const dias = diasParaVencer(c.contrato_fim);
+    const cor = dias <= 180 ? 'var(--atencao)' : 'var(--pendente)';
+    return `
+    <tr>
+      <td class="ck-name">${escapeHtml(c.nome)}</td>
+      <td>${escapeHtml(normalizeFilialCanonica(c.filial) || '')}</td>
+      <td>${escapeHtml(c.responsavel || '')}</td>
+      <td>${fmtDataBRRenov(c.contrato_fim)}</td>
+      <td style="color:${cor}; font-weight:600;">${faltamLabel(dias)}</td>
+      <td>${fmtMoedaRenov(c.mensalidade)}</td>
+      <td>${c.qtd_unidades ?? '—'}</td>
+      <td>
+        <button type="button" class="renov-action-btn" data-registrar="${c.item_id}">+ Registrar negociação</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 function getFilteredRenovNegociacoes(){
@@ -10971,6 +11120,17 @@ document.getElementById('btnLimparFiltrosRenovVencidos').addEventListener('click
   document.getElementById('renovVencidosSearch').value = '';
   renderRenovVencidos();
 });
+['renovBreveFilterFilial','renovBreveFilterResponsavel','renovBreveFilterFaixa'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderRenovVencendoBreve);
+});
+document.getElementById('renovBreveSearch').addEventListener('input', renderRenovVencendoBreve);
+document.getElementById('btnLimparFiltrosRenovBreve').addEventListener('click', ()=>{
+  document.getElementById('renovBreveFilterFilial').value = '';
+  document.getElementById('renovBreveFilterResponsavel').value = '';
+  document.getElementById('renovBreveFilterFaixa').value = '';
+  document.getElementById('renovBreveSearch').value = '';
+  renderRenovVencendoBreve();
+});
 document.getElementById('renovNegSearch').addEventListener('input', renderRenovNegociacoes);
 ['renovNegFilterFilial','renovNegFilterResponsavel','renovNegFilterStatus','renovNegFilterTempoRenovado'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderRenovNegociacoes);
@@ -10983,6 +11143,21 @@ document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()
   document.getElementById('renovNegFilterTempoRenovado').value = '';
   renderRenovNegociacoes();
 });
+
+function exportarRenovBreveExcel(){
+  const lista = getFilteredRenovBreve();
+  if (!lista.length){ alert('Nenhum dado para exportar com esses filtros.'); return; }
+  const linhas = lista.map(c => ({
+    'Condomínio': c.nome, 'Filial': normalizeFilialCanonica(c.filial) || '', 'Responsável': c.responsavel || '',
+    'Fim do Contrato': fmtDataBRRenov(c.contrato_fim), 'Faltam': faltamLabel(diasParaVencer(c.contrato_fim)),
+    'Mensalidade': c.mensalidade || '', 'Unidades': c.qtd_unidades || '',
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  ws['!cols'] = [{wch:32},{wch:12},{wch:16},{wch:14},{wch:12},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Vencendo em Breve');
+  XLSX.writeFile(wb, `renovacao_vencendo_em_breve_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
 
 function exportarRenovacaoExcel(){
   const vencidos = getFilteredRenovVencidos();
@@ -11083,6 +11258,7 @@ function gerarRelatorioRenovacaoPDF(){
 }
 
 document.getElementById('btnExportarRenovExcel').addEventListener('click', exportarRenovacaoExcel);
+document.getElementById('btnExportarRenovBreveExcel').addEventListener('click', exportarRenovBreveExcel);
 document.getElementById('btnExportarRenovPDF').addEventListener('click', gerarRelatorioRenovacaoPDF);
 
 function negBadge(status){
@@ -11164,11 +11340,13 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.querySelectorAll('[data-renov-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
     const alvo = btn.getAttribute('data-renov-subtab');
     document.getElementById('renovViewVencidos').style.display = alvo === 'vencidos' ? 'block' : 'none';
+    document.getElementById('renovViewVencendoBreve').style.display = alvo === 'vencendobreve' ? 'block' : 'none';
     document.getElementById('renovViewNegociacao').style.display = alvo === 'negociacao' ? 'block' : 'none';
     document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     if (alvo === 'negociacao') renderRenovNegociacoes();
+    if (alvo === 'vencendobreve') renderRenovVencendoBreve();
     if (alvo === 'renovados') renderRenovRenovados();
     if (alvo === 'minidash') renderRenovMiniDash();
     if (alvo === 'cronograma'){
@@ -11977,6 +12155,10 @@ function initRenovacaoUI(){
     if (t) { openNegociacaoModal(t.dataset.registrar); return; }
     const delBtn = ev.target.closest('[data-excluir-vencido]');
     if (delBtn) excluirCondominioVencido(delBtn.dataset.excluirVencido);
+  });
+  document.getElementById('renovBreveBody').addEventListener('click', (ev) => {
+    const t = ev.target.closest('[data-registrar]');
+    if (t) openNegociacaoModal(t.dataset.registrar);
   });
   document.getElementById('renovNegociacoesBody').addEventListener('click', (ev) => {
     const editBtn = ev.target.closest('[data-edit-neg]');
