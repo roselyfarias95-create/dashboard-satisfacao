@@ -733,6 +733,8 @@
     font-family:"IBM Plex Mono",monospace;
     font-weight:600;
   }
+  .pq-sortable{ cursor:pointer; user-select:none; }
+  .pq-sortable .pq-sort-arrow{ opacity:0.6; margin-left:2px; }
   .list-header .lh-nota, .list-header .lh-crit, .list-header .lh-humor, .list-header .lh-res, .list-header .lh-data, .list-header .lh-nota2{ text-align:center; }
   .list-header .lh-status{ text-align:right; padding-right:4px; }
   @media (max-width:820px){
@@ -1578,7 +1580,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZE (ordenação por coluna em todas as tabelas)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZG2 (ordenação em Pesquisas, sem tocar no Cadastro)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1859,16 +1861,16 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   </div>
   <div class="list-header" id="listHeader">
     <div></div>
-    <div>Condomínio</div>
-    <div>Motivo</div>
-    <div class="lh-nota">Nota (Média)</div>
-    <div class="lh-nota2">Nota 1</div>
-    <div class="lh-nota2">Nota 2</div>
-    <div class="lh-data">Data</div>
-    <div class="lh-crit">Criticidade</div>
-    <div class="lh-humor">Humor</div>
-    <div class="lh-res">Resolução</div>
-    <div class="lh-status">Status da pesquisa</div>
+    <div class="pq-sortable" data-pq-sort="nome">Condomínio <span class="pq-sort-arrow">⇅</span></div>
+    <div class="pq-sortable" data-pq-sort="motivo">Motivo <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-nota pq-sortable" data-pq-sort="notaMedia">Nota (Média) <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-nota2 pq-sortable" data-pq-sort="nota1">Nota 1 <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-nota2 pq-sortable" data-pq-sort="nota2">Nota 2 <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-data pq-sortable" data-pq-sort="data">Data <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-crit pq-sortable" data-pq-sort="crit">Criticidade <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-humor pq-sortable" data-pq-sort="humor">Humor <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-res pq-sortable" data-pq-sort="resolucao">Resolução <span class="pq-sort-arrow">⇅</span></div>
+    <div class="lh-status pq-sortable" data-pq-sort="status">Status da pesquisa <span class="pq-sort-arrow">⇅</span></div>
     <div></div>
   </div>
   <div class="list" id="list"></div>
@@ -8416,8 +8418,67 @@ function renderMiniDash(baseFiltered){
   });
 }
 
+let pqSortCol = null;
+let pqSortDir = 'desc';
+const CRIT_ORDEM = { alto: 3, medio: 2, baixo: 1 };
+
+function ordenarListaPesquisas(lista){
+  if (!pqSortCol) return lista;
+  const copia = [...lista];
+  const valor = (item) => {
+    switch (pqSortCol){
+      case 'nome': return (item.nome || '').toLowerCase();
+      case 'motivo': return (classifyGrupoMotivo(item)[0] || '').toLowerCase();
+      case 'notaMedia': { const v = notaMedia(item); return v === '—' ? -1 : parseFloat(String(v).replace(',','.')); }
+      case 'nota1': { const v = notaNumerica(item); return v === null ? -1 : v; }
+      case 'nota2': { const v = parseFloat(String(item.notaPosResolucao||'').replace(',','.')); return isNaN(v) ? -1 : v; }
+      case 'data': return item.dataPesquisa || '';
+      case 'crit': return CRIT_ORDEM[item.crit] || 0;
+      case 'humor': return (item.humor || '').toLowerCase();
+      case 'resolucao': return (item.statusTratativa || '').toLowerCase();
+      case 'status': return (item.statusPesquisa || '').toLowerCase();
+      default: return '';
+    }
+  };
+  copia.sort((a,b) => {
+    const va = valor(a), vb = valor(b);
+    if (typeof va === 'number' && typeof vb === 'number') return pqSortDir === 'desc' ? vb - va : va - vb;
+    return pqSortDir === 'desc' ? String(vb).localeCompare(String(va),'pt-BR') : String(va).localeCompare(String(vb),'pt-BR');
+  });
+  return copia;
+}
+
+function atualizarSetasOrdenacaoPq(){
+  document.querySelectorAll('.pq-sortable').forEach(el=>{
+    const col = el.getAttribute('data-pq-sort');
+    const seta = el.querySelector('.pq-sort-arrow');
+    if (col === pqSortCol){
+      seta.textContent = pqSortDir === 'desc' ? '▼' : '▲';
+      el.style.color = 'var(--accent)';
+    } else {
+      seta.textContent = '⇅';
+      el.style.color = '';
+    }
+  });
+}
+
+document.querySelectorAll('.pq-sortable').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    const col = el.getAttribute('data-pq-sort');
+    if (pqSortCol === col){
+      pqSortDir = pqSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      pqSortCol = col;
+      pqSortDir = 'desc';
+    }
+    atualizarSetasOrdenacaoPq();
+    render();
+  });
+});
+
 function render(){
   renderPqCicloProgresso();
+  atualizarSetasOrdenacaoPq();
   const q = document.getElementById('search').value.trim();
 
   const baseFiltered = DATA.filter(d=>baseMatches(d,q)).filter(d=>{
@@ -8451,6 +8512,8 @@ function render(){
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyMsg');
   document.getElementById('countLineText').textContent = `${filtered.length} de ${baseFiltered.length} condomínios exibidos`;
+
+  filtered = ordenarListaPesquisas(filtered);
 
   listEl.innerHTML = '';
   emptyEl.style.display = filtered.length ? 'none' : 'block';
