@@ -1578,7 +1578,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZC (cores de vencimento + sub-aba Vencendo em Breve)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZE (ordenação por coluna em todas as tabelas)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -9243,6 +9243,12 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       <option value="MIP 1000">MIP 1000</option>
       <option value="Módulo Guarita">Módulo Guarita</option>
     </select>
+    <select class="filter-select" id="filterVencimento">
+      <option value="">Vencimento: todos</option>
+      <option value="vencido">🔴 Vencido</option>
+      <option value="perto">🟡 Vencendo em breve (90 dias)</option>
+      <option value="vigente">🟢 Vigente</option>
+    </select>
     <button class="btn btn-ghost" id="btnLimparFiltrosCadastro" type="button">Limpar filtros</button>
     <button class="btn btn-ghost" id="btnExport">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
@@ -9763,6 +9769,8 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     });
   }
 
+  var kpiPendenteAtivo = false; // toggle interno do card "Pendentes de Classificação"
+
   function getFiltered(){
     var q = document.getElementById("searchInput").value.trim().toLowerCase();
     var fFilial = document.getElementById("filterFilial").value;
@@ -9774,7 +9782,10 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var fFacial = document.getElementById("filterFacial").value;
     var fAcessoVeicular = document.getElementById("filterAcessoVeicular").value;
     var fSistema = document.getElementById("filterSistema").value;
+    var fVencimento = document.getElementById("filterVencimento").value;
     var sindicoSelectedNaoDefinido = document.getElementById("filterSindico").selectedIndex === 3;
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var em90dias = new Date(); em90dias.setDate(hoje.getDate()+90);
 
     return state.data.filter(function(c){
       if(q && !(c.nome.toLowerCase().indexOf(q)>-1 || (c.responsavel||"").toLowerCase().indexOf(q)>-1)) return false;
@@ -9788,6 +9799,16 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       if(fSistema && c.sistema !== fSistema) return false;
       if(sindicoSelectedNaoDefinido){ if(c.sindico) return false; }
       else if(fSindico && c.sindico !== fSindico) return false;
+      if(kpiPendenteAtivo && c.sindico && c.modalidade) return false;
+      if(fVencimento){
+        if(!c.contratoFim){ if(fVencimento !== "vigente") return false; }
+        else{
+          var d = new Date(c.contratoFim+"T00:00:00");
+          if(fVencimento === "vencido" && !(d < hoje)) return false;
+          if(fVencimento === "perto" && !(d >= hoje && d <= em90dias)) return false;
+          if(fVencimento === "vigente" && !(d > em90dias)) return false;
+        }
+      }
       return true;
     });
   }
@@ -9837,21 +9858,63 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var ativos = state.data.filter(function(c){return c.status==="Ativo";}).length;
     var inativos = state.data.filter(function(c){return c.status==="Inativo";}).length;
     var pendentes = state.data.filter(function(c){return !c.sindico || !c.modalidade;}).length;
-    var hoje = new Date();
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
     var em90dias = new Date(); em90dias.setDate(hoje.getDate()+90);
     var vencendo = state.data.filter(function(c){
       if(!c.contratoFim) return false;
       var d = new Date(c.contratoFim+"T00:00:00");
       return d >= hoje && d <= em90dias;
     }).length;
+    var vencidos = state.data.filter(function(c){
+      if(!c.contratoFim) return false;
+      var d = new Date(c.contratoFim+"T00:00:00");
+      return d < hoje;
+    }).length;
+    var vigentes = state.data.filter(function(c){
+      if(!c.contratoFim) return true;
+      var d = new Date(c.contratoFim+"T00:00:00");
+      return d > em90dias;
+    }).length;
+
+    var cardsInfo = [
+      {num: total, lbl: "Total de Condomínios", accent: "navy", icon: iconBuilding(), acao: "limpar"},
+      {num: ativos, lbl: "Ativos", accent: "teal", icon: iconCheck(), acao: "status", valor: "Ativo"},
+      {num: inativos, lbl: "Inativos", accent: "red", icon: iconX(), acao: "status", valor: "Inativo"},
+      {num: pendentes, lbl: "Pendentes de Classificação", accent: "amber", icon: iconAlert(), acao: "pendente"},
+      {num: vencidos, lbl: "🔴 Contratos Vencidos", accent: "red", icon: iconClock(), acao: "vencimento", valor: "vencido"},
+      {num: vencendo, lbl: "🟡 Vencendo em Breve (90 dias)", accent: "amber", icon: iconClock(), acao: "vencimento", valor: "perto"},
+      {num: vigentes, lbl: "🟢 Vigente", accent: "teal", icon: iconCheck(), acao: "vencimento", valor: "vigente"}
+    ];
     var grid = document.getElementById("summaryGrid");
-    grid.innerHTML = [
-      statCard(total, "Total de Condomínios", "navy", iconBuilding()),
-      statCard(ativos, "Ativos", "teal", iconCheck()),
-      statCard(inativos, "Inativos", "red", iconX()),
-      statCard(pendentes, "Pendentes de Classificação", "amber", iconAlert()),
-      statCard(vencendo, "Fim de Contrato (próx. 90 dias)", "amber", iconClock())
-    ].join("");
+    grid.innerHTML = cardsInfo.map(function(c){
+      return statCard(c.num, c.lbl, c.accent, c.icon);
+    }).join("");
+
+    // Torna os cards clicáveis (sem alterar statCard()) — clicar filtra a tabela abaixo.
+    var nodes = grid.querySelectorAll(".stat-card");
+    nodes.forEach(function(node, i){
+      var info = cardsInfo[i];
+      node.style.cursor = "pointer";
+      node.title = "Clique para filtrar a tabela por este indicador";
+      node.addEventListener("click", function(){
+        if (info.acao === "limpar"){
+          document.getElementById("btnLimparFiltrosCadastro").click();
+          return;
+        }
+        if (info.acao === "status"){
+          kpiPendenteAtivo = false;
+          document.getElementById("filterVencimento").value = "";
+          document.getElementById("filterStatus").value = info.valor;
+        } else if (info.acao === "pendente"){
+          kpiPendenteAtivo = !kpiPendenteAtivo;
+        } else if (info.acao === "vencimento"){
+          kpiPendenteAtivo = false;
+          var sel = document.getElementById("filterVencimento");
+          sel.value = (sel.value === info.valor) ? "" : info.valor;
+        }
+        renderTable();
+      });
+    });
   }
   function statCard(num, lbl, accent, icon){
     return '<div class="stat-card accent-'+accent+'"><div class="bar-icon">'+icon+'</div><div class="num">'+num+'</div><div class="lbl">'+lbl+'</div></div>';
@@ -10214,15 +10277,16 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   // ==========================================================================
   // EVENTOS: FILTROS DA TABELA
   // ==========================================================================
-  ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema"].forEach(function(id){
+  ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema","filterVencimento"].forEach(function(id){
     document.getElementById(id).addEventListener("input", renderTable);
     document.getElementById(id).addEventListener("change", renderTable);
   });
 
   document.getElementById("btnLimparFiltrosCadastro").addEventListener("click", function(){
-    ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema"].forEach(function(id){
+    ["searchInput","filterFilial","filterStatus","filterSindico","filterModalidade","filterArmario","filterGphone","filterFacial","filterAcessoVeicular","filterSistema","filterVencimento"].forEach(function(id){
       document.getElementById(id).value = "";
     });
+    kpiPendenteAtivo = false;
     renderTable();
   });
 
@@ -19701,6 +19765,92 @@ function exportarRelatorioExcel(){
     alert('Erro ao gerar o Excel: ' + e.message);
   }
 }
+// ============================================================================
+// ORDENAÇÃO GENÉRICA DE TABELAS — funciona em qualquer tabela .checklist-table
+// do sistema, clicando no cabeçalho da coluna. Não interfere nas tabelas que
+// já têm ordenação própria mais robusta (Adoção Digital e Fluxo de
+// Atendimento, marcadas com .ad-sortable/.fa-sortable), essas continuam
+// usando a lógica delas (ordena os dados de verdade, não só o texto na tela).
+// ============================================================================
+function prepararSetasOrdenacaoGenerica(){
+  document.querySelectorAll('.checklist-table thead th').forEach(th=>{
+    if (th.classList.contains('ad-sortable') || th.classList.contains('fa-sortable')) return;
+    if (th.querySelector('.generic-sort-arrow')) return; // já preparado
+    if (/ações?$/i.test(th.textContent.trim())) return; // não ordena a coluna de Ações
+    th.style.cursor = 'pointer';
+    th.style.userSelect = 'none';
+    th.title = 'Clique para ordenar';
+    const seta = document.createElement('span');
+    seta.className = 'generic-sort-arrow';
+    seta.style.marginLeft = '4px';
+    seta.style.opacity = '0.6';
+    seta.textContent = '⇅';
+    th.appendChild(seta);
+  });
+}
+
+function parseValorOrdenavel(txt){
+  const limpo = txt.trim().replace(/^R\$\s?/,'').replace(/\s?%$/,'').replace(/\s?s$/,'');
+  const limpoNum = limpo.replace(/\./g,'').replace(',', '.');
+  const n = parseFloat(limpoNum);
+  if (!isNaN(n) && /\d/.test(limpo) && /^-?[\d.,]+$/.test(limpo)) return n;
+  // datas dd/mm/aaaa — converte pra formato ordenável
+  const dm = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(txt.trim());
+  if (dm) return dm[3]+dm[2]+dm[1];
+  return txt.trim().toLowerCase();
+}
+
+document.addEventListener('click', (ev)=>{
+  const th = ev.target.closest('.checklist-table thead th');
+  if (!th) return;
+  if (th.classList.contains('ad-sortable') || th.classList.contains('fa-sortable')) return; // essas já têm handler próprio
+  const table = th.closest('table');
+  const theadRow = table.querySelector('thead tr');
+  const ths = [...theadRow.children];
+  const colIndex = ths.indexOf(th);
+  if (colIndex === -1) return;
+  if (/ações?$/i.test(th.textContent.trim().replace(/[⇅▲▼]/g,'').trim())) return;
+
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const linhas = [...tbody.querySelectorAll('tr')];
+  if (!linhas.length || (linhas.length === 1 && linhas[0].querySelector('.empty'))) return;
+
+  const dirAtual = th.getAttribute('data-sort-dir') || 'none';
+  const novaDir = dirAtual === 'desc' ? 'asc' : 'desc';
+  ths.forEach(h=>{
+    h.removeAttribute('data-sort-dir');
+    const s = h.querySelector('.generic-sort-arrow');
+    if (s) s.textContent = '⇅';
+    h.style.color = '';
+  });
+  th.setAttribute('data-sort-dir', novaDir);
+  th.style.color = 'var(--accent)';
+  const seta = th.querySelector('.generic-sort-arrow');
+  if (seta) seta.textContent = novaDir === 'desc' ? '▼' : '▲';
+
+  const valores = linhas.map(tr => {
+    const cel = tr.children[colIndex];
+    return { tr, v: cel ? parseValorOrdenavel(cel.textContent) : '' };
+  });
+  valores.sort((a,b)=>{
+    if (typeof a.v === 'number' && typeof b.v === 'number') return novaDir === 'asc' ? a.v - b.v : b.v - a.v;
+    const sa = String(a.v), sb = String(b.v);
+    return novaDir === 'asc' ? sa.localeCompare(sb, 'pt-BR') : sb.localeCompare(sa, 'pt-BR');
+  });
+  valores.forEach(o => tbody.appendChild(o.tr));
+});
+
+// Prepara na carga inicial (as tabelas já existem no DOM, só escondidas por
+// abas) e de novo a cada clique em qualquer aba/sub-aba, como reforço leve
+// pra qualquer tabela criada dinamicamente depois.
+prepararSetasOrdenacaoGenerica();
+document.addEventListener('click', (ev)=>{
+  if (ev.target.closest('.tab-btn, .subtab-btn, .view-toggle-btn')){
+    setTimeout(prepararSetasOrdenacaoGenerica, 50);
+  }
+});
+
 function determinarTimbrado(){
   const painel = getAbaAtivaVisivel();
   if (!painel) return 'servis';
