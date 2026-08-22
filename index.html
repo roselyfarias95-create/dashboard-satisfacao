@@ -1580,7 +1580,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZI (quantidade de pesquisas no comparativo por filial)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZJ (Fila Prioritária + evolução do TMA)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -2678,6 +2678,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn active" data-fa-subtab="registros">📋 Registros do Mês</button>
       <button type="button" class="subtab-btn" data-fa-subtab="historico">🗂 Histórico</button>
       <button type="button" class="subtab-btn" data-fa-subtab="minidash">📊 Mini Dashboard</button>
+      <button type="button" class="subtab-btn" id="faSubtabPrioritaria" data-fa-subtab="prioritaria">⭐ Fila Prioritária</button>
     </div>
 
     <div id="faViewRegistros">
@@ -2772,6 +2773,22 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="chart-panel" style="margin-top:16px;">
         <p class="chart-title">📈 Comparativo mensal por filial (TMA médio)</p>
         <div id="faCompFilialMensal"></div>
+      </div>
+    </div>
+
+    <div id="faViewPrioritaria" style="display:none;">
+      <p style="font-size:12.5px; color:var(--text-faint); margin:-4px 0 16px; line-height:1.5;">
+        Condomínios marcados com ⭐ na aba "Registros do Mês" — acompanhamento próximo da evolução do TMA deles ao longo dos meses.
+      </p>
+      <div class="chart-panel">
+        <p class="chart-title">📈 Evolução do TMA — Condomínios Prioritários</p>
+        <div id="faPrioritariaGrafico"></div>
+      </div>
+      <div class="checklist-table-wrap" style="margin-top:16px;">
+        <table class="checklist-table" id="faPrioritariaTable">
+          <thead><tr id="faPrioritariaThead"><th class="ck-name">Condomínio</th></tr></thead>
+          <tbody id="faPrioritariaBody"><tr><td class="empty">Nenhum condomínio marcado como prioritário ainda.</td></tr></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -6470,7 +6487,7 @@ let cadastroLiveCarregado = false;
 async function carregarCadastroLive(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade,possui_armario,possui_gphone');
+    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade,possui_armario,possui_gphone,fila_prioritaria');
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
@@ -6486,6 +6503,29 @@ function buscarEnderecoPorNomeCondo(nome){
   return achado ? (achado.endereco || '') : '';
 }
 const MODALIDADES_FORA_DO_FLUXO = ['Autônomo', 'Controle de Acesso', 'Empresa'];
+function ehFilaPrioritaria(nomeCondo){
+  if (!cadastroLiveCarregado || !CADASTRO_LIVE.length) return false;
+  const achado = CADASTRO_LIVE.find(c => normalizeNomeCondo(c.nome) === normalizeNomeCondo(nomeCondo));
+  return !!(achado && achado.fila_prioritaria);
+}
+
+async function alternarFilaPrioritaria(nomeCondo){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const achado = CADASTRO_LIVE.find(c => normalizeNomeCondo(c.nome) === normalizeNomeCondo(nomeCondo));
+  if (!achado){ alert('Condomínio não encontrado no Cadastro — verifique se o nome está igual nas duas telas.'); return; }
+  const novoValor = !achado.fila_prioritaria;
+  try{
+    const { error } = await sb.from('cadastro_condominios').update({ fila_prioritaria: novoValor }).eq('nome', achado.nome);
+    if (error) throw error;
+    achado.fila_prioritaria = novoValor;
+    renderFluxoAtendimento();
+    if (document.getElementById('faSubtabPrioritaria') && document.getElementById('faSubtabPrioritaria').classList.contains('active')){
+      renderFluxoPrioritaria();
+    }
+  }catch(e){
+    alert('Erro ao atualizar fila prioritária: ' + e.message);
+  }
+}
 function nomesForaDoFluxoAtendimento(){
   if (!cadastroLiveCarregado || !CADASTRO_LIVE.length) return new Set();
   return new Set(
@@ -15120,6 +15160,79 @@ document.querySelectorAll('.fa-sortable').forEach(th=>{
   });
 });
 
+function renderFluxoPrioritaria(){
+  const graficoEl = document.getElementById('faPrioritariaGrafico');
+  const thead = document.getElementById('faPrioritariaThead');
+  const tbody = document.getElementById('faPrioritariaBody');
+  if (!graficoEl || !thead || !tbody) return;
+
+  const prioritarios = (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.fila_prioritaria).map(c => c.nome);
+  if (!prioritarios.length){
+    graficoEl.innerHTML = '<p class="empty" style="font-size:11.5px;">Nenhum condomínio marcado como prioritário ainda. Marque com o botão ☆ na aba "Registros do Mês".</p>';
+    thead.innerHTML = '<tr><th class="ck-name">Condomínio</th></tr>';
+    tbody.innerHTML = '<tr><td class="empty">—</td></tr>';
+    return;
+  }
+
+  const unificado = coletarFluxoUnificado();
+  const porCondoMes = new Map(); // nome -> Map(mesChave YYYY-MM -> tma)
+  unificado.forEach(r => {
+    const nomeNorm = normalizeNomeCondo(r.condominio);
+    const alvo = prioritarios.find(p => normalizeNomeCondo(p) === nomeNorm);
+    if (!alvo || r.tma === null || r.tma === undefined) return;
+    const chave = /^\d{4}-\d{2}$/.test(r.mes) ? r.mes : (historicoMesParaChave(r.mes) || r.mes);
+    if (!porCondoMes.has(alvo)) porCondoMes.set(alvo, new Map());
+    porCondoMes.get(alvo).set(chave, r.tma);
+  });
+
+  const todosMeses = [...new Set([...porCondoMes.values()].flatMap(m => [...m.keys()]))].sort();
+  if (!todosMeses.length){
+    graficoEl.innerHTML = `<p class="empty" style="font-size:11.5px;">${prioritarios.length} condomínio(s) marcado(s) como prioritário, mas ainda sem TMA registrado.</p>`;
+    thead.innerHTML = '<tr><th class="ck-name">Condomínio</th></tr>';
+    tbody.innerHTML = prioritarios.map(n => `<tr><td class="ck-name">${escapeHtml(n)}</td></tr>`).join('');
+    return;
+  }
+
+  const cores = ['#38bdf8','#f5b942','#22c55e','#ff4d5e','#a78bfa','#fb923c','#2dd4bf','#f472b6'];
+  const w = 820, h = 220, padL = 40, padR = 24, padT = 16, padB = 30;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const xToPx = (i) => todosMeses.length>1 ? padL + (i/(todosMeses.length-1))*plotW : padL + plotW/2;
+  const tmaMaxima = Math.max(...[...porCondoMes.values()].flatMap(m => [...m.values()]), 10);
+  const yToPx = (v) => padT + plotH - (v/tmaMaxima)*plotH;
+
+  let svgLinhas = '';
+  let legenda = '';
+  [...porCondoMes.entries()].forEach(([nome, mesesMap], i) => {
+    const cor = cores[i % cores.length];
+    const pontos = todosMeses.map((m,idx) => mesesMap.has(m) ? [xToPx(idx), yToPx(mesesMap.get(m))] : null).filter(Boolean);
+    if (pontos.length){
+      const d = pontos.map((p,idx)=>(idx===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+      svgLinhas += `<path d="${d}" fill="none" stroke="${cor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      svgLinhas += pontos.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="${cor}"/>`).join('');
+    }
+    legenda += `<div style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-dim); margin-bottom:4px;"><span style="width:10px; height:10px; border-radius:50%; background:${cor}; display:inline-block; flex-shrink:0;"></span>${escapeHtml(nome)}</div>`;
+  });
+  const labelsX = todosMeses.map((m,idx) => `<text x="${xToPx(idx).toFixed(1)}" y="${h-8}" font-size="9.5" fill="var(--text-faint)" text-anchor="middle">${escapeHtml(mesLabelBR(m))}</text>`).join('');
+  const linhaMeta = `<line x1="${padL}" y1="${yToPx(8).toFixed(1)}" x2="${w-padR}" y2="${yToPx(8).toFixed(1)}" stroke="var(--text-faint)" stroke-dasharray="4,3" stroke-width="1"/><text x="${w-padR}" y="${(yToPx(8)-4).toFixed(1)}" font-size="9" fill="var(--text-faint)" text-anchor="end">meta 8s</text>`;
+
+  graficoEl.innerHTML = `
+    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:280px;"><svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${linhaMeta}${svgLinhas}${labelsX}</svg></div>
+      <div style="min-width:160px;">${legenda}</div>
+    </div>`;
+
+  thead.innerHTML = `<tr><th class="ck-name">Condomínio</th>${todosMeses.map(m=>`<th style="text-align:center;">${escapeHtml(mesLabelBR(m))}</th>`).join('')}</tr>`;
+  tbody.innerHTML = [...porCondoMes.entries()].map(([nome, mesesMap]) => `
+    <tr>
+      <td class="ck-name">${escapeHtml(nome)}</td>
+      ${todosMeses.map(m => {
+        const tma = mesesMap.has(m) ? mesesMap.get(m) : null;
+        return `<td style="text-align:center; color:${corTMA(tma)};">${tma!=null?tma+'s':'—'}</td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+}
+
 function renderFluxoAtendimento(){
   atualizarSetasOrdenacaoFa();
   const mesAtual = document.getElementById('faFilterMes').value || mesAtualReal();
@@ -15166,6 +15279,7 @@ function renderFluxoAtendimento(){
       <td>
         <button type="button" class="renov-action-btn" data-edit-fa="${f.id}">Editar</button>
         <button type="button" class="renov-action-btn" data-tratativa-fa="${f.id}" style="${f.tratativa ? 'border-color:var(--ok); color:var(--ok);' : 'border-color:var(--atencao); color:var(--atencao);'}" title="${f.tratativa ? 'Tratativa já registrada — clique pra ver/editar' : 'Nenhuma tratativa registrada ainda'}">${f.tratativa ? '✅ Tratativa' : '📝 Realizar Tratativa'}</button>
+        <button type="button" class="renov-action-btn" data-prioridade-fa="${escapeHtml(f.condominio)}" style="${ehFilaPrioritaria(f.condominio) ? 'border-color:#f5b942; color:#f5b942;' : ''}" title="${ehFilaPrioritaria(f.condominio) ? 'Remover da fila prioritária' : 'Marcar como prioritário'}">${ehFilaPrioritaria(f.condominio) ? '⭐ Prioritário' : '☆ Marcar'}</button>
       </td>
     </tr>`;
   }).join('');
@@ -15174,6 +15288,9 @@ function renderFluxoAtendimento(){
   });
   tbody.querySelectorAll('[data-tratativa-fa]').forEach(btn=>{
     btn.onclick = ()=> abrirTratativaFluxoModal(faData.find(f=>String(f.id)===btn.getAttribute('data-tratativa-fa')));
+  });
+  tbody.querySelectorAll('[data-prioridade-fa]').forEach(btn=>{
+    btn.onclick = ()=> alternarFilaPrioritaria(btn.getAttribute('data-prioridade-fa'));
   });
 }
 
@@ -15590,12 +15707,20 @@ document.querySelectorAll('[data-fa-subtab]').forEach(btn=>{
     document.getElementById('faViewRegistros').style.display = alvo === 'registros' ? 'block' : 'none';
     document.getElementById('faViewHistorico').style.display = alvo === 'historico' ? 'block' : 'none';
     document.getElementById('faViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
+    document.getElementById('faViewPrioritaria').style.display = alvo === 'prioritaria' ? 'block' : 'none';
     if (alvo === 'historico' && !faHistLoaded) loadFaHistorico();
     if (alvo === 'minidash'){
       if (!faHistLoaded){
         loadFaHistorico().then(renderFaMiniDash);
       } else {
         renderFaMiniDash();
+      }
+    }
+    if (alvo === 'prioritaria'){
+      if (!faHistLoaded){
+        loadFaHistorico().then(renderFluxoPrioritaria);
+      } else {
+        renderFluxoPrioritaria();
       }
     }
   });
