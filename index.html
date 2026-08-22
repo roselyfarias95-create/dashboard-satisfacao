@@ -1580,7 +1580,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZH (Pendentes de Classificação exclui inativos)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZI (quantidade de pesquisas no comparativo por filial)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -14794,6 +14794,15 @@ function corNota(n){
   return 'var(--critico)';
 }
 
+function qtdPesquisasDoMes(mes, itensOverride){
+  const source = itensOverride || itensDoMes(mes);
+  return source.filter(d => {
+    if (typeof d.nota === 'number') return true;
+    const n = parseFloat(String(d.nota).replace(',', '.'));
+    return !isNaN(n);
+  }).length;
+}
+
 function renderPesquisaComparativoFilial(){
   const tabelaEl = document.getElementById('pqCompFilialMensal');
   const narrEl = document.getElementById('pqCompNarrativa');
@@ -14810,7 +14819,10 @@ function renderPesquisaComparativoFilial(){
 
   const linhas = filiais.map(f => ({
     filial: f,
-    valores: meses.map(m => mediaNotaDoMes(m, itensDoMes(m, f)))
+    valores: meses.map(m => {
+      const itens = itensDoMes(m, f);
+      return { nota: mediaNotaDoMes(m, itens), qtd: qtdPesquisasDoMes(m, itens) };
+    })
   }));
 
   tabelaEl.innerHTML = `
@@ -14826,7 +14838,10 @@ function renderPesquisaComparativoFilial(){
           ${linhas.map(l=>`
             <tr>
               <td class="ck-name">${escapeHtml(l.filial)}</td>
-              ${l.valores.map(v=>`<td style="text-align:center; color:${corNota(v)}; font-family:'IBM Plex Mono',monospace;">${v!==null?v.toFixed(1):'—'}</td>`).join('')}
+              ${l.valores.map(v=>`<td style="text-align:center; font-family:'IBM Plex Mono',monospace;">
+                <span style="color:${corNota(v.nota)};">${v.nota!==null?v.nota.toFixed(1):'—'}</span>
+                <span style="display:block; font-size:9.5px; color:var(--text-faint); font-family:inherit;">${v.qtd} pesquisa${v.qtd===1?'':'s'}</span>
+              </td>`).join('')}
             </tr>
           `).join('')}
         </tbody>
@@ -14841,7 +14856,7 @@ function renderPesquisaComparativoFilial(){
   }
   const primeiro = meses[0], ultimo = meses[meses.length-1];
   const comparaveis = linhas.map(l=>{
-    const ini = l.valores[0], fim = l.valores[l.valores.length-1];
+    const ini = l.valores[0].nota, fim = l.valores[l.valores.length-1].nota;
     const delta = (ini!==null && fim!==null) ? fim-ini : null;
     return { filial: l.filial, ini, fim, delta };
   }).filter(x=>x.delta!==null);
@@ -14855,7 +14870,7 @@ function renderPesquisaComparativoFilial(){
       frases.push(`<b>${escapeHtml(piorEvolucao.filial)}</b> teve a maior queda no período (${piorEvolucao.ini.toFixed(1)} → ${piorEvolucao.fim.toFixed(1)}).`);
     }
   }
-  const doUltimoMes = linhas.map(l=>({ filial:l.filial, nota:l.valores[l.valores.length-1] })).filter(x=>x.nota!==null);
+  const doUltimoMes = linhas.map(l=>({ filial:l.filial, nota:l.valores[l.valores.length-1].nota })).filter(x=>x.nota!==null);
   if (doUltimoMes.length){
     const melhorAtual = [...doUltimoMes].sort((a,b)=>b.nota-a.nota)[0];
     const piorAtual = [...doUltimoMes].sort((a,b)=>a.nota-b.nota)[0];
