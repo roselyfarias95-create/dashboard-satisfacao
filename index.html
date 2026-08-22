@@ -1580,7 +1580,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZG2 (ordenação em Pesquisas, sem tocar no Cadastro)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZH (Pendentes de Classificação exclui inativos)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -9862,7 +9862,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
       if(fSistema && c.sistema !== fSistema) return false;
       if(sindicoSelectedNaoDefinido){ if(c.sindico) return false; }
       else if(fSindico && c.sindico !== fSindico) return false;
-      if(kpiPendenteAtivo && c.sindico && c.modalidade) return false;
+      if(kpiPendenteAtivo && (c.status === "Inativo" || (c.sindico && c.modalidade))) return false;
       if(fVencimento){
         if(!c.contratoFim){ if(fVencimento !== "vigente") return false; }
         else{
@@ -9920,7 +9920,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
     var total = state.data.filter(function(c){return c.status !== "Inativo";}).length;
     var ativos = state.data.filter(function(c){return c.status==="Ativo";}).length;
     var inativos = state.data.filter(function(c){return c.status==="Inativo";}).length;
-    var pendentes = state.data.filter(function(c){return !c.sindico || !c.modalidade;}).length;
+    var pendentes = state.data.filter(function(c){return c.status !== "Inativo" && (!c.sindico || !c.modalidade);}).length;
     var hoje = new Date(); hoje.setHours(0,0,0,0);
     var em90dias = new Date(); em90dias.setDate(hoje.getDate()+90);
     var vencendo = state.data.filter(function(c){
