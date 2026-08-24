@@ -1336,6 +1336,10 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     <div class="pq-card" id="pqCardPendencia" style="display:none;">
       <div class="pq-card-title"><span class="pq-card-num">3</span>Pendência</div>
       <div class="pq-field">
+        <label class="pq-label">Motivo da Pendência <span class="pq-required">*</span></label>
+        <select id="pqMotivoPendencia"><option value="">Selecione...</option></select>
+      </div>
+      <div class="pq-field">
         <label class="pq-label">Descrição da Pendência <span class="pq-required">*</span></label>
         <textarea id="pqDescricaoPendencia" placeholder="Descreva a pendência relatada pelo síndico..."></textarea>
       </div>
@@ -1576,7 +1580,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZM (botões movidos pro cabeçalho, sem flutuar)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZQ (motivo pendência + filtro filial do ciclo corrigidos)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6269,7 +6273,7 @@ function extraRowToItem(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
-    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
@@ -6294,7 +6298,7 @@ function itemToExtraRow(item){
     houve_pendencia2: !!item.houvePendencia2, pendencia_descricao2: item.pendenciaDescricao2 || null, setor_pendencia2: item.setorPendencia2 || null,
     houve_reclamacao2: !!item.houveReclamacao2, reclamacao_descricao2: item.reclamacaoDescricao2 || null, setor_reclamacao2: item.setorReclamacao2 || null,
     houve_elogio2: !!item.houveElogio2, elogio_descricao2: item.elogioDescricao2 || null, elogio_setor2: item.elogioSetor2 || null,
-    pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null,
+    pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null, motivo_pendencia: item.motivoPendencia || null,
     data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
     pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
     created_by: currentUsername || 'desconhecido',
@@ -6410,7 +6414,7 @@ function rowToUpdates(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
-    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia,
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
@@ -6436,7 +6440,7 @@ function updatesToRow(itemN, updates){
     houve_reclamacao2: !!updates.houveReclamacao2, reclamacao_descricao2: updates.reclamacaoDescricao2 || null, setor_reclamacao2: updates.setorReclamacao2 || null,
     houve_elogio2: !!updates.houveElogio2, elogio_descricao2: updates.elogioDescricao2 || null, elogio_setor2: updates.elogioSetor2 || null,
     excluido: !!updates.excluido,
-    pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null,
+    pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null, motivo_pendencia: updates.motivoPendencia || null,
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
     updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
@@ -7295,11 +7299,11 @@ function renderPqCicloProgresso(){
   });
   const selFilial = document.getElementById('pqCicloFilialSel');
   if (selFilial.options.length <= 1){
-    const filiais = [...new Set(DATA.map(d=>d.filial).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const filiais = [...new Set(DATA.map(d=>normalizeFilialCanonica(d.filial)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     selFilial.innerHTML = '<option value="">Todas as filiais</option>' + filiais.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
   }
   const filialAlvo = selFilial.value;
-  const doMes = DATA.filter(d => getMes(d) === selectedMes && (!filialAlvo || d.filial === filialAlvo));
+  const doMes = dadosCombinadosDoMes(selectedMes).filter(d => (!filialAlvo || normalizeFilialCanonica(d.filial) === filialAlvo));
   const total = doMes.length;
   const realizadas = doMes.filter(d => !pesquisaNaoRealizada(d)).length;
   const pendentes = total - realizadas;
@@ -8157,6 +8161,22 @@ function editFormHTML(item){
         <input type="text" class="ef-nota-pos" placeholder="ex: 9" value="${escapeHtml(item.notaPosResolucao || '')}">
       </label>
       <label class="full">Pendências / Reclamações<textarea class="ef-pend">${escapeHtml(item.pend)}</textarea></label>
+      <label>Motivo da pendência <span style="font-weight:400;text-transform:none;">(pode marcar mais de um)</span>
+        <div class="cb-box ef-motivo-pend-box">
+          ${MOTIVOS_CANONICOS.map(m => {
+            const parts = (item.motivoPendencia||'').split(' / ');
+            const isChecked = m === 'Outros'
+              ? parts.some(p => p.trim().toLowerCase().startsWith('outros'))
+              : parts.includes(m);
+            return `<label><input type="checkbox" class="ef-motivo-pend-cb" value="${m}" ${isChecked ? 'checked':''}> ${m}</label>`;
+          }).join('')}
+        </div>
+      </label>
+      <label class="ef-motivo-pend-outro-wrap" style="display:${(item.motivoPendencia||'').split(' / ').some(p=>p.trim().toLowerCase().startsWith('outros')) ? 'block':'none'}">
+        Especifique o motivo da pendência
+        <input type="text" class="ef-motivo-pend-outro" placeholder="Descreva o motivo..."
+          value="${escapeHtml(((item.motivoPendencia||'').split(' / ').find(p=>p.trim().toLowerCase().startsWith('outros')) || '').replace(/^outros\s*:?\s*/i,''))}">
+      </label>
       <label class="full">Encaminhamento / Retorno<textarea class="ef-resolucao">${escapeHtml(item.resolucao)}</textarea></label>
       <div class="edit-actions">
         <button type="button" class="btn-cancel">Cancelar</button>
@@ -8467,7 +8487,7 @@ function ordenarListaPesquisas(lista){
   const valor = (item) => {
     switch (pqSortCol){
       case 'nome': return (item.nome || '').toLowerCase();
-      case 'motivo': return (classifyGrupoMotivo(item)[0] || '').toLowerCase();
+      case 'motivo': return ((item.motivo && item.motivo !== '—') ? item.motivo : (item.houvePendencia && item.motivoPendencia ? item.motivoPendencia : (classifyGrupoMotivo(item)[0] || ''))).toLowerCase();
       case 'notaMedia': { const v = notaMedia(item); return v === '—' ? -1 : parseFloat(String(v).replace(',','.')); }
       case 'nota1': { const v = notaNumerica(item); return v === null ? -1 : v; }
       case 'nota2': { const v = parseFloat(String(item.notaPosResolucao||'').replace(',','.')); return isNaN(v) ? -1 : v; }
@@ -8592,6 +8612,7 @@ function render(){
               <p class="blk-title" style="margin-top:14px;">⚠️ Pendência</p>
               <div class="meta-row">
                 ${item.setorPendencia ? `<span class="pill">Setor Responsável: ${escapeHtml(item.setorPendencia)}</span>` : ''}
+                ${item.motivoPendencia ? `<span class="pill">Motivo: ${escapeHtml(item.motivoPendencia)}</span>` : ''}
               </div>
               ${item.pendenciaObservacoes ? `<p class="blk-text" style="margin-top:6px;"><i>Observações: ${escapeHtml(item.pendenciaObservacoes)}</i></p>` : ''}
             ` : ''}
@@ -8657,7 +8678,7 @@ function render(){
           ${item.motivoNaoRealizada ? `— ${escapeHtml(item.motivoNaoRealizada)}` : ''}
         </div>
         ` : `
-        <div class="motivo">${escapeHtml(item.motivo || (item.houveReclamacao ? '—' : 'Não teve reclamação'))}</div>
+        <div class="motivo">${escapeHtml((item.motivo && item.motivo !== '—') ? item.motivo : (item.houvePendencia && item.motivoPendencia ? item.motivoPendencia : (item.houveReclamacao ? '—' : 'Não teve reclamação')))}</div>
         <div class="nota">${notaMedia(item)} ${emojiParaNota(notaMedia(item))}<span class="nlabel">média</span></div>
         <div class="nota2col">${escapeHtml(item.nota)}</div>
         <div class="nota2col">${nota2Display(item)}</div>
@@ -8691,6 +8712,14 @@ function render(){
       });
     });
 
+    card.querySelectorAll('.ef-motivo-pend-cb').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const wrap = card.querySelector('.ef-motivo-pend-outro-wrap');
+        const outrosSelected = [...card.querySelectorAll('.ef-motivo-pend-cb:checked')].some(c=>c.value==='Outros');
+        wrap.style.display = outrosSelected ? 'block' : 'none';
+      });
+    });
+
     const cancelBtn = card.querySelector('.btn-cancel');
     if (cancelBtn) cancelBtn.onclick = (e)=>{
       e.stopPropagation();
@@ -8706,6 +8735,9 @@ function render(){
       const motivoVals = [...form.querySelectorAll('.ef-motivo-cb:checked')].map(cb=>cb.value);
       const outroTexto = form.querySelector('.ef-motivo-outro').value.trim();
       const motivoFinal = motivoVals.map(v => (v === 'Outros' && outroTexto) ? `Outros: ${outroTexto}` : v);
+      const motivoPendVals = [...form.querySelectorAll('.ef-motivo-pend-cb:checked')].map(cb=>cb.value);
+      const outroPendTexto = form.querySelector('.ef-motivo-pend-outro').value.trim();
+      const motivoPendFinal = motivoPendVals.map(v => (v === 'Outros' && outroPendTexto) ? `Outros: ${outroPendTexto}` : v);
       const updates = {
         nota: form.querySelector('.ef-nota').value.trim(),
         dataPesquisa: form.querySelector('.ef-data').value.trim(),
@@ -8713,6 +8745,7 @@ function render(){
         crit: form.querySelector('.ef-crit').value,
         setor: [...form.querySelectorAll('.ef-setor-cb:checked')].map(cb=>cb.value).join(' / ') || '—',
         motivo: motivoFinal.join(' / ') || '—',
+        motivoPendencia: motivoPendFinal.join(' / ') || null,
         resolvido: resolvidoRaw === 'true' ? true : (resolvidoRaw === 'false' ? false : null),
         notaPosResolucao: form.querySelector('.ef-nota-pos').value.trim(),
         houveReclamacao: form.querySelector('.ef-houve-reclamacao').checked,
@@ -12458,7 +12491,7 @@ let pqNotaSelecionada = null;
 const PQ_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
 const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial'];
 const PQ_SETORES_PENDENCIA = ['Síndico','Zeladoria','Portaria','Financeiro','Manutenção','Administração'];
-const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações'];
+const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Backoffice'];
 const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial'];
 
 function pqBuildNotaRow(){
@@ -12542,6 +12575,9 @@ function pqPopulateDropdowns(){
 
   const setorPendencia = document.getElementById('pqSetorPendencia');
   setorPendencia.innerHTML = '<option value="">Selecione...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+  const motivoPendenciaSel = document.getElementById('pqMotivoPendencia');
+  motivoPendenciaSel.innerHTML = '<option value="">Selecione...</option>' + MOTIVOS_CANONICOS.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
 
   const setorPendencia2 = document.getElementById('pqSetorPendencia2');
   setorPendencia2.innerHTML = '<option value="">Setor Responsável...</option>' + PQ_SETORES_RESPONSAVEL.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
@@ -12638,6 +12674,7 @@ function openPesquisaModal(item){
   document.getElementById('pqRetornoSetor').value = item ? (item.resolucao || '') : '';
   document.getElementById('pqStatusTratativa').value = item ? (item.statusTratativa || 'Em andamento') : 'Em andamento';
   document.getElementById('pqDescricaoPendencia').value = item ? (item.pendenciaDescricao || '') : '';
+  document.getElementById('pqMotivoPendencia').value = item ? (item.motivoPendencia || '') : '';
   document.getElementById('pqObservacoesPendencia').value = item ? (item.pendenciaObservacoes || '') : '';
   {
     const setorPendValor = item ? (item.setorPendencia || '') : '';
@@ -12736,6 +12773,11 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
       errEl.style.display = 'block';
       return;
     }
+    if (usaPendencia && !document.getElementById('pqMotivoPendencia').value){
+      errEl.textContent = 'Selecione o Motivo da Pendência.';
+      errEl.style.display = 'block';
+      return;
+    }
     if (usaPendencia && !document.getElementById('pqDescricaoPendencia').value.trim()){
       errEl.textContent = 'Descreva a Pendência.';
       errEl.style.display = 'block';
@@ -12796,6 +12838,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     houveReclamacao: usaReclamacao,
     houveElogio: usaElogio,
     pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
+    motivoPendencia: usaPendencia ? document.getElementById('pqMotivoPendencia').value : '',
     pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
     setorPendencia: usaPendencia
       ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || document.getElementById('pqSetorPendencia').value)
