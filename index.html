@@ -1504,6 +1504,16 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
 
     <div id="pqNaoRealizadaWrap" style="display:none; border:1px solid var(--critico); background:var(--critico-bg); border-radius:12px; padding:14px 16px; margin-bottom:14px;">
       <div class="pq-field">
+        <label class="pq-label">📞 Tentativas de Contato <span style="font-weight:400; text-transform:none;">(mínimo 3 pra poder fechar como Não Realizada)</span></label>
+        <div id="pqTentativasLista" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="date" id="pqTentativaData" style="max-width:170px;">
+          <input type="text" id="pqTentativaObs" placeholder="Obs. da tentativa (opcional)" style="flex:1;">
+          <button type="button" class="clearbtn" id="pqBtnAddTentativa">+ Registrar</button>
+        </div>
+        <p id="pqTentativasAviso" style="font-size:11.5px; color:var(--critico); margin:8px 0 0; display:none;">Registre pelo menos 3 tentativas de contato antes de fechar como Não Realizada.</p>
+      </div>
+      <div class="pq-field">
         <label class="pq-label" style="color:var(--critico);">Motivo da não realização <span class="pq-required">*</span></label>
         <select id="pqMotivoNaoRealizada">
           <option value="">Selecione...</option>
@@ -1580,7 +1590,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZQ (motivo pendência + filtro filial do ciclo corrigidos)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZR (tentativas de contato, mínimo 3 pra fechar)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -6273,7 +6283,7 @@ function extraRowToItem(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
-    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia, tentativasContato: row.tentativas_contato || [],
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
@@ -6298,7 +6308,7 @@ function itemToExtraRow(item){
     houve_pendencia2: !!item.houvePendencia2, pendencia_descricao2: item.pendenciaDescricao2 || null, setor_pendencia2: item.setorPendencia2 || null,
     houve_reclamacao2: !!item.houveReclamacao2, reclamacao_descricao2: item.reclamacaoDescricao2 || null, setor_reclamacao2: item.setorReclamacao2 || null,
     houve_elogio2: !!item.houveElogio2, elogio_descricao2: item.elogioDescricao2 || null, elogio_setor2: item.elogioSetor2 || null,
-    pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null, motivo_pendencia: item.motivoPendencia || null,
+    pendencia_descricao: item.pendenciaDescricao || null, pendencia_observacoes: item.pendenciaObservacoes || null, motivo_pendencia: item.motivoPendencia || null, tentativas_contato: item.tentativasContato || [],
     data_pesquisa_2: item.dataPesquisa2 || null, setor_pendencia: item.setorPendencia || null,
     pesquisa_remarcada: !!item.pesquisaRemarcada, data_remarcada: item.dataRemarcada || null, retorno_visita_remarcada: item.retornoVisitaRemarcada || null,
     created_by: currentUsername || 'desconhecido',
@@ -6414,7 +6424,7 @@ function rowToUpdates(row){
     elogioSetor: row.elogio_setor, elogioDescricao: row.elogio_descricao,
     comentarioSindico: row.comentario_sindico, responsavelPesquisa: row.responsavel_pesquisa,
     motivoNaoRealizada: row.motivo_nao_realizada, observacaoNaoRealizada: row.observacao_nao_realizada,
-    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia,
+    pendenciaDescricao: row.pendencia_descricao, pendenciaObservacoes: row.pendencia_observacoes, motivoPendencia: row.motivo_pendencia, tentativasContato: row.tentativas_contato || [],
     dataPesquisa2: row.data_pesquisa_2, setorPendencia: row.setor_pendencia,
     pesquisa2NaoRealizada: !!row.pesquisa2_nao_realizada, motivoNaoRealizada2: row.motivo_nao_realizada2, observacaoNaoRealizada2: row.observacao_nao_realizada2,
     comentarioContato: row.comentario_contato, comentarioContato2: row.comentario_contato2,
@@ -6440,7 +6450,7 @@ function updatesToRow(itemN, updates){
     houve_reclamacao2: !!updates.houveReclamacao2, reclamacao_descricao2: updates.reclamacaoDescricao2 || null, setor_reclamacao2: updates.setorReclamacao2 || null,
     houve_elogio2: !!updates.houveElogio2, elogio_descricao2: updates.elogioDescricao2 || null, elogio_setor2: updates.elogioSetor2 || null,
     excluido: !!updates.excluido,
-    pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null, motivo_pendencia: updates.motivoPendencia || null,
+    pendencia_descricao: updates.pendenciaDescricao || null, pendencia_observacoes: updates.pendenciaObservacoes || null, motivo_pendencia: updates.motivoPendencia || null, tentativas_contato: updates.tentativasContato || [],
     data_pesquisa_2: updates.dataPesquisa2 || null, setor_pendencia: updates.setorPendencia || null,
     pesquisa_remarcada: !!updates.pesquisaRemarcada, data_remarcada: updates.dataRemarcada || null, retorno_visita_remarcada: updates.retornoVisitaRemarcada || null,
     updated_by: currentUsername || 'desconhecido', updated_at: new Date().toISOString(),
@@ -12486,6 +12496,40 @@ function initTabs(){
 // ============================================================================
 let pqEditingItem = null; // null = nova pesquisa; objeto = editando pesquisa existente
 const pqToggleState = {}; // { pqRealizada:'sim'|'nao', pqPendencia:..., pqReclamacao:..., pqElogio:... }
+let pqTentativasAtuais = []; // [{data:'YYYY-MM-DD', obs:'...'}]
+document.getElementById('pqBtnAddTentativa').addEventListener('click', ()=>{
+  const data = document.getElementById('pqTentativaData').value;
+  if (!data){ alert('Escolha a data da tentativa.'); return; }
+  const obs = document.getElementById('pqTentativaObs').value.trim();
+  pqTentativasAtuais.push({ data, obs });
+  document.getElementById('pqTentativaObs').value = '';
+  document.getElementById('pqTentativaData').value = new Date().toISOString().slice(0,10);
+  renderPqTentativas();
+});
+
+function renderPqTentativas(){
+  const lista = document.getElementById('pqTentativasLista');
+  const aviso = document.getElementById('pqTentativasAviso');
+  if (!lista) return;
+  if (!pqTentativasAtuais.length){
+    lista.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint); margin:0;">Nenhuma tentativa registrada ainda.</p>';
+  } else {
+    lista.innerHTML = pqTentativasAtuais.map((t, i) => `
+      <div style="display:flex; align-items:center; gap:8px; font-size:12px; background:var(--bg-panel-2); border-radius:6px; padding:5px 10px;">
+        <b style="font-family:'IBM Plex Mono',monospace;">${escapeHtml(formatDateBR(t.data))}</b>
+        <span style="color:var(--text-faint); flex:1;">${escapeHtml(t.obs || '')}</span>
+        <button type="button" data-del-tentativa="${i}" style="background:none; border:none; color:var(--critico); cursor:pointer; font-size:13px;">✕</button>
+      </div>
+    `).join('');
+    lista.querySelectorAll('[data-del-tentativa]').forEach(btn=>{
+      btn.onclick = ()=>{
+        pqTentativasAtuais.splice(parseInt(btn.getAttribute('data-del-tentativa'),10), 1);
+        renderPqTentativas();
+      };
+    });
+  }
+  aviso.style.display = pqTentativasAtuais.length < 3 ? 'block' : 'none';
+}
 let pqNotaSelecionada = null;
 
 const PQ_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
@@ -12651,6 +12695,10 @@ function openPesquisaModal(item){
 
   document.getElementById('pqMotivoNaoRealizada').value = item ? (item.motivoNaoRealizada || '') : '';
   document.getElementById('pqObservacaoNaoRealizada').value = item ? (item.observacaoNaoRealizada || '') : '';
+  pqTentativasAtuais = item && Array.isArray(item.tentativasContato) ? [...item.tentativasContato] : [];
+  document.getElementById('pqTentativaData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pqTentativaObs').value = '';
+  renderPqTentativas();
   pqSetToggle('pqRealizada', item ? (pesquisaNaoRealizada(item) ? 'nao' : 'sim') : 'sim');
   pqSetToggle('pqPendencia', item && item.houvePendencia ? 'sim' : 'nao');
   pqSetToggle('pqReclamacao', item && item.houveReclamacao ? 'sim' : 'nao');
@@ -12750,6 +12798,11 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
   const remarcada = pqToggleState.pqRemarcada === 'sim';
 
   if (!realizada){
+    if (pqTentativasAtuais.length < 3){
+      errEl.textContent = `Registre pelo menos 3 tentativas de contato antes de fechar como Não Realizada (você tem ${pqTentativasAtuais.length}).`;
+      errEl.style.display = 'block';
+      return;
+    }
     if (!document.getElementById('pqMotivoNaoRealizada').value){
       errEl.textContent = 'Selecione o Motivo da não realização.';
       errEl.style.display = 'block';
@@ -12839,6 +12892,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     houveElogio: usaElogio,
     pendenciaDescricao: usaPendencia ? document.getElementById('pqDescricaoPendencia').value.trim() : '',
     motivoPendencia: usaPendencia ? document.getElementById('pqMotivoPendencia').value : '',
+    tentativasContato: pqTentativasAtuais,
     pendenciaObservacoes: usaPendencia ? document.getElementById('pqObservacoesPendencia').value.trim() : '',
     setorPendencia: usaPendencia
       ? (document.getElementById('pqSetorPendenciaOutro').value.trim() || document.getElementById('pqSetorPendencia').value)
