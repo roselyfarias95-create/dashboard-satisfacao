@@ -1592,7 +1592,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZY (grupos recolhíveis + nomes em maiúsculo)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-A (meta de 100 pra porta aberta/violada)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -7023,7 +7023,7 @@ function notaFaixaIndex2(item){
     if (idx !== -1) return idx;
   }
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
-  if (!isNaN(n1) && n1 >= 9) return NOTA2_FAIXAS.findIndex(f=>f.special==='estrela');
+  if (!isNaN(n1) && n1 >= 8) return NOTA2_FAIXAS.findIndex(f=>f.special==='estrela');
   return NOTA2_FAIXAS.findIndex(f=>f.special==='sem_nota');
 }
 function emojiParaNota(notaRaw){
@@ -8144,7 +8144,7 @@ function nota2Display(item){
   }
   if (item.notaPosResolucao) return escapeHtml(item.notaPosResolucao);
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
-  if (!isNaN(n1) && n1 >= 9) return '<span title="Nota já era 9 ou 10 na 1ª pesquisa — sem necessidade de retorno">⭐</span>';
+  if (!isNaN(n1) && n1 >= 8) return '<span title="Nota já era 8 ou mais na 1ª pesquisa — sem necessidade de retorno">⭐</span>';
   return '—';
 }
 
@@ -12822,7 +12822,7 @@ function pqAtualizarVisibilidadeEncaminhamento(){
 function pqAtualizarVisibilidadeRecuperacao(){
   const n = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
   const jaTemPesquisa2 = !!(pqEditingItem && (pqEditingItem.dataPesquisa2 || pqEditingItem.notaPosResolucao || pqEditingItem.pesquisa2NaoRealizada));
-  const mostrar = (!isNaN(n) && n < 9) || jaTemPesquisa2;
+  const mostrar = (!isNaN(n) && n < 8) || jaTemPesquisa2;
   document.getElementById('pqCardRecuperacao').style.display = mostrar ? 'block' : 'none';
   if (mostrar){
     const dataTxt = document.getElementById('pqData').value ? formatDateBR(document.getElementById('pqData').value) : '—';
@@ -15159,14 +15159,12 @@ function corTMA(tma){
 }
 function corPortaViolada(n){
   if (n === null || n === undefined) return 'var(--text-faint)';
-  if (n > 10) return 'var(--critico)';
-  if (n >= 6) return 'var(--atencao)';
+  if (n > 100) return 'var(--critico)';
   return 'var(--ok)';
 }
 function corPortaAberta(n){
   if (n === null || n === undefined) return 'var(--text-faint)';
-  if (n > 50) return 'var(--critico)';
-  if (n >= 21) return 'var(--atencao)';
+  if (n > 100) return 'var(--critico)';
   return 'var(--ok)';
 }
 function faStatus(registro){
