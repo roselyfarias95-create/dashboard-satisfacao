@@ -1166,6 +1166,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="demandas" checked> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="vidaCondominio" checked> Vida do Condomínio</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="equipeMetas" checked> Equipe & Metas</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="fechamentoMensal" checked> Fechamento do Mês</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1204,6 +1205,7 @@
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="demandas"> Demandas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="vidaCondominio"> Vida do Condomínio</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="equipeMetas"> Equipe & Metas</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="fechamentoMensal"> Fechamento do Mês</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1590,7 +1592,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZR (tentativas de contato, mínimo 3 pra fechar)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-09-ZY (grupos recolhíveis + nomes em maiúsculo)</div>
       <div class="session-info">
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
@@ -1633,6 +1635,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="demandas"><span class="tab-icon">🗂️</span><span class="tab-label">Demandas</span></button>
       <button type="button" class="tab-btn" data-tab="vidaCondominio"><span class="tab-icon">🕓</span><span class="tab-label">Vida do Condomínio</span></button>
       <button type="button" class="tab-btn" data-tab="equipeMetas"><span class="tab-icon">👥</span><span class="tab-label">Equipe & Metas</span></button>
+      <button type="button" class="tab-btn" data-tab="fechamentoMensal"><span class="tab-icon">📊</span><span class="tab-label">Fechamento do Mês</span></button>
       <button type="button" class="tab-btn" data-tab="atividades" id="tabBtnAtividades" style="display:none;"><span class="tab-icon">🕵️</span><span class="tab-label">Atividades da Equipe</span></button>
     </nav>
 
@@ -4006,6 +4009,68 @@ CONDOMINIO Y	480	45"></textarea>
     </div>
   </div>
 
+  <!-- ==================== FECHAMENTO DO MÊS ==================== -->
+  <div id="tabFechamentoMensal" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Pra onde olhar no mês que vem: os condomínios que precisam da sua atenção, por quê, e o que fazer com cada um.
+    </p>
+
+    <div class="toolbar" style="margin-bottom:16px;">
+      <input type="month" class="search" id="fmMesAtual" style="max-width:170px;">
+      <span id="fmStatusBadge" class="tag" style="font-size:11.5px;"></span>
+      <button type="button" class="clearbtn" id="fmBtnConcluir">✅ Marcar como Concluído</button>
+      <button type="button" class="login-btn" id="fmBtnSalvar" style="width:auto; margin-top:0; padding:8px 20px;">💾 Salvar</button>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">🎯 Ação para o Mês Seguinte</p>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:-4px 0 12px;">O sistema sugere a classificação (🟢🟡🔴) e o motivo — você confirma ou troca, e anota o plano de ação. Clique em cada grupo pra abrir ou fechar.</p>
+      <div id="fmClientesGrupos"></div>
+    </div>
+
+    <details>
+      <summary style="cursor:pointer; font-size:12px; color:var(--text-faint); user-select:none; margin-bottom:12px;">▸ Ver mais: indicadores do mês, OS e análise completa</summary>
+
+      <div class="chart-panel" style="margin:12px 0 16px;">
+        <p class="chart-title">📋 Indicadores do Mês — Comparativo</p>
+        <div style="display:flex; gap:16px; margin-bottom:10px; font-size:11px; color:var(--text-faint);">
+          <span><span style="color:var(--accent);">●</span> Automático</span>
+          <span><span style="color:var(--atencao);">●</span> Manual</span>
+        </div>
+        <div class="checklist-table-wrap">
+          <table class="checklist-table" id="fmComparativoTable">
+            <thead>
+              <tr><th class="ck-name">Indicador</th><th style="text-align:center;">Mês Atual</th><th style="text-align:center;">Mês Anterior</th><th style="text-align:center;">Evolução</th><th>Ponto de Atenção</th></tr>
+            </thead>
+            <tbody id="fmComparativoBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex; gap:16px; margin-top:14px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-faint);">OS no mês: <input type="number" id="fmOsTotal" min="0" style="width:70px;"></label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-faint);">OS Reincidentes: <input type="number" id="fmOsReincidentes" min="0" style="width:70px;"></label>
+        </div>
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer; font-size:11px; color:var(--text-faint);">Condomínios com maior reincidência de OS (opcional)</summary>
+          <textarea id="fmOsCondominios" rows="2" placeholder="Ex: Cond. X (3 OS), Cond. Y (2 OS)..." style="margin-top:8px;"></textarea>
+        </details>
+      </div>
+
+      <div class="chart-panel">
+        <p class="chart-title">📝 Análise do Mês</p>
+        <div class="pq-field"><label class="pq-label">1. Principais problemas encontrados</label><textarea id="fmAnaliseProblemas" rows="3"></textarea></div>
+        <div class="pq-field"><label class="pq-label">2. Clientes críticos (resumo)</label><textarea id="fmAnaliseClientesCriticos" rows="3"></textarea></div>
+        <div class="pq-field"><label class="pq-label">3. Principais reclamações</label><textarea id="fmAnaliseReclamacoes" rows="3"></textarea></div>
+        <div class="pq-field"><label class="pq-label">4. Melhorias percebidas</label><textarea id="fmAnaliseMelhorias" rows="3"></textarea></div>
+        <div class="pq-field"><label class="pq-label">5. Ações realizadas</label><textarea id="fmAnaliseAcoesRealizadas" rows="3"></textarea></div>
+        <div class="pq-field"><label class="pq-label">6. Ações que continuarão no próximo mês</label><textarea id="fmAnaliseAcoesContinuar" rows="3"></textarea></div>
+        <div class="pq-field" style="margin-bottom:0;"><label class="pq-label">7. Responsável por cada ação</label><textarea id="fmAnaliseResponsaveis" rows="3"></textarea></div>
+      </div>
+    </details>
+  </div>
+
   <div id="tabAtividades" class="tab-panel" style="display:none;">
     <header>
       <div>
@@ -4423,7 +4488,7 @@ document.getElementById('btnAtividadesOntem').addEventListener('click', ()=>{
   carregarRelatorioAtividades();
 });
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas','fechamentoMensal'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -12424,6 +12489,7 @@ function initTabs(){
       document.getElementById('tabDemandas').style.display = tab === 'demandas' ? 'block' : 'none';
       document.getElementById('tabVidaCondominio').style.display = tab === 'vidaCondominio' ? 'block' : 'none';
       document.getElementById('tabEquipeMetas').style.display = tab === 'equipeMetas' ? 'block' : 'none';
+      document.getElementById('tabFechamentoMensal').style.display = tab === 'fechamentoMensal' ? 'block' : 'none';
       document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
@@ -12482,6 +12548,9 @@ function initTabs(){
       }
       if (tab === 'equipeMetas'){
         if (typeof renderEquipeMetasBarras === 'function') renderEquipeMetasBarras();
+      }
+      if (tab === 'fechamentoMensal'){
+        if (typeof loadFechamentoMensal === 'function') loadFechamentoMensal();
       }
       if (tab === 'atividades'){
         if (typeof carregarRelatorioAtividades === 'function') carregarRelatorioAtividades();
@@ -20143,6 +20212,322 @@ document.addEventListener('click', (ev)=>{
   if (ev.target.closest('.tab-btn, .subtab-btn, .view-toggle-btn')){
     setTimeout(prepararSetasOrdenacaoGenerica, 50);
   }
+});
+
+// ============================================================================
+// FECHAMENTO DO MÊS
+// ============================================================================
+let fmMesSelecionado = null;
+let fmDadosSalvos = null;
+let fmClassificacoesSalvas = [];
+
+function fmMesAnterior(mesRef){
+  const [ano, mes] = mesRef.split('-').map(Number);
+  const d = new Date(ano, mes - 2, 1); // mes é 1-based; -2 pra voltar 1 mês em base 0
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function fmComputarIndicadores(mesRef){
+  const itens = dadosCombinadosDoMes(mesRef);
+  const excluidosFluxo = nomesForaDoFluxoAtendimento();
+
+  const ligacoes = faData
+    .filter(f => String(f.mes_referencia||'').slice(0,7) === mesRef && !excluidosFluxo.has(normalizeNomeCondo(f.condominio)))
+    .reduce((a,f) => a + (f.atendimentos || 0), 0);
+
+  const eventos = incData.filter(i => (i.data_hora||'').slice(0,7) === mesRef).length;
+
+  const realizadas = itens.filter(d => !pesquisaNaoRealizada(d));
+  const pesquisas = realizadas.length;
+
+  const notas = realizadas.map(d => notaNumerica(d)).filter(n => n !== null);
+  const mediaSatisfacao = notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null;
+
+  const reclamacoes = itens.filter(d => d.houveReclamacao).length;
+
+  const criticosSet = new Set();
+  itens.forEach(d => {
+    const n = notaNumerica(d);
+    if ((n !== null && n <= 6) || d.crit === 'alto') criticosSet.add(normalizeNomeCondo(d.nome));
+  });
+
+  return { ligacoes, eventos, pesquisas, mediaSatisfacao, reclamacoes, clientesCriticos: criticosSet.size };
+}
+
+function fmFormatarValor(v, tipo){
+  if (v === null || v === undefined) return '—';
+  if (tipo === 'nota') return v.toFixed(1);
+  return v.toLocaleString('pt-BR');
+}
+
+function fmLinhaComparativo(label, atual, anterior, tipo, pontoAtencao, manual){
+  const delta = (atual !== null && anterior !== null) ? atual - anterior : null;
+  let evolucaoHtml = '<span style="color:var(--text-faint);">—</span>';
+  if (delta !== null && delta !== 0){
+    const bomSeSobe = label !== 'Reclamações' && label !== 'Clientes Críticos' && label !== 'Eventos/Ocorrências' && label !== 'OS Reincidentes';
+    const subiu = delta > 0;
+    const corBom = (subiu && bomSeSobe) || (!subiu && !bomSeSobe);
+    evolucaoHtml = `<span style="color:${corBom?'var(--ok)':'var(--critico)'}; font-weight:600;">${subiu?'▲':'▼'} ${fmFormatarValor(Math.abs(delta), tipo)}</span>`;
+  } else if (delta === 0){
+    evolucaoHtml = '<span style="color:var(--text-faint);">estável</span>';
+  }
+  const bolinha = `<span style="color:${manual?'var(--atencao)':'var(--accent)'}; margin-right:6px;">●</span>`;
+  return `<tr>
+    <td class="ck-name">${bolinha}${escapeHtml(label)}</td>
+    <td style="text-align:center; font-family:'IBM Plex Mono',monospace;">${fmFormatarValor(atual, tipo)}</td>
+    <td style="text-align:center; font-family:'IBM Plex Mono',monospace; color:var(--text-faint);">${fmFormatarValor(anterior, tipo)}</td>
+    <td style="text-align:center;">${evolucaoHtml}</td>
+    <td style="font-size:11px; color:var(--text-faint);">${escapeHtml(pontoAtencao || '')}</td>
+  </tr>`;
+}
+
+function fmRenderComparativo(){
+  const atual = fmComputarIndicadores(fmMesSelecionado);
+  const anteriorMes = fmMesAnterior(fmMesSelecionado);
+  const anterior = fmComputarIndicadores(anteriorMes);
+  const osAtual = fmDadosSalvos ? fmDadosSalvos.os_total : null;
+  const osReincAtual = fmDadosSalvos ? fmDadosSalvos.os_reincidentes : null;
+
+  const body = document.getElementById('fmComparativoBody');
+  body.innerHTML = [
+    fmLinhaComparativo('Ligações', atual.ligacoes, anterior.ligacoes, 'num', atual.ligacoes < anterior.ligacoes ? 'Volume caiu em relação ao mês anterior' : '', false),
+    fmLinhaComparativo('Eventos/Ocorrências', atual.eventos, anterior.eventos, 'num', atual.eventos > anterior.eventos ? 'Aumento de ocorrências — investigar causa' : '', false),
+    fmLinhaComparativo('OS', osAtual, null, 'num', 'Preenchimento manual', true),
+    fmLinhaComparativo('OS Reincidentes', osReincAtual, null, 'num', 'Preenchimento manual', true),
+    fmLinhaComparativo('Pesquisas Realizadas', atual.pesquisas, anterior.pesquisas, 'num', '', false),
+    fmLinhaComparativo('Média de Satisfação', atual.mediaSatisfacao, anterior.mediaSatisfacao, 'nota', atual.mediaSatisfacao !== null && atual.mediaSatisfacao < 8 ? 'Abaixo da meta da equipe' : '', false),
+    fmLinhaComparativo('Reclamações', atual.reclamacoes, anterior.reclamacoes, 'num', atual.reclamacoes > anterior.reclamacoes ? 'Reclamações subiram — ver principais motivos' : '', false),
+    fmLinhaComparativo('Clientes Críticos', atual.clientesCriticos, anterior.clientesCriticos, 'num', atual.clientesCriticos > 0 ? 'Ver classificação abaixo' : '', false),
+  ].join('');
+}
+
+function fmRenderClientesCriticos(){
+  const itens = dadosCombinadosDoMes(fmMesSelecionado);
+  const porCondo = new Map();
+
+  itens.forEach(d => {
+    const n = notaNumerica(d);
+    const chave = normalizeNomeCondo(d.nome);
+    const motivos = [];
+
+    if (n !== null && n <= 7.9) motivos.push(`Nota baixa (${n.toFixed(1)})`);
+    if (d.houveReclamacao && d.statusTratativa !== 'Resolvido') motivos.push('Reclamação em aberto');
+    if (d.houvePendencia) motivos.push('Pendência registrada');
+    if (d.crit === 'alto') motivos.push('Criticidade alta');
+
+    if (motivos.length){
+      const existente = porCondo.get(chave);
+      if (!existente || (n !== null && (existente.nota === null || n < existente.nota))){
+        porCondo.set(chave, { nome: d.nome, nota: n, motivos: new Set(motivos) });
+      } else {
+        motivos.forEach(m => existente.motivos.add(m));
+      }
+    }
+  });
+
+  // Cruza com Renovação de Contratos: condomínio com negociação em andamento também
+  // é sinal de atenção (cliente pediu renegociação ou demonstrou insatisfação).
+  if (typeof renovNegociacoes !== 'undefined' && typeof negociacaoEmAndamento === 'function'){
+    renovNegociacoes.filter(negociacaoEmAndamento).forEach(neg => {
+      const chave = normalizeNomeCondo(neg.condo_nome);
+      if (!chave) return;
+      const existente = porCondo.get(chave);
+      if (existente){
+        existente.motivos.add('Em negociação de renovação');
+      } else {
+        porCondo.set(chave, { nome: neg.condo_nome, nota: null, motivos: new Set(['Em negociação de renovação']) });
+      }
+    });
+  }
+
+  // Cruza com Incidentes: incidente de gravidade Alta registrado no mês.
+  if (typeof incData !== 'undefined'){
+    incData.filter(i => (i.data_hora||'').slice(0,7) === fmMesSelecionado && i.gravidade === 'Alta').forEach(i => {
+      const chave = normalizeNomeCondo(i.condominio);
+      if (!chave) return;
+      const existente = porCondo.get(chave);
+      const motivo = `Incidente grave (${i.tipo||'—'})`;
+      if (existente) existente.motivos.add(motivo);
+      else porCondo.set(chave, { nome: i.condominio, nota: null, motivos: new Set([motivo]) });
+    });
+  }
+
+  // Cruza com Visitas Emergenciais: visita ainda em aberto (não concluída).
+  if (typeof veData !== 'undefined'){
+    veData.filter(v => v.status !== 'Concluído').forEach(v => {
+      const chave = normalizeNomeCondo(v.condominio);
+      if (!chave) return;
+      const existente = porCondo.get(chave);
+      if (existente) existente.motivos.add('Visita emergencial em aberto');
+      else porCondo.set(chave, { nome: v.condominio, nota: null, motivos: new Set(['Visita emergencial em aberto']) });
+    });
+  }
+
+  // Cruza com Fluxo de Atendimento: TMA fora da meta (>8s) no mês, só condomínios
+  // que realmente entram no controle de atendimento (mesma regra da aba Fluxo).
+  if (typeof faData !== 'undefined' && typeof nomesForaDoFluxoAtendimento === 'function'){
+    const excluidosFluxo = nomesForaDoFluxoAtendimento();
+    faData.filter(f => String(f.mes_referencia||'').slice(0,7) === fmMesSelecionado && f.tma > 8 && !excluidosFluxo.has(normalizeNomeCondo(f.condominio))).forEach(f => {
+      const chave = normalizeNomeCondo(f.condominio);
+      if (!chave) return;
+      const existente = porCondo.get(chave);
+      const motivo = `TMA fora da meta (${f.tma}s)`;
+      if (existente) existente.motivos.add(motivo);
+      else porCondo.set(chave, { nome: f.condominio, nota: null, motivos: new Set([motivo]) });
+    });
+  }
+
+  const lista = [...porCondo.values()].sort((a,b) => (a.nota ?? 99) - (b.nota ?? 99));
+
+  const gruposEl = document.getElementById('fmClientesGrupos');
+  if (!lista.length){
+    gruposEl.innerHTML = '<p class="empty">Nenhum condomínio com sinais de atenção neste mês. 🎉</p>';
+    return;
+  }
+
+  const linhaHtml = (item) => {
+    const salvo = fmClassificacoesSalvas.find(c => normalizeNomeCondo(c.condominio) === normalizeNomeCondo(item.nome));
+    const graves = item.motivos.has('Criticidade alta') || (item.nota !== null && item.nota <= 6);
+    const classificacaoAtual = salvo ? salvo.classificacao : (graves ? 'Crítico' : 'Atenção');
+    const planoAtual = salvo ? (salvo.plano_acao || '') : '';
+    const motivosTexto = [...item.motivos].join(' · ');
+    const nomeMaiusculo = String(item.nome || '').toUpperCase();
+    return { classificacaoAtual, html: `<tr>
+      <td class="ck-name">${escapeHtml(nomeMaiusculo)}</td>
+      <td style="text-align:center; font-family:'IBM Plex Mono',monospace; color:${corPorNota(item.nota)};">${item.nota !== null ? item.nota.toFixed(1) : '—'}</td>
+      <td style="font-size:11px; color:var(--text-faint);">${escapeHtml(motivosTexto)}</td>
+      <td>
+        <select data-fm-classificacao="${escapeHtml(item.nome)}" style="width:100%;">
+          <option value="Estável" ${classificacaoAtual==='Estável'?'selected':''}>🟢 Estável</option>
+          <option value="Atenção" ${classificacaoAtual==='Atenção'?'selected':''}>🟡 Atenção</option>
+          <option value="Crítico" ${classificacaoAtual==='Crítico'?'selected':''}>🔴 Crítico</option>
+        </select>
+      </td>
+      <td><input type="text" data-fm-plano="${escapeHtml(item.nome)}" value="${escapeHtml(planoAtual)}" placeholder="Plano de ação..." style="width:100%;"></td>
+    </tr>` };
+  };
+
+  const linhasClassificadas = lista.map(linhaHtml);
+  const grupos = [
+    { chave: 'Crítico', titulo: '🔴 Críticos', cor: 'var(--critico)', aberto: true },
+    { chave: 'Atenção', titulo: '🟡 Atenção', cor: 'var(--atencao)', aberto: false },
+    { chave: 'Estável', titulo: '🟢 Saudáveis', cor: 'var(--ok)', aberto: false },
+  ];
+
+  gruposEl.innerHTML = grupos.map(g => {
+    const linhasDoGrupo = linhasClassificadas.filter(l => l.classificacaoAtual === g.chave);
+    if (!linhasDoGrupo.length) return '';
+    return `
+      <details ${g.aberto ? 'open' : ''} style="margin-bottom:10px; border:1px solid var(--line); border-radius:10px; overflow:hidden;">
+        <summary style="cursor:pointer; padding:10px 14px; background:var(--bg-panel-2); font-size:12.5px; font-weight:700; color:${g.cor}; user-select:none;">${g.titulo} (${linhasDoGrupo.length})</summary>
+        <div class="checklist-table-wrap" style="margin:0;">
+          <table class="checklist-table">
+            <thead>
+              <tr><th class="ck-name">Condomínio</th><th style="text-align:center;">Nota do Mês</th><th>Motivo</th><th>Classificação</th><th>Plano de Ação</th></tr>
+            </thead>
+            <tbody>${linhasDoGrupo.map(l => l.html).join('')}</tbody>
+          </table>
+        </div>
+      </details>`;
+  }).join('');
+}
+
+async function loadFechamentoMensal(){
+  const selMes = document.getElementById('fmMesAtual');
+  if (!selMes.value) selMes.value = mesAtualReal();
+  fmMesSelecionado = selMes.value;
+
+  const carregamentos = [];
+  if (!incLoaded && typeof loadIncidentes === 'function') carregamentos.push(loadIncidentes());
+  if (!faLoaded && typeof loadFluxoAtendimento === 'function') carregamentos.push(loadFluxoAtendimento());
+  if (typeof historicoData === 'undefined' || !historicoData || !historicoData.length){
+    if (typeof loadHistorico === 'function') carregamentos.push(loadHistorico());
+  }
+  if (!renovLoaded && typeof loadRenovacaoData === 'function') carregamentos.push(loadRenovacaoData());
+  if (!veLoaded && typeof loadVE === 'function') carregamentos.push(loadVE());
+  if (carregamentos.length) await Promise.all(carregamentos);
+
+  if (sb){
+    try{
+      const [{ data: fechamento }, { data: classificacoes }] = await Promise.all([
+        sb.from('fechamento_mensal').select('*').eq('mes_referencia', fmMesSelecionado).maybeSingle(),
+        sb.from('fechamento_clientes_classificacao').select('*').eq('mes_referencia', fmMesSelecionado),
+      ]);
+      fmDadosSalvos = fechamento || null;
+      fmClassificacoesSalvas = classificacoes || [];
+    }catch(e){
+      console.warn('Falha ao carregar fechamento mensal (tabelas podem não existir ainda no Supabase):', e);
+      fmDadosSalvos = null;
+      fmClassificacoesSalvas = [];
+    }
+  }
+
+  document.getElementById('fmOsTotal').value = fmDadosSalvos && fmDadosSalvos.os_total !== null ? fmDadosSalvos.os_total : '';
+  document.getElementById('fmOsReincidentes').value = fmDadosSalvos && fmDadosSalvos.os_reincidentes !== null ? fmDadosSalvos.os_reincidentes : '';
+  document.getElementById('fmOsCondominios').value = fmDadosSalvos ? (fmDadosSalvos.os_condominios_recorrentes || '') : '';
+  document.getElementById('fmAnaliseProblemas').value = fmDadosSalvos ? (fmDadosSalvos.analise_problemas || '') : '';
+  document.getElementById('fmAnaliseClientesCriticos').value = fmDadosSalvos ? (fmDadosSalvos.analise_clientes_criticos || '') : '';
+  document.getElementById('fmAnaliseReclamacoes').value = fmDadosSalvos ? (fmDadosSalvos.analise_reclamacoes || '') : '';
+  document.getElementById('fmAnaliseMelhorias').value = fmDadosSalvos ? (fmDadosSalvos.analise_melhorias || '') : '';
+  document.getElementById('fmAnaliseAcoesRealizadas').value = fmDadosSalvos ? (fmDadosSalvos.analise_acoes_realizadas || '') : '';
+  document.getElementById('fmAnaliseAcoesContinuar').value = fmDadosSalvos ? (fmDadosSalvos.analise_acoes_continuar || '') : '';
+  document.getElementById('fmAnaliseResponsaveis').value = fmDadosSalvos ? (fmDadosSalvos.analise_responsaveis || '') : '';
+
+  const statusAtual = fmDadosSalvos ? (fmDadosSalvos.status_fechamento || 'Em andamento') : 'Em andamento';
+  const badge = document.getElementById('fmStatusBadge');
+  badge.textContent = statusAtual === 'Concluído' ? '✅ Concluído' : '🕓 Em andamento';
+  badge.style.color = statusAtual === 'Concluído' ? 'var(--ok)' : 'var(--atencao)';
+  badge.style.border = `1px solid ${statusAtual === 'Concluído' ? 'var(--ok)' : 'var(--atencao)'}`;
+
+  fmRenderComparativo();
+  fmRenderClientesCriticos();
+}
+
+async function fmSalvar(mostrarAlerta){
+  if (!sb){ if (mostrarAlerta) alert('Sem conexão com o Supabase.'); return; }
+  const payload = {
+    mes_referencia: fmMesSelecionado,
+    os_total: document.getElementById('fmOsTotal').value ? parseInt(document.getElementById('fmOsTotal').value, 10) : null,
+    os_reincidentes: document.getElementById('fmOsReincidentes').value ? parseInt(document.getElementById('fmOsReincidentes').value, 10) : null,
+    os_condominios_recorrentes: document.getElementById('fmOsCondominios').value.trim() || null,
+    analise_problemas: document.getElementById('fmAnaliseProblemas').value.trim() || null,
+    analise_clientes_criticos: document.getElementById('fmAnaliseClientesCriticos').value.trim() || null,
+    analise_reclamacoes: document.getElementById('fmAnaliseReclamacoes').value.trim() || null,
+    analise_melhorias: document.getElementById('fmAnaliseMelhorias').value.trim() || null,
+    analise_acoes_realizadas: document.getElementById('fmAnaliseAcoesRealizadas').value.trim() || null,
+    analise_acoes_continuar: document.getElementById('fmAnaliseAcoesContinuar').value.trim() || null,
+    analise_responsaveis: document.getElementById('fmAnaliseResponsaveis').value.trim() || null,
+    status_fechamento: fmDadosSalvos ? fmDadosSalvos.status_fechamento : 'Em andamento',
+    atualizado_em: new Date().toISOString(),
+  };
+  try{
+    const { error } = await sb.from('fechamento_mensal').upsert(payload, { onConflict: 'mes_referencia' });
+    if (error) throw error;
+
+    const linhasClassificacao = [...document.querySelectorAll('[data-fm-classificacao]')].map(sel => {
+      const nome = sel.getAttribute('data-fm-classificacao');
+      const planoInput = document.querySelector(`[data-fm-plano="${CSS.escape(nome)}"]`);
+      return { mes_referencia: fmMesSelecionado, condominio: nome, classificacao: sel.value, plano_acao: planoInput ? planoInput.value.trim() || null : null };
+    });
+    if (linhasClassificacao.length){
+      const { error: errClass } = await sb.from('fechamento_clientes_classificacao').upsert(linhasClassificacao, { onConflict: 'mes_referencia,condominio' });
+      if (errClass) throw errClass;
+    }
+
+    if (mostrarAlerta) alert('✅ Fechamento salvo com sucesso.');
+    await loadFechamentoMensal();
+  }catch(e){
+    alert('Erro ao salvar fechamento: ' + e.message + (e.message && e.message.includes('fechamento') ? ' — confira se as tabelas de fechamento já foram criadas no Supabase.' : ''));
+  }
+}
+
+document.getElementById('fmMesAtual').addEventListener('change', loadFechamentoMensal);
+document.getElementById('fmBtnSalvar').addEventListener('click', ()=> fmSalvar(true));
+document.getElementById('fmBtnConcluir').addEventListener('click', async ()=>{
+  if (!confirm('Marcar o fechamento desse mês como Concluído?')) return;
+  fmDadosSalvos = Object.assign({}, fmDadosSalvos, { status_fechamento: 'Concluído' });
+  await fmSalvar(false);
+  alert('✅ Fechamento marcado como Concluído.');
 });
 
 function determinarTimbrado(){
