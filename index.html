@@ -1145,6 +1145,7 @@
     <div id="usersList" class="users-list"></div>
     <form id="newUserForm" class="users-form">
       <input type="text" id="newUserName" placeholder="usuário" autocomplete="off" required>
+      <input type="text" id="newUserNomeCompleto" placeholder="nome completo (aparece no cabeçalho)" autocomplete="off" style="grid-column:1 / -1;">
       <input type="password" id="newUserPass" placeholder="senha" autocomplete="new-password" required>
       <select id="newUserRole">
         <option value="viewer">Visualização</option>
@@ -1184,6 +1185,7 @@
     <p class="users-sub">Deixe a senha em branco para não alterá-la.</p>
     <form id="editUserForm" class="users-form">
       <input type="hidden" id="editUserName">
+      <input type="text" id="editUserNomeCompleto" placeholder="nome completo (aparece no cabeçalho)" autocomplete="off" style="grid-column:1 / -1;">
       <input type="password" id="editUserPass" placeholder="nova senha (opcional)" autocomplete="new-password" style="grid-column:1 / -1;">
       <select id="editUserRole" style="grid-column:1 / -1;">
         <option value="viewer">Visualização</option>
@@ -1592,8 +1594,13 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-A (meta de 100 pra porta aberta/violada)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-B (foto de perfil + Equipe & Metas editável)</div>
       <div class="session-info">
+        <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
+          <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
+          <div id="perfilFotoPlaceholder" style="width:34px; height:34px; border-radius:50%; background:var(--bg-panel-2); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:15px;">👤</div>
+          <input type="file" id="perfilFotoInput" accept="image/*" style="display:none;">
+        </div>
         <span id="roleTag"></span>
         <span id="syncTag" class="sync-tag">🟡 Sincronizando...</span>
         <button type="button" class="export-excel header-export-btn" id="btnExportarExcelFlutuante" title="Exportar as tabelas visíveis desta aba">📊 Excel</button>
@@ -3859,31 +3866,11 @@ CONDOMINIO Y	480	45"></textarea>
     </div>
 
     <div class="chart-panel" style="margin:16px 0;">
-      <p class="chart-title">🧭 Organograma da Equipe</p>
-      <div class="orgchart">
-        <ul>
-          <li>
-            <div class="org-box org-root">
-              <div class="org-nome">Equipe Customer Success</div>
-              <div class="org-cargo">Servis Tecnologia em Segurança</div>
-            </div>
-            <ul>
-              <li>
-                <div class="org-box">
-                  <div class="org-nome">Maria Rosely</div>
-                  <div class="org-cargo">Analista de CS</div>
-                  <div class="org-info">CE · MA — 201 condomínios<br>Lidera a equipe</div>
-                </div>
-                <ul>
-                  <li><div class="org-box"><div class="org-nome">Josiane Alves</div><div class="org-cargo">Assistente de CS</div><div class="org-info">AM · PI (SECOPI) — 86 condomínios</div></div></li>
-                  <li><div class="org-box"><div class="org-nome">Nicole</div><div class="org-cargo">Jovem Aprendiz (Manhã)</div><div class="org-info">Apoio CE · MA</div></div></li>
-                  <li><div class="org-box"><div class="org-nome">Geovanna</div><div class="org-cargo">Jovem Aprendiz (Tarde)</div><div class="org-info">Apoio CE · MA</div></div></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <p class="chart-title" style="margin:0;">🧭 Organograma da Equipe</p>
+        <button type="button" class="clearbtn" id="btnNovoMembroEquipe">+ Novo Membro</button>
       </div>
+      <div class="orgchart" id="equipeOrgChart"><p class="empty">Carregando...</p></div>
     </div>
 
     <div class="charts-grid charts-grid-2">
@@ -3921,56 +3908,8 @@ CONDOMINIO Y	480	45"></textarea>
     </div>
 
     <div class="chart-panel" style="margin-top:16px;">
-      <p class="chart-title">🎯 Metas Diárias por Membro <span style="text-transform:none; letter-spacing:0; font-weight:400;">· auditoria de cadastros: 1 condomínio/semana por membro</span></p>
-      <div class="metas-grid">
-        <div class="meta-card">
-          <div class="meta-nome">Maria Rosely</div>
-          <div class="meta-cargo">Analista de CS · CE · MA</div>
-          <ul>
-            <li>Pesquisas de satisfação <b>10/dia</b></li>
-            <li>Reclamações críticas <b>5/dia</b></li>
-            <li>O.S. verificadas <b>10/dia</b></li>
-            <li>Preventivas verificadas <b>5/dia</b></li>
-            <li>Renovações/aditivos <b>2/dia</b></li>
-            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
-          </ul>
-        </div>
-        <div class="meta-card">
-          <div class="meta-nome">Josiane Alves</div>
-          <div class="meta-cargo">Assistente de CS · AM · PI</div>
-          <ul>
-            <li>Pesquisas de satisfação <b>10/dia</b></li>
-            <li>Faciais auditados <b>15/dia</b></li>
-            <li>Apps auditados <b>15/dia</b></li>
-            <li>Tokens auditados <b>15/dia</b></li>
-            <li>Retornos cobrados <b>10/dia</b></li>
-            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
-          </ul>
-        </div>
-        <div class="meta-card">
-          <div class="meta-nome">Nicole</div>
-          <div class="meta-cargo">Jovem Aprendiz · Apoio CE · MA</div>
-          <ul>
-            <li>Pesquisas de satisfação <b>15/dia</b></li>
-            <li>Contatos atualizados <b>10/dia</b></li>
-            <li>Reclamações acompanhadas <b>10/dia</b></li>
-            <li>Atualização do sistema <b>—</b></li>
-            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
-          </ul>
-        </div>
-        <div class="meta-card">
-          <div class="meta-nome">Geovanna</div>
-          <div class="meta-cargo">Jovem Aprendiz · Apoio CE · MA</div>
-          <ul>
-            <li>Pesquisas de satisfação <b>15/dia</b></li>
-            <li>Agendamentos realizados <b>10/dia</b></li>
-            <li>Pendências verificadas <b>10/dia</b></li>
-            <li>Reclamações acompanhadas <b>10/dia</b></li>
-            <li>Status atualizados <b>10/dia</b></li>
-            <li>Cond. auditado (cadastro) <b>1/sem</b></li>
-          </ul>
-        </div>
-      </div>
+      <p class="chart-title">🎯 Metas Diárias por Membro <span style="text-transform:none; letter-spacing:0; font-weight:400;">· clique em "Editar" pra ajustar as metas de cada um</span></p>
+      <div class="metas-grid" id="equipeMetasCards"><p class="empty">Carregando...</p></div>
     </div>
 
     <div class="charts-grid charts-grid-2" style="margin-top:16px;">
@@ -4006,6 +3945,66 @@ CONDOMINIO Y	480	45"></textarea>
         <div class="fluxo-etapa"><div class="fluxo-num">6</div><div class="fluxo-titulo">Retorno ao Síndico</div><div class="fluxo-desc">Comunicação formal da resolução ao síndico.</div></div>
         <div class="fluxo-etapa"><div class="fluxo-num">7</div><div class="fluxo-titulo">Encerramento</div><div class="fluxo-desc">Registro do encerramento e fechamento no sistema.</div></div>
       </div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="equipeMembroModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3 id="equipeMembroModalTitle">Novo Membro</h3>
+        <button type="button" class="logout-btn" id="equipeMembroModalClose">✕</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+        <div id="equipeMembroFotoWrap" style="position:relative; cursor:pointer;" title="Clique pra escolher a foto">
+          <img id="equipeMembroFotoImg" src="" alt="" style="display:none; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
+          <div id="equipeMembroFotoPlaceholder" style="width:64px; height:64px; border-radius:50%; background:var(--bg-panel-2); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:26px;">👤</div>
+          <input type="file" id="equipeMembroFotoInput" accept="image/*" style="display:none;">
+        </div>
+        <span style="font-size:11px; color:var(--text-faint);">Clique na foto pra trocar</span>
+      </div>
+      <div class="users-form" style="margin-bottom:14px;">
+        <input type="hidden" id="equipeMembroId">
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Nome
+          <input type="text" id="equipeMembroNome" placeholder="Ex: Maria Rosely" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Cargo
+          <input type="text" id="equipeMembroCargo" placeholder="Ex: Analista de CS" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Área / Carteira
+          <input type="text" id="equipeMembroArea" placeholder="Ex: CE · MA — 201 condomínios" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Reporta para (organograma)
+          <select id="equipeMembroLidera" style="width:100%; margin-top:4px;"><option value="">— Ninguém (topo da equipe) —</option></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta: Pesquisas/dia
+          <input type="number" id="equipeMembroMetaPesquisas" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <div></div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 1 — nome
+          <input type="text" id="equipeMembroMeta1Label" placeholder="Ex: Reclamações críticas" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 1 — valor/dia
+          <input type="number" id="equipeMembroMeta1Valor" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 2 — nome
+          <input type="text" id="equipeMembroMeta2Label" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 2 — valor/dia
+          <input type="number" id="equipeMembroMeta2Valor" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 3 — nome
+          <input type="text" id="equipeMembroMeta3Label" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 3 — valor/dia
+          <input type="number" id="equipeMembroMeta3Valor" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="equipeMembroDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="equipeMembroCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="equipeMembroSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="equipeMembroError" style="display:none;"></p>
     </div>
   </div>
 
@@ -4527,6 +4526,52 @@ function applyTabPermissions(){
   }
 }
 
+async function carregarPerfilUsuario(username){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('app_users').select('nome_completo,foto_url').eq('username', username).maybeSingle();
+    if (error) throw error;
+    if (data && data.nome_completo){
+      document.getElementById('roleTag').textContent = `${data.nome_completo} · ${ROLE_LABELS[currentRole] || currentRole}`;
+    }
+    aplicarFotoPerfil(data && data.foto_url ? data.foto_url : null);
+  }catch(e){
+    console.warn('Falha ao carregar perfil (colunas nome_completo/foto_url podem não existir ainda):', e);
+  }
+}
+
+function aplicarFotoPerfil(url){
+  const img = document.getElementById('perfilFotoImg');
+  const placeholder = document.getElementById('perfilFotoPlaceholder');
+  if (url){
+    img.src = url;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+}
+
+document.getElementById('perfilFotoWrap').addEventListener('click', ()=>{
+  document.getElementById('perfilFotoInput').click();
+});
+document.getElementById('perfilFotoInput').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0];
+  if (!file || !currentUsername) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  try{
+    const registro = await uploadAnexo(file, 'perfil_usuario', currentUsername);
+    const { error } = await sb.from('app_users').update({ foto_url: registro.url }).eq('username', currentUsername);
+    if (error) throw error;
+    aplicarFotoPerfil(registro.url);
+  }catch(e){
+    alert('Erro ao enviar foto: ' + e.message + (e.message && e.message.includes('foto_url') ? ' — confira se as colunas de perfil já foram criadas no Supabase.' : ''));
+  }finally{
+    ev.target.value = '';
+  }
+});
+
 function showApp(role, username, allowedTabs){
   currentRole = role;
   currentUsername = username;
@@ -4534,6 +4579,7 @@ function showApp(role, username, allowedTabs){
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
   document.getElementById('roleTag').textContent = `${username} · ${ROLE_LABELS[role] || role}`;
+  carregarPerfilUsuario(username);
   document.getElementById('manageUsersBtn').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   document.getElementById('newRodadaBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
@@ -4676,6 +4722,7 @@ document.getElementById('newUserForm').addEventListener('submit', async (e)=>{
   const errEl = document.getElementById('usersError');
   errEl.style.display = 'none';
   const username = document.getElementById('newUserName').value.trim().toLowerCase();
+  const nomeCompleto = document.getElementById('newUserNomeCompleto').value.trim();
   const password = document.getElementById('newUserPass').value;
   const role = document.getElementById('newUserRole').value;
   if (!username || !password){ return; }
@@ -4683,7 +4730,7 @@ document.getElementById('newUserForm').addEventListener('submit', async (e)=>{
   const allowedTabs = Array.from(document.querySelectorAll('.newUserTab:checked')).map(cb => cb.value).join(',');
   try{
     const password_hash = await sha256(password);
-    const { error } = await sb.from('app_users').insert({ username, password_hash, role, allowed_tabs: allowedTabs, created_by: currentUsername });
+    const { error } = await sb.from('app_users').insert({ username, password_hash, role, allowed_tabs: allowedTabs, created_by: currentUsername, nome_completo: nomeCompleto || null });
     if (error){
       if (String(error.message||'').toLowerCase().includes('duplicate')){
         errEl.textContent = `O usuário "${username}" já existe.`;
@@ -4705,6 +4752,7 @@ function openEditUserModal(row){
   document.getElementById('editUserError').style.display = 'none';
   document.getElementById('editUserNameLabel').textContent = row.username;
   document.getElementById('editUserName').value = row.username;
+  document.getElementById('editUserNomeCompleto').value = row.nome_completo || '';
   document.getElementById('editUserPass').value = '';
   document.getElementById('editUserRole').value = row.role;
   const allowed = row.allowed_tabs ? String(row.allowed_tabs).split(',').map(s=>s.trim()).filter(Boolean) : ALL_TABS;
@@ -4727,13 +4775,14 @@ document.getElementById('editUserForm').addEventListener('submit', async (e)=>{
   const allowedTabs = Array.from(document.querySelectorAll('.editUserTab:checked')).map(cb => cb.value).join(',');
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
   try{
-    const patch = { role, allowed_tabs: allowedTabs };
+    const patch = { role, allowed_tabs: allowedTabs, nome_completo: document.getElementById('editUserNomeCompleto').value.trim() || null };
     if (newPass) patch.password_hash = await sha256(newPass);
     const { error } = await sb.from('app_users').update(patch).eq('username', username);
     if (error) throw error;
     document.getElementById('editUserModal').style.display = 'none';
     renderUsersList();
     if (username === currentUsername){
+      carregarPerfilUsuario(username);
       const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
       const newAllowed = allowedTabs ? allowedTabs.split(',') : null;
       if (saved){
@@ -15935,9 +15984,213 @@ function normalizarResponsavelEquipe(nomeRaw){
   return null;
 }
 
+// ============================================================================
+// EQUIPE & METAS — CRUD completo (organograma + cards de meta), com foto por
+// membro. Reaproveita o sistema de anexos (Storage) já usado no resto do app.
+// ============================================================================
+let equipeMembrosData = [];
+let equipeMembroFotoUrlAtual = null;
+
+async function carregarEquipeMembros(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('equipe_membros').select('*').eq('ativo', true).order('ordem', { ascending: true });
+    if (error) throw error;
+    equipeMembrosData = data || [];
+  }catch(e){
+    console.warn('Falha ao carregar equipe_membros (a tabela pode não existir ainda no Supabase):', e);
+    equipeMembrosData = [];
+  }
+}
+
+function renderEquipeOrgChart(){
+  const el = document.getElementById('equipeOrgChart');
+  if (!el) return;
+  if (!equipeMembrosData.length){
+    el.innerHTML = '<p class="empty">Nenhum membro cadastrado ainda. Clique em "+ Novo Membro" pra começar.</p>';
+    return;
+  }
+  const topo = equipeMembrosData.filter(m => !m.lidera);
+  const filhosDe = (nome) => equipeMembrosData.filter(m => m.lidera === nome);
+
+  const boxHtml = (m) => {
+    const fotoHtml = m.foto_url
+      ? `<img src="${escapeHtml(m.foto_url)}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; margin-bottom:6px;">`
+      : `<div style="width:40px; height:40px; border-radius:50%; background:var(--bg-panel); display:flex; align-items:center; justify-content:center; font-size:18px; margin:0 auto 6px;">👤</div>`;
+    return `<div class="org-box" data-editar-membro="${m.id}" style="cursor:pointer;" title="Clique pra editar">
+      ${fotoHtml}
+      <div class="org-nome">${escapeHtml(m.nome)}</div>
+      <div class="org-cargo">${escapeHtml(m.cargo||'')}</div>
+      ${m.area ? `<div class="org-info">${escapeHtml(m.area)}</div>` : ''}
+    </div>`;
+  };
+
+  const montarNivel = (lista) => {
+    if (!lista.length) return '';
+    return `<ul>${lista.map(m => {
+      const filhos = filhosDe(m.nome);
+      return `<li>${boxHtml(m)}${filhos.length ? montarNivel(filhos) : ''}</li>`;
+    }).join('')}</ul>`;
+  };
+
+  el.innerHTML = `<ul><li>
+    <div class="org-box org-root">
+      <div class="org-nome">Equipe Customer Success</div>
+      <div class="org-cargo">Servis Tecnologia em Segurança</div>
+    </div>
+    ${montarNivel(topo)}
+  </li></ul>`;
+
+  el.querySelectorAll('[data-editar-membro]').forEach(box => {
+    box.addEventListener('click', () => abrirEquipeMembroModal(equipeMembrosData.find(m => String(m.id) === box.getAttribute('data-editar-membro'))));
+  });
+}
+
+function renderEquipeMetasCards(){
+  const el = document.getElementById('equipeMetasCards');
+  if (!el) return;
+  if (!equipeMembrosData.length){
+    el.innerHTML = '<p class="empty">Nenhum membro cadastrado ainda.</p>';
+    return;
+  }
+  el.innerHTML = equipeMembrosData.map(m => {
+    const extras = [
+      m.meta_extra_1_label ? `<li>${escapeHtml(m.meta_extra_1_label)} <b>${m.meta_extra_1_valor ?? '—'}/dia</b></li>` : '',
+      m.meta_extra_2_label ? `<li>${escapeHtml(m.meta_extra_2_label)} <b>${m.meta_extra_2_valor ?? '—'}/dia</b></li>` : '',
+      m.meta_extra_3_label ? `<li>${escapeHtml(m.meta_extra_3_label)} <b>${m.meta_extra_3_valor ?? '—'}/dia</b></li>` : '',
+    ].join('');
+    return `<div class="meta-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+        <div>
+          <div class="meta-nome">${escapeHtml(m.nome)}</div>
+          <div class="meta-cargo">${escapeHtml(m.cargo||'')}</div>
+        </div>
+        <button type="button" class="clearbtn" data-editar-membro-card="${m.id}" style="padding:3px 10px; font-size:11px; flex-shrink:0;">Editar</button>
+      </div>
+      <ul>
+        <li>Pesquisas de satisfação <b>${m.meta_pesquisas_dia ?? 0}/dia</b></li>
+        ${extras}
+      </ul>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-editar-membro-card]').forEach(btn => {
+    btn.addEventListener('click', () => abrirEquipeMembroModal(equipeMembrosData.find(m => String(m.id) === btn.getAttribute('data-editar-membro-card'))));
+  });
+}
+
+function popularSelectLidera(idAtual){
+  const sel = document.getElementById('equipeMembroLidera');
+  const outros = equipeMembrosData.filter(m => String(m.id) !== String(idAtual));
+  sel.innerHTML = '<option value="">— Ninguém (topo da equipe) —</option>' + outros.map(m => `<option value="${escapeHtml(m.nome)}">${escapeHtml(m.nome)}</option>`).join('');
+}
+
+function aplicarFotoMembroModal(url){
+  const img = document.getElementById('equipeMembroFotoImg');
+  const placeholder = document.getElementById('equipeMembroFotoPlaceholder');
+  if (url){ img.src = url; img.style.display = 'block'; placeholder.style.display = 'none'; }
+  else { img.style.display = 'none'; placeholder.style.display = 'flex'; }
+}
+
+function abrirEquipeMembroModal(membro){
+  document.getElementById('equipeMembroModalTitle').textContent = membro ? 'Editar Membro' : 'Novo Membro';
+  document.getElementById('equipeMembroId').value = membro ? membro.id : '';
+  document.getElementById('equipeMembroNome').value = membro ? membro.nome : '';
+  document.getElementById('equipeMembroCargo').value = membro ? (membro.cargo||'') : '';
+  document.getElementById('equipeMembroArea').value = membro ? (membro.area||'') : '';
+  popularSelectLidera(membro ? membro.id : null);
+  document.getElementById('equipeMembroLidera').value = membro ? (membro.lidera||'') : '';
+  document.getElementById('equipeMembroMetaPesquisas').value = membro ? (membro.meta_pesquisas_dia ?? '') : '';
+  document.getElementById('equipeMembroMeta1Label').value = membro ? (membro.meta_extra_1_label||'') : '';
+  document.getElementById('equipeMembroMeta1Valor').value = membro ? (membro.meta_extra_1_valor ?? '') : '';
+  document.getElementById('equipeMembroMeta2Label').value = membro ? (membro.meta_extra_2_label||'') : '';
+  document.getElementById('equipeMembroMeta2Valor').value = membro ? (membro.meta_extra_2_valor ?? '') : '';
+  document.getElementById('equipeMembroMeta3Label').value = membro ? (membro.meta_extra_3_label||'') : '';
+  document.getElementById('equipeMembroMeta3Valor').value = membro ? (membro.meta_extra_3_valor ?? '') : '';
+  equipeMembroFotoUrlAtual = membro ? (membro.foto_url||null) : null;
+  aplicarFotoMembroModal(equipeMembroFotoUrlAtual);
+  document.getElementById('equipeMembroDeleteBtn').style.display = membro ? '' : 'none';
+  document.getElementById('equipeMembroError').style.display = 'none';
+  document.getElementById('equipeMembroModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('btnNovoMembroEquipe').addEventListener('click', () => abrirEquipeMembroModal(null));
+document.getElementById('equipeMembroModalClose').addEventListener('click', () => { document.getElementById('equipeMembroModalOverlay').style.display = 'none'; });
+document.getElementById('equipeMembroCancelBtn').addEventListener('click', () => { document.getElementById('equipeMembroModalOverlay').style.display = 'none'; });
+
+document.getElementById('equipeMembroFotoWrap').addEventListener('click', () => {
+  document.getElementById('equipeMembroFotoInput').click();
+});
+document.getElementById('equipeMembroFotoInput').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const idAtual = document.getElementById('equipeMembroId').value || ('novo_' + Date.now());
+  try{
+    const registro = await uploadAnexo(file, 'equipe_membro', idAtual);
+    equipeMembroFotoUrlAtual = registro.url;
+    aplicarFotoMembroModal(equipeMembroFotoUrlAtual);
+  }catch(e){
+    alert('Erro ao enviar foto: ' + e.message);
+  }finally{
+    ev.target.value = '';
+  }
+});
+
+document.getElementById('equipeMembroSaveBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('equipeMembroError');
+  const nome = document.getElementById('equipeMembroNome').value.trim();
+  if (!nome){ errEl.textContent = 'Informe o nome.'; errEl.style.display = 'block'; return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  const id = document.getElementById('equipeMembroId').value;
+  const payload = {
+    nome,
+    cargo: document.getElementById('equipeMembroCargo').value.trim() || null,
+    area: document.getElementById('equipeMembroArea').value.trim() || null,
+    lidera: document.getElementById('equipeMembroLidera').value || null,
+    foto_url: equipeMembroFotoUrlAtual,
+    meta_pesquisas_dia: document.getElementById('equipeMembroMetaPesquisas').value ? parseInt(document.getElementById('equipeMembroMetaPesquisas').value,10) : 0,
+    meta_extra_1_label: document.getElementById('equipeMembroMeta1Label').value.trim() || null,
+    meta_extra_1_valor: document.getElementById('equipeMembroMeta1Valor').value ? parseInt(document.getElementById('equipeMembroMeta1Valor').value,10) : null,
+    meta_extra_2_label: document.getElementById('equipeMembroMeta2Label').value.trim() || null,
+    meta_extra_2_valor: document.getElementById('equipeMembroMeta2Valor').value ? parseInt(document.getElementById('equipeMembroMeta2Valor').value,10) : null,
+    meta_extra_3_label: document.getElementById('equipeMembroMeta3Label').value.trim() || null,
+    meta_extra_3_valor: document.getElementById('equipeMembroMeta3Valor').value ? parseInt(document.getElementById('equipeMembroMeta3Valor').value,10) : null,
+  };
+  try{
+    let result;
+    if (id) result = await sb.from('equipe_membros').update(payload).eq('id', id);
+    else result = await sb.from('equipe_membros').insert(Object.assign({ ordem: equipeMembrosData.length }, payload));
+    if (result.error) throw result.error;
+    document.getElementById('equipeMembroModalOverlay').style.display = 'none';
+    await carregarEquipeMembros();
+    renderEquipeOrgChart();
+    renderEquipeMetasCards();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('equipe_membros') ? ' — confira se a tabela já foi criada no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('equipeMembroDeleteBtn').addEventListener('click', async () => {
+  const id = document.getElementById('equipeMembroId').value;
+  if (!id) return;
+  if (!confirm('Excluir esse membro da equipe? Isso não apaga nenhum dado de pesquisas/atendimento, só remove ele do organograma.')) return;
+  try{
+    const { error } = await sb.from('equipe_membros').update({ ativo: false }).eq('id', id);
+    if (error) throw error;
+    document.getElementById('equipeMembroModalOverlay').style.display = 'none';
+    await carregarEquipeMembros();
+    renderEquipeOrgChart();
+    renderEquipeMetasCards();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
+
 async function renderEquipeMetasBarras(){
   const el = document.getElementById('equipeMetasBarras');
   if (!el) return;
+  await carregarEquipeMembros();
+  renderEquipeOrgChart();
+  renderEquipeMetasCards();
   el.innerHTML =
     barraHorizontal('Rosely', 10, 50, 'var(--accent)', '/dia') +
     barraHorizontal('Josiane', 10, 50, 'var(--accent)', '/dia') +
