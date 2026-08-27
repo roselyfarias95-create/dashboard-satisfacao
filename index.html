@@ -1594,7 +1594,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-B (foto de perfil + Equipe & Metas editável)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-E (listas totalmente editáveis: add/renomear/excluir)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1643,6 +1643,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="vidaCondominio"><span class="tab-icon">🕓</span><span class="tab-label">Vida do Condomínio</span></button>
       <button type="button" class="tab-btn" data-tab="equipeMetas"><span class="tab-icon">👥</span><span class="tab-label">Equipe & Metas</span></button>
       <button type="button" class="tab-btn" data-tab="fechamentoMensal"><span class="tab-icon">📊</span><span class="tab-label">Fechamento do Mês</span></button>
+      <button type="button" class="tab-btn" data-tab="configuracoes"><span class="tab-icon">⚙️</span><span class="tab-label">Configurações</span></button>
       <button type="button" class="tab-btn" data-tab="atividades" id="tabBtnAtividades" style="display:none;"><span class="tab-icon">🕵️</span><span class="tab-label">Atividades da Equipe</span></button>
     </nav>
 
@@ -4070,6 +4071,68 @@ CONDOMINIO Y	480	45"></textarea>
     </details>
   </div>
 
+  <!-- ==================== CONFIGURAÇÕES ==================== -->
+  <div id="tabConfiguracoes" class="tab-panel" style="display:none;">
+    <header>
+      <div><p class="eyebrow"><span class="rec"></span>Sucesso do Cliente · Servis Eletrônica</p></div>
+    </header>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:-6px 0 16px; line-height:1.5;">
+      Metas e listas usadas nas abas de Pesquisas e Renovação de Contratos — só quem tem acesso admin vê essa aba.
+    </p>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">🎯 Metas e Limites</p>
+      <div class="pq-field">
+        <label class="pq-label">Nota mínima considerada "meta atingida" (Pesquisas)</label>
+        <input type="number" id="cfgPqMetaNota" min="0" max="10" step="0.1" style="max-width:140px;">
+      </div>
+      <div class="pq-field">
+        <label class="pq-label">Nota abaixo da qual gera 2ª ligação/pesquisa de recuperação</label>
+        <input type="number" id="cfgPqNota2aLigacao" min="0" max="10" step="0.1" style="max-width:140px;">
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Renovação: até quantos dias antes do vencimento entra em "Vencendo em Breve"</label>
+        <input type="number" id="cfgRenovVencBreve" min="1" style="max-width:140px;">
+      </div>
+      <button type="button" class="login-btn" id="cfgSalvarMetasBtn" style="width:auto; margin-top:14px; padding:9px 20px;">💾 Salvar Metas e Limites</button>
+      <p id="cfgMetasAviso" style="font-size:11px; color:var(--text-faint); margin-top:8px;"></p>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">📋 Setores Responsáveis <span style="text-transform:none; letter-spacing:0; font-weight:400;">(usado em Pendência/Reclamação nas Pesquisas)</span></p>
+      <div id="cfgSetoresLista" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="cfgNovoSetor" placeholder="Nome do novo setor..." style="flex:1; max-width:280px;">
+        <button type="button" class="clearbtn" id="cfgAddSetorBtn">+ Adicionar</button>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">🏷️ Responsável <span style="text-transform:none; letter-spacing:0; font-weight:400;">(sincronizado com a aba Equipe & Metas)</span></p>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:-4px 0 0;">Os nomes que aparecem nos campos "Responsável" (Pesquisas, Incidentes, Demandas, Fluxo de Atendimento etc.) vêm direto da equipe cadastrada. Pra adicionar, editar ou remover alguém, vá até <b style="color:var(--text-dim);">👥 Equipe & Metas</b>.</p>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <p class="chart-title">📝 Motivos (extras) <span style="text-transform:none; letter-spacing:0; font-weight:400;">(além dos motivos padrão de Pendência/Reclamação)</span></p>
+      <p style="font-size:11px; color:var(--text-faint); margin:-4px 0 10px;">Motivos novos entram automaticamente na categoria "Outros" dos gráficos de análise, até que alguém ajuste o agrupamento.</p>
+      <div id="cfgMotivosLista" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="cfgNovoMotivo" placeholder="Nome do novo motivo..." style="flex:1; max-width:280px;">
+        <button type="button" class="clearbtn" id="cfgAddMotivoBtn">+ Adicionar</button>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <p class="chart-title">🔖 Status de Negociação <span style="text-transform:none; letter-spacing:0; font-weight:400;">(Renovação de Contratos)</span></p>
+      <p style="font-size:11px; color:var(--text-faint); margin:-4px 0 10px;">Clica no texto pra renomear, no ✕ pra excluir. <b style="color:var(--atencao);">Atenção:</b> o sistema usa o texto salvo de cada negociação (não a lista) pra saber se ela terminou — qualquer status que comece com "Renovado" conta como renovado, e "Não renovado"/"Cancelado" contam como finalizados. Se você renomear esses três, negociações <i>novas</i> com esse status deixam de ser reconhecidas como finalizadas.</p>
+      <div id="cfgStatusLista" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="cfgNovoStatus" placeholder="Nome do novo status..." style="flex:1; max-width:280px;">
+        <button type="button" class="clearbtn" id="cfgAddStatusBtn">+ Adicionar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="tabAtividades" class="tab-panel" style="display:none;">
     <header>
       <div>
@@ -4487,7 +4550,7 @@ document.getElementById('btnAtividadesOntem').addEventListener('click', ()=>{
   carregarRelatorioAtividades();
 });
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas','fechamentoMensal'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas','fechamentoMensal','configuracoes'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -6235,7 +6298,7 @@ const OUTROS_SUBMOTIVOS = {
   730:'Pendência Técnica',        // instabilidade pontual na internet
 };
 
-const META_NOTA = 8.0;
+let META_NOTA = 8.0;
 const GRAVIDADE_COLORS = { critico:'#ff4d5e', atencao:'#ffb020', ok:'#2dd4a7' };
 const MESES_PT_PARA_NUM = {
   'janeiro':'01','fevereiro':'02','marco':'03','março':'03','abril':'04','maio':'05','junho':'06',
@@ -6252,7 +6315,7 @@ const MESES_PT_PARA_NUM = {
 // porque um regex genérico de "demora" ou "retorno" não sabia distinguir Central de
 // Técnico de Comercial de Gestão — essa era a causa da duplicidade anterior.
 // ============================================================================
-const MOTIVOS_CANONICOS = [
+let MOTIVOS_CANONICOS = [
   'Portões','Controle de Acesso','Câmeras','Interfone','Aplicativo',
   'Atendimento da Central','Tempo de Atendimento da Central','Falta de Retorno da Central','Comunicação',
   'Falta de Retorno do Comercial',
@@ -7072,7 +7135,7 @@ function notaFaixaIndex2(item){
     if (idx !== -1) return idx;
   }
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
-  if (!isNaN(n1) && n1 >= 8) return NOTA2_FAIXAS.findIndex(f=>f.special==='estrela');
+  if (!isNaN(n1) && n1 >= PQ_NOTA_2A_LIGACAO) return NOTA2_FAIXAS.findIndex(f=>f.special==='estrela');
   return NOTA2_FAIXAS.findIndex(f=>f.special==='sem_nota');
 }
 function emojiParaNota(notaRaw){
@@ -8193,7 +8256,7 @@ function nota2Display(item){
   }
   if (item.notaPosResolucao) return escapeHtml(item.notaPosResolucao);
   const n1 = parseFloat(String(item.nota).replace(',', '.'));
-  if (!isNaN(n1) && n1 >= 8) return '<span title="Nota já era 8 ou mais na 1ª pesquisa — sem necessidade de retorno">⭐</span>';
+  if (!isNaN(n1) && n1 >= PQ_NOTA_2A_LIGACAO) return `<span title="Nota já era ${PQ_NOTA_2A_LIGACAO} ou mais na 1ª pesquisa — sem necessidade de retorno">⭐</span>`;
   return '—';
 }
 
@@ -10837,6 +10900,7 @@ function fmtDataBRRenov(iso){
   return `${d}/${m}/${y}`;
 }
 
+let RENOV_VENC_BREVE_DIAS = 365;
 function diasVencido(iso){
   const fim = new Date(iso+"T00:00:00");
   const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -10875,7 +10939,7 @@ async function loadRenovacaoData(){
     ).sort((a,b) => a.contrato_fim.localeCompare(b.contrato_fim));
 
     renovVencendoBreve = renovAllCondos.filter(c =>
-      (c.status || 'Ativo') !== 'Inativo' && c.contrato_fim && c.contrato_fim >= hojeStr && diasParaVencer(c.contrato_fim) <= 365
+      (c.status || 'Ativo') !== 'Inativo' && c.contrato_fim && c.contrato_fim >= hojeStr && diasParaVencer(c.contrato_fim) <= RENOV_VENC_BREVE_DIAS
     ).sort((a,b) => a.contrato_fim.localeCompare(b.contrato_fim));
 
     // Tabela de negociações pode ainda não existir no banco.
@@ -11294,7 +11358,7 @@ function getFilteredRenovBreve(){
     if (fFaixa){
       const dias = diasParaVencer(c.contrato_fim);
       if (fFaixa === '6' && dias > 180) return false;
-      if (fFaixa === '12' && (dias <= 180 || dias > 365)) return false;
+      if (fFaixa === '12' && (dias <= 180 || dias > RENOV_VENC_BREVE_DIAS)) return false;
     }
     return true;
   });
@@ -12539,6 +12603,7 @@ function initTabs(){
       document.getElementById('tabVidaCondominio').style.display = tab === 'vidaCondominio' ? 'block' : 'none';
       document.getElementById('tabEquipeMetas').style.display = tab === 'equipeMetas' ? 'block' : 'none';
       document.getElementById('tabFechamentoMensal').style.display = tab === 'fechamentoMensal' ? 'block' : 'none';
+      document.getElementById('tabConfiguracoes').style.display = tab === 'configuracoes' ? 'block' : 'none';
       document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
@@ -12601,6 +12666,9 @@ function initTabs(){
       if (tab === 'fechamentoMensal'){
         if (typeof loadFechamentoMensal === 'function') loadFechamentoMensal();
       }
+      if (tab === 'configuracoes'){
+        if (typeof loadConfiguracoes === 'function') loadConfiguracoes();
+      }
       if (tab === 'atividades'){
         if (typeof carregarRelatorioAtividades === 'function') carregarRelatorioAtividades();
       }
@@ -12650,10 +12718,11 @@ function renderPqTentativas(){
 }
 let pqNotaSelecionada = null;
 
-const PQ_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
+let PQ_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
 const PQ_MOTIVOS_RECLAMACAO = ['Portões','Interfone','Câmeras','Controle de Acesso','Aplicativo','Cadastro','Atendimento da Central','Equipe Técnica','Tempo de Atendimento Técnico','Tempo de Atendimento da Central','Qualidade da Equipe Técnica','Falta de Retorno','Financeiro','Comercial'];
 const PQ_SETORES_PENDENCIA = ['Síndico','Zeladoria','Portaria','Financeiro','Manutenção','Administração'];
-const PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Backoffice'];
+let PQ_SETORES_RESPONSAVEL = ['Técnica','Central','Financeiro','Comercial','Sucesso do Cliente','Operações','Backoffice'];
+let PQ_NOTA_2A_LIGACAO = 8;
 const PQ_SETORES_ELOGIO = ['Central','Equipe Técnica','Sucesso do Cliente','Financeiro','Comercial'];
 
 function pqBuildNotaRow(){
@@ -12871,7 +12940,7 @@ function pqAtualizarVisibilidadeEncaminhamento(){
 function pqAtualizarVisibilidadeRecuperacao(){
   const n = parseFloat(String(pqNotaSelecionada).replace(',', '.'));
   const jaTemPesquisa2 = !!(pqEditingItem && (pqEditingItem.dataPesquisa2 || pqEditingItem.notaPosResolucao || pqEditingItem.pesquisa2NaoRealizada));
-  const mostrar = (!isNaN(n) && n < 8) || jaTemPesquisa2;
+  const mostrar = (!isNaN(n) && n < PQ_NOTA_2A_LIGACAO) || jaTemPesquisa2;
   document.getElementById('pqCardRecuperacao').style.display = mostrar ? 'block' : 'none';
   if (mostrar){
     const dataTxt = document.getElementById('pqData').value ? formatDateBR(document.getElementById('pqData').value) : '—';
@@ -15997,10 +16066,20 @@ async function carregarEquipeMembros(){
     const { data, error } = await sb.from('equipe_membros').select('*').eq('ativo', true).order('ordem', { ascending: true });
     if (error) throw error;
     equipeMembrosData = data || [];
+    sincronizarResponsaveisComEquipe();
   }catch(e){
     console.warn('Falha ao carregar equipe_membros (a tabela pode não existir ainda no Supabase):', e);
     equipeMembrosData = [];
   }
+}
+
+function sincronizarResponsaveisComEquipe(){
+  if (!equipeMembrosData.length) return;
+  const nomes = equipeMembrosData.map(m => m.nome).filter(Boolean);
+  if (!nomes.length) return;
+  PQ_RESPONSAVEIS = [...nomes];
+  DEM_RESPONSAVEIS = [...nomes];
+  RESPONSAVEL_OPCOES_INC = [...nomes, 'Equipe CS', 'Técnica'];
 }
 
 function renderEquipeOrgChart(){
@@ -17483,7 +17562,7 @@ document.getElementById('btnMarcarTodosResolvidos').addEventListener('click', as
   }
 });
 
-const RESPONSAVEL_OPCOES_INC = ['Maria Rosely (Analista)','Josiane Alves (Assistente)','Nicole (Aprendiz Manhã)','Geovanna (Aprendiz Tarde)','Equipe CS','Técnica'];
+let RESPONSAVEL_OPCOES_INC = ['Maria Rosely (Analista)','Josiane Alves (Assistente)','Nicole (Aprendiz Manhã)','Geovanna (Aprendiz Tarde)','Equipe CS','Técnica'];
 
 function renderIncidentesDashboard(filtered){
   const altaGravidade = filtered.filter(i=>i.gravidade === 'Alta').length;
@@ -18021,7 +18100,7 @@ document.getElementById('btnLimparFiltrosIncidentes').addEventListener('click', 
 // centralizado) + Fase 4 (cache por versão) + Fase 5 (integração com Vida do
 // Condomínio via risco_contribuinte e getMetricasCondominio).
 // ============================================================================
-const DEM_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
+let DEM_RESPONSAVEIS = ['Maria Rosely (Analista)', 'Josiane Alves (Assistente)', 'Nicole (Aprendiz Manhã)', 'Geovanna (Aprendiz Tarde)'];
 const DEM_STATUS_LIST = ['Aberta', 'Em andamento', 'Aguardando', 'Concluída'];
 
 let demData = [];
@@ -20294,6 +20373,8 @@ document.addEventListener('click', function(e){
 initTabs();
 
 initAuth();
+setTimeout(()=>{ if (typeof loadConfiguracoes === 'function') loadConfiguracoes().catch(e=>console.warn('Configurações não carregadas:', e)); }, 1500);
+setTimeout(()=>{ if (typeof carregarEquipeMembros === 'function') carregarEquipeMembros().catch(e=>console.warn('Equipe não carregada:', e)); }, 1500);
 
 // ============================================================================
 // BACKUP DIÁRIO — salva uma "foto" de tudo que importa (principalmente as
@@ -20779,6 +20860,242 @@ document.getElementById('fmBtnConcluir').addEventListener('click', async ()=>{
   fmDadosSalvos = Object.assign({}, fmDadosSalvos, { status_fechamento: 'Concluído' });
   await fmSalvar(false);
   alert('✅ Fechamento marcado como Concluído.');
+});
+
+// ============================================================================
+// CONFIGURAÇÕES — metas/limites e listas do sistema, editáveis pelo admin.
+// Carrega do Supabase e sobrescreve as variáveis globais correspondentes
+// (com respaldo pros valores padrão, caso as tabelas ainda não existam).
+// ============================================================================
+let listaSetoresCarregada = [];
+let listaMotivosExtrasCarregada = [];
+let listaStatusExtrasCarregada = [];
+
+async function loadConfiguracoes(){
+  if (!sb) return;
+  try{
+    const { data: configs } = await sb.from('configuracoes_sistema').select('*');
+    (configs||[]).forEach(c=>{
+      if (c.chave === 'pq_meta_nota') META_NOTA = parseFloat(c.valor) || META_NOTA;
+      if (c.chave === 'pq_nota_2a_ligacao') PQ_NOTA_2A_LIGACAO = parseFloat(c.valor) || PQ_NOTA_2A_LIGACAO;
+      if (c.chave === 'renov_venc_breve_dias') RENOV_VENC_BREVE_DIAS = parseInt(c.valor,10) || RENOV_VENC_BREVE_DIAS;
+    });
+    document.getElementById('cfgPqMetaNota').value = META_NOTA;
+    document.getElementById('cfgPqNota2aLigacao').value = PQ_NOTA_2A_LIGACAO;
+    document.getElementById('cfgRenovVencBreve').value = RENOV_VENC_BREVE_DIAS;
+
+    const { data: todasListas } = await sb.from('listas_sistema').select('*').eq('ativo', true).order('ordem', { ascending:true });
+
+    const setores = (todasListas||[]).filter(l => l.categoria === 'pq_setores');
+    if (setores.length){
+      listaSetoresCarregada = setores;
+      PQ_SETORES_RESPONSAVEL = setores.map(s => s.valor);
+    }
+    renderCfgSetoresLista();
+
+    listaMotivosExtrasCarregada = (todasListas||[]).filter(l => l.categoria === 'pq_motivos_extra');
+    if (listaMotivosExtrasCarregada.length){
+      const extras = listaMotivosExtrasCarregada.map(l => l.valor);
+      MOTIVOS_CANONICOS = [...new Set([...MOTIVOS_CANONICOS, ...extras])];
+    }
+    renderCfgMotivosLista();
+
+    listaStatusExtrasCarregada = (todasListas||[]).filter(l => l.categoria === 'renov_status_negociacao');
+    aplicarStatusListaCompleta();
+    renderCfgStatusLista();
+  }catch(e){
+    console.warn('Falha ao carregar configurações (as tabelas podem não existir ainda no Supabase):', e);
+  }
+}
+
+function aplicarStatusListaCompleta(){
+  const sel = document.getElementById('negStatus');
+  if (!sel || !listaStatusExtrasCarregada.length) return; // sem dados salvos ainda, mantém as opções fixas do HTML
+  const valorAtual = sel.value;
+  sel.innerHTML = listaStatusExtrasCarregada.map(item => `<option value="${escapeHtml(item.valor)}">${escapeHtml(item.valor)}</option>`).join('');
+  if ([...sel.options].some(o => o.value === valorAtual)) sel.value = valorAtual;
+}
+
+function renderCfgSetoresLista(){
+  const el = document.getElementById('cfgSetoresLista');
+  if (!el) return;
+  if (!listaSetoresCarregada.length){
+    el.innerHTML = `<p style="font-size:11.5px; color:var(--text-faint);">Usando a lista padrão (${PQ_SETORES_RESPONSAVEL.join(', ')}) — rode o SQL de configurações no Supabase pra poder editar.</p>`;
+    return;
+  }
+  el.innerHTML = listaSetoresCarregada.map(s => `
+    <span style="display:inline-flex; align-items:center; gap:6px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px 5px 12px; font-size:12px;">
+      <span data-renomear-setor="${s.id}" style="cursor:pointer;" title="Clique pra renomear">${escapeHtml(s.valor)}</span>
+      <button type="button" data-remover-setor="${s.id}" style="background:none; border:none; color:var(--critico); cursor:pointer; font-size:13px; line-height:1;">✕</button>
+    </span>
+  `).join('');
+  el.querySelectorAll('[data-renomear-setor]').forEach(span=>{
+    span.addEventListener('click', async ()=>{
+      const id = span.getAttribute('data-renomear-setor');
+      const item = listaSetoresCarregada.find(s => String(s.id) === id);
+      const novoValor = prompt('Renomear setor:', item ? item.valor : '');
+      if (!novoValor || !novoValor.trim() || (item && novoValor.trim() === item.valor)) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ valor: novoValor.trim() }).eq('id', id);
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao renomear: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-remover-setor]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if (!confirm('Remover esse setor da lista?')) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ ativo: false }).eq('id', btn.getAttribute('data-remover-setor'));
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao remover: ' + e.message); }
+    });
+  });
+}
+
+function renderCfgMotivosLista(){
+  const el = document.getElementById('cfgMotivosLista');
+  if (!el) return;
+  if (!listaMotivosExtrasCarregada.length){
+    el.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint);">Nenhum motivo extra adicionado ainda.</p>';
+    return;
+  }
+  el.innerHTML = listaMotivosExtrasCarregada.map(s => `
+    <span style="display:inline-flex; align-items:center; gap:6px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px 5px 12px; font-size:12px;">
+      <span data-renomear-motivo="${s.id}" style="cursor:pointer;" title="Clique pra renomear">${escapeHtml(s.valor)}</span>
+      <button type="button" data-remover-motivo="${s.id}" style="background:none; border:none; color:var(--critico); cursor:pointer; font-size:13px; line-height:1;">✕</button>
+    </span>
+  `).join('');
+  el.querySelectorAll('[data-renomear-motivo]').forEach(span=>{
+    span.addEventListener('click', async ()=>{
+      const id = span.getAttribute('data-renomear-motivo');
+      const item = listaMotivosExtrasCarregada.find(s => String(s.id) === id);
+      const novoValor = prompt('Renomear motivo:', item ? item.valor : '');
+      if (!novoValor || !novoValor.trim() || (item && novoValor.trim() === item.valor)) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ valor: novoValor.trim() }).eq('id', id);
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao renomear: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-remover-motivo]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if (!confirm('Remover esse motivo da lista?')) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ ativo: false }).eq('id', btn.getAttribute('data-remover-motivo'));
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao remover: ' + e.message); }
+    });
+  });
+}
+
+function renderCfgStatusLista(){
+  const el = document.getElementById('cfgStatusLista');
+  if (!el) return;
+  if (!listaStatusExtrasCarregada.length){
+    el.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint);">Nenhum status cadastrado ainda — rode o SQL de popular status no Supabase.</p>';
+    return;
+  }
+  el.innerHTML = listaStatusExtrasCarregada.map(s => `
+    <span style="display:inline-flex; align-items:center; gap:6px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px 5px 12px; font-size:12px;">
+      <span data-renomear-status="${s.id}" style="cursor:pointer;" title="Clique pra renomear">${escapeHtml(s.valor)}</span>
+      <button type="button" data-remover-status="${s.id}" style="background:none; border:none; color:var(--critico); cursor:pointer; font-size:13px; line-height:1;">✕</button>
+    </span>
+  `).join('');
+  el.querySelectorAll('[data-renomear-status]').forEach(span=>{
+    span.addEventListener('click', async ()=>{
+      const id = span.getAttribute('data-renomear-status');
+      const item = listaStatusExtrasCarregada.find(s => String(s.id) === id);
+      const novoValor = prompt('Renomear status:', item ? item.valor : '');
+      if (!novoValor || !novoValor.trim() || (item && novoValor.trim() === item.valor)) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ valor: novoValor.trim() }).eq('id', id);
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao renomear: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-remover-status]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if (!confirm('Remover esse status da lista? (as negociações que já usam ele continuam com o valor salvo, só não aparece mais como opção pra novas)')) return;
+      try{
+        const { error } = await sb.from('listas_sistema').update({ ativo: false }).eq('id', btn.getAttribute('data-remover-status'));
+        if (error) throw error;
+        await loadConfiguracoes();
+      }catch(e){ alert('Erro ao remover: ' + e.message); }
+    });
+  });
+}
+
+document.getElementById('cfgSalvarMetasBtn').addEventListener('click', async ()=>{
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const aviso = document.getElementById('cfgMetasAviso');
+  const valores = [
+    { chave: 'pq_meta_nota', valor: document.getElementById('cfgPqMetaNota').value },
+    { chave: 'pq_nota_2a_ligacao', valor: document.getElementById('cfgPqNota2aLigacao').value },
+    { chave: 'renov_venc_breve_dias', valor: document.getElementById('cfgRenovVencBreve').value },
+  ];
+  try{
+    const { error } = await sb.from('configuracoes_sistema').upsert(
+      valores.map(v => Object.assign({}, v, { atualizado_em: new Date().toISOString() })),
+      { onConflict: 'chave' }
+    );
+    if (error) throw error;
+    await loadConfiguracoes();
+    aviso.textContent = '✅ Salvo! As novas metas já valem a partir de agora.';
+    aviso.style.color = 'var(--ok)';
+  }catch(e){
+    aviso.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('configuracoes_sistema') ? ' — rode o SQL de configurações no Supabase primeiro.' : '');
+    aviso.style.color = 'var(--critico)';
+  }
+});
+
+document.getElementById('cfgAddSetorBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('cfgNovoSetor');
+  const valor = input.value.trim();
+  if (!valor) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  try{
+    const { error } = await sb.from('listas_sistema').insert({ categoria: 'pq_setores', valor, ordem: listaSetoresCarregada.length + 1 });
+    if (error) throw error;
+    input.value = '';
+    await loadConfiguracoes();
+  }catch(e){
+    alert('Erro ao adicionar: ' + e.message + (e.message && e.message.includes('duplicate') ? ' — esse setor já existe na lista.' : ''));
+  }
+});
+
+document.getElementById('cfgAddMotivoBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('cfgNovoMotivo');
+  const valor = input.value.trim();
+  if (!valor) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  try{
+    const { error } = await sb.from('listas_sistema').insert({ categoria: 'pq_motivos_extra', valor, ordem: listaMotivosExtrasCarregada.length + 1 });
+    if (error) throw error;
+    input.value = '';
+    await loadConfiguracoes();
+  }catch(e){
+    alert('Erro ao adicionar: ' + e.message + (e.message && e.message.includes('duplicate') ? ' — esse motivo já existe na lista.' : ''));
+  }
+});
+
+document.getElementById('cfgAddStatusBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('cfgNovoStatus');
+  const valor = input.value.trim();
+  if (!valor) return;
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  try{
+    const { error } = await sb.from('listas_sistema').insert({ categoria: 'renov_status_negociacao', valor, ordem: listaStatusExtrasCarregada.length + 1 });
+    if (error) throw error;
+    input.value = '';
+    await loadConfiguracoes();
+  }catch(e){
+    alert('Erro ao adicionar: ' + e.message + (e.message && e.message.includes('duplicate') ? ' — esse status já existe na lista.' : ''));
+  }
 });
 
 function determinarTimbrado(){
