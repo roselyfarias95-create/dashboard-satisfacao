@@ -1594,7 +1594,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-E (listas totalmente editáveis: add/renomear/excluir)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-F (botão de backup de pesquisas em HTML)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1873,6 +1873,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     <button class="clearbtn" id="newItemBtn" style="display:none;">+ Nova pesquisa</button>
     <button class="clearbtn" id="newRodadaBtn" style="display:none;">📅 Nova rodada mensal</button>
     <button class="clearbtn" id="excelBtn">📊 Excel</button>
+    <button class="clearbtn" id="btnBackupPesquisasHtml" style="border-color:#2563eb; color:#60a5fa;" title="Baixa um arquivo HTML com todas as pesquisas de hoje, pra guardar como cópia de segurança">💾 Salvar Backup (HTML)</button>
     <button class="clearbtn" id="historicoNovaPastaBtn" style="display:none;">+ Nova Pasta</button>
   </div>
 
@@ -21097,6 +21098,91 @@ document.getElementById('cfgAddStatusBtn').addEventListener('click', async ()=>{
     alert('Erro ao adicionar: ' + e.message + (e.message && e.message.includes('duplicate') ? ' — esse status já existe na lista.' : ''));
   }
 });
+
+// ============================================================================
+// BACKUP DE PESQUISAS EM HTML — baixa um arquivo local com todas as pesquisas
+// (ativas + arquivadas no Histórico), pra ter uma cópia de segurança fora do
+// sistema, independente do que acontecer no banco de dados.
+// ============================================================================
+function montarLinhaBackupPesquisa(item, origem){
+  return `<tr>
+    <td>${escapeHtml(item.nome||'')}</td>
+    <td>${escapeHtml(item.filial||'')}</td>
+    <td>${escapeHtml(getMes(item)||'')}</td>
+    <td style="text-align:center;">${escapeHtml(String(item.nota??'—'))}</td>
+    <td style="text-align:center;">${escapeHtml(String(item.notaPosResolucao??'—'))}</td>
+    <td>${escapeHtml(item.dataPesquisa||'')}</td>
+    <td>${escapeHtml(item.motivo||item.motivoPendencia||'')}</td>
+    <td>${escapeHtml(item.statusPesquisa||'')}</td>
+    <td style="font-size:10px; color:#6b7280;">${escapeHtml(origem)}</td>
+  </tr>`;
+}
+
+function exportarBackupPesquisasHtml(){
+  const agora = new Date();
+  const timestamp = agora.toISOString().slice(0,19).replace(/[:T]/g,'-');
+  const emitido = agora.toLocaleString('pt-BR');
+
+  const linhasAtivas = (typeof DATA !== 'undefined' ? DATA : []).map(d => montarLinhaBackupPesquisa(d, 'Ativo'));
+  const linhasHistorico = (typeof historicoData !== 'undefined' ? historicoData : []).map(h => montarLinhaBackupPesquisa({
+    nome: h.condominio, filial: h.filial, dataPesquisa: '', nota: h.nota, notaPosResolucao: h.nota2,
+    motivo: '', statusPesquisa: h.resultado, mesReferencia: h.mes,
+  }, 'Histórico'));
+
+  const totalAtivo = (typeof DATA !== 'undefined' ? DATA.length : 0);
+  const totalHistorico = (typeof historicoData !== 'undefined' ? historicoData.length : 0);
+
+  const jsonCompleto = JSON.stringify({
+    gerado_em: agora.toISOString(),
+    total_ativo: totalAtivo,
+    total_historico: totalHistorico,
+    dados_ativos: typeof DATA !== 'undefined' ? DATA : [],
+    dados_historico: typeof historicoData !== 'undefined' ? historicoData : [],
+  });
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Backup de Pesquisas — ${escapeHtml(emitido)}</title>
+  <style>
+    body{ font-family:Arial,Helvetica,sans-serif; color:#1a2333; margin:0; padding:24px; background:#fff; }
+    h1{ font-size:18px; margin:0 0 4px; }
+    p.sub{ font-size:12px; color:#6b7280; margin:0 0 20px; }
+    h2{ font-size:14px; margin:26px 0 8px; color:#222f59; }
+    table{ width:100%; border-collapse:collapse; font-size:11px; }
+    th{ background:#222f59; color:#fff; text-align:left; padding:6px 8px; position:sticky; top:0; }
+    td{ padding:5px 8px; border-bottom:1px solid #e5e7eb; }
+    tr:nth-child(even) td{ background:#f7f8fa; }
+  </style></head><body>
+    <h1>📋 Backup de Pesquisas — Sucesso do Cliente · Servis Eletrônica</h1>
+    <p class="sub">Gerado em ${escapeHtml(emitido)} · ${totalAtivo} registro(s) ativo(s) · ${totalHistorico} registro(s) no Histórico</p>
+
+    <h2>Pesquisas Ativas (${totalAtivo})</h2>
+    <table>
+      <thead><tr><th>Condomínio</th><th>Filial</th><th>Mês</th><th>Nota 1</th><th>Nota 2</th><th>Data</th><th>Motivo</th><th>Status</th><th>Origem</th></tr></thead>
+      <tbody>${linhasAtivas.join('')}</tbody>
+    </table>
+
+    <h2>Histórico Arquivado (${totalHistorico})</h2>
+    <table>
+      <thead><tr><th>Condomínio</th><th>Filial</th><th>Mês</th><th>Nota 1</th><th>Nota 2</th><th>Data</th><th>Motivo</th><th>Status</th><th>Origem</th></tr></thead>
+      <tbody>${linhasHistorico.join('')}</tbody>
+    </table>
+
+    <p style="font-size:10px; color:#9ca3af; margin-top:30px;">Esse arquivo também guarda os dados brutos em JSON (visualização técnica), pra eventual recuperação manual se precisar.</p>
+    <script type="application/json" id="dadosBrutosBackup">${jsonCompleto}<\/script>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_pesquisas_${timestamp}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('btnBackupPesquisasHtml').addEventListener('click', exportarBackupPesquisasHtml);
 
 function determinarTimbrado(){
   const painel = getAbaAtivaVisivel();
