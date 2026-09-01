@@ -1641,7 +1641,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-Q (pendências de ontem + alerta de login)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-R (nomes padronizados: login ligado à Equipe)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4039,6 +4039,9 @@ CONDOMINIO Y	480	45"></textarea>
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Filiais que essa pessoa é responsável <span style="font-weight:400; text-transform:none;">(pra tabela de Distribuição por Filial)</span>
           <div id="equipeMembroFiliaisResp" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;"></div>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Usuário de login dessa pessoa <span style="font-weight:400; text-transform:none;">(pra ela receber o alerta de tarefas pendentes ao entrar)</span>
+          <input type="text" id="equipeMembroUsuarioLogin" placeholder="Ex: josiane (o username que ela usa pra logar)" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Responsabilidades da área <span style="font-weight:400; text-transform:none;">(uma por linha — vira o card "Área" na tela)</span>
           <textarea id="equipeMembroResponsabilidades" rows="5" placeholder="✅ Lidera tal filial diretamente&#10;✅ Foco em retenção e aditivos&#10;..." style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
@@ -16379,6 +16382,7 @@ function abrirEquipeMembroModal(membro){
   document.getElementById('equipeMembroMeta3Label').value = membro ? (membro.meta_extra_3_label||'') : '';
   document.getElementById('equipeMembroMeta3Valor').value = membro ? (membro.meta_extra_3_valor ?? '') : '';
   document.getElementById('equipeMembroResponsabilidades').value = membro ? (membro.responsabilidades||'') : '';
+  document.getElementById('equipeMembroUsuarioLogin').value = membro ? (membro.usuario_login||'') : '';
   renderEquipeFiliaisCheckboxes(membro ? (membro.filiais_responsavel||'') : '');
   equipeMembroFotoUrlAtual = membro ? (membro.foto_url||null) : null;
   aplicarFotoMembroModal(equipeMembroFotoUrlAtual);
@@ -16430,6 +16434,7 @@ document.getElementById('equipeMembroSaveBtn').addEventListener('click', async (
     meta_extra_3_label: document.getElementById('equipeMembroMeta3Label').value.trim() || null,
     meta_extra_3_valor: document.getElementById('equipeMembroMeta3Valor').value ? parseInt(document.getElementById('equipeMembroMeta3Valor').value,10) : null,
     responsabilidades: document.getElementById('equipeMembroResponsabilidades').value.trim() || null,
+    usuario_login: document.getElementById('equipeMembroUsuarioLogin').value.trim().toLowerCase() || null,
     filiais_responsavel: [...document.querySelectorAll('#equipeMembroFiliaisResp input:checked')].map(c=>c.value).join(',') || null,
   };
   try{
@@ -21764,12 +21769,25 @@ async function verificarAlertaAgendaLogin(username){
 
     const nomesResponsaveis = [...new Set(tarefasHoje.map(t=>t.responsavel))];
     const norm = (s) => (s||'').toLowerCase().trim();
-    const matchNome = nomesResponsaveis.find(resp => {
-      const r = norm(resp);
-      return r === norm(username) || r === norm(nomeCompleto) ||
-        (nomeCompleto && norm(nomeCompleto).includes(r)) || (nomeCompleto && r.includes(norm(nomeCompleto))) ||
-        norm(username).includes(r) || r.includes(norm(username));
-    });
+
+    if (!equipeMembrosData.length) await carregarEquipeMembros();
+
+    // 1ª tentativa: ligação direta e exata via "Usuário de login" cadastrado na Equipe & Metas
+    let matchNome = null;
+    const membroLigado = equipeMembrosData.find(m => m.usuario_login && norm(m.usuario_login) === norm(username));
+    if (membroLigado){
+      matchNome = nomesResponsaveis.find(resp => norm(resp) === norm(membroLigado.nome));
+    }
+
+    // 2ª tentativa (reserva): aproximação pelo nome/usuário, caso a ligação ainda não tenha sido cadastrada
+    if (!matchNome){
+      matchNome = nomesResponsaveis.find(resp => {
+        const r = norm(resp);
+        return r === norm(username) || r === norm(nomeCompleto) ||
+          (nomeCompleto && norm(nomeCompleto).includes(r)) || (nomeCompleto && r.includes(norm(nomeCompleto))) ||
+          norm(username).includes(r) || r.includes(norm(username));
+      });
+    }
     if (!matchNome) return;
 
     const pendentes = tarefasHoje.filter(t => t.responsavel === matchNome && !t.concluida && !(t.meta_total && (t.meta_atual||0) >= t.meta_total));
@@ -21909,7 +21927,11 @@ document.getElementById('agendaConferenciaSaveBtn').addEventListener('click', as
 });
 
 document.getElementById('btnNovaRaiaAgenda').addEventListener('click', ()=>{
-  const nome = prompt('Nome da pessoa (nova raia):');
+  const nomes = equipeMembrosData.map(m=>m.nome);
+  const sugestao = nomes.length
+    ? `Nomes já cadastrados na Equipe & Metas: ${nomes.join(', ')}\n\nDigite o nome EXATAMENTE como está na Equipe (senão o alerta de pendências não vai casar certo):`
+    : 'Nome da pessoa (nova raia):';
+  const nome = prompt(sugestao);
   if (!nome || !nome.trim()) return;
   abrirAgendaTarefaModal(nome.trim());
 });
