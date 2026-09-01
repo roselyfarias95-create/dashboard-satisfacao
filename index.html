@@ -1147,6 +1147,20 @@
   <div id="erroPersistenteOuterTexto" style="margin-top:6px; word-break:break-word;"></div>
 </div>
 
+<div class="users-modal" id="agendaAlertaModalOverlay" style="display:none; z-index:9999;">
+  <div class="users-box" style="max-width:480px; border:1px solid var(--atencao);">
+    <div class="users-head">
+      <h3 style="color:var(--atencao);">⏰ Você tem tarefas pendentes na Agenda do Dia</h3>
+      <button type="button" class="logout-btn" id="agendaAlertaModalClose">✕</button>
+    </div>
+    <p id="agendaAlertaPrazo" style="font-size:12.5px; color:var(--text-dim); margin:-6px 0 14px;"></p>
+    <div id="agendaAlertaLista" style="max-height:280px; overflow-y:auto;"></div>
+    <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+      <button type="button" class="login-btn" id="agendaAlertaFecharBtn" style="width:auto; margin-top:0; padding:9px 20px;">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <div id="loginOverlay" class="login-overlay">
   <form id="loginForm" class="login-box">
     <div class="login-icon">🏢</div>
@@ -1627,7 +1641,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-N (botão Marcar Tudo por pessoa na Agenda)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-Q (pendências de ontem + alerta de login)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4182,6 +4196,12 @@ CONDOMINIO Y	480	45"></textarea>
       </div>
     </div>
 
+    <div class="subtab-nav" id="agendaSubtabNav">
+      <button type="button" class="subtab-btn active" data-agenda-subtab="hoje">📅 Hoje</button>
+      <button type="button" class="subtab-btn" data-agenda-subtab="historico">📈 Histórico & Evolução</button>
+    </div>
+
+    <div id="agendaViewHoje">
     <div class="agenda-kpi-strip">
       <div class="agenda-kpi"><div class="lbl">Tarefas concluídas</div><div class="val" id="agendaKpiDone">0/0</div></div>
       <div class="agenda-kpi"><div class="lbl">Prioridade alta pendente</div><div class="val" style="color:var(--critico);" id="agendaKpiAlta">0</div></div>
@@ -4231,6 +4251,23 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="clearbtn" id="btnReiniciarDiaAgenda" style="border-color:var(--critico); color:var(--critico);">Reiniciar o dia</button>
       </div>
     </div>
+    </div>
+
+    <div id="agendaViewHistorico" style="display:none;">
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <p class="chart-title">📈 Evolução — últimos 14 dias</p>
+        <p style="font-size:11.5px; color:var(--text-faint); margin:-2px 0 12px;">% de tarefas concluídas por dia (todas as pessoas somadas).</p>
+        <div id="agendaHistoricoGrafico"><p class="empty">Carregando...</p></div>
+      </div>
+
+      <div class="chart-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <p class="chart-title" style="margin:0;">🗓️ Ver um dia específico</p>
+          <input type="date" id="agendaHistoricoDataEscolhida" style="max-width:170px;">
+        </div>
+        <div id="agendaHistoricoDetalhe"><p class="empty">Escolha uma data acima.</p></div>
+      </div>
+    </div>
   </div>
 
   <div class="users-modal" id="agendaConferenciaModalOverlay" style="display:none;">
@@ -4271,6 +4308,9 @@ CONDOMINIO Y	480	45"></textarea>
             <option value="alta">Alta</option>
             <option value="media" selected>Média</option>
           </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta numérica <span style="font-weight:400; text-transform:none;">(opcional — ex: 200 pesquisas)</span>
+          <input type="number" id="agendaTarefaMetaTotal" min="1" placeholder="Deixe em branco pra tarefa simples (marcado/não marcado)" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
@@ -4791,6 +4831,7 @@ function showApp(role, username, allowedTabs){
   document.getElementById('appRoot').style.display = '';
   document.getElementById('roleTag').textContent = `${username} · ${ROLE_LABELS[role] || role}`;
   carregarPerfilUsuario(username);
+  setTimeout(()=>{ verificarAlertaAgendaLogin(username); }, 1200);
   document.getElementById('manageUsersBtn').style.display = role === 'admin' ? '' : 'none';
   document.getElementById('newItemBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
   document.getElementById('newRodadaBtn').style.display = ['admin','editor'].includes(role) ? '' : 'none';
@@ -21526,6 +21567,8 @@ async function loadAgendaDoDia(){
   const agora = new Date();
   document.getElementById('agendaDataLabel').textContent = `${diasSemana[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]}`;
 
+  await agendaTransferirPendentesDeOntem(hoje);
+
   try{
     const [{ data: tarefas }, { data: contexto }, { data: conferencia }] = await Promise.all([
       sb.from('agenda_diaria_tarefas').select('*').eq('data', hoje).order('ordem', { ascending:true }),
@@ -21552,6 +21595,31 @@ async function loadAgendaDoDia(){
   renderAgendaConferencia();
 }
 
+async function agendaTransferirPendentesDeOntem(hoje){
+  try{
+    const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('pendentes_transferidas').eq('data', hoje).maybeSingle();
+    if (contextoHoje && contextoHoje.pendentes_transferidas) return; // já rodou hoje, não duplica
+
+    const d = new Date(hoje + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    const ontem = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const { data: pendentesOntem } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', ontem).eq('concluida', false);
+
+    if (pendentesOntem && pendentesOntem.length){
+      const novas = pendentesOntem.map(t => ({
+        data: hoje, responsavel: t.responsavel, titulo: t.titulo, prioridade: t.prioridade,
+        meta_total: t.meta_total, meta_atual: t.meta_atual, ordem: t.ordem, veio_atrasada: true,
+      }));
+      await sb.from('agenda_diaria_tarefas').insert(novas);
+    }
+
+    await sb.from('agenda_diaria_contexto').upsert({ data: hoje, pendentes_transferidas: true }, { onConflict: 'data' });
+  }catch(e){
+    console.warn('Falha ao transferir pendências de ontem:', e);
+  }
+}
+
 function renderAgendaLanes(){
   const el = document.getElementById('agendaLanes');
   if (!el) return;
@@ -21563,7 +21631,7 @@ function renderAgendaLanes(){
   el.innerHTML = responsaveis.map((resp, i) => {
     const cor = agendaCorPorIndice(i);
     const tarefas = agendaTarefasData.filter(t => t.responsavel === resp);
-    const done = tarefas.filter(t => t.concluida).length;
+    const done = tarefas.filter(t => t.meta_total ? (t.meta_atual||0) >= t.meta_total : t.concluida).length;
     const pct = tarefas.length ? Math.round(done/tarefas.length*100) : 0;
     return `
     <div class="agenda-lane" style="--lane-c:${cor};">
@@ -21573,13 +21641,29 @@ function renderAgendaLanes(){
       </div>
       <div class="agenda-bar-track"><div class="agenda-bar-fill" style="width:${pct}%;"></div></div>
       <div>
-        ${tarefas.map(t => `
+        ${tarefas.map(t => {
+          if (t.meta_total){
+            const pctTarefa = Math.min(100, Math.round((t.meta_atual||0)/t.meta_total*100));
+            return `
+            <div class="agenda-task ${t.concluida?'done':''}" style="flex-direction:column; align-items:stretch; gap:4px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="txt" style="flex:1;">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+                <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="number" min="0" max="${t.meta_total}" value="${t.meta_atual||0}" data-agenda-meta-atual="${t.id}" style="width:64px; padding:3px 6px; font-size:12px;">
+                <span style="font-size:12px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">/ ${t.meta_total} (${pctTarefa}%)</span>
+                <div style="flex:1; height:4px; background:var(--bg-panel-2); border-radius:2px; overflow:hidden;"><div style="height:100%; width:${pctTarefa}%; background:${pctTarefa>=100?'var(--ok)':'var(--lane-c)'}; border-radius:2px;"></div></div>
+              </div>
+            </div>`;
+          }
+          return `
           <label class="agenda-task ${t.concluida?'done':''}">
             <input type="checkbox" data-agenda-check="${t.id}" ${t.concluida?'checked':''}>
-            <span class="txt">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+            <span class="txt">${t.veio_atrasada?'<span class="agenda-badge" style="background:rgba(139,148,167,0.18); color:var(--text-faint);">⏰ atrasada</span> ':''}${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
             <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
-          </label>
-        `).join('')}
+          </label>`;
+        }).join('')}
       </div>
       <div style="display:flex; gap:8px; margin-top:10px;">
         <button type="button" class="clearbtn agenda-addtask" data-agenda-add="${escapeHtml(resp)}" style="flex:1;">+ Nova tarefa</button>
@@ -21596,6 +21680,26 @@ function renderAgendaLanes(){
         if (error) throw error;
         const t = agendaTarefasData.find(x=>String(x.id)===id);
         if (t) t.concluida = cb.checked;
+        renderAgendaLanes();
+        renderAgendaKpis();
+        agendaAtualizarCarimbo();
+      }catch(e){ alert('Erro ao salvar: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-agenda-meta-atual]').forEach(input=>{
+    input.addEventListener('change', async ()=>{
+      const id = input.getAttribute('data-agenda-meta-atual');
+      const t = agendaTarefasData.find(x=>String(x.id)===id);
+      if (!t) return;
+      let valor = parseInt(input.value, 10);
+      if (isNaN(valor) || valor < 0) valor = 0;
+      if (valor > t.meta_total) valor = t.meta_total;
+      const concluidaAgora = valor >= t.meta_total;
+      try{
+        const { error } = await sb.from('agenda_diaria_tarefas').update({ meta_atual: valor, concluida: concluidaAgora }).eq('id', id);
+        if (error) throw error;
+        t.meta_atual = valor;
+        t.concluida = concluidaAgora;
         renderAgendaLanes();
         renderAgendaKpis();
         agendaAtualizarCarimbo();
@@ -21621,9 +21725,12 @@ function renderAgendaLanes(){
       const resp = btn.getAttribute('data-agenda-marcar-tudo');
       if (!confirm(`Marcar todas as tarefas de ${resp} como concluídas?`)) return;
       try{
-        const { error } = await sb.from('agenda_diaria_tarefas').update({ concluida: true }).eq('data', agendaHojeISO()).eq('responsavel', resp);
-        if (error) throw error;
-        agendaTarefasData.filter(t=>t.responsavel===resp).forEach(t=>t.concluida=true);
+        const tarefasDaPessoa = agendaTarefasData.filter(t=>t.responsavel===resp);
+        await Promise.all(tarefasDaPessoa.map(t => {
+          const payload = t.meta_total ? { concluida: true, meta_atual: t.meta_total } : { concluida: true };
+          return sb.from('agenda_diaria_tarefas').update(payload).eq('id', t.id);
+        }));
+        tarefasDaPessoa.forEach(t=>{ t.concluida = true; if (t.meta_total) t.meta_atual = t.meta_total; });
         renderAgendaLanes();
         renderAgendaKpis();
         agendaAtualizarCarimbo();
@@ -21633,9 +21740,10 @@ function renderAgendaLanes(){
 }
 
 function renderAgendaKpis(){
+  const agendaEstaDone = (t) => t.meta_total ? (t.meta_atual||0) >= t.meta_total : t.concluida;
   const total = agendaTarefasData.length;
-  const done = agendaTarefasData.filter(t=>t.concluida).length;
-  const altaPendente = agendaTarefasData.filter(t=>t.prioridade==='alta' && !t.concluida).length;
+  const done = agendaTarefasData.filter(agendaEstaDone).length;
+  const altaPendente = agendaTarefasData.filter(t=>t.prioridade==='alta' && !agendaEstaDone(t)).length;
   document.getElementById('agendaKpiDone').textContent = `${done}/${total}`;
   document.getElementById('agendaKpiAlta').textContent = altaPendente;
   const pct = total ? Math.round(done/total*100) : 0;
@@ -21643,6 +21751,63 @@ function renderAgendaKpis(){
   const circunferencia = 169.6;
   document.getElementById('agendaRingFill').style.strokeDashoffset = circunferencia - (pct/100)*circunferencia;
 }
+
+async function verificarAlertaAgendaLogin(username){
+  if (!sb || !username) return;
+  try{
+    const hoje = agendaHojeISO();
+    const { data: userRow } = await sb.from('app_users').select('nome_completo').eq('username', username).maybeSingle();
+    const nomeCompleto = userRow && userRow.nome_completo ? userRow.nome_completo : '';
+
+    const { data: tarefasHoje } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', hoje);
+    if (!tarefasHoje || !tarefasHoje.length) return;
+
+    const nomesResponsaveis = [...new Set(tarefasHoje.map(t=>t.responsavel))];
+    const norm = (s) => (s||'').toLowerCase().trim();
+    const matchNome = nomesResponsaveis.find(resp => {
+      const r = norm(resp);
+      return r === norm(username) || r === norm(nomeCompleto) ||
+        (nomeCompleto && norm(nomeCompleto).includes(r)) || (nomeCompleto && r.includes(norm(nomeCompleto))) ||
+        norm(username).includes(r) || r.includes(norm(username));
+    });
+    if (!matchNome) return;
+
+    const pendentes = tarefasHoje.filter(t => t.responsavel === matchNome && !t.concluida && !(t.meta_total && (t.meta_atual||0) >= t.meta_total));
+    if (!pendentes.length) return;
+
+    const { data: contexto } = await sb.from('agenda_diaria_contexto').select('fechamento_dia').eq('data', hoje).maybeSingle();
+    const prazo = contexto && contexto.fechamento_dia ? `Prazo: até ${contexto.fechamento_dia}.` : 'Sem horário de fechamento definido pra hoje — combine com sua liderança.';
+    document.getElementById('agendaAlertaPrazo').textContent = `Você tem ${pendentes.length} tarefa(s) pendente(s) hoje. ${prazo}`;
+
+    const listaEl = document.getElementById('agendaAlertaLista');
+    listaEl.innerHTML = pendentes.map(t => `
+      <label class="agenda-task" style="border-bottom:1px solid var(--line);">
+        <input type="checkbox" data-agenda-alerta-check="${t.id}">
+        <span class="txt">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}${t.meta_total?` <span style="font-size:11px; color:var(--text-faint);">(${t.meta_atual||0}/${t.meta_total})</span>`:''}</span>
+      </label>
+    `).join('');
+    listaEl.querySelectorAll('[data-agenda-alerta-check]').forEach(cb=>{
+      cb.addEventListener('change', async ()=>{
+        try{
+          await sb.from('agenda_diaria_tarefas').update({ concluida: cb.checked }).eq('id', cb.getAttribute('data-agenda-alerta-check'));
+          cb.closest('label').style.opacity = cb.checked ? '0.5' : '1';
+        }catch(e){ alert('Erro ao salvar: ' + e.message); }
+      });
+    });
+
+    document.getElementById('agendaAlertaModalOverlay').style.display = 'flex';
+  }catch(e){
+    console.warn('Falha ao verificar alerta de agenda no login:', e);
+  }
+}
+
+document.getElementById('agendaAlertaModalClose').addEventListener('click', ()=>{ document.getElementById('agendaAlertaModalOverlay').style.display = 'none'; });
+document.getElementById('agendaAlertaFecharBtn').addEventListener('click', async ()=>{
+  document.getElementById('agendaAlertaModalOverlay').style.display = 'none';
+  if (typeof loadAgendaDoDia === 'function' && document.getElementById('tabAgendaDia').style.display !== 'none'){
+    await loadAgendaDoDia();
+  }
+});
 
 function agendaAtualizarCarimbo(){
   const agora = new Date();
@@ -21653,6 +21818,7 @@ function abrirAgendaTarefaModal(responsavel){
   document.getElementById('agendaTarefaResponsavel').value = responsavel;
   document.getElementById('agendaTarefaTitulo').value = '';
   document.getElementById('agendaTarefaPrioridade').value = 'media';
+  document.getElementById('agendaTarefaMetaTotal').value = '';
   document.getElementById('agendaTarefaError').style.display = 'none';
   document.getElementById('agendaTarefaModalOverlay').style.display = 'flex';
   document.getElementById('agendaTarefaTitulo').focus();
@@ -21758,9 +21924,11 @@ document.getElementById('agendaTarefaSaveBtn').addEventListener('click', async (
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
   const responsavel = document.getElementById('agendaTarefaResponsavel').value;
   const prioridade = document.getElementById('agendaTarefaPrioridade').value;
+  const metaTotal = document.getElementById('agendaTarefaMetaTotal').value ? parseInt(document.getElementById('agendaTarefaMetaTotal').value, 10) : null;
   try{
     const { error } = await sb.from('agenda_diaria_tarefas').insert({
       data: agendaHojeISO(), responsavel, titulo, prioridade,
+      meta_total: metaTotal, meta_atual: metaTotal ? 0 : null,
       ordem: agendaTarefasData.filter(t=>t.responsavel===responsavel).length + 1,
     });
     if (error) throw error;
@@ -21806,6 +21974,95 @@ document.getElementById('btnReiniciarDiaAgenda').addEventListener('click', async
     await loadAgendaDoDia();
     document.getElementById('agendaUpdatedLabel').textContent = 'Dia reiniciado';
   }catch(e){ alert('Erro ao reiniciar: ' + e.message); }
+});
+
+// ============================================================================
+// AGENDA DO DIA — HISTÓRICO & EVOLUÇÃO
+// ============================================================================
+document.querySelectorAll('[data-agenda-subtab]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-agenda-subtab]').forEach(b=>b.classList.toggle('active', b===btn));
+    const alvo = btn.getAttribute('data-agenda-subtab');
+    document.getElementById('agendaViewHoje').style.display = alvo === 'hoje' ? 'block' : 'none';
+    document.getElementById('agendaViewHistorico').style.display = alvo === 'historico' ? 'block' : 'none';
+    if (alvo === 'historico') renderAgendaHistoricoGrafico();
+  });
+});
+
+async function renderAgendaHistoricoGrafico(){
+  const el = document.getElementById('agendaHistoricoGrafico');
+  if (!el || !sb) return;
+  const hoje = new Date();
+  const inicio = new Date(); inicio.setDate(hoje.getDate() - 13);
+  const inicioISO = `${inicio.getFullYear()}-${String(inicio.getMonth()+1).padStart(2,'0')}-${String(inicio.getDate()).padStart(2,'0')}`;
+
+  try{
+    const { data, error } = await sb.from('agenda_diaria_tarefas').select('data,concluida').gte('data', inicioISO);
+    if (error) throw error;
+
+    const porDia = new Map();
+    for (let i = 0; i < 14; i++){
+      const d = new Date(inicio); d.setDate(inicio.getDate() + i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      porDia.set(iso, { total: 0, done: 0 });
+    }
+    (data||[]).forEach(t=>{
+      if (!porDia.has(t.data)) return;
+      const r = porDia.get(t.data);
+      r.total++;
+      if (t.concluida) r.done++;
+    });
+
+    const dias = [...porDia.keys()];
+    const w = 820, h = 200, padL = 36, padR = 12, padT = 12, padB = 26;
+    const plotW = w-padL-padR, plotH = h-padT-padB;
+    const barW = plotW / dias.length * 0.6;
+    const gap = plotW / dias.length;
+
+    const barras = dias.map((iso, i) => {
+      const r = porDia.get(iso);
+      const pct = r.total ? Math.round(r.done/r.total*100) : 0;
+      const x = padL + i*gap + (gap-barW)/2;
+      const barH = (pct/100) * plotH;
+      const y = padT + plotH - barH;
+      const cor = pct >= 80 ? 'var(--ok)' : pct >= 40 ? 'var(--atencao)' : (r.total ? 'var(--critico)' : 'var(--line)');
+      const [, mes, dia] = iso.split('-');
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(barH,1).toFixed(1)}" fill="${cor}" rx="2"/>
+        <text x="${(x+barW/2).toFixed(1)}" y="${h-8}" font-size="9.5" fill="var(--text-faint)" text-anchor="middle">${dia}/${mes}</text>
+        ${r.total ? `<text x="${(x+barW/2).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="9" fill="var(--text-dim)" text-anchor="middle">${pct}%</text>` : ''}`;
+    }).join('');
+
+    el.innerHTML = `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${barras}</svg>`;
+  }catch(e){
+    el.innerHTML = `<p class="empty">Não foi possível carregar o histórico: ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+document.getElementById('agendaHistoricoDataEscolhida').addEventListener('change', async (ev)=>{
+  const data = ev.target.value;
+  const el = document.getElementById('agendaHistoricoDetalhe');
+  if (!data || !sb) return;
+  el.innerHTML = '<p class="empty">Carregando...</p>';
+  try{
+    const { data: tarefas, error } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', data).order('responsavel',{ascending:true}).order('ordem',{ascending:true});
+    if (error) throw error;
+    if (!tarefas || !tarefas.length){
+      el.innerHTML = '<p class="empty">Nenhuma tarefa registrada nesse dia.</p>';
+      return;
+    }
+    const responsaveis = [...new Set(tarefas.map(t=>t.responsavel))];
+    el.innerHTML = `<div class="agenda-lanes">` + responsaveis.map((resp, i) => {
+      const cor = agendaCorPorIndice(i);
+      const doResp = tarefas.filter(t=>t.responsavel===resp);
+      const done = doResp.filter(t=>t.concluida).length;
+      return `<div class="agenda-lane" style="--lane-c:${cor};">
+        <div class="agenda-lane-head"><h3>${escapeHtml(resp)}</h3><span>${done}/${doResp.length}</span></div>
+        <div>${doResp.map(t => `<div class="agenda-task ${t.concluida?'done':''}"><span style="width:14px;">${t.concluida?'✅':'⬜'}</span><span class="txt">${escapeHtml(t.titulo)}</span></div>`).join('')}</div>
+      </div>`;
+    }).join('') + `</div>`;
+  }catch(e){
+    el.innerHTML = `<p class="empty">Erro ao carregar: ${escapeHtml(e.message)}</p>`;
+  }
 });
 
 function determinarTimbrado(){
