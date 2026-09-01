@@ -1641,7 +1641,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-R (nomes padronizados: login ligado à Equipe)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-V (tarefas fixas diárias + editar meta depois)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4202,6 +4202,12 @@ CONDOMINIO Y	480	45"></textarea>
     <div class="subtab-nav" id="agendaSubtabNav">
       <button type="button" class="subtab-btn active" data-agenda-subtab="hoje">📅 Hoje</button>
       <button type="button" class="subtab-btn" data-agenda-subtab="historico">📈 Histórico & Evolução</button>
+      <button type="button" class="subtab-btn" data-agenda-subtab="fechamento">📆 Fechamento Mensal</button>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:14px;">
+      <button type="button" class="clearbtn" id="btnAgendaExportarExcel">📊 Excel</button>
+      <button type="button" class="clearbtn" id="btnAgendaExportarPdf">📄 PDF</button>
     </div>
 
     <div id="agendaViewHoje">
@@ -4220,6 +4226,7 @@ CONDOMINIO Y	480	45"></textarea>
 
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button type="button" class="clearbtn" id="btnNovaRaiaAgenda">+ Nova pessoa</button>
+      <button type="button" class="clearbtn" id="btnGerenciarTarefasFixas">⚙️ Tarefas Fixas</button>
     </div>
     <div class="agenda-lanes" id="agendaLanes">
       <p class="empty">Carregando...</p>
@@ -4271,7 +4278,29 @@ CONDOMINIO Y	480	45"></textarea>
         <div id="agendaHistoricoDetalhe"><p class="empty">Escolha uma data acima.</p></div>
       </div>
     </div>
-  </div>
+
+    <div id="agendaViewFechamento" style="display:none;">
+      <div class="toolbar" style="margin-bottom:16px;">
+        <input type="month" id="agendaFechamentoMes" style="max-width:170px;">
+      </div>
+
+      <div class="chart-panel" style="margin-bottom:16px;">
+        <p class="chart-title">📊 Produtividade do Mês por Pessoa</p>
+        <div class="checklist-table-wrap">
+          <table class="checklist-table">
+            <thead><tr><th>Pessoa</th><th style="text-align:center;">Total de Tarefas</th><th style="text-align:center;">Concluídas</th><th style="text-align:center;">% Conclusão</th><th style="text-align:center;">Atrasadas</th></tr></thead>
+            <tbody id="agendaFechamentoTabela"><tr><td class="empty">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <p class="chart-title">🤖 Sugestão de Metas pro Próximo Mês</p>
+        <p style="font-size:11.5px; color:var(--text-faint); margin:-4px 0 12px;">Análise automática por regras, com base no desempenho deste mês — não é uma IA externa de verdade, é o mesmo tipo de parecer automático já usado em outras partes do sistema.</p>
+        <div id="agendaFechamentoSugestoes"><p class="empty">Escolha um mês acima.</p></div>
+      </div>
+    </div>
+    </div>
 
   <div class="users-modal" id="agendaConferenciaModalOverlay" style="display:none;">
     <div class="users-box" style="max-width:420px;">
@@ -4303,6 +4332,10 @@ CONDOMINIO Y	480	45"></textarea>
       </div>
       <div class="users-form" style="margin-bottom:14px; grid-template-columns:1fr;">
         <input type="hidden" id="agendaTarefaResponsavel">
+        <input type="hidden" id="agendaTarefaEditandoId">
+        <label id="agendaTarefaResponsavelWrap" style="display:none; font-size:11px; color:var(--text-faint); font-weight:600;">Pessoa
+          <select id="agendaTarefaResponsavelSelect" style="width:100%; margin-top:4px;"></select>
+        </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tarefa
           <input type="text" id="agendaTarefaTitulo" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
@@ -4321,6 +4354,41 @@ CONDOMINIO Y	480	45"></textarea>
         <button type="button" class="login-btn" id="agendaTarefaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Adicionar</button>
       </div>
       <p class="users-error" id="agendaTarefaError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="agendaFixasModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+      <div class="users-head">
+        <h3>⚙️ Tarefas Fixas (repetem todo dia)</h3>
+        <button type="button" class="logout-btn" id="agendaFixasModalClose">✕</button>
+      </div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:-6px 0 14px;">Essas tarefas são criadas automaticamente todo dia, pra ninguém esquecer da rotina fixa. Editar aqui não muda os dias que já passaram.</p>
+      <div class="checklist-table-wrap" style="margin-bottom:14px;">
+        <table class="checklist-table">
+          <thead><tr><th>Pessoa</th><th>Tarefa</th><th>Prioridade</th><th style="text-align:center;">Meta</th><th></th></tr></thead>
+          <tbody id="agendaFixasTabela"><tr><td class="empty">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; border-top:1px solid var(--line); padding-top:14px;">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600; flex:1; min-width:140px;">Pessoa
+          <select id="agendaFixaNovaResponsavel" style="width:100%; margin-top:4px;"></select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600; flex:2; min-width:200px;">Tarefa
+          <input type="text" id="agendaFixaNovaTitulo" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Prioridade
+          <select id="agendaFixaNovaPrioridade" style="margin-top:4px;">
+            <option value="alta">Alta</option>
+            <option value="media" selected>Média</option>
+          </select>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta
+          <input type="number" id="agendaFixaNovaMeta" min="1" placeholder="opcional" style="width:80px; margin-top:4px;">
+        </label>
+        <button type="button" class="login-btn" id="agendaFixaAddBtn" style="width:auto; margin-top:0; padding:9px 16px;">+ Adicionar</button>
+      </div>
+      <p class="users-error" id="agendaFixaError" style="display:none;"></p>
     </div>
   </div>
 
@@ -21573,6 +21641,7 @@ async function loadAgendaDoDia(){
   document.getElementById('agendaDataLabel').textContent = `${diasSemana[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]}`;
 
   await agendaTransferirPendentesDeOntem(hoje);
+  await agendaInserirTarefasFixasDeHoje(hoje);
 
   try{
     const [{ data: tarefas }, { data: contexto }, { data: conferencia }] = await Promise.all([
@@ -21625,6 +21694,100 @@ async function agendaTransferirPendentesDeOntem(hoje){
   }
 }
 
+// ============================================================================
+// TAREFAS FIXAS — modelo que se repete todo dia automaticamente
+// ============================================================================
+let agendaTarefasFixasData = [];
+
+async function agendaInserirTarefasFixasDeHoje(hoje){
+  try{
+    const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('tarefas_fixas_inseridas').eq('data', hoje).maybeSingle();
+    if (contextoHoje && contextoHoje.tarefas_fixas_inseridas) return; // já rodou hoje, não duplica
+
+    const { data: fixas } = await sb.from('agenda_tarefas_fixas').select('*').eq('ativo', true).order('ordem', { ascending:true });
+    if (fixas && fixas.length){
+      const novas = fixas.map(f => ({
+        data: hoje, responsavel: f.responsavel, titulo: f.titulo, prioridade: f.prioridade,
+        meta_total: f.meta_total, meta_atual: f.meta_total ? 0 : null, ordem: f.ordem,
+      }));
+      await sb.from('agenda_diaria_tarefas').insert(novas);
+    }
+    await sb.from('agenda_diaria_contexto').upsert({ data: hoje, tarefas_fixas_inseridas: true }, { onConflict: 'data' });
+  }catch(e){
+    console.warn('Falha ao inserir tarefas fixas de hoje (a tabela pode não existir ainda no Supabase):', e);
+  }
+}
+
+async function carregarTarefasFixas(){
+  if (!sb) return;
+  try{
+    const { data } = await sb.from('agenda_tarefas_fixas').select('*').eq('ativo', true).order('ordem', { ascending:true });
+    agendaTarefasFixasData = data || [];
+  }catch(e){
+    agendaTarefasFixasData = [];
+  }
+  renderAgendaFixasTabela();
+}
+
+function renderAgendaFixasTabela(){
+  const el = document.getElementById('agendaFixasTabela');
+  if (!el) return;
+  if (!agendaTarefasFixasData.length){
+    el.innerHTML = '<tr><td class="empty">Nenhuma tarefa fixa cadastrada ainda.</td></tr>';
+    return;
+  }
+  el.innerHTML = agendaTarefasFixasData.map(f => `
+    <tr>
+      <td class="ck-name">${escapeHtml(f.responsavel)}</td>
+      <td>${escapeHtml(f.titulo)}</td>
+      <td>${f.prioridade==='alta'?'Alta':'Média'}</td>
+      <td style="text-align:center;">${f.meta_total || '—'}</td>
+      <td style="text-align:center;"><button type="button" data-remover-fixa="${f.id}" style="background:none; border:none; color:var(--critico); cursor:pointer;">✕</button></td>
+    </tr>
+  `).join('');
+  el.querySelectorAll('[data-remover-fixa]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if (!confirm('Remover essa tarefa fixa? (não afeta os dias que já passaram)')) return;
+      try{
+        const { error } = await sb.from('agenda_tarefas_fixas').update({ ativo: false }).eq('id', btn.getAttribute('data-remover-fixa'));
+        if (error) throw error;
+        await carregarTarefasFixas();
+      }catch(e){ alert('Erro ao remover: ' + e.message); }
+    });
+  });
+}
+
+document.getElementById('btnGerenciarTarefasFixas').addEventListener('click', async ()=>{
+  const select = document.getElementById('agendaFixaNovaResponsavel');
+  select.innerHTML = equipeMembrosData.length
+    ? equipeMembrosData.map(m => `<option value="${escapeHtml(m.nome)}">${escapeHtml(m.nome)}</option>`).join('')
+    : '<option value="">Cadastre alguém em Equipe & Metas primeiro</option>';
+  document.getElementById('agendaFixaError').style.display = 'none';
+  document.getElementById('agendaFixasModalOverlay').style.display = 'flex';
+  await carregarTarefasFixas();
+});
+document.getElementById('agendaFixasModalClose').addEventListener('click', ()=>{ document.getElementById('agendaFixasModalOverlay').style.display = 'none'; });
+
+document.getElementById('agendaFixaAddBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('agendaFixaError');
+  const responsavel = document.getElementById('agendaFixaNovaResponsavel').value;
+  const titulo = document.getElementById('agendaFixaNovaTitulo').value.trim();
+  if (!responsavel || !titulo){ errEl.textContent = 'Preencha a pessoa e a tarefa.'; errEl.style.display = 'block'; return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  const prioridade = document.getElementById('agendaFixaNovaPrioridade').value;
+  const metaTotal = document.getElementById('agendaFixaNovaMeta').value ? parseInt(document.getElementById('agendaFixaNovaMeta').value, 10) : null;
+  try{
+    const { error } = await sb.from('agenda_tarefas_fixas').insert({ responsavel, titulo, prioridade, meta_total: metaTotal, ordem: agendaTarefasFixasData.length + 1 });
+    if (error) throw error;
+    document.getElementById('agendaFixaNovaTitulo').value = '';
+    document.getElementById('agendaFixaNovaMeta').value = '';
+    await carregarTarefasFixas();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('agenda_tarefas_fixas') ? ' — confira se a tabela já foi criada no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
 function renderAgendaLanes(){
   const el = document.getElementById('agendaLanes');
   if (!el) return;
@@ -21653,6 +21816,8 @@ function renderAgendaLanes(){
             <div class="agenda-task ${t.concluida?'done':''}" style="flex-direction:column; align-items:stretch; gap:4px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="txt" style="flex:1;">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+                <button type="button" data-agenda-editar="${t.id}" title="Editar tarefa" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px;">✏️</button>
+                <button type="button" class="agenda-del" data-agenda-promover="${t.id}" title="Virar Demanda formal" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px;">📋→</button>
                 <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
@@ -21666,6 +21831,8 @@ function renderAgendaLanes(){
           <label class="agenda-task ${t.concluida?'done':''}">
             <input type="checkbox" data-agenda-check="${t.id}" ${t.concluida?'checked':''}>
             <span class="txt">${t.veio_atrasada?'<span class="agenda-badge" style="background:rgba(139,148,167,0.18); color:var(--text-faint);">⏰ atrasada</span> ':''}${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+            <button type="button" data-agenda-editar="${t.id}" title="Editar tarefa" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px; flex-shrink:0;">✏️</button>
+            <button type="button" data-agenda-promover="${t.id}" title="Virar Demanda formal" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px; flex-shrink:0;">📋→</button>
             <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
           </label>`;
         }).join('')}
@@ -21720,6 +21887,20 @@ function renderAgendaLanes(){
         if (error) throw error;
         await loadAgendaDoDia();
       }catch(e){ alert('Erro ao excluir: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-agenda-promover]').forEach(btn=>{
+    btn.addEventListener('click', (ev)=>{
+      ev.preventDefault();
+      const t = agendaTarefasData.find(x => String(x.id) === btn.getAttribute('data-agenda-promover'));
+      if (t) promoverTarefaParaDemanda(t);
+    });
+  });
+  el.querySelectorAll('[data-agenda-editar]').forEach(btn=>{
+    btn.addEventListener('click', (ev)=>{
+      ev.preventDefault();
+      const t = agendaTarefasData.find(x => String(x.id) === btn.getAttribute('data-agenda-editar'));
+      if (t) abrirAgendaTarefaModal(t.responsavel, t);
     });
   });
   el.querySelectorAll('[data-agenda-add]').forEach(btn=>{
@@ -21827,16 +22008,46 @@ document.getElementById('agendaAlertaFecharBtn').addEventListener('click', async
   }
 });
 
+function promoverTarefaParaDemanda(tarefa){
+  if (typeof abrirDemandaModal !== 'function'){
+    alert('A tela de Demandas ainda não carregou — abre a aba Demandas uma vez e tenta de novo.');
+    return;
+  }
+  abrirDemandaModal(null); // abre em modo "Nova Demanda" (não edição), com os padrões de sempre
+  document.getElementById('demDescricao').value = tarefa.titulo;
+  document.getElementById('demPrioridade').value = tarefa.prioridade === 'alta' ? 'Alta' : 'Média';
+  if (typeof DEM_RESPONSAVEIS !== 'undefined' && DEM_RESPONSAVEIS.includes(tarefa.responsavel)){
+    document.getElementById('demResponsavel').value = tarefa.responsavel;
+  }
+  document.getElementById('demModalTitle').textContent = '+ Nova Demanda (a partir da Agenda do Dia)';
+}
+
 function agendaAtualizarCarimbo(){
   const agora = new Date();
   document.getElementById('agendaUpdatedLabel').textContent = `Última atualização às ${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
 }
 
-function abrirAgendaTarefaModal(responsavel){
-  document.getElementById('agendaTarefaResponsavel').value = responsavel;
-  document.getElementById('agendaTarefaTitulo').value = '';
-  document.getElementById('agendaTarefaPrioridade').value = 'media';
-  document.getElementById('agendaTarefaMetaTotal').value = '';
+function abrirAgendaTarefaModal(responsavel, tarefaParaEditar){
+  const wrapSelect = document.getElementById('agendaTarefaResponsavelWrap');
+  if (responsavel){
+    document.getElementById('agendaTarefaResponsavel').value = responsavel;
+    wrapSelect.style.display = 'none';
+  } else {
+    document.getElementById('agendaTarefaResponsavel').value = '';
+    const select = document.getElementById('agendaTarefaResponsavelSelect');
+    if (equipeMembrosData.length){
+      select.innerHTML = equipeMembrosData.map(m => `<option value="${escapeHtml(m.nome)}">${escapeHtml(m.nome)}</option>`).join('');
+    } else {
+      select.innerHTML = '<option value="">Nenhum membro cadastrado — vá em Equipe & Metas primeiro</option>';
+    }
+    wrapSelect.style.display = 'block';
+  }
+  document.getElementById('agendaTarefaEditandoId').value = tarefaParaEditar ? tarefaParaEditar.id : '';
+  document.querySelector('#agendaTarefaModalOverlay h3').textContent = tarefaParaEditar ? 'Editar Tarefa' : 'Nova Tarefa';
+  document.getElementById('agendaTarefaSaveBtn').textContent = tarefaParaEditar ? 'Salvar' : 'Adicionar';
+  document.getElementById('agendaTarefaTitulo').value = tarefaParaEditar ? tarefaParaEditar.titulo : '';
+  document.getElementById('agendaTarefaPrioridade').value = tarefaParaEditar ? tarefaParaEditar.prioridade : 'media';
+  document.getElementById('agendaTarefaMetaTotal').value = tarefaParaEditar && tarefaParaEditar.meta_total ? tarefaParaEditar.meta_total : '';
   document.getElementById('agendaTarefaError').style.display = 'none';
   document.getElementById('agendaTarefaModalOverlay').style.display = 'flex';
   document.getElementById('agendaTarefaTitulo').focus();
@@ -21927,13 +22138,7 @@ document.getElementById('agendaConferenciaSaveBtn').addEventListener('click', as
 });
 
 document.getElementById('btnNovaRaiaAgenda').addEventListener('click', ()=>{
-  const nomes = equipeMembrosData.map(m=>m.nome);
-  const sugestao = nomes.length
-    ? `Nomes já cadastrados na Equipe & Metas: ${nomes.join(', ')}\n\nDigite o nome EXATAMENTE como está na Equipe (senão o alerta de pendências não vai casar certo):`
-    : 'Nome da pessoa (nova raia):';
-  const nome = prompt(sugestao);
-  if (!nome || !nome.trim()) return;
-  abrirAgendaTarefaModal(nome.trim());
+  abrirAgendaTarefaModal(null);
 });
 
 document.getElementById('agendaTarefaModalClose').addEventListener('click', ()=>{ document.getElementById('agendaTarefaModalOverlay').style.display = 'none'; });
@@ -21944,16 +22149,28 @@ document.getElementById('agendaTarefaSaveBtn').addEventListener('click', async (
   const titulo = document.getElementById('agendaTarefaTitulo').value.trim();
   if (!titulo){ errEl.textContent = 'Escreva a tarefa.'; errEl.style.display = 'block'; return; }
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
-  const responsavel = document.getElementById('agendaTarefaResponsavel').value;
+  const wrapVisivel = document.getElementById('agendaTarefaResponsavelWrap').style.display !== 'none';
+  const responsavel = wrapVisivel ? document.getElementById('agendaTarefaResponsavelSelect').value : document.getElementById('agendaTarefaResponsavel').value;
+  if (!responsavel){ errEl.textContent = 'Selecione a pessoa.'; errEl.style.display = 'block'; return; }
   const prioridade = document.getElementById('agendaTarefaPrioridade').value;
   const metaTotal = document.getElementById('agendaTarefaMetaTotal').value ? parseInt(document.getElementById('agendaTarefaMetaTotal').value, 10) : null;
+  const editandoId = document.getElementById('agendaTarefaEditandoId').value;
   try{
-    const { error } = await sb.from('agenda_diaria_tarefas').insert({
-      data: agendaHojeISO(), responsavel, titulo, prioridade,
-      meta_total: metaTotal, meta_atual: metaTotal ? 0 : null,
-      ordem: agendaTarefasData.filter(t=>t.responsavel===responsavel).length + 1,
-    });
-    if (error) throw error;
+    let result;
+    if (editandoId){
+      const tarefaAtual = agendaTarefasData.find(t => String(t.id) === editandoId);
+      const metaAtualAjustada = metaTotal ? Math.min(tarefaAtual && tarefaAtual.meta_atual || 0, metaTotal) : null;
+      result = await sb.from('agenda_diaria_tarefas').update({
+        titulo, prioridade, meta_total: metaTotal, meta_atual: metaTotal ? metaAtualAjustada : null,
+      }).eq('id', editandoId);
+    } else {
+      result = await sb.from('agenda_diaria_tarefas').insert({
+        data: agendaHojeISO(), responsavel, titulo, prioridade,
+        meta_total: metaTotal, meta_atual: metaTotal ? 0 : null,
+        ordem: agendaTarefasData.filter(t=>t.responsavel===responsavel).length + 1,
+      });
+    }
+    if (result.error) throw result.error;
     document.getElementById('agendaTarefaModalOverlay').style.display = 'none';
     await loadAgendaDoDia();
     agendaAtualizarCarimbo();
@@ -22007,9 +22224,90 @@ document.querySelectorAll('[data-agenda-subtab]').forEach(btn=>{
     const alvo = btn.getAttribute('data-agenda-subtab');
     document.getElementById('agendaViewHoje').style.display = alvo === 'hoje' ? 'block' : 'none';
     document.getElementById('agendaViewHistorico').style.display = alvo === 'historico' ? 'block' : 'none';
+    document.getElementById('agendaViewFechamento').style.display = alvo === 'fechamento' ? 'block' : 'none';
     if (alvo === 'historico') renderAgendaHistoricoGrafico();
+    if (alvo === 'fechamento') renderAgendaFechamentoMensal();
   });
 });
+
+// ============================================================================
+// AGENDA DO DIA — FECHAMENTO MENSAL: produtividade + sugestão de metas
+// ============================================================================
+function agendaMesAtualISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+async function renderAgendaFechamentoMensal(){
+  const selMes = document.getElementById('agendaFechamentoMes');
+  if (!selMes.value) selMes.value = agendaMesAtualISO();
+  const mes = selMes.value;
+  const tabelaEl = document.getElementById('agendaFechamentoTabela');
+  const sugestoesEl = document.getElementById('agendaFechamentoSugestoes');
+  tabelaEl.innerHTML = '<tr><td class="empty">Carregando...</td></tr>';
+  sugestoesEl.innerHTML = '<p class="empty">Carregando...</p>';
+
+  if (!sb) return;
+  try{
+    const { data: tarefasMes } = await sb.from('agenda_diaria_tarefas').select('*').gte('data', `${mes}-01`).lt('data', proximoMesISO(mes) + '-01');
+    const lista = tarefasMes || [];
+    const responsaveis = [...new Set(lista.map(t=>t.responsavel))];
+
+    const resumo = responsaveis.map(resp => {
+      const doResp = lista.filter(t=>t.responsavel===resp);
+      const concluidas = doResp.filter(t => t.meta_total ? (t.meta_atual||0) >= t.meta_total : t.concluida).length;
+      const atrasadas = doResp.filter(t=>t.veio_atrasada).length;
+      const pct = doResp.length ? Math.round(concluidas/doResp.length*100) : 0;
+      return { resp, total: doResp.length, concluidas, pct, atrasadas };
+    }).sort((a,b) => b.pct - a.pct);
+
+    if (!resumo.length){
+      tabelaEl.innerHTML = '<tr><td class="empty">Nenhuma tarefa registrada nesse mês.</td></tr>';
+      sugestoesEl.innerHTML = '<p class="empty">Sem dados suficientes pra sugerir metas.</p>';
+      return;
+    }
+
+    tabelaEl.innerHTML = resumo.map(r => `
+      <tr>
+        <td class="ck-name">${escapeHtml(r.resp)}</td>
+        <td style="text-align:center;">${r.total}</td>
+        <td style="text-align:center;">${r.concluidas}</td>
+        <td style="text-align:center; color:${r.pct>=80?'var(--ok)':r.pct>=50?'var(--atencao)':'var(--critico)'}; font-weight:600;">${r.pct}%</td>
+        <td style="text-align:center; color:${r.atrasadas>0?'var(--critico)':'var(--text-faint)'};">${r.atrasadas}</td>
+      </tr>
+    `).join('');
+
+    sugestoesEl.innerHTML = resumo.map(r => `<div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--line);">
+      <b style="color:var(--text);">${escapeHtml(r.resp)}</b>
+      <p style="font-size:12.5px; color:var(--text-dim); margin:4px 0 0;">${gerarSugestaoMetaIA(r)}</p>
+    </div>`).join('');
+  }catch(e){
+    tabelaEl.innerHTML = `<tr><td class="empty">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
+    sugestoesEl.innerHTML = '';
+  }
+}
+
+function proximoMesISO(mes){
+  const [ano, m] = mes.split('-').map(Number);
+  const d = new Date(ano, m, 1); // m já é o próximo mês em base 0
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function gerarSugestaoMetaIA(r){
+  if (r.total === 0) return 'Sem tarefas registradas nesse mês pra essa pessoa.';
+  if (r.pct >= 90 && r.atrasadas === 0){
+    return `🟢 Excelente ritmo (${r.pct}% concluído, sem atrasos). Considere aumentar um pouco a meta diária pro próximo mês, já que o volume atual está sendo bem absorvido.`;
+  }
+  if (r.pct >= 70){
+    return `🟡 Bom desempenho (${r.pct}% concluído${r.atrasadas ? `, ${r.atrasadas} tarefa(s) precisou(aram) de mais tempo` : ''}). Manter a meta atual parece razoável pro próximo mês.`;
+  }
+  if (r.pct >= 40){
+    return `🟠 Desempenho abaixo do esperado (${r.pct}% concluído, ${r.atrasadas} atrasada(s)). Vale conversar sobre o que está travando — pode ser volume alto demais pra meta atual, ou algum bloqueio recorrente.`;
+  }
+  return `🔴 Muitas pendências esse mês (só ${r.pct}% concluído, ${r.atrasadas} atrasada(s)). Recomendo revisar a meta pra baixo temporariamente e entender a causa antes de aumentar de novo.`;
+}
+
+document.getElementById('agendaFechamentoMes').addEventListener('change', renderAgendaFechamentoMensal);
 
 async function renderAgendaHistoricoGrafico(){
   const el = document.getElementById('agendaHistoricoGrafico');
@@ -22086,6 +22384,99 @@ document.getElementById('agendaHistoricoDataEscolhida').addEventListener('change
     el.innerHTML = `<p class="empty">Erro ao carregar: ${escapeHtml(e.message)}</p>`;
   }
 });
+
+// ============================================================================
+// AGENDA DO DIA — EXPORTAÇÃO EXCEL E PDF
+// ============================================================================
+function agendaEstaDoneExport(t){ return t.meta_total ? (t.meta_atual||0) >= t.meta_total : t.concluida; }
+
+function exportarAgendaExcel(){
+  const subAtiva = document.querySelector('[data-agenda-subtab].active').getAttribute('data-agenda-subtab');
+  const wb = XLSX.utils.book_new();
+
+  if (subAtiva === 'fechamento'){
+    const linhas = [...document.querySelectorAll('#agendaFechamentoTabela tr')].map(tr => {
+      const cels = [...tr.querySelectorAll('td')];
+      if (cels.length < 5) return null;
+      return { Pessoa: cels[0].textContent.trim(), 'Total de Tarefas': cels[1].textContent.trim(), Concluídas: cels[2].textContent.trim(), '% Conclusão': cels[3].textContent.trim(), Atrasadas: cels[4].textContent.trim() };
+    }).filter(Boolean);
+    if (!linhas.length){ alert('Nada pra exportar ainda — escolha um mês com dados.'); return; }
+    const ws = XLSX.utils.json_to_sheet(linhas);
+    XLSX.utils.book_append_sheet(wb, ws, 'Fechamento Mensal');
+    XLSX.writeFile(wb, `agenda_fechamento_${document.getElementById('agendaFechamentoMes').value}.xlsx`);
+    return;
+  }
+
+  const linhas = agendaTarefasData.map(t => ({
+    Responsável: t.responsavel, Tarefa: t.titulo, Prioridade: t.prioridade === 'alta' ? 'Alta' : 'Média',
+    Concluída: agendaEstaDoneExport(t) ? 'Sim' : 'Não',
+    Meta: t.meta_total ? `${t.meta_atual||0}/${t.meta_total}` : '—',
+    'Veio Atrasada': t.veio_atrasada ? 'Sim' : 'Não',
+  }));
+  if (!linhas.length){ alert('Nenhuma tarefa pra exportar hoje.'); return; }
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  ws['!cols'] = [{wch:16},{wch:50},{wch:10},{wch:10},{wch:10},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Agenda de Hoje');
+  XLSX.writeFile(wb, `agenda_do_dia_${agendaHojeISO()}.xlsx`);
+}
+
+function exportarAgendaPDF(){
+  const subAtiva = document.querySelector('[data-agenda-subtab].active').getAttribute('data-agenda-subtab');
+  const timbrado = determinarTimbrado();
+  const imgTopoB64 = timbrado === 'secopi' ? TIMBRADO_TOPO_SECOPI : TIMBRADO_TOPO_SERVIS;
+  const emitido = new Date().toLocaleString('pt-BR');
+
+  let titulo = 'Agenda do Dia';
+  let corpoHtml = '';
+
+  if (subAtiva === 'fechamento'){
+    const mesTxt = document.getElementById('agendaFechamentoMes').value;
+    titulo = `Fechamento Mensal da Agenda — ${mesTxt}`;
+    corpoHtml = `
+      <table class="rel-table"><thead><tr><th>Pessoa</th><th>Total</th><th>Concluídas</th><th>% Conclusão</th><th>Atrasadas</th></tr></thead>
+      <tbody>${[...document.querySelectorAll('#agendaFechamentoTabela tr')].map(tr=>tr.outerHTML).join('')}</tbody></table>
+      <h2 style="margin-top:22px;">🤖 Sugestão de Metas</h2>
+      ${document.getElementById('agendaFechamentoSugestoes').innerHTML}`;
+  } else {
+    titulo = `Agenda do Dia — ${document.getElementById('agendaDataLabel').textContent}`;
+    const responsaveis = [...new Set(agendaTarefasData.map(t=>t.responsavel))];
+    corpoHtml = responsaveis.map(resp => {
+      const doResp = agendaTarefasData.filter(t=>t.responsavel===resp);
+      const done = doResp.filter(agendaEstaDoneExport).length;
+      return `<h2>${escapeHtml(resp)} — ${done}/${doResp.length}</h2>
+        <table class="rel-table"><thead><tr><th style="width:24px;"></th><th>Tarefa</th><th>Prioridade</th></tr></thead>
+        <tbody>${doResp.map(t=>`<tr><td style="text-align:center;">${agendaEstaDoneExport(t)?'✅':'⬜'}</td><td>${escapeHtml(t.titulo)}${t.meta_total?` (${t.meta_atual||0}/${t.meta_total})`:''}</td><td>${t.prioridade==='alta'?'Alta':'Média'}</td></tr>`).join('')}</tbody></table>`;
+    }).join('');
+  }
+
+  const janela = window.open('', '_blank');
+  janela.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>${escapeHtml(titulo)}</title>
+  <style>
+    @page{ size: A4 landscape; margin: 14mm; }
+    *{ box-sizing:border-box; }
+    html, body{ margin:0; }
+    body{ font-family:Arial,Helvetica,sans-serif; color:#1a2333; }
+    .topo-logo{ width:200px; display:block; margin-bottom:14px; }
+    h1{ font-size:18px; margin:0 0 2px; color:#222f59; }
+    h2{ font-size:14px; margin:20px 0 6px; color:#222f59; }
+    p.sub{ font-size:11px; color:#6b7280; margin:0 0 14px; }
+    table.rel-table{ width:100%; border-collapse:collapse; font-size:11px; background:#fff; margin-bottom:6px; }
+    table.rel-table th{ background:#222f59; color:#fff; text-align:left; padding:5px 7px; font-size:10px; text-transform:uppercase; }
+    table.rel-table td{ padding:5px 7px; border-bottom:1px solid #e5e7eb; }
+    table.rel-table tr:nth-child(even) td{ background:#f7f8fa; }
+  </style></head><body>
+    <img class="topo-logo" src="${imgTopoB64}">
+    <h1>${escapeHtml(titulo)}</h1>
+    <p class="sub">Sucesso do Cliente · Servis Eletrônica · Emitido em ${emitido}</p>
+    ${corpoHtml}
+    <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };<\/script>
+  </body></html>`);
+  janela.document.close();
+}
+
+document.getElementById('btnAgendaExportarExcel').addEventListener('click', exportarAgendaExcel);
+document.getElementById('btnAgendaExportarPdf').addEventListener('click', exportarAgendaPDF);
 
 function determinarTimbrado(){
   const painel = getAbaAtivaVisivel();
