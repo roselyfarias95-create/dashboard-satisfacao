@@ -661,6 +661,39 @@
 
   /* ---------- FLUXO DE RECLAMAÇÕES ---------- */
   .fluxo-etapas{ display:flex; gap:10px; overflow-x:auto; padding:6px 2px 10px; }
+
+  /* ---------- AGENDA DO DIA ---------- */
+  .agenda-titulo{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:26px; margin:0 0 4px; color:var(--text); letter-spacing:-0.01em; }
+  .agenda-sub{ margin:0; color:var(--text-faint); font-size:13.5px; }
+  .agenda-kpi-strip{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
+  .agenda-kpi{ background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .agenda-kpi .lbl{ font-size:12px; color:var(--text-faint); margin-bottom:6px; }
+  .agenda-kpi .val{ font-family:'IBM Plex Mono',monospace; font-size:21px; font-weight:600; color:var(--text); }
+  .agenda-lanes{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:16px; margin-bottom:22px; }
+  .agenda-lane{ background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:18px 18px 14px; border-top:3px solid var(--lane-c); }
+  .agenda-lane-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .agenda-lane-head h3{ font-family:'Space Grotesk',sans-serif; font-size:16px; margin:0; color:var(--text); }
+  .agenda-lane-head span{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-faint); }
+  .agenda-bar-track{ height:5px; background:var(--bg-panel-2); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+  .agenda-bar-fill{ height:100%; background:var(--lane-c); border-radius:3px; transition:width .4s ease; }
+  .agenda-task{ display:flex; align-items:flex-start; gap:9px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .agenda-task:last-of-type{ border-bottom:none; }
+  .agenda-task input[type=checkbox]{ appearance:none; -webkit-appearance:none; width:16px; height:16px; margin-top:2px; border:1.5px solid var(--text-faint); border-radius:4px; flex-shrink:0; cursor:pointer; position:relative; background:transparent; }
+  .agenda-task input[type=checkbox]:checked{ background:var(--lane-c); border-color:var(--lane-c); }
+  .agenda-task input[type=checkbox]:checked::after{ content:""; position:absolute; left:4px; top:1px; width:5px; height:9px; border:solid #12161d; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .agenda-task .txt{ font-size:13.5px; line-height:1.4; color:var(--text-dim); flex:1; }
+  .agenda-task.done .txt{ color:var(--text-faint); text-decoration:line-through; }
+  .agenda-badge{ font-size:10px; padding:1.5px 6px; border-radius:4px; margin-left:6px; display:inline-block; vertical-align:middle; font-family:'IBM Plex Mono',monospace; background:rgba(255,77,94,0.14); color:var(--critico); }
+  .agenda-badge.media{ background:rgba(245,158,11,0.14); color:var(--atencao); }
+  .agenda-del{ background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px; flex-shrink:0; }
+  .agenda-addtask{ margin-top:10px; width:100%; }
+  .agenda-bottom{ display:grid; grid-template-columns:1fr 1.3fr; gap:16px; margin-bottom:20px; }
+  .agenda-box{ background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .agenda-box h4{ font-family:'Space Grotesk',sans-serif; font-size:14px; margin:0 0 12px; color:var(--text-faint); font-weight:600; }
+  .agenda-box.regra{ border-color:rgba(245,158,11,0.35); }
+  .agenda-box.regra p{ color:var(--atencao); font-weight:500; }
+  .agenda-footer{ display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-faint); }
+  @media (max-width:860px){ .agenda-kpi-strip{ grid-template-columns:repeat(2,1fr); } .agenda-bottom{ grid-template-columns:1fr; } }
   .fluxo-etapa{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:170px; flex-shrink:0; position:relative; }
   .fluxo-etapa .fluxo-num{
     width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff;
@@ -1594,7 +1627,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-I (corrigido: erro de script no backup)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-N (botão Marcar Tudo por pessoa na Agenda)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1644,6 +1677,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="tab-btn" data-tab="equipeMetas"><span class="tab-icon">👥</span><span class="tab-label">Equipe & Metas</span></button>
       <button type="button" class="tab-btn" data-tab="fechamentoMensal"><span class="tab-icon">📊</span><span class="tab-label">Fechamento do Mês</span></button>
       <button type="button" class="tab-btn" data-tab="configuracoes"><span class="tab-icon">⚙️</span><span class="tab-label">Configurações</span></button>
+      <button type="button" class="tab-btn" data-tab="agendaDia"><span class="tab-icon">📅</span><span class="tab-label">Agenda do Dia</span></button>
       <button type="button" class="tab-btn" data-tab="atividades" id="tabBtnAtividades" style="display:none;"><span class="tab-icon">🕵️</span><span class="tab-label">Atividades da Equipe</span></button>
     </nav>
 
@@ -3860,11 +3894,11 @@ CONDOMINIO Y	480	45"></textarea>
       Estrutura da equipe, divisão de carteira por área e metas diárias de cada membro.
     </p>
 
-    <div class="stats-strip">
-      <div class="stat-box"><div class="snum">287</div><div class="slbl">Condomínios (total)</div></div>
-      <div class="stat-box"><div class="snum">4</div><div class="slbl">Filiais · AM · CE · MA · PI</div></div>
-      <div class="stat-box"><div class="snum" style="color:var(--accent);">50</div><div class="slbl">Pesquisas/dia (meta)</div></div>
-      <div class="stat-box"><div class="snum" style="color:var(--ok);">1.100</div><div class="slbl">Pesquisas/mês (meta)</div></div>
+    <div class="stats-strip" id="equipeStatsTop">
+      <div class="stat-box"><div class="snum">—</div><div class="slbl">Condomínios (total)</div></div>
+      <div class="stat-box"><div class="snum">—</div><div class="slbl">Filiais</div></div>
+      <div class="stat-box"><div class="snum" style="color:var(--accent);">—</div><div class="slbl">Pesquisas/dia (meta)</div></div>
+      <div class="stat-box"><div class="snum" style="color:var(--ok);">—</div><div class="slbl">Pesquisas/mês (meta)</div></div>
     </div>
 
     <div class="chart-panel" style="margin:16px 0;">
@@ -3875,34 +3909,7 @@ CONDOMINIO Y	480	45"></textarea>
       <div class="orgchart" id="equipeOrgChart"><p class="empty">Carregando...</p></div>
     </div>
 
-    <div class="charts-grid charts-grid-2">
-      <div class="chart-panel">
-        <p class="chart-title">🟢 Área Rosely — 201 condomínios</p>
-        <p style="font-size:12px; color:var(--text-dim); margin:0 0 10px;">CE: 170 condomínios · MA: 31 condomínios</p>
-        <ul style="list-style:none; margin:0; padding:0; font-size:12px; color:var(--text-dim); line-height:2;">
-          <li>✅ Rosely lidera CE e MA diretamente</li>
-          <li>✅ Aprendizes atuam no CE e MA</li>
-          <li>✅ Parceria com Coordenador Jhon (MA)</li>
-          <li>✅ Foco em retenção e aditivos</li>
-          <li>✅ Auditoria de faciais/app</li>
-          <li>✅ Pesquisas mensais · Retorno de O.S e preventivas</li>
-          <li>✅ Visitas, entregas de condomínios e assembleias</li>
-          <li>✅ Atendimento via WhatsApp, Blip e SAC Gear</li>
-        </ul>
-      </div>
-      <div class="chart-panel">
-        <p class="chart-title">🔵 Área Josiane — 86 condomínios</p>
-        <p style="font-size:12px; color:var(--text-dim); margin:0 0 10px;">AM: 31 condomínios · SECOPI (PI): 55 condomínios</p>
-        <ul style="list-style:none; margin:0; padding:0; font-size:12px; color:var(--text-dim); line-height:2;">
-          <li>✅ Josiane lidera / dá suporte à Tayanne (AM)</li>
-          <li>✅ Auditoria de faciais/app/token</li>
-          <li>✅ Pesquisas mensais · Retorno de O.S</li>
-          <li>✅ Foco em retenção e aditivos</li>
-          <li>✅ Atendimento via WhatsApp, Blip e SAC Gear</li>
-          <li>✅ Parceria com Coordenadora Juliana e assistente Paula (SECOPI)</li>
-        </ul>
-      </div>
-    </div>
+    <div class="charts-grid charts-grid-2" id="equipeAreasCards"></div>
 
     <div class="chart-panel" style="margin-top:16px;">
       <p class="chart-title">✅ Pesquisas de Hoje x Meta (ao vivo)</p>
@@ -3916,37 +3923,53 @@ CONDOMINIO Y	480	45"></textarea>
 
     <div class="charts-grid charts-grid-2" style="margin-top:16px;">
       <div class="chart-panel">
-        <p class="chart-title">📊 Distribuição por Filial</p>
+        <p class="chart-title">📊 Distribuição por Filial <span style="text-transform:none; letter-spacing:0; font-weight:400;">· quantidade vem do Cadastro, responsável vem da Equipe</span></p>
         <div class="checklist-table-wrap">
           <table class="checklist-table">
             <thead><tr><th>Filial</th><th style="text-align:center;">Condomínios</th><th>Responsável</th></tr></thead>
-            <tbody>
-              <tr><td class="ck-name">Ceará (CE)</td><td style="text-align:center;">170</td><td>Maria Rosely</td></tr>
-              <tr><td class="ck-name">Maranhão (MA)</td><td style="text-align:center;">31</td><td>Maria Rosely</td></tr>
-              <tr><td class="ck-name">Amazonas (AM)</td><td style="text-align:center;">31</td><td>Josiane Alves</td></tr>
-              <tr><td class="ck-name">SECOPI (PI)</td><td style="text-align:center;">55</td><td>Josiane Alves</td></tr>
-              <tr style="font-weight:700;"><td class="ck-name">Total</td><td style="text-align:center;">287</td><td>—</td></tr>
-            </tbody>
+            <tbody id="equipeFilialBody"><tr><td class="empty">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
       <div class="chart-panel">
-        <p class="chart-title">📋 Distribuição Diária de Pesquisas (meta: 50/dia)</p>
+        <p class="chart-title">📋 Distribuição Diária de Pesquisas</p>
         <div id="equipeMetasBarras"></div>
       </div>
     </div>
 
     <div class="chart-panel" style="margin-top:16px;">
-      <p class="chart-title">🔄 Fluxo de Reclamações — SLA 48h, tratativa padronizada</p>
-      <div class="fluxo-etapas">
-        <div class="fluxo-etapa"><div class="fluxo-num">1</div><div class="fluxo-titulo">Pesquisa Realizada</div><div class="fluxo-desc">Coleta feita pela equipe no condomínio.</div></div>
-        <div class="fluxo-etapa"><div class="fluxo-num">2</div><div class="fluxo-titulo">Identificação</div><div class="fluxo-desc">Reclamação identificada e registrada no sistema.</div></div>
-        <div class="fluxo-etapa"><div class="fluxo-num">3</div><div class="fluxo-titulo">Encaminhamento</div><div class="fluxo-desc">Envio ao setor responsável para resolução.</div></div>
-        <div class="fluxo-etapa fluxo-sla"><div class="fluxo-num">4</div><div class="fluxo-titulo">Cobrança de Retorno</div><div class="fluxo-desc">SLA 48h — Equipe CS monitora prazo e cobra feedback.</div></div>
-        <div class="fluxo-etapa"><div class="fluxo-num">5</div><div class="fluxo-titulo">Validação da Solução</div><div class="fluxo-desc">Confirma se o problema foi resolvido.</div></div>
-        <div class="fluxo-etapa"><div class="fluxo-num">6</div><div class="fluxo-titulo">Retorno ao Síndico</div><div class="fluxo-desc">Comunicação formal da resolução ao síndico.</div></div>
-        <div class="fluxo-etapa"><div class="fluxo-num">7</div><div class="fluxo-titulo">Encerramento</div><div class="fluxo-desc">Registro do encerramento e fechamento no sistema.</div></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <p class="chart-title" style="margin:0;">🔄 Fluxo de Reclamações</p>
+        <button type="button" class="clearbtn" id="btnNovaEtapaFluxo">+ Nova Etapa</button>
       </div>
+      <div class="fluxo-etapas" id="equipeFluxoEtapas"><p class="empty">Carregando...</p></div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="equipeEtapaModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:480px;">
+      <div class="users-head">
+        <h3 id="equipeEtapaModalTitle">Nova Etapa</h3>
+        <button type="button" class="logout-btn" id="equipeEtapaModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px; grid-template-columns:1fr;">
+        <input type="hidden" id="equipeEtapaId">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Título da etapa
+          <input type="text" id="equipeEtapaTitulo" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Descrição
+          <textarea id="equipeEtapaDescricao" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); font-weight:600;">
+          <input type="checkbox" id="equipeEtapaDestaqueSla" style="width:auto;"> Destacar como etapa de SLA (fica em laranja)
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="equipeEtapaDeleteBtn" style="color:var(--critico); border-color:var(--critico); margin-right:auto;">🗑️ Excluir</button>
+        <button type="button" class="logout-btn" id="equipeEtapaCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="equipeEtapaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar</button>
+      </div>
+      <p class="users-error" id="equipeEtapaError" style="display:none;"></p>
     </div>
   </div>
 
@@ -3999,6 +4022,12 @@ CONDOMINIO Y	480	45"></textarea>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Meta extra 3 — valor/dia
           <input type="number" id="equipeMembroMeta3Valor" min="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Filiais que essa pessoa é responsável <span style="font-weight:400; text-transform:none;">(pra tabela de Distribuição por Filial)</span>
+          <div id="equipeMembroFiliaisResp" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;"></div>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Responsabilidades da área <span style="font-weight:400; text-transform:none;">(uma por linha — vira o card "Área" na tela)</span>
+          <textarea id="equipeMembroResponsabilidades" rows="5" placeholder="✅ Lidera tal filial diretamente&#10;✅ Foco em retenção e aditivos&#10;..." style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
         </label>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
@@ -4131,6 +4160,124 @@ CONDOMINIO Y	480	45"></textarea>
         <input type="text" id="cfgNovoStatus" placeholder="Nome do novo status..." style="flex:1; max-width:280px;">
         <button type="button" class="clearbtn" id="cfgAddStatusBtn">+ Adicionar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== AGENDA DO DIA (só admin) ==================== -->
+  <div id="tabAgendaDia" class="tab-panel" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; border-bottom:1px solid var(--line); padding-bottom:22px; margin-bottom:22px;">
+      <div>
+        <p class="agenda-titulo">Painel do dia — Sucesso do Cliente</p>
+        <p class="agenda-sub" id="agendaDataLabel">Carregando...</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-faint); text-align:right; line-height:1.5;">
+          progresso geral<br><b id="agendaRingLabel" style="display:block; color:var(--text); font-size:22px; font-weight:600;">0%</b>
+        </div>
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--line)" stroke-width="6"/>
+          <circle id="agendaRingFill" cx="32" cy="32" r="27" fill="none" stroke="var(--atencao)" stroke-width="6"
+            stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 32 32)" style="transition:stroke-dashoffset .4s ease;"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="agenda-kpi-strip">
+      <div class="agenda-kpi"><div class="lbl">Tarefas concluídas</div><div class="val" id="agendaKpiDone">0/0</div></div>
+      <div class="agenda-kpi"><div class="lbl">Prioridade alta pendente</div><div class="val" style="color:var(--critico);" id="agendaKpiAlta">0</div></div>
+      <div class="agenda-kpi">
+        <div class="lbl">Próxima reunião</div>
+        <input type="text" id="agendaProximaReuniao" placeholder="Ex: 15:00 · Sr. Giuliano" style="border:none; background:none; padding:0; font-size:15px; font-weight:600; color:var(--text); width:100%; font-family:'IBM Plex Mono',monospace;">
+      </div>
+      <div class="agenda-kpi">
+        <div class="lbl">Fechamento do dia</div>
+        <input type="text" id="agendaFechamentoDia" placeholder="Ex: 17:00 · retro" style="border:none; background:none; padding:0; font-size:15px; font-weight:600; color:var(--text); width:100%; font-family:'IBM Plex Mono',monospace;">
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button type="button" class="clearbtn" id="btnNovaRaiaAgenda">+ Nova pessoa</button>
+    </div>
+    <div class="agenda-lanes" id="agendaLanes">
+      <p class="empty">Carregando...</p>
+    </div>
+
+    <div class="agenda-bottom">
+      <div class="agenda-box">
+        <h4>Fica para depois</h4>
+        <textarea id="agendaBacklog" rows="5" placeholder="Um item por linha..." style="width:100%; box-sizing:border-box; font-family:inherit; resize:vertical; background:none; border:none; color:var(--text-dim); font-size:13.5px; padding:0;"></textarea>
+      </div>
+      <div class="agenda-box regra">
+        <h4 style="color:var(--atencao);">Regra do dia</h4>
+        <textarea id="agendaRegraDia" rows="5" placeholder="Ex: Antes de largar o que está fazendo por uma demanda nova, pergunte..." style="width:100%; box-sizing:border-box; font-family:inherit; resize:vertical; background:none; border:none; font-size:14px; padding:0;"></textarea>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <p class="chart-title" style="margin:0;">✅ Conferência Final do Dia</p>
+        <button type="button" class="clearbtn" id="btnNovoItemConferencia">+ Novo Item</button>
+      </div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:-2px 0 12px;">Checklist separada das tarefas — pra revisar no fim do dia se tudo mesmo foi feito.</p>
+      <div class="charts-grid" id="agendaConferenciaGrid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+        <p class="empty">Carregando...</p>
+      </div>
+    </div>
+
+    <div class="agenda-footer">
+      <span id="agendaUpdatedLabel">Nenhuma alteração ainda</span>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="login-btn" id="btnSalvarContextoAgenda" style="width:auto; margin-top:0; padding:8px 18px;">💾 Salvar Reunião/Backlog/Regra</button>
+        <button type="button" class="clearbtn" id="btnReiniciarDiaAgenda" style="border-color:var(--critico); color:var(--critico);">Reiniciar o dia</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="users-modal" id="agendaConferenciaModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:420px;">
+      <div class="users-head">
+        <h3>Novo Item de Conferência</h3>
+        <button type="button" class="logout-btn" id="agendaConferenciaModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px; grid-template-columns:1fr;">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Pessoa
+          <input type="text" id="agendaConferenciaResponsavel" placeholder="Ex: Rosely" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Item a conferir
+          <input type="text" id="agendaConferenciaItem" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="agendaConferenciaCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="agendaConferenciaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Adicionar</button>
+      </div>
+      <p class="users-error" id="agendaConferenciaError" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="users-modal" id="agendaTarefaModalOverlay" style="display:none;">
+    <div class="users-box" style="max-width:420px;">
+      <div class="users-head">
+        <h3>Nova Tarefa</h3>
+        <button type="button" class="logout-btn" id="agendaTarefaModalClose">✕</button>
+      </div>
+      <div class="users-form" style="margin-bottom:14px; grid-template-columns:1fr;">
+        <input type="hidden" id="agendaTarefaResponsavel">
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tarefa
+          <input type="text" id="agendaTarefaTitulo" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Prioridade
+          <select id="agendaTarefaPrioridade" style="width:100%; margin-top:4px;">
+            <option value="alta">Alta</option>
+            <option value="media" selected>Média</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="logout-btn" id="agendaTarefaCancelBtn">Cancelar</button>
+        <button type="button" class="login-btn" id="agendaTarefaSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Adicionar</button>
+      </div>
+      <p class="users-error" id="agendaTarefaError" style="display:none;"></p>
     </div>
   </div>
 
@@ -4551,7 +4698,7 @@ document.getElementById('btnAtividadesOntem').addEventListener('click', ()=>{
   carregarRelatorioAtividades();
 });
 let currentAllowedTabs = null; // null/empty = acesso a todas as abas
-const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas','fechamentoMensal','configuracoes'];
+const ALL_TABS = ['dashboard','pesquisa','cadastro','renovacao','checklist','visitasEmergenciais','relatorioDiario','lembretes','fluxoAtendimento','adocaoDigital','incidentes','demandas','vidaCondominio','equipeMetas','fechamentoMensal','configuracoes','agendaDia'];
 
 async function sha256(text){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -12605,6 +12752,7 @@ function initTabs(){
       document.getElementById('tabEquipeMetas').style.display = tab === 'equipeMetas' ? 'block' : 'none';
       document.getElementById('tabFechamentoMensal').style.display = tab === 'fechamentoMensal' ? 'block' : 'none';
       document.getElementById('tabConfiguracoes').style.display = tab === 'configuracoes' ? 'block' : 'none';
+      document.getElementById('tabAgendaDia').style.display = tab === 'agendaDia' ? 'block' : 'none';
       document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
       if (tab === 'cadastro' && !cadastroLoaded){
@@ -12669,6 +12817,9 @@ function initTabs(){
       }
       if (tab === 'configuracoes'){
         if (typeof loadConfiguracoes === 'function') loadConfiguracoes();
+      }
+      if (tab === 'agendaDia'){
+        if (typeof loadAgendaDoDia === 'function') loadAgendaDoDia();
       }
       if (tab === 'atividades'){
         if (typeof carregarRelatorioAtividades === 'function') carregarRelatorioAtividades();
@@ -16186,6 +16337,8 @@ function abrirEquipeMembroModal(membro){
   document.getElementById('equipeMembroMeta2Valor').value = membro ? (membro.meta_extra_2_valor ?? '') : '';
   document.getElementById('equipeMembroMeta3Label').value = membro ? (membro.meta_extra_3_label||'') : '';
   document.getElementById('equipeMembroMeta3Valor').value = membro ? (membro.meta_extra_3_valor ?? '') : '';
+  document.getElementById('equipeMembroResponsabilidades').value = membro ? (membro.responsabilidades||'') : '';
+  renderEquipeFiliaisCheckboxes(membro ? (membro.filiais_responsavel||'') : '');
   equipeMembroFotoUrlAtual = membro ? (membro.foto_url||null) : null;
   aplicarFotoMembroModal(equipeMembroFotoUrlAtual);
   document.getElementById('equipeMembroDeleteBtn').style.display = membro ? '' : 'none';
@@ -16235,6 +16388,8 @@ document.getElementById('equipeMembroSaveBtn').addEventListener('click', async (
     meta_extra_2_valor: document.getElementById('equipeMembroMeta2Valor').value ? parseInt(document.getElementById('equipeMembroMeta2Valor').value,10) : null,
     meta_extra_3_label: document.getElementById('equipeMembroMeta3Label').value.trim() || null,
     meta_extra_3_valor: document.getElementById('equipeMembroMeta3Valor').value ? parseInt(document.getElementById('equipeMembroMeta3Valor').value,10) : null,
+    responsabilidades: document.getElementById('equipeMembroResponsabilidades').value.trim() || null,
+    filiais_responsavel: [...document.querySelectorAll('#equipeMembroFiliaisResp input:checked')].map(c=>c.value).join(',') || null,
   };
   try{
     let result;
@@ -16265,20 +16420,178 @@ document.getElementById('equipeMembroDeleteBtn').addEventListener('click', async
   }catch(e){ alert('Erro ao excluir: ' + e.message); }
 });
 
+function renderEquipeFiliaisCheckboxes(selecionadas){
+  const el = document.getElementById('equipeMembroFiliaisResp');
+  if (!el) return;
+  const filiais = ['Ceará','Maranhão','Amazonas','SECOPI'];
+  const jaSelecionadas = (selecionadas||'').split(',').map(s=>s.trim()).filter(Boolean);
+  el.innerHTML = filiais.map(f => `
+    <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-dim); font-weight:400; text-transform:none;">
+      <input type="checkbox" value="${escapeHtml(f)}" ${jaSelecionadas.includes(f)?'checked':''} style="width:auto;"> ${escapeHtml(f)}
+    </label>
+  `).join('');
+}
+
+function renderEquipeStatsTop(){
+  const el = document.getElementById('equipeStatsTop');
+  if (!el) return;
+  const fonteCondos = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.filter(c=>c.status!=='Inativo') : [];
+  const totalCondos = fonteCondos.length;
+  const filiaisPresentes = [...new Set(fonteCondos.map(c=>normalizeFilialCanonica(c.filial)).filter(Boolean))];
+  const somaPesquisasDia = equipeMembrosData.reduce((a,m)=>a+(m.meta_pesquisas_dia||0), 0);
+  const somaPesquisasMes = equipeMembrosData.reduce((a,m)=>a+(m.meta_pesquisas_mes || (m.meta_pesquisas_dia||0)*22), 0);
+  el.innerHTML = `
+    <div class="stat-box"><div class="snum">${totalCondos || '—'}</div><div class="slbl">Condomínios (total)</div></div>
+    <div class="stat-box"><div class="snum">${filiaisPresentes.length || '—'}</div><div class="slbl">Filiais${filiaisPresentes.length ? ' · '+filiaisPresentes.join(' · ') : ''}</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--accent);">${somaPesquisasDia || '—'}</div><div class="slbl">Pesquisas/dia (meta)</div></div>
+    <div class="stat-box"><div class="snum" style="color:var(--ok);">${somaPesquisasMes ? somaPesquisasMes.toLocaleString('pt-BR') : '—'}</div><div class="slbl">Pesquisas/mês (meta)</div></div>
+  `;
+}
+
+function renderEquipeAreasCards(){
+  const el = document.getElementById('equipeAreasCards');
+  if (!el) return;
+  const comArea = equipeMembrosData.filter(m => m.responsabilidades && m.responsabilidades.trim());
+  if (!comArea.length){
+    el.innerHTML = '<p class="empty">Nenhuma área com responsabilidades cadastradas ainda — edite um membro e preencha o campo "Responsabilidades da área".</p>';
+    return;
+  }
+  el.innerHTML = comArea.map(m => {
+    const linhas = m.responsabilidades.split('\n').map(l=>l.trim()).filter(Boolean);
+    const filiaisTxt = (m.filiais_responsavel||'').split(',').map(s=>s.trim()).filter(Boolean).join(' · ');
+    return `<div class="chart-panel">
+      <p class="chart-title">🟢 Área ${escapeHtml(m.nome)}${filiaisTxt ? ` — ${escapeHtml(filiaisTxt)}` : ''}</p>
+      <ul style="list-style:none; margin:0; padding:0; font-size:12px; color:var(--text-dim); line-height:2;">
+        ${linhas.map(l => `<li>${escapeHtml(l)}</li>`).join('')}
+      </ul>
+    </div>`;
+  }).join('');
+}
+
+function renderEquipeFilialTabela(){
+  const el = document.getElementById('equipeFilialBody');
+  if (!el) return;
+  const fonteCondos = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.filter(c=>c.status!=='Inativo') : [];
+  if (!fonteCondos.length){
+    el.innerHTML = '<tr><td class="empty">Carregando dados do Cadastro...</td></tr>';
+    return;
+  }
+  const filiaisCanonicas = ['Ceará','Maranhão','Amazonas','SECOPI'];
+  const linhas = filiaisCanonicas.map(f => {
+    const qtd = fonteCondos.filter(c => normalizeFilialCanonica(c.filial) === f).length;
+    const responsaveis = equipeMembrosData.filter(m => (m.filiais_responsavel||'').split(',').map(s=>s.trim()).includes(f)).map(m=>m.nome);
+    return { filial: f, qtd, responsavel: responsaveis.join(', ') || '—' };
+  }).filter(l => l.qtd > 0);
+  const total = linhas.reduce((a,l)=>a+l.qtd, 0);
+  el.innerHTML = linhas.map(l => `<tr><td class="ck-name">${escapeHtml(l.filial)}</td><td style="text-align:center;">${l.qtd}</td><td>${escapeHtml(l.responsavel)}</td></tr>`).join('')
+    + `<tr style="font-weight:700;"><td class="ck-name">Total</td><td style="text-align:center;">${total}</td><td>—</td></tr>`;
+}
+
 async function renderEquipeMetasBarras(){
   const el = document.getElementById('equipeMetasBarras');
   if (!el) return;
+  if (!cadastroLiveCarregado && typeof carregarCadastroLive === 'function') await carregarCadastroLive();
   await carregarEquipeMembros();
   renderEquipeOrgChart();
   renderEquipeMetasCards();
-  el.innerHTML =
-    barraHorizontal('Rosely', 10, 50, 'var(--accent)', '/dia') +
-    barraHorizontal('Josiane', 10, 50, 'var(--accent)', '/dia') +
-    barraHorizontal('Aprendiz Manhã', 15, 50, 'var(--ok)', '/dia') +
-    barraHorizontal('Aprendiz Tarde', 15, 50, 'var(--ok)', '/dia') +
-    barraHorizontal('TOTAL', 50, 50, 'var(--accent-2)', '/dia');
+  renderEquipeStatsTop();
+  renderEquipeAreasCards();
+  renderEquipeFilialTabela();
+  await carregarFluxoReclamacoesEtapas();
+
+  const totalMeta = equipeMembrosData.reduce((a,m)=>a+(m.meta_pesquisas_dia||0), 0) || 1;
+  el.innerHTML = equipeMembrosData.map(m => barraHorizontal(m.nome, m.meta_pesquisas_dia||0, totalMeta, 'var(--accent)', '/dia')).join('')
+    + barraHorizontal('TOTAL', equipeMembrosData.reduce((a,m)=>a+(m.meta_pesquisas_dia||0),0), totalMeta, 'var(--accent-2)', '/dia');
   await renderMetasHoje();
 }
+
+// ============================================================================
+// FLUXO DE RECLAMAÇÕES — etapas editáveis (CRUD)
+// ============================================================================
+let fluxoReclamacoesEtapasData = [];
+
+async function carregarFluxoReclamacoesEtapas(){
+  if (!sb) return;
+  try{
+    const { data, error } = await sb.from('fluxo_reclamacoes_etapas').select('*').eq('ativo', true).order('ordem', { ascending:true });
+    if (error) throw error;
+    fluxoReclamacoesEtapasData = data || [];
+  }catch(e){
+    console.warn('Falha ao carregar fluxo_reclamacoes_etapas (a tabela pode não existir ainda no Supabase):', e);
+    fluxoReclamacoesEtapasData = [];
+  }
+  renderEquipeFluxoEtapas();
+}
+
+function renderEquipeFluxoEtapas(){
+  const el = document.getElementById('equipeFluxoEtapas');
+  if (!el) return;
+  if (!fluxoReclamacoesEtapasData.length){
+    el.innerHTML = '<p class="empty">Nenhuma etapa cadastrada ainda. Clique em "+ Nova Etapa".</p>';
+    return;
+  }
+  el.innerHTML = fluxoReclamacoesEtapasData.map((e, i) => `
+    <div class="fluxo-etapa ${e.destaque_sla ? 'fluxo-sla' : ''}" data-editar-etapa="${e.id}" style="cursor:pointer;" title="Clique pra editar">
+      <div class="fluxo-num">${i+1}</div>
+      <div class="fluxo-titulo">${escapeHtml(e.titulo)}</div>
+      <div class="fluxo-desc">${escapeHtml(e.descricao||'')}</div>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-editar-etapa]').forEach(box=>{
+    box.addEventListener('click', () => abrirEquipeEtapaModal(fluxoReclamacoesEtapasData.find(e => String(e.id) === box.getAttribute('data-editar-etapa'))));
+  });
+}
+
+function abrirEquipeEtapaModal(etapa){
+  document.getElementById('equipeEtapaModalTitle').textContent = etapa ? 'Editar Etapa' : 'Nova Etapa';
+  document.getElementById('equipeEtapaId').value = etapa ? etapa.id : '';
+  document.getElementById('equipeEtapaTitulo').value = etapa ? etapa.titulo : '';
+  document.getElementById('equipeEtapaDescricao').value = etapa ? (etapa.descricao||'') : '';
+  document.getElementById('equipeEtapaDestaqueSla').checked = etapa ? !!etapa.destaque_sla : false;
+  document.getElementById('equipeEtapaDeleteBtn').style.display = etapa ? '' : 'none';
+  document.getElementById('equipeEtapaError').style.display = 'none';
+  document.getElementById('equipeEtapaModalOverlay').style.display = 'flex';
+}
+
+document.getElementById('btnNovaEtapaFluxo').addEventListener('click', () => abrirEquipeEtapaModal(null));
+document.getElementById('equipeEtapaModalClose').addEventListener('click', () => { document.getElementById('equipeEtapaModalOverlay').style.display = 'none'; });
+document.getElementById('equipeEtapaCancelBtn').addEventListener('click', () => { document.getElementById('equipeEtapaModalOverlay').style.display = 'none'; });
+
+document.getElementById('equipeEtapaSaveBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('equipeEtapaError');
+  const titulo = document.getElementById('equipeEtapaTitulo').value.trim();
+  if (!titulo){ errEl.textContent = 'Informe o título da etapa.'; errEl.style.display = 'block'; return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  const id = document.getElementById('equipeEtapaId').value;
+  const payload = {
+    titulo,
+    descricao: document.getElementById('equipeEtapaDescricao').value.trim() || null,
+    destaque_sla: document.getElementById('equipeEtapaDestaqueSla').checked,
+  };
+  try{
+    let result;
+    if (id) result = await sb.from('fluxo_reclamacoes_etapas').update(payload).eq('id', id);
+    else result = await sb.from('fluxo_reclamacoes_etapas').insert(Object.assign({ ordem: fluxoReclamacoesEtapasData.length + 1 }, payload));
+    if (result.error) throw result.error;
+    document.getElementById('equipeEtapaModalOverlay').style.display = 'none';
+    await carregarFluxoReclamacoesEtapas();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('fluxo_reclamacoes_etapas') ? ' — confira se a tabela já foi criada no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('equipeEtapaDeleteBtn').addEventListener('click', async () => {
+  const id = document.getElementById('equipeEtapaId').value;
+  if (!id) return;
+  if (!confirm('Excluir essa etapa do fluxo?')) return;
+  try{
+    const { error } = await sb.from('fluxo_reclamacoes_etapas').update({ ativo: false }).eq('id', id);
+    if (error) throw error;
+    document.getElementById('equipeEtapaModalOverlay').style.display = 'none';
+    await carregarFluxoReclamacoesEtapas();
+  }catch(e){ alert('Erro ao excluir: ' + e.message); }
+});
 
 async function renderMetasHoje(){
   const box = document.getElementById('metasHojeBox');
@@ -21189,6 +21502,311 @@ function exportarBackupPesquisasHtml(){
 }
 
 document.getElementById('btnBackupPesquisasHtml').addEventListener('click', exportarBackupPesquisasHtml);
+
+// ============================================================================
+// AGENDA DO DIA — painel diário de tarefas por pessoa (só admin)
+// ============================================================================
+let agendaTarefasData = [];
+let agendaContextoData = null;
+let agendaConferenciaData = [];
+const AGENDA_CORES = ['var(--atencao)','var(--accent)','#b083f0','#4fd1c5','#f472b6','#fb923c'];
+
+function agendaHojeISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function agendaCorPorIndice(i){ return AGENDA_CORES[i % AGENDA_CORES.length]; }
+
+async function loadAgendaDoDia(){
+  if (!sb) return;
+  const hoje = agendaHojeISO();
+  const diasSemana = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const agora = new Date();
+  document.getElementById('agendaDataLabel').textContent = `${diasSemana[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]}`;
+
+  try{
+    const [{ data: tarefas }, { data: contexto }, { data: conferencia }] = await Promise.all([
+      sb.from('agenda_diaria_tarefas').select('*').eq('data', hoje).order('ordem', { ascending:true }),
+      sb.from('agenda_diaria_contexto').select('*').eq('data', hoje).maybeSingle(),
+      sb.from('agenda_diaria_conferencia').select('*').eq('data', hoje).order('ordem', { ascending:true }),
+    ]);
+    agendaTarefasData = tarefas || [];
+    agendaContextoData = contexto || {};
+    agendaConferenciaData = conferencia || [];
+  }catch(e){
+    console.warn('Falha ao carregar agenda do dia (as tabelas podem não existir ainda no Supabase):', e);
+    agendaTarefasData = [];
+    agendaContextoData = {};
+    agendaConferenciaData = [];
+  }
+
+  document.getElementById('agendaProximaReuniao').value = agendaContextoData.proxima_reuniao || '';
+  document.getElementById('agendaFechamentoDia').value = agendaContextoData.fechamento_dia || '';
+  document.getElementById('agendaBacklog').value = agendaContextoData.backlog || '';
+  document.getElementById('agendaRegraDia').value = agendaContextoData.regra_do_dia || '';
+
+  renderAgendaLanes();
+  renderAgendaKpis();
+  renderAgendaConferencia();
+}
+
+function renderAgendaLanes(){
+  const el = document.getElementById('agendaLanes');
+  if (!el) return;
+  const responsaveis = [...new Set(agendaTarefasData.map(t => t.responsavel))];
+  if (!responsaveis.length){
+    el.innerHTML = '<p class="empty">Nenhuma tarefa pra hoje ainda. Clique em "+ Nova pessoa" pra começar.</p>';
+    return;
+  }
+  el.innerHTML = responsaveis.map((resp, i) => {
+    const cor = agendaCorPorIndice(i);
+    const tarefas = agendaTarefasData.filter(t => t.responsavel === resp);
+    const done = tarefas.filter(t => t.concluida).length;
+    const pct = tarefas.length ? Math.round(done/tarefas.length*100) : 0;
+    return `
+    <div class="agenda-lane" style="--lane-c:${cor};">
+      <div class="agenda-lane-head">
+        <h3>${escapeHtml(resp)}</h3>
+        <span>${done}/${tarefas.length}</span>
+      </div>
+      <div class="agenda-bar-track"><div class="agenda-bar-fill" style="width:${pct}%;"></div></div>
+      <div>
+        ${tarefas.map(t => `
+          <label class="agenda-task ${t.concluida?'done':''}">
+            <input type="checkbox" data-agenda-check="${t.id}" ${t.concluida?'checked':''}>
+            <span class="txt">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+            <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
+          </label>
+        `).join('')}
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" class="clearbtn agenda-addtask" data-agenda-add="${escapeHtml(resp)}" style="flex:1;">+ Nova tarefa</button>
+        <button type="button" class="clearbtn" data-agenda-marcar-tudo="${escapeHtml(resp)}" title="Marcar todas as tarefas dessa pessoa como concluídas" style="border-color:var(--ok); color:var(--ok);">✓ Marcar tudo</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-agenda-check]').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      const id = cb.getAttribute('data-agenda-check');
+      try{
+        const { error } = await sb.from('agenda_diaria_tarefas').update({ concluida: cb.checked }).eq('id', id);
+        if (error) throw error;
+        const t = agendaTarefasData.find(x=>String(x.id)===id);
+        if (t) t.concluida = cb.checked;
+        renderAgendaLanes();
+        renderAgendaKpis();
+        agendaAtualizarCarimbo();
+      }catch(e){ alert('Erro ao salvar: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-agenda-del]').forEach(btn=>{
+    btn.addEventListener('click', async (ev)=>{
+      ev.preventDefault();
+      if (!confirm('Excluir essa tarefa?')) return;
+      try{
+        const { error } = await sb.from('agenda_diaria_tarefas').delete().eq('id', btn.getAttribute('data-agenda-del'));
+        if (error) throw error;
+        await loadAgendaDoDia();
+      }catch(e){ alert('Erro ao excluir: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-agenda-add]').forEach(btn=>{
+    btn.addEventListener('click', ()=> abrirAgendaTarefaModal(btn.getAttribute('data-agenda-add')));
+  });
+  el.querySelectorAll('[data-agenda-marcar-tudo]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const resp = btn.getAttribute('data-agenda-marcar-tudo');
+      if (!confirm(`Marcar todas as tarefas de ${resp} como concluídas?`)) return;
+      try{
+        const { error } = await sb.from('agenda_diaria_tarefas').update({ concluida: true }).eq('data', agendaHojeISO()).eq('responsavel', resp);
+        if (error) throw error;
+        agendaTarefasData.filter(t=>t.responsavel===resp).forEach(t=>t.concluida=true);
+        renderAgendaLanes();
+        renderAgendaKpis();
+        agendaAtualizarCarimbo();
+      }catch(e){ alert('Erro ao salvar: ' + e.message); }
+    });
+  });
+}
+
+function renderAgendaKpis(){
+  const total = agendaTarefasData.length;
+  const done = agendaTarefasData.filter(t=>t.concluida).length;
+  const altaPendente = agendaTarefasData.filter(t=>t.prioridade==='alta' && !t.concluida).length;
+  document.getElementById('agendaKpiDone').textContent = `${done}/${total}`;
+  document.getElementById('agendaKpiAlta').textContent = altaPendente;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('agendaRingLabel').textContent = pct + '%';
+  const circunferencia = 169.6;
+  document.getElementById('agendaRingFill').style.strokeDashoffset = circunferencia - (pct/100)*circunferencia;
+}
+
+function agendaAtualizarCarimbo(){
+  const agora = new Date();
+  document.getElementById('agendaUpdatedLabel').textContent = `Última atualização às ${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
+}
+
+function abrirAgendaTarefaModal(responsavel){
+  document.getElementById('agendaTarefaResponsavel').value = responsavel;
+  document.getElementById('agendaTarefaTitulo').value = '';
+  document.getElementById('agendaTarefaPrioridade').value = 'media';
+  document.getElementById('agendaTarefaError').style.display = 'none';
+  document.getElementById('agendaTarefaModalOverlay').style.display = 'flex';
+  document.getElementById('agendaTarefaTitulo').focus();
+}
+
+function renderAgendaConferencia(){
+  const el = document.getElementById('agendaConferenciaGrid');
+  if (!el) return;
+  const responsaveis = [...new Set(agendaConferenciaData.map(c => c.responsavel))];
+  if (!responsaveis.length){
+    el.innerHTML = '<p class="empty">Nenhum item de conferência ainda. Clique em "+ Novo Item".</p>';
+    return;
+  }
+  el.innerHTML = responsaveis.map((resp, i) => {
+    const cor = agendaCorPorIndice(i);
+    const itens = agendaConferenciaData.filter(c => c.responsavel === resp);
+    const done = itens.filter(c => c.concluido).length;
+    return `
+    <div class="chart-panel" style="border-top:3px solid ${cor};">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+        <p class="chart-title" style="margin:0;">${escapeHtml(resp)}</p>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-faint);">${done}/${itens.length}</span>
+      </div>
+      ${itens.map(c => `
+        <label style="display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px solid var(--line); cursor:pointer;">
+          <input type="checkbox" data-conf-check="${c.id}" ${c.concluido?'checked':''} style="margin-top:3px; accent-color:${cor}; width:14px; height:14px; flex-shrink:0;">
+          <span style="font-size:12.5px; line-height:1.4; flex:1; ${c.concluido?'color:var(--text-faint); text-decoration:line-through;':'color:var(--text-dim);'}">${escapeHtml(c.item)}</span>
+          <button type="button" data-conf-del="${c.id}" title="Excluir" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:11px; flex-shrink:0;">✕</button>
+        </label>
+      `).join('')}
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-conf-check]').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      const id = cb.getAttribute('data-conf-check');
+      try{
+        const { error } = await sb.from('agenda_diaria_conferencia').update({ concluido: cb.checked }).eq('id', id);
+        if (error) throw error;
+        const c = agendaConferenciaData.find(x=>String(x.id)===id);
+        if (c) c.concluido = cb.checked;
+        renderAgendaConferencia();
+        agendaAtualizarCarimbo();
+      }catch(e){ alert('Erro ao salvar: ' + e.message); }
+    });
+  });
+  el.querySelectorAll('[data-conf-del]').forEach(btn=>{
+    btn.addEventListener('click', async (ev)=>{
+      ev.preventDefault();
+      if (!confirm('Excluir esse item de conferência?')) return;
+      try{
+        const { error } = await sb.from('agenda_diaria_conferencia').delete().eq('id', btn.getAttribute('data-conf-del'));
+        if (error) throw error;
+        await loadAgendaDoDia();
+      }catch(e){ alert('Erro ao excluir: ' + e.message); }
+    });
+  });
+}
+
+document.getElementById('btnNovoItemConferencia').addEventListener('click', ()=>{
+  document.getElementById('agendaConferenciaResponsavel').value = '';
+  document.getElementById('agendaConferenciaItem').value = '';
+  document.getElementById('agendaConferenciaError').style.display = 'none';
+  document.getElementById('agendaConferenciaModalOverlay').style.display = 'flex';
+});
+document.getElementById('agendaConferenciaModalClose').addEventListener('click', ()=>{ document.getElementById('agendaConferenciaModalOverlay').style.display = 'none'; });
+document.getElementById('agendaConferenciaCancelBtn').addEventListener('click', ()=>{ document.getElementById('agendaConferenciaModalOverlay').style.display = 'none'; });
+
+document.getElementById('agendaConferenciaSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('agendaConferenciaError');
+  const responsavel = document.getElementById('agendaConferenciaResponsavel').value.trim();
+  const item = document.getElementById('agendaConferenciaItem').value.trim();
+  if (!responsavel || !item){ errEl.textContent = 'Preencha a pessoa e o item.'; errEl.style.display = 'block'; return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  try{
+    const { error } = await sb.from('agenda_diaria_conferencia').insert({
+      data: agendaHojeISO(), responsavel, item,
+      ordem: agendaConferenciaData.filter(c=>c.responsavel===responsavel).length + 1,
+    });
+    if (error) throw error;
+    document.getElementById('agendaConferenciaModalOverlay').style.display = 'none';
+    await loadAgendaDoDia();
+    agendaAtualizarCarimbo();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('agenda_diaria_conferencia') ? ' — confira se a tabela já foi criada no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('btnNovaRaiaAgenda').addEventListener('click', ()=>{
+  const nome = prompt('Nome da pessoa (nova raia):');
+  if (!nome || !nome.trim()) return;
+  abrirAgendaTarefaModal(nome.trim());
+});
+
+document.getElementById('agendaTarefaModalClose').addEventListener('click', ()=>{ document.getElementById('agendaTarefaModalOverlay').style.display = 'none'; });
+document.getElementById('agendaTarefaCancelBtn').addEventListener('click', ()=>{ document.getElementById('agendaTarefaModalOverlay').style.display = 'none'; });
+
+document.getElementById('agendaTarefaSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('agendaTarefaError');
+  const titulo = document.getElementById('agendaTarefaTitulo').value.trim();
+  if (!titulo){ errEl.textContent = 'Escreva a tarefa.'; errEl.style.display = 'block'; return; }
+  if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
+  const responsavel = document.getElementById('agendaTarefaResponsavel').value;
+  const prioridade = document.getElementById('agendaTarefaPrioridade').value;
+  try{
+    const { error } = await sb.from('agenda_diaria_tarefas').insert({
+      data: agendaHojeISO(), responsavel, titulo, prioridade,
+      ordem: agendaTarefasData.filter(t=>t.responsavel===responsavel).length + 1,
+    });
+    if (error) throw error;
+    document.getElementById('agendaTarefaModalOverlay').style.display = 'none';
+    await loadAgendaDoDia();
+    agendaAtualizarCarimbo();
+  }catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('agenda_diaria') ? ' — confira se as tabelas já foram criadas no Supabase.' : '');
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('btnSalvarContextoAgenda').addEventListener('click', async ()=>{
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const payload = {
+    data: agendaHojeISO(),
+    proxima_reuniao: document.getElementById('agendaProximaReuniao').value.trim() || null,
+    fechamento_dia: document.getElementById('agendaFechamentoDia').value.trim() || null,
+    backlog: document.getElementById('agendaBacklog').value.trim() || null,
+    regra_do_dia: document.getElementById('agendaRegraDia').value.trim() || null,
+  };
+  try{
+    const { error } = await sb.from('agenda_diaria_contexto').upsert(payload, { onConflict: 'data' });
+    if (error) throw error;
+    agendaAtualizarCarimbo();
+    alert('✅ Salvo!');
+  }catch(e){
+    alert('Erro ao salvar: ' + e.message + (e.message && e.message.includes('agenda_diaria') ? ' — confira se as tabelas já foram criadas no Supabase.' : ''));
+  }
+});
+
+document.getElementById('btnReiniciarDiaAgenda').addEventListener('click', async ()=>{
+  if (!confirm('Reiniciar o dia? Isso desmarca todas as tarefas e itens de conferência de hoje (nada é apagado).')) return;
+  if (!sb) return;
+  try{
+    const hoje = agendaHojeISO();
+    const [{ error: err1 }, { error: err2 }] = await Promise.all([
+      sb.from('agenda_diaria_tarefas').update({ concluida: false }).eq('data', hoje),
+      sb.from('agenda_diaria_conferencia').update({ concluido: false }).eq('data', hoje),
+    ]);
+    if (err1) throw err1;
+    if (err2) throw err2;
+    await loadAgendaDoDia();
+    document.getElementById('agendaUpdatedLabel').textContent = 'Dia reiniciado';
+  }catch(e){ alert('Erro ao reiniciar: ' + e.message); }
+});
 
 function determinarTimbrado(){
   const painel = getAbaAtivaVisivel();
