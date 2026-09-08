@@ -1641,7 +1641,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-V (tarefas fixas diárias + editar meta depois)</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: 2026-08-10-X (importação de planilha de Pesquisas funcionando)</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1869,7 +1869,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
 
   <div id="tabPesquisa" class="tab-panel" style="display:none;">
 
-  <div class="chart-panel" id="pqCicloBox" style="margin-bottom:14px;">
+  <div class="chart-panel" id="pqCicloBox" style="margin-bottom:14px; display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
       <p class="chart-title" style="margin:0;">📅 Acompanhamento do Ciclo — <span id="pqCicloMesLabel"></span> <span id="pqCicloBadgeConcluido" style="display:none; font-size:11px; color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid var(--ok); border-radius:20px; padding:3px 10px; margin-left:6px; vertical-align:middle;">✅ Ciclo Concluído</span></p>
       <div style="display:flex; align-items:center; gap:8px;">
@@ -1884,6 +1884,11 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div id="pqCicloBarraTexto" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);"></div>
     </div>
     <div id="pqCicloDetalhe" style="margin-top:8px; font-size:11.5px; color:var(--text-faint);"></div>
+  </div>
+
+  <div class="toolbar" style="margin-bottom:16px;">
+    <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
+    <input type="file" id="pqImportarPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
   </div>
 
   <div id="miniDashPesquisa" class="mini-dash-row"></div>
@@ -22477,6 +22482,140 @@ function exportarAgendaPDF(){
 
 document.getElementById('btnAgendaExportarExcel').addEventListener('click', exportarAgendaExcel);
 document.getElementById('btnAgendaExportarPdf').addEventListener('click', exportarAgendaPDF);
+
+// ============================================================================
+// IMPORTAR PLANILHA DE PESQUISAS — lê o arquivo que a Rosely já usa fora do
+// sistema (uma aba por mês), identifica as colunas pelo texto do cabeçalho
+// (não pela posição), e grava nota/nota2/comentário/status no condo_extra.
+// ============================================================================
+function pqDeduzirMesReferenciaDoNomeAba(nomeAba){
+  const meses = {'janeiro':'01','fevereiro':'02','março':'03','marco':'03','abril':'04','maio':'05','junho':'06','julho':'07','agosto':'08','setembro':'09','outubro':'10','novembro':'11','dezembro':'12'};
+  const nomeLower = nomeAba.toLowerCase();
+  const mesEncontrado = Object.keys(meses).find(m => nomeLower.includes(m));
+  const anoMatch = /20\d{2}/.exec(nomeAba);
+  const ano = anoMatch ? anoMatch[0] : new Date().getFullYear();
+  return mesEncontrado ? `${ano}-${meses[mesEncontrado]}` : mesAtualReal();
+}
+
+function pqConverterDataBRparaISO(dataTxt, mesReferencia){
+  if (!dataTxt) return '';
+  const m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(dataTxt).trim());
+  if (!m) return '';
+  const dia = m[1].padStart(2,'0');
+  const mes = m[2].padStart(2,'0');
+  const ano = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : (mesReferencia ? mesReferencia.slice(0,4) : new Date().getFullYear());
+  return `${ano}-${mes}-${dia}`;
+}
+
+async function importarPlanilhaPesquisas(file){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const btn = document.getElementById('btnImportarPlanilhaPesquisas');
+    const textoOriginal = btn.textContent;
+    try{
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const nomesAbasPesquisa = wb.SheetNames.filter(n => /pesquisa/i.test(n) && /satisfa/i.test(n));
+      let nomeAba;
+      if (nomesAbasPesquisa.length === 1){
+        nomeAba = nomesAbasPesquisa[0];
+      } else if (nomesAbasPesquisa.length > 1){
+        nomeAba = prompt(`Essa planilha tem mais de uma aba de pesquisa. Digite o nome exato da aba que quer importar:\n\n${nomesAbasPesquisa.join('\n')}`, nomesAbasPesquisa[0]);
+      } else {
+        nomeAba = prompt(`Não encontrei uma aba com "pesquisa" e "satisfação" no nome. Digite o nome exato da aba:\n\n${wb.SheetNames.join('\n')}`);
+      }
+      if (!nomeAba || !wb.SheetNames.includes(nomeAba)){ if (nomeAba) alert('Aba não encontrada.'); return; }
+
+      const sheet = wb.Sheets[nomeAba];
+      const linhasRaw = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+      let headerRowIdx = linhasRaw.findIndex(row => row.some(cel => /condom/i.test(String(cel))));
+      if (headerRowIdx === -1){ alert('Não encontrei a linha de cabeçalho (procurei por uma coluna "Condomínio").'); return; }
+      const headers = linhasRaw[headerRowIdx].map(h => String(h||'').trim().toLowerCase());
+
+      const achaColuna = (padroes, excetoIdx) => headers.findIndex((h,i) => i !== excetoIdx && padroes.some(p => h.includes(p)));
+      const colStatus = achaColuna(['status']);
+      const colCondominio = achaColuna(['condomín', 'condomin', 'cliente']);
+      const colFilial = achaColuna(['filial']);
+      const colData = achaColuna(['data']);
+      const colNota = achaColuna(['nota']);
+      const colNota2 = achaColuna(['nota'], colNota);
+      const colComentario = achaColuna(['coment']);
+      const colRetorno = achaColuna(['retorno']);
+
+      if (colCondominio === -1 || colNota === -1){
+        alert('Não consegui identificar as colunas de Condomínio e/ou Nota nessa aba. Confira se os títulos batem com "Condomínio/Cliente" e "Nota".');
+        return;
+      }
+
+      const mesReferencia = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
+      const linhasDados = linhasRaw.slice(headerRowIdx+1).filter(row => row[colCondominio] && String(row[colCondominio]).trim());
+
+      if (!confirm(`Importar ${linhasDados.length} linha(s) da aba "${nomeAba}" (mês de referência: ${mesReferencia})?`)) return;
+      btn.disabled = true; btn.textContent = 'Importando...';
+
+      let novos = 0, atualizados = 0, ignorados = 0;
+      for (const row of linhasDados){
+        const nome = String(row[colCondominio]).trim().toUpperCase();
+        const notaTxt = String(row[colNota]||'').trim();
+        if (!notaTxt){ ignorados++; continue; }
+
+        const nota2Txt = colNota2 !== -1 ? String(row[colNota2]||'').trim() : '';
+        const filial = colFilial !== -1 ? normalizeFilialCanonica(String(row[colFilial]||'')) : '';
+        const dataTxt = colData !== -1 ? String(row[colData]||'').trim() : '';
+        const dataPesquisa = pqConverterDataBRparaISO(dataTxt, mesReferencia);
+        const statusTxt = colStatus !== -1 ? String(row[colStatus]||'').trim() : '';
+        const statusPesquisa = /conclu/i.test(statusTxt) ? 'Concluída' : (statusTxt || 'Concluída');
+        const comentarioSindico = colComentario !== -1 ? String(row[colComentario]||'').trim() : '';
+        const comentarioContato = colRetorno !== -1 ? String(row[colRetorno]||'').trim() : '';
+
+        const notaNum = parseFloat(notaTxt.replace(',','.'));
+        const dadosPesquisa = {
+          nota: notaTxt, notaPosResolucao: nota2Txt, statusPesquisa, comentarioSindico, comentarioContato,
+          dataPesquisa, mesReferencia, crit: notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok',
+        };
+
+        const existente = DATA.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome) && d.mesReferencia === mesReferencia);
+        try{
+          if (existente){
+            Object.assign(existente, dadosPesquisa);
+            existente.humor = classifyHumor(existente);
+            const { error } = await sb.from('condo_extra').update(itemToExtraRow(existente)).eq('item_n', existente.n);
+            if (error) throw error;
+            atualizados++;
+          } else {
+            const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+            const item = Object.assign({ n: newN, filial, nome }, dadosPesquisa);
+            item.humor = classifyHumor(item);
+            DATA.push(item);
+            const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
+            if (error) throw error;
+            novos++;
+          }
+        }catch(err){
+          console.error('Erro ao importar linha de', nome, ':', err);
+        }
+      }
+
+      alert(`Importação concluída!\n\n${novos} pesquisa(s) nova(s)\n${atualizados} atualizada(s)\n${ignorados} ignorada(s) (sem nota preenchida)`);
+      render();
+    }catch(err){
+      alert('Erro ao ler a planilha: ' + err.message);
+    }finally{
+      btn.disabled = false; btn.textContent = textoOriginal;
+      document.getElementById('pqImportarPlanilhaInput').value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('btnImportarPlanilhaPesquisas').addEventListener('click', ()=>{
+  document.getElementById('pqImportarPlanilhaInput').click();
+});
+document.getElementById('pqImportarPlanilhaInput').addEventListener('change', (ev)=>{
+  const file = ev.target.files[0];
+  if (file) importarPlanilhaPesquisas(file);
+});
 
 function determinarTimbrado(){
   const painel = getAbaAtivaVisivel();
