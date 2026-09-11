@@ -4643,7 +4643,8 @@ CONDOMINIO Y	480	45"></textarea>
           <input type="date" id="veData" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Condomínio
-          <input type="text" id="veCondominio" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <input type="text" id="veCondominio" list="ve-condo-list" placeholder="Nome do condomínio" style="width:100%; margin-top:4px; box-sizing:border-box;">
+          <datalist id="ve-condo-list"></datalist>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável pela Visita
           <input type="text" id="veResponsavel" placeholder="Ex: Pedro Firmino" style="width:100%; margin-top:4px; box-sizing:border-box;">
@@ -14605,8 +14606,11 @@ document.getElementById('btnExcluirVESelecionadas').addEventListener('click', as
   }
 });
 
-function openVEModal(v){
+async function openVEModal(v){
   document.getElementById('veError').style.display = 'none';
+  if (!cadastroLiveCarregado && typeof carregarCadastroLive === 'function') await carregarCadastroLive();
+  const listaNomesVE = (cadastroLiveCarregado && CADASTRO_LIVE.length) ? CADASTRO_LIVE.map(d=>d.nome) : DATA.map(d=>d.nome);
+  document.getElementById('ve-condo-list').innerHTML = [...new Set(listaNomesVE)].sort().map(n=>`<option value="${escapeHtml(n)}">`).join('');
   document.getElementById('veModalTitle').textContent = v ? 'Editar Visita' : 'Nova Visita';
   document.getElementById('veId').value = v ? v.id : '';
   document.getElementById('veRealizada').value = v ? (v.realizada || 'SIM') : 'SIM';
