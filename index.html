@@ -2793,6 +2793,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <button type="button" class="clearbtn" id="btnImportarPlanilhaFluxo">📥 Importar Planilha (Jan–Abr)</button>
         <button type="button" class="clearbtn" id="btnNovaRodadaFluxo">🔄 Nova Rodada do Mês</button>
         <button type="button" class="clearbtn" id="btnExcluirRodadaFluxo" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir Rodada</button>
+        <button type="button" class="clearbtn" id="btnMoverRodadaFluxo">↔️ Mover Rodada de Mês</button>
         <button type="button" class="logout-btn" id="btnNovoFluxoAtendimento" style="background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; border:none;">+ Novo Registro</button>
       </div>
       <span id="faCount" class="count-line"></span>
@@ -16039,6 +16040,53 @@ async function excluirRodadaFluxo(){
   }
 }
 document.getElementById('btnExcluirRodadaFluxo').addEventListener('click', excluirRodadaFluxo);
+
+async function moverRodadaFluxo(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const mesOrigem = document.getElementById('faFilterMes').value || hojeISO().slice(0,7);
+  const doMes = faData.filter(f => String(f.mes_referencia||'').slice(0,7) === mesOrigem);
+  if (!doMes.length){ alert(`Não há registros de Fluxo de Atendimento em ${mesLabelBR(mesOrigem)} pra mover.`); return; }
+
+  const [ano, mesNum] = mesOrigem.split('-').map(Number);
+  const dataAnterior = new Date(ano, mesNum - 2, 1);
+  const sugestao = `${dataAnterior.getFullYear()}-${String(dataAnterior.getMonth()+1).padStart(2,'0')}`;
+
+  const digitado = prompt(`Mover os ${doMes.length} registro(s) de ${mesLabelBR(mesOrigem)} para qual mês? (formato AAAA-MM)`, sugestao);
+  if (!digitado) return;
+  const mesDestino = digitado.trim();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mesDestino)){ alert('Mês inválido. Use o formato AAAA-MM, ex: 2026-08.'); return; }
+  if (mesDestino === mesOrigem){ alert('O mês de destino é igual ao de origem.'); return; }
+
+  const existentesDestino = new Set(faData.filter(f => String(f.mes_referencia||'').slice(0,7) === mesDestino).map(f => normalizeNomeCondo(f.condominio||'')));
+  const moviveis = doMes.filter(f => !existentesDestino.has(normalizeNomeCondo(f.condominio||'')));
+  const conflitantes = doMes.filter(f => existentesDestino.has(normalizeNomeCondo(f.condominio||'')));
+
+  if (!moviveis.length){ alert(`Todos os condomínios de ${mesLabelBR(mesOrigem)} já têm registro em ${mesLabelBR(mesDestino)}. Nada foi movido.`); return; }
+
+  let msgConfirm = `Mover ${moviveis.length} registro(s) de ${mesLabelBR(mesOrigem)} para ${mesLabelBR(mesDestino)}?`;
+  if (conflitantes.length) msgConfirm += `\n\n${conflitantes.length} condomínio(s) já têm registro em ${mesLabelBR(mesDestino)} e serão ignorados (ficam em ${mesLabelBR(mesOrigem)}): ${conflitantes.slice(0,5).map(f=>f.condominio).join(', ')}${conflitantes.length>5?'...':''}`;
+  if (!confirm(msgConfirm)) return;
+
+  const btn = document.getElementById('btnMoverRodadaFluxo');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Movendo...';
+  try{
+    const { error } = await sb.from('fluxo_atendimento')
+      .update({ mes_referencia: mesDestino })
+      .in('id', moviveis.map(f=>f.id));
+    if (error) throw error;
+    document.getElementById('faFilterMes').value = mesDestino;
+    await loadFluxoAtendimento();
+    let msgFinal = `${moviveis.length} registro(s) movido(s) para ${mesLabelBR(mesDestino)}.`;
+    if (conflitantes.length) msgFinal += ` ${conflitantes.length} ignorado(s) por já ter registro no destino.`;
+    alert(msgFinal);
+  }catch(e){
+    alert('Erro ao mover rodada: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+document.getElementById('btnMoverRodadaFluxo').addEventListener('click', moverRodadaFluxo);
 
 document.getElementById('btnNovoFluxoAtendimento').addEventListener('click', ()=>{
   if (!sb){ alert('Sem conexão com o servidor — não é possível criar registros agora.'); return; }
