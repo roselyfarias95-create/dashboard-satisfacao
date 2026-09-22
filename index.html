@@ -2174,6 +2174,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
         <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
         <option value="Pendente assinatura da diretoria">Pendente assinatura da diretoria</option>
+        <option value="Aguardando assinatura Diretoria">Aguardando assinatura Diretoria</option>
         <option value="Pendente lançar pedido no ERP">Pendente lançar pedido no ERP</option>
         <option value="Aguardando assinatura Sr. Giuliano">Aguardando assinatura Sr. Giuliano</option>
         <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
@@ -2407,6 +2408,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
             <option value="Aguardando levantamento técnico">Aguardando levantamento técnico</option>
             <option value="Pendente assinatura síndico">Pendente assinatura síndico</option>
             <option value="Pendente assinatura da diretoria">Pendente assinatura da diretoria</option>
+            <option value="Aguardando assinatura Diretoria">Aguardando assinatura Diretoria</option>
             <option value="Pendente lançar pedido no ERP">Pendente lançar pedido no ERP</option>
             <option value="Aguardando assinatura Sr. Giuliano">Aguardando assinatura Sr. Giuliano</option>
             <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
@@ -12033,11 +12035,13 @@ document.getElementById('btnExportarRenovPDF').addEventListener('click', gerarRe
 function negBadge(status){
   const map = {
     "Em negociação": ["andamento","Em negociação"],
+    "Síndico analisando a proposta": ["aguardando-tecnico","Síndico analisando a proposta"],
     "Proposta Enviada - Aguardando Retorno do Síndico": ["aguardando-tecnico","Proposta Enviada - Aguard. Síndico"],
     "Aguardando envio do aditivo pelo comercial": ["aguardando-aditivo","Aguardando aditivo (Comercial)"],
     "Aguardando levantamento técnico": ["aguardando-tecnico","Aguardando levantamento técnico"],
     "Pendente assinatura síndico": ["pendente-assinatura","Pendente assinatura síndico"],
     "Pendente assinatura da diretoria": ["pendente-assinatura","Pendente assinatura da diretoria"],
+    "Aguardando assinatura Diretoria": ["pendente-assinatura","Aguardando assinatura Diretoria"],
     "Pendente lançar pedido no ERP": ["pendente-erp","Pendente lançar pedido no ERP"],
     "Aguardando assinatura Sr. Giuliano": ["aguardando-giuliano","Aguardando assinatura Sr. Giuliano"],
     "Aguardando faturar o boleto": ["aguardando-boleto","Aguardando faturar o boleto"],
