@@ -1902,6 +1902,32 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   <div class="toolbar" style="margin-bottom:16px;">
     <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
     <input type="file" id="pqImportarPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
+    <button type="button" class="clearbtn" id="btnEncontrarDuplicadosPq" style="border-color:#E07B2C; color:#E07B2C;">🔎 Encontrar Duplicados</button>
+    <button type="button" class="clearbtn" id="btnExcluirRodadaPq" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir Rodada</button>
+  </div>
+
+  <div id="impPqPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9100; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(820px, 94vw); max-height:86vh; overflow-y:auto;">
+      <h3 style="margin:0 0 4px;">📥 Prévia da importação</h3>
+      <p id="impPqResumo" style="font-size:13px; color:var(--text-faint); margin:0 0 16px; line-height:1.6;"></p>
+      <div id="impPqRevisaoBody"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+        <button type="button" class="clearbtn" id="impPqCancelarBtn">Cancelar</button>
+        <button type="button" class="clearbtn" id="impPqConfirmarBtn" style="border-color:var(--ok); color:var(--ok);">✅ Confirmar Importação</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dupModalPq" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9000; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(820px, 94vw); max-height:86vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h3 style="margin:0;">🔎 Condomínios duplicados</h3>
+        <button type="button" class="modal-close" id="dupModalPqClose">×</button>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin:4px 0 16px;">Mesmo condomínio aparecendo mais de uma vez no mês selecionado. Revise cada grupo e exclua a(s) linha(s) que não deveriam existir — a que você quer manter, deixe como está.</p>
+      <div id="dupModalPqMes" style="margin-bottom:12px;"></div>
+      <div id="dupModalPqBody"></div>
+    </div>
   </div>
 
   <div id="miniDashPesquisa" class="mini-dash-row"></div>
@@ -22727,63 +22753,236 @@ async function importarPlanilhaPesquisas(file){
       const mesReferencia = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
       const linhasDados = linhasRaw.slice(headerRowIdx+1).filter(row => row[colCondominio] && String(row[colCondominio]).trim());
 
-      if (!confirm(`Importar ${linhasDados.length} linha(s) da aba "${nomeAba}" (mês de referência: ${mesReferencia})?`)) return;
-      btn.disabled = true; btn.textContent = 'Importando...';
-
-      let novos = 0, atualizados = 0, ignorados = 0;
+      // Monta a lista de linhas com nota preenchida (as sem nota são ignoradas, como antes)
+      // e já resolve, pra cada uma, se bate com um condomínio existente no mês ou não —
+      // isso é mostrado numa prévia ANTES de gravar qualquer coisa, pra evitar duplicados
+      // quando o nome da planilha não é idêntico ao nome já cadastrado.
+      const candidatosDoMes = DATA.filter(d => d.mesReferencia === mesReferencia);
+      let ignoradosSemNota = 0;
+      const linhasPreview = [];
       for (const row of linhasDados){
-        const nome = String(row[colCondominio]).trim().toUpperCase();
+        const nome = String(row[colCondominio]).replace(/\s+/g,' ').trim().toUpperCase();
         const notaTxt = String(row[colNota]||'').trim();
-        if (!notaTxt){ ignorados++; continue; }
-
-        const nota2Txt = colNota2 !== -1 ? String(row[colNota2]||'').trim() : '';
-        const filial = colFilial !== -1 ? normalizeFilialCanonica(String(row[colFilial]||'')) : '';
-        const dataTxt = colData !== -1 ? String(row[colData]||'').trim() : '';
-        const dataPesquisa = pqConverterDataBRparaISO(dataTxt, mesReferencia);
-        const statusTxt = colStatus !== -1 ? String(row[colStatus]||'').trim() : '';
-        const statusPesquisa = /conclu/i.test(statusTxt) ? 'Concluída' : (statusTxt || 'Concluída');
-        const comentarioSindico = colComentario !== -1 ? String(row[colComentario]||'').trim() : '';
-        const comentarioContato = colRetorno !== -1 ? String(row[colRetorno]||'').trim() : '';
-
-        const notaNum = parseFloat(notaTxt.replace(',','.'));
-        const dadosPesquisa = {
-          nota: notaTxt, notaPosResolucao: nota2Txt, statusPesquisa, comentarioSindico, comentarioContato,
-          dataPesquisa, mesReferencia, crit: notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok',
-        };
-
-        const existente = DATA.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome) && d.mesReferencia === mesReferencia);
-        try{
-          if (existente){
-            Object.assign(existente, dadosPesquisa);
-            existente.humor = classifyHumor(existente);
-            const { error } = await sb.from('condo_extra').update(itemToExtraRow(existente)).eq('item_n', existente.n);
-            if (error) throw error;
-            atualizados++;
-          } else {
-            const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
-            const item = Object.assign({ n: newN, filial, nome }, dadosPesquisa);
-            item.humor = classifyHumor(item);
-            DATA.push(item);
-            const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
-            if (error) throw error;
-            novos++;
-          }
-        }catch(err){
-          console.error('Erro ao importar linha de', nome, ':', err);
+        if (!notaTxt){ ignoradosSemNota++; continue; }
+        const nomeNorm = normalizeNomeCondo(nome);
+        const exato = candidatosDoMes.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
+        let sugestao = null;
+        if (!exato && nomeNorm){
+          sugestao = candidatosDoMes.find(d => {
+            const dn = normalizeNomeCondo(d.nome);
+            return dn && (dn.includes(nomeNorm) || nomeNorm.includes(dn));
+          }) || null;
         }
+        linhasPreview.push({ row, nome, exato, sugestao });
       }
 
-      alert(`Importação concluída!\n\n${novos} pesquisa(s) nova(s)\n${atualizados} atualizada(s)\n${ignorados} ignorada(s) (sem nota preenchida)`);
-      render();
+      const semMatch = linhasPreview.filter(p => !p.exato);
+      const comMatch = linhasPreview.filter(p => p.exato);
+
+      // Preenche o modal de prévia
+      document.getElementById('impPqResumo').innerHTML =
+        `<strong>${comMatch.length}</strong> vão atualizar a pesquisa de um condomínio já existente automaticamente.<br>` +
+        (ignoradosSemNota ? `<strong>${ignoradosSemNota}</strong> linha(s) sem nota preenchida serão ignoradas.<br>` : '') +
+        (semMatch.length ? `<strong style="color:var(--critico);">${semMatch.length}</strong> não bateram com nenhum condomínio de ${mesLabelBR(mesReferencia)} — revise abaixo antes de confirmar.` : `Todas as linhas bateram certinho. ✅`);
+
+      const opcoesCandidatos = candidatosDoMes.slice().sort((a,b)=>a.nome.localeCompare(b.nome))
+        .map(d => `<option value="${d.n}">${escapeHtml(d.nome)}</option>`).join('');
+
+      const bodyEl = document.getElementById('impPqRevisaoBody');
+      if (!semMatch.length){
+        bodyEl.innerHTML = '';
+      } else {
+        bodyEl.innerHTML = semMatch.map((p, i) => `
+          <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+            <p style="margin:0 0 6px; font-size:12.5px;"><strong>Planilha:</strong> ${escapeHtml(p.nome)}</p>
+            <select data-imp-idx="${i}" style="width:100%;">
+              <option value="novo" ${!p.sugestao?'selected':''}>➕ Criar como condomínio novo</option>
+              ${p.sugestao ? `<option value="${p.sugestao.n}" selected>✅ É o mesmo que: ${escapeHtml(p.sugestao.nome)}</option>` : ''}
+              <option value="" disabled>── ou escolha manualmente ──</option>
+              ${opcoesCandidatos}
+            </select>
+          </div>
+        `).join('');
+      }
+
+      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal };
+      document.getElementById('impPqPreviewModal').style.display = 'flex';
     }catch(err){
       alert('Erro ao ler a planilha: ' + err.message);
-    }finally{
-      btn.disabled = false; btn.textContent = textoOriginal;
       document.getElementById('pqImportarPlanilhaInput').value = '';
     }
   };
   reader.readAsArrayBuffer(file);
 }
+
+async function executarImportacaoPesquisasConfirmada(){
+  const st = window.__importPqState;
+  if (!st) return;
+  const { linhasPreview, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal } = st;
+
+  // Lê as escolhas feitas nos <select> das linhas sem match automático
+  const escolhas = {};
+  document.querySelectorAll('#impPqRevisaoBody [data-imp-idx]').forEach(sel => {
+    escolhas[sel.getAttribute('data-imp-idx')] = sel.value;
+  });
+
+  document.getElementById('impPqPreviewModal').style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Importando...';
+
+  let novos = 0, atualizados = 0, semMatchIdx = -1;
+  for (const p of linhasPreview){
+    const { row, nome } = p;
+    const notaTxt = String(row[colNota]||'').trim();
+    const nota2Txt = colNota2 !== -1 ? String(row[colNota2]||'').trim() : '';
+    const filial = colFilial !== -1 ? normalizeFilialCanonica(String(row[colFilial]||'')) : '';
+    const dataTxt = colData !== -1 ? String(row[colData]||'').trim() : '';
+    const dataPesquisa = pqConverterDataBRparaISO(dataTxt, mesReferencia);
+    const statusTxt = colStatus !== -1 ? String(row[colStatus]||'').trim() : '';
+    const statusPesquisa = /conclu/i.test(statusTxt) ? 'Concluída' : (statusTxt || 'Concluída');
+    const comentarioSindico = colComentario !== -1 ? String(row[colComentario]||'').trim() : '';
+    const comentarioContato = colRetorno !== -1 ? String(row[colRetorno]||'').trim() : '';
+    const notaNum = parseFloat(notaTxt.replace(',','.'));
+    const dadosPesquisa = {
+      nota: notaTxt, notaPosResolucao: nota2Txt, statusPesquisa, comentarioSindico, comentarioContato,
+      dataPesquisa, mesReferencia, crit: notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok',
+    };
+
+    let existente = p.exato;
+    if (!existente){
+      semMatchIdx++;
+      const escolha = escolhas[semMatchIdx];
+      if (escolha && escolha !== 'novo'){
+        existente = DATA.find(d => String(d.n) === String(escolha));
+      }
+    }
+
+    try{
+      if (existente){
+        Object.assign(existente, dadosPesquisa);
+        existente.humor = classifyHumor(existente);
+        const { error } = await sb.from('condo_extra').update(itemToExtraRow(existente)).eq('item_n', existente.n);
+        if (error) throw error;
+        atualizados++;
+      } else {
+        const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+        const item = Object.assign({ n: newN, filial, nome }, dadosPesquisa);
+        item.humor = classifyHumor(item);
+        DATA.push(item);
+        const { error } = await sb.from('condo_extra').insert(itemToExtraRow(item));
+        if (error) throw error;
+        novos++;
+      }
+    }catch(err){
+      console.error('Erro ao importar linha de', nome, ':', err);
+    }
+  }
+
+  alert(`Importação concluída!\n\n${novos} pesquisa(s) nova(s)\n${atualizados} atualizada(s)`);
+  render();
+  btn.disabled = false; btn.textContent = textoOriginal;
+  document.getElementById('pqImportarPlanilhaInput').value = '';
+  window.__importPqState = null;
+}
+document.getElementById('impPqConfirmarBtn').addEventListener('click', executarImportacaoPesquisasConfirmada);
+document.getElementById('impPqCancelarBtn').addEventListener('click', ()=>{
+  document.getElementById('impPqPreviewModal').style.display = 'none';
+  const st = window.__importPqState;
+  if (st){ st.btn.disabled = false; st.btn.textContent = st.textoOriginal; }
+  document.getElementById('pqImportarPlanilhaInput').value = '';
+  window.__importPqState = null;
+});
+
+// ===== Excluir Rodada (mês inteiro) na aba Pesquisas =====
+async function excluirItemPesquisaCompleto(item){
+  if (sb){
+    await sb.from('condo_extra').delete().eq('item_n', item.n);
+    const { error } = await sb.from('condo_overrides').upsert(updatesToRow(item.n, { excluido: true }));
+    if (error) throw error;
+  }
+  OVERRIDES[item.n] = Object.assign({}, OVERRIDES[item.n], { excluido: true });
+}
+
+async function excluirRodadaPesquisas(){
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  if (!doMes.length){ alert(`Não há pesquisas em ${mesLabelBR(selectedMes)} pra excluir.`); return; }
+  const digitado = prompt(`Isso vai excluir definitivamente ${doMes.length} registro(s) de pesquisa de ${mesLabelBR(selectedMes)} — incluindo os que já têm pesquisa respondida.\n\nEssa ação não pode ser desfeita.\n\nPra confirmar, digite EXCLUIR:`);
+  if (digitado !== 'EXCLUIR') { if (digitado !== null) alert('Confirmação não bateu com "EXCLUIR". Nada foi excluído.'); return; }
+
+  const btn = document.getElementById('btnExcluirRodadaPq');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Excluindo...';
+  try{
+    for (const item of doMes){ await excluirItemPesquisaCompleto(item); }
+    persistOverrides(OVERRIDES);
+    DATA = DATA.filter(d => getMes(d) !== selectedMes);
+    populateFilterOptions();
+    render();
+    alert(`${doMes.length} registro(s) de ${mesLabelBR(selectedMes)} excluído(s).`);
+  }catch(e){
+    alert('Erro ao excluir a rodada: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+document.getElementById('btnExcluirRodadaPq').addEventListener('click', excluirRodadaPesquisas);
+
+// ===== Encontrar e excluir duplicados na aba Pesquisas =====
+function renderDupModalPq(){
+  document.getElementById('dupModalPqMes').innerHTML = `<strong>Mês selecionado:</strong> ${mesLabelBR(selectedMes)}`;
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const grupos = new Map();
+  doMes.forEach(item => {
+    const chave = normalizeNomeCondo(item.nome);
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave).push(item);
+  });
+  const duplicados = [...grupos.values()].filter(g => g.length > 1);
+  const body = document.getElementById('dupModalPqBody');
+  if (!duplicados.length){
+    body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>`;
+    return;
+  }
+  body.innerHTML = duplicados.map((grupo, gi) => `
+    <div style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:12px;">
+      <p style="font-weight:600; margin:0 0 8px;">${escapeHtml(grupo[0].nome)} <span style="color:var(--text-faint); font-weight:400;">— ${grupo.length} registros</span></p>
+      ${grupo.map((item) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 10px; background:var(--bg-panel-2); border-radius:6px; margin-bottom:6px;">
+          <div style="font-size:12.5px;">
+            <strong>${escapeHtml(item.filial||'—')}</strong> · Status: ${escapeHtml(item.statusPesquisa||'—')} · Nota: ${escapeHtml(String(item.nota||'—'))} · Data: ${escapeHtml(item.dataPesquisa||'—')}
+          </div>
+          <button type="button" class="clearbtn" style="color:var(--critico); border-color:var(--critico); white-space:nowrap;" data-dup-excluir="${item.n}">🗑️ Excluir esta</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  body.querySelectorAll('[data-dup-excluir]').forEach(btn => {
+    btn.addEventListener('click', async ()=>{
+      const n = parseInt(btn.getAttribute('data-dup-excluir'), 10);
+      const item = DATA.find(d => d.n === n);
+      if (!item) return;
+      if (!confirm(`Excluir definitivamente este registro de "${item.nome}"?`)) return;
+      btn.disabled = true; btn.textContent = 'Excluindo...';
+      try{
+        await excluirItemPesquisaCompleto(item);
+        persistOverrides(OVERRIDES);
+        DATA = DATA.filter(d => d.n !== n);
+        populateFilterOptions();
+        render();
+        renderDupModalPq();
+      }catch(e){
+        alert('Erro ao excluir: ' + e.message);
+        btn.disabled = false; btn.textContent = '🗑️ Excluir esta';
+      }
+    });
+  });
+}
+document.getElementById('btnEncontrarDuplicadosPq').addEventListener('click', ()=>{
+  renderDupModalPq();
+  document.getElementById('dupModalPq').style.display = 'flex';
+});
+document.getElementById('dupModalPqClose').addEventListener('click', ()=>{
+  document.getElementById('dupModalPq').style.display = 'none';
+});
 
 document.getElementById('btnImportarPlanilhaPesquisas').addEventListener('click', ()=>{
   document.getElementById('pqImportarPlanilhaInput').click();
