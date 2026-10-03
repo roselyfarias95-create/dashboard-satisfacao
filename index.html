@@ -22890,7 +22890,11 @@ async function executarImportacaoPesquisasConfirmada(){
       if (existente){
         Object.assign(existente, dadosPesquisa);
         existente.humor = classifyHumor(existente);
-        const { error } = await sb.from('condo_extra').update(itemToExtraRow(existente)).eq('item_n', existente.n);
+        // Usa condo_overrides (upsert), o mesmo mecanismo usado em toda edição manual de
+        // pesquisa — condo_extra só tem linha pra condomínios inseridos por lá; pra um item
+        // que já existia (seed ou rodada mensal), um UPDATE em condo_extra não acha nada
+        // pra alterar e retorna sucesso (204) sem gravar nada, por isso sumia ao recarregar.
+        const { error } = await sb.from('condo_overrides').upsert(updatesToRow(existente.n, existente));
         if (error) throw error;
         atualizados++;
       } else {
