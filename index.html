@@ -1900,6 +1900,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   </div>
 
   <div class="toolbar" style="margin-bottom:16px;">
+    <button type="button" class="clearbtn" id="btnGerarPlanilhaPreencher" style="border-color:var(--ok); color:var(--ok);">📋 Gerar Planilha para Preencher</button>
     <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
     <input type="file" id="pqImportarPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
     <button type="button" class="clearbtn" id="btnEncontrarDuplicadosPq" style="border-color:#E07B2C; color:#E07B2C;">🔎 Encontrar Duplicados</button>
@@ -22708,6 +22709,35 @@ function pqConverterDataBRparaISO(dataTxt, mesReferencia){
   const ano = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : (mesReferencia ? mesReferencia.slice(0,4) : new Date().getFullYear());
   return `${ano}-${mes}-${dia}`;
 }
+
+function gerarPlanilhaParaPreencher(){
+  if (typeof XLSX === 'undefined'){
+    alert('Não foi possível carregar a biblioteca de exportação Excel. Verifique sua conexão com a internet e tente novamente.');
+    return;
+  }
+  const doMes = DATA.filter(d => getMes(d) === selectedMes).slice().sort((a,b)=> a.nome.localeCompare(b.nome));
+  if (!doMes.length){ alert(`Não há condomínios cadastrados em ${mesLabelBR(selectedMes)}.`); return; }
+
+  const linhas = [
+    [`PESQUISA DE SATISFAÇÃO — ${mesLabelBR(selectedMes).toUpperCase()}`],
+    ['Preencha apenas Nota, Data, Comentário e Retorno dos clientes que você já visitou/pesquisou. Deixe os outros em branco — eles ficam pendentes. Não altere o texto da segunda coluna.'],
+    ['Status', 'Condomínio', 'Filial', 'Data', 'Nota', 'Nota 2 (pós-resolução)', 'Comentário do Síndico', 'Retorno'],
+    ...doMes.map(item => ['', item.nome, item.filial || '', '', '', '', '', ''])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(linhas);
+  ws['!cols'] = [ {wch:12}, {wch:38}, {wch:12}, {wch:12}, {wch:8}, {wch:20}, {wch:50}, {wch:50} ];
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:7} }, { s:{r:1,c:0}, e:{r:1,c:7} }];
+  const wb = XLSX.utils.book_new();
+  const nomesMeses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const [anoSel, mesSelNum] = selectedMes.split('-').map(Number);
+  // O nome da aba inclui o mês/ano por extenso de propósito: é assim que o importador
+  // do dashboard descobre pra qual mês a planilha é, não importa quando ela for reaberta.
+  const nomeAba = `PESQUISA SATISFACAO ${nomesMeses[mesSelNum-1].toUpperCase()} ${anoSel}`.slice(0,31);
+  XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+  XLSX.writeFile(wb, `planilha_para_preencher_${selectedMes}.xlsx`);
+}
+document.getElementById('btnGerarPlanilhaPreencher').addEventListener('click', gerarPlanilhaParaPreencher);
 
 async function importarPlanilhaPesquisas(file){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
