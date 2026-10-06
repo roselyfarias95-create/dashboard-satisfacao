@@ -1901,6 +1901,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
 
   <div class="toolbar" style="margin-bottom:16px;">
     <button type="button" class="clearbtn" id="btnGerarPlanilhaPreencher" style="border-color:var(--ok); color:var(--ok);">📋 Gerar Planilha para Preencher</button>
+    <button type="button" class="clearbtn" id="btnCompletarRodadaPq" style="border-color:#a78bfa; color:#a78bfa;" title="Cria a pesquisa pendente dos condomínios do Cadastro que ainda não estão no mês selecionado">➕ Completar Rodada do Mês</button>
     <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
     <input type="file" id="pqImportarPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
     <button type="button" class="clearbtn" id="btnEncontrarDuplicadosPq" style="border-color:#E07B2C; color:#E07B2C;">🔎 Encontrar Duplicados</button>
@@ -1910,6 +1911,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   <div id="impPqPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9100; align-items:center; justify-content:center;">
     <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(820px, 94vw); max-height:86vh; overflow-y:auto;">
       <h3 style="margin:0 0 4px;">📥 Prévia da importação</h3>
+      <label style="display:block; font-size:12.5px; margin:6px 0 10px;">Mês de referência desta planilha: <input type="month" id="impPqMes" style="margin-left:6px;"></label>
       <p id="impPqResumo" style="font-size:13px; color:var(--text-faint); margin:0 0 16px; line-height:1.6;"></p>
       <div id="impPqRevisaoBody"></div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
@@ -22710,6 +22712,51 @@ function pqConverterDataBRparaISO(dataTxt, mesReferencia){
   return `${ano}-${mes}-${dia}`;
 }
 
+async function completarRodadaPesquisas(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const mes = selectedMes;
+  const btn = document.getElementById('btnCompletarRodadaPq');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Buscando Cadastro...';
+  try{
+    const { data: condos, error } = await sb.from('cadastro_condominios').select('*');
+    if (error) throw error;
+    const ativos = (condos || []).filter(c => (c.status || 'Ativo') !== 'Inativo' && c.nome);
+    if (!ativos.length){ alert('Nenhum condomínio ativo encontrado no Cadastro.'); return; }
+
+    const doMes = DATA.filter(d => getMes(d) === mes);
+    const jaTem = (nome) => doMes.some(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome) || pqMesmoConjuntoTokens(d.nome, nome));
+    const faltando = ativos.filter(c => !jaTem(c.nome));
+
+    if (!faltando.length){ alert(`A rodada de ${mesLabelBR(mes)} já está completa: todos os ${ativos.length} condomínios ativos do Cadastro já têm uma linha nesse mês.`); return; }
+    if (!confirm(`Em ${mesLabelBR(mes)} existem ${doMes.length} condomínio(s) e o Cadastro tem ${ativos.length} ativos.\n\nCriar ${faltando.length} pesquisa(s) pendente(s) que estão faltando em ${mesLabelBR(mes)}? Os que já existem não serão alterados.`)) return;
+
+    btn.textContent = 'Criando...';
+    let nextN = Math.max(0, ...DATA.map(d => d.n)) + 1;
+    const novosItens = faltando.map(c => ({
+      n: nextN++, filial: c.filial || 'Não definida', nome: c.nome, nota: '—', dataPesquisa: '',
+      statusPesquisa: 'Pendente', crit: 'pendente', setor: 'Não se aplica', motivo: '—', resolvido: null,
+      notaPosResolucao: '', pend: 'Pesquisa registrada como não realizada.', resolucao: '', mesReferencia: mes,
+    }));
+    novosItens.forEach(item => { item.humor = classifyHumor(item); });
+    const rows = novosItens.map(itemToExtraRow);
+    for (let i = 0; i < rows.length; i += 50){
+      const { error: insErr } = await sb.from('condo_extra').insert(rows.slice(i, i + 50));
+      if (insErr) throw insErr;
+      btn.textContent = `Salvando... ${Math.min(i+50, rows.length)} de ${rows.length}`;
+    }
+    novosItens.forEach(item => DATA.push(item));
+    populateFilterOptions();
+    render();
+    alert(`${novosItens.length} pesquisa(s) pendente(s) criada(s) em ${mesLabelBR(mes)}.`);
+  }catch(e){
+    alert('Erro ao completar a rodada: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = textoOriginal;
+  }
+}
+document.getElementById('btnCompletarRodadaPq').addEventListener('click', completarRodadaPesquisas);
+
 function gerarPlanilhaParaPreencher(){
   if (typeof XLSX === 'undefined'){
     alert('Não foi possível carregar a biblioteca de exportação Excel. Verifique sua conexão com a internet e tente novamente.');
@@ -22739,6 +22786,22 @@ function gerarPlanilhaParaPreencher(){
 }
 document.getElementById('btnGerarPlanilhaPreencher').addEventListener('click', gerarPlanilhaParaPreencher);
 
+// Comparação de nomes por palavras-chave (ignora "CONDOMINIO DO EDIFICIO", "RESIDENCIAL", "CLUBE" etc.)
+const PQ_STOPWORDS_NOME = new Set(['DO','DA','DE','DOS','DAS','E','EDIFICIO','ED','CONDOMINIO','COND','RESIDENCIAL','RESIDENCE','RES','CLUBE','EMPRESARIAL','CONDOMINIOS','EDF']);
+function pqTokensNome(nome){
+  return normalizeNomeCondo(nome).split(' ').filter(t => t.length > 1 && !PQ_STOPWORDS_NOME.has(t));
+}
+function pqSimilaridadeNome(a, b){
+  const ta = new Set(pqTokensNome(a)), tb = new Set(pqTokensNome(b));
+  if (!ta.size || !tb.size) return 0;
+  let inter = 0; ta.forEach(t => { if (tb.has(t)) inter++; });
+  return inter / Math.min(ta.size, tb.size);
+}
+function pqMesmoConjuntoTokens(a, b){
+  const ta = pqTokensNome(a), tb = pqTokensNome(b);
+  return ta.length > 0 && ta.length === tb.length && ta.every(t => tb.includes(t));
+}
+
 async function importarPlanilhaPesquisas(file){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const reader = new FileReader();
@@ -22747,7 +22810,11 @@ async function importarPlanilhaPesquisas(file){
     const textoOriginal = btn.textContent;
     try{
       const wb = XLSX.read(e.target.result, { type: 'array' });
-      const nomesAbasPesquisa = wb.SheetNames.filter(n => /pesquisa/i.test(n) && /satisfa/i.test(n));
+      // Aceita variações/erros de digitação no nome (ex.: "SARTISFAÇÃO") e, se a planilha tiver
+      // só uma aba, usa essa aba direto.
+      let nomesAbasPesquisa = wb.SheetNames.filter(n => /pesquisa/i.test(n) && /s[a-z]{0,3}tisfa/i.test(n));
+      if (!nomesAbasPesquisa.length && wb.SheetNames.length === 1) nomesAbasPesquisa = [wb.SheetNames[0]];
+      if (!nomesAbasPesquisa.length) nomesAbasPesquisa = wb.SheetNames.filter(n => /pesquisa/i.test(n));
       let nomeAba;
       if (nomesAbasPesquisa.length === 1){
         nomeAba = nomesAbasPesquisa[0];
@@ -22780,28 +22847,57 @@ async function importarPlanilhaPesquisas(file){
         return;
       }
 
-      const mesReferencia = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
       const linhasDados = linhasRaw.slice(headerRowIdx+1).filter(row => row[colCondominio] && String(row[colCondominio]).trim());
+
+      // Mês de referência: 1) mês escrito no nome da aba; 2) mês mais frequente na coluna de data
+      // da própria planilha; 3) mês que está selecionado na tela. (Antes caía no mês real de hoje,
+      // o que mandava a planilha de setembro pra outubro.) Dá pra trocar na prévia.
+      const nomeAbaTemMes = /janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro/i.test(nomeAba);
+      let mesInicial;
+      if (nomeAbaTemMes){
+        mesInicial = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
+      } else {
+        const contagem = {};
+        const anoBase = (selectedMes || mesAtualReal()).slice(0,4);
+        linhasDados.forEach(row => {
+          const m = colData !== -1 ? /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(row[colData]||'').trim()) : null;
+          if (!m) return;
+          const ano = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : anoBase;
+          const chave = `${ano}-${m[2].padStart(2,'0')}`;
+          contagem[chave] = (contagem[chave]||0) + 1;
+        });
+        const maisFrequente = Object.entries(contagem).sort((a,b)=>b[1]-a[1])[0];
+        mesInicial = maisFrequente ? maisFrequente[0] : (selectedMes || mesAtualReal());
+      }
+
+      const notaVazia = (t) => {
+        const x = String(t||'').trim();
+        return !x || /^[-–—\s]+$/.test(x) || /^#?n\/?a$/i.test(x) || /^sem nota$/i.test(x) || isNaN(parseFloat(x.replace(',','.')));
+      };
+
+      const montarPreview = (mesReferencia) => {
 
       // Monta a lista de linhas com nota preenchida (as sem nota são ignoradas, como antes)
       // e já resolve, pra cada uma, se bate com um condomínio existente no mês ou não —
       // isso é mostrado numa prévia ANTES de gravar qualquer coisa, pra evitar duplicados
       // quando o nome da planilha não é idêntico ao nome já cadastrado.
-      const candidatosDoMes = DATA.filter(d => d.mesReferencia === mesReferencia);
+      const candidatosDoMes = DATA.filter(d => getMes(d) === mesReferencia);
       let ignoradosSemNota = 0;
       const linhasPreview = [];
       for (const row of linhasDados){
         const nome = String(row[colCondominio]).replace(/\s+/g,' ').trim().toUpperCase();
         const notaTxt = String(row[colNota]||'').trim();
-        if (!notaTxt){ ignoradosSemNota++; continue; }
+        if (notaVazia(notaTxt)){ ignoradosSemNota++; continue; }
         const nomeNorm = normalizeNomeCondo(nome);
-        const exato = candidatosDoMes.find(d => normalizeNomeCondo(d.nome) === nomeNorm);
+        const exato = candidatosDoMes.find(d => normalizeNomeCondo(d.nome) === nomeNorm)
+          || candidatosDoMes.find(d => pqMesmoConjuntoTokens(d.nome, nome));
         let sugestao = null;
         if (!exato && nomeNorm){
-          sugestao = candidatosDoMes.find(d => {
-            const dn = normalizeNomeCondo(d.nome);
-            return dn && (dn.includes(nomeNorm) || nomeNorm.includes(dn));
-          }) || null;
+          let melhor = 0;
+          candidatosDoMes.forEach(d => {
+            const sim = pqSimilaridadeNome(d.nome, nome);
+            if (sim >= 0.6 && sim > melhor){ melhor = sim; sugestao = d; }
+          });
         }
         linhasPreview.push({ row, nome, exato, sugestao });
       }
@@ -22810,7 +22906,10 @@ async function importarPlanilhaPesquisas(file){
       const comMatch = linhasPreview.filter(p => p.exato);
 
       // Preenche o modal de prévia
-      document.getElementById('impPqResumo').innerHTML =
+      const avisoPoucos = (candidatosDoMes.length < linhasPreview.length * 0.5)
+        ? `<div style="background:rgba(239,68,68,.12); border:1px solid var(--critico); border-radius:8px; padding:8px 10px; margin-bottom:8px; color:var(--text);">⚠️ Só existem <strong>${candidatosDoMes.length}</strong> condomínio(s) cadastrados em ${mesLabelBR(mesReferencia)} e a planilha tem <strong>${linhasPreview.length}</strong> com nota. A rodada desse mês parece incompleta — por isso quase nada bate. Cancele e clique em <strong>➕ Completar Rodada do Mês</strong> antes de importar.</div>`
+        : '';
+      document.getElementById('impPqResumo').innerHTML = avisoPoucos +
         `<strong>${comMatch.length}</strong> vão atualizar a pesquisa de um condomínio já existente automaticamente.<br>` +
         (ignoradosSemNota ? `<strong>${ignoradosSemNota}</strong> linha(s) sem nota preenchida serão ignoradas.<br>` : '') +
         (semMatch.length ? `<strong style="color:var(--critico);">${semMatch.length}</strong> não bateram com nenhum condomínio de ${mesLabelBR(mesReferencia)} — revise abaixo antes de confirmar.` : `Todas as linhas bateram certinho. ✅`);
@@ -22826,7 +22925,8 @@ async function importarPlanilhaPesquisas(file){
           <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
             <p style="margin:0 0 6px; font-size:12.5px;"><strong>Planilha:</strong> ${escapeHtml(p.nome)}</p>
             <select data-imp-idx="${i}" style="width:100%;">
-              <option value="novo" ${!p.sugestao?'selected':''}>➕ Criar como condomínio novo</option>
+              <option value="ignorar" ${!p.sugestao?'selected':''}>⏭️ Não importar esta linha</option>
+              <option value="novo">➕ Criar como condomínio novo</option>
               ${p.sugestao ? `<option value="${p.sugestao.n}" selected>✅ É o mesmo que: ${escapeHtml(p.sugestao.nome)}</option>` : ''}
               <option value="" disabled>── ou escolha manualmente ──</option>
               ${opcoesCandidatos}
@@ -22835,7 +22935,13 @@ async function importarPlanilhaPesquisas(file){
         `).join('');
       }
 
-      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal };
+      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal, notaVazia };
+      };
+
+      const inputMes = document.getElementById('impPqMes');
+      inputMes.value = mesInicial;
+      inputMes.onchange = () => { if (/^\d{4}-\d{2}$/.test(inputMes.value)) montarPreview(inputMes.value); };
+      montarPreview(mesInicial);
       document.getElementById('impPqPreviewModal').style.display = 'flex';
     }catch(err){
       alert('Erro ao ler a planilha: ' + err.message);
@@ -22859,11 +22965,12 @@ async function executarImportacaoPesquisasConfirmada(){
   document.getElementById('impPqPreviewModal').style.display = 'none';
   btn.disabled = true; btn.textContent = 'Importando...';
 
-  let novos = 0, atualizados = 0, semMatchIdx = -1;
+  let novos = 0, atualizados = 0, ignoradosEscolha = 0, semMatchIdx = -1;
   for (const p of linhasPreview){
     const { row, nome } = p;
     const notaTxt = String(row[colNota]||'').trim();
-    const nota2Txt = colNota2 !== -1 ? String(row[colNota2]||'').trim() : '';
+    const nota2Bruta = colNota2 !== -1 ? String(row[colNota2]||'').trim() : '';
+    const nota2Txt = st.notaVazia(nota2Bruta) ? '' : nota2Bruta;
     const filial = colFilial !== -1 ? normalizeFilialCanonica(String(row[colFilial]||'')) : '';
     const dataTxt = colData !== -1 ? String(row[colData]||'').trim() : '';
     const dataPesquisa = pqConverterDataBRparaISO(dataTxt, mesReferencia);
@@ -22881,6 +22988,7 @@ async function executarImportacaoPesquisasConfirmada(){
     if (!existente){
       semMatchIdx++;
       const escolha = escolhas[semMatchIdx];
+      if (escolha === 'ignorar'){ ignoradosEscolha++; continue; }
       if (escolha && escolha !== 'novo'){
         existente = DATA.find(d => String(d.n) === String(escolha));
       }
@@ -22911,7 +23019,7 @@ async function executarImportacaoPesquisasConfirmada(){
     }
   }
 
-  alert(`Importação concluída!\n\n${novos} pesquisa(s) nova(s)\n${atualizados} atualizada(s)`);
+  alert(`Importação concluída!\n\n${novos} pesquisa(s) nova(s)\n${atualizados} atualizada(s)\n${ignoradosEscolha} linha(s) não importada(s)`);
   render();
   btn.disabled = false; btn.textContent = textoOriginal;
   document.getElementById('pqImportarPlanilhaInput').value = '';
@@ -22925,6 +23033,11 @@ document.getElementById('impPqCancelarBtn').addEventListener('click', ()=>{
   document.getElementById('pqImportarPlanilhaInput').value = '';
   window.__importPqState = null;
 });
+
+// DATA é um const (array), então não pode ser reatribuído — remove os itens no próprio array.
+function removerDoDATA(predicado){
+  for (let i = DATA.length - 1; i >= 0; i--){ if (predicado(DATA[i])) DATA.splice(i, 1); }
+}
 
 // ===== Excluir Rodada (mês inteiro) na aba Pesquisas =====
 async function excluirItemPesquisaCompleto(item){
@@ -22948,7 +23061,7 @@ async function excluirRodadaPesquisas(){
   try{
     for (const item of doMes){ await excluirItemPesquisaCompleto(item); }
     persistOverrides(OVERRIDES);
-    DATA = DATA.filter(d => getMes(d) !== selectedMes);
+    removerDoDATA(d => getMes(d) === selectedMes);
     populateFilterOptions();
     render();
     alert(`${doMes.length} registro(s) de ${mesLabelBR(selectedMes)} excluído(s).`);
@@ -22976,7 +23089,13 @@ function renderDupModalPq(){
     body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>`;
     return;
   }
-  body.innerHTML = duplicados.map((grupo, gi) => `
+  const totalExtras = duplicados.reduce((acc, g) => acc + g.length - 1, 0);
+  const cabecalho = `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
+      <div style="font-size:13px;"><strong>${duplicados.length}</strong> condomínio(s) repetido(s) — <strong>${totalExtras}</strong> linha(s) a mais.</div>
+      <button type="button" class="clearbtn" id="btnLimparDupAuto" style="border-color:var(--critico); color:var(--critico);">🧹 Limpar automaticamente (manter a melhor de cada)</button>
+    </div>`;
+  body.innerHTML = cabecalho + duplicados.map((grupo, gi) => `
     <div style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:12px;">
       <p style="font-weight:600; margin:0 0 8px;">${escapeHtml(grupo[0].nome)} <span style="color:var(--text-faint); font-weight:400;">— ${grupo.length} registros</span></p>
       ${grupo.map((item) => `
@@ -22989,6 +23108,43 @@ function renderDupModalPq(){
       `).join('')}
     </div>
   `).join('');
+  document.getElementById('btnLimparDupAuto').addEventListener('click', async ()=>{
+    const pontuar = (it) => {
+      const temNota = it.nota && it.nota !== '—' && String(it.nota).trim() !== '';
+      return (temNota ? 100 : 0) + (it.statusPesquisa && it.statusPesquisa !== 'Pendente' ? 10 : 0)
+        + ((it.houveReclamacao || it.houvePendencia || it.houveElogio) ? 5 : 0);
+    };
+    const remover = [];
+    duplicados.forEach(grupo => {
+      const ordenado = grupo.slice().sort((a,b) => (pontuar(b) - pontuar(a)) || (a.n - b.n));
+      remover.push(...ordenado.slice(1));
+    });
+    if (!confirm(`Vou manter 1 linha de cada condomínio repetido (a que tem nota/dados; se empatar, a mais antiga) e EXCLUIR ${remover.length} linha(s) de ${mesLabelBR(selectedMes)}.\n\nNão dá pra desfazer. Continuar?`)) return;
+    const b = document.getElementById('btnLimparDupAuto');
+    b.disabled = true;
+    try{
+      for (let i = 0; i < remover.length; i += 50){
+        const lote = remover.slice(i, i + 50);
+        b.textContent = `Excluindo... ${Math.min(i+50, remover.length)} de ${remover.length}`;
+        if (sb){
+          await sb.from('condo_extra').delete().in('item_n', lote.map(x => x.n));
+          const { error } = await sb.from('condo_overrides').upsert(lote.map(x => updatesToRow(x.n, { excluido: true })));
+          if (error) throw error;
+        }
+        lote.forEach(x => { OVERRIDES[x.n] = Object.assign({}, OVERRIDES[x.n], { excluido: true }); });
+      }
+      persistOverrides(OVERRIDES);
+      const ids = new Set(remover.map(x => x.n));
+      removerDoDATA(d => ids.has(d.n));
+      populateFilterOptions();
+      render();
+      renderDupModalPq();
+      alert(`${remover.length} linha(s) duplicada(s) excluída(s).`);
+    }catch(e){
+      alert('Erro ao limpar duplicados: ' + e.message);
+      b.disabled = false; b.textContent = '🧹 Limpar automaticamente (manter a melhor de cada)';
+    }
+  });
   body.querySelectorAll('[data-dup-excluir]').forEach(btn => {
     btn.addEventListener('click', async ()=>{
       const n = parseInt(btn.getAttribute('data-dup-excluir'), 10);
@@ -22999,7 +23155,7 @@ function renderDupModalPq(){
       try{
         await excluirItemPesquisaCompleto(item);
         persistOverrides(OVERRIDES);
-        DATA = DATA.filter(d => d.n !== n);
+        removerDoDATA(d => d.n === n);
         populateFilterOptions();
         render();
         renderDupModalPq();
