@@ -22715,14 +22715,24 @@ function pqConverterDataBRparaISO(dataTxt, mesReferencia){
 // Próximo número livre de condomínio: olha o DATA e também o que já existe nas tabelas do banco
 // (linhas excluídas/ocultas não ficam no DATA, mas continuam ocupando o número no banco —
 // reutilizar um número assim dava "duplicate key ... condo_extra_pkey").
+const BUILD_PQ = 'v111';
+async function maiorItemNDaTabela(tabela){
+  let max = 0, de = 0;
+  while (true){
+    const { data, error } = await sb.from(tabela).select('item_n').range(de, de + 999);
+    if (error || !data || !data.length) break;
+    data.forEach(r => { const v = Number(r.item_n); if (!isNaN(v) && v > max) max = v; });
+    if (data.length < 1000) break;
+    de += 1000;
+  }
+  return max;
+}
 async function proximoNLivre(){
   let max = Math.max(0, ...DATA.map(d => (typeof d.n === 'number' ? d.n : 0)));
   if (sb){
     for (const tabela of ['condo_extra', 'condo_overrides']){
-      try{
-        const { data } = await sb.from(tabela).select('item_n').order('item_n', { ascending: false }).limit(1);
-        if (data && data[0] && Number(data[0].item_n) > max) max = Number(data[0].item_n);
-      }catch(e){ console.error('Falha ao consultar o maior item_n em', tabela, e); }
+      try{ max = Math.max(max, await maiorItemNDaTabela(tabela)); }
+      catch(e){ console.error('Falha ao consultar o maior item_n em', tabela, e); }
     }
   }
   return max + 1;
@@ -22755,18 +22765,26 @@ async function completarRodadaPesquisas(){
       notaPosResolucao: '', pend: 'Pesquisa registrada como não realizada.', resolucao: '', mesReferencia: mes,
     }));
     novosItens.forEach(item => { item.humor = classifyHumor(item); });
-    const rows = novosItens.map(itemToExtraRow);
-    for (let i = 0; i < rows.length; i += 50){
-      const { error: insErr } = await sb.from('condo_extra').insert(rows.slice(i, i + 50));
-      if (insErr) throw insErr;
-      btn.textContent = `Salvando... ${Math.min(i+50, rows.length)} de ${rows.length}`;
+    let tentativas = 0;
+    for (let i = 0; i < novosItens.length; i += 50){
+      const lote = novosItens.slice(i, i + 50);
+      while (true){
+        const { error: insErr } = await sb.from('condo_extra').insert(lote.map(itemToExtraRow));
+        if (!insErr) break;
+        const colisao = insErr.code === '23505' || /duplicate key/i.test(insErr.message || '');
+        if (!colisao || ++tentativas > 6) throw insErr;
+        // número já ocupado no banco: renumera o que falta e tenta de novo
+        let base = await proximoNLivre();
+        novosItens.slice(i).forEach((it, k) => { it.n = base + k; });
+      }
+      lote.forEach(item => DATA.push(item));
+      btn.textContent = `Salvando... ${Math.min(i+50, novosItens.length)} de ${novosItens.length}`;
     }
-    novosItens.forEach(item => DATA.push(item));
     populateFilterOptions();
     render();
     alert(`${novosItens.length} pesquisa(s) pendente(s) criada(s) em ${mesLabelBR(mes)}.`);
   }catch(e){
-    alert('Erro ao completar a rodada: ' + e.message);
+    alert(`Erro ao completar a rodada (${BUILD_PQ}): ` + e.message);
   }finally{
     btn.disabled = false; btn.textContent = textoOriginal;
   }
