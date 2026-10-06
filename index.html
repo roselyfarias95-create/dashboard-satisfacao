@@ -22712,6 +22712,22 @@ function pqConverterDataBRparaISO(dataTxt, mesReferencia){
   return `${ano}-${mes}-${dia}`;
 }
 
+// Próximo número livre de condomínio: olha o DATA e também o que já existe nas tabelas do banco
+// (linhas excluídas/ocultas não ficam no DATA, mas continuam ocupando o número no banco —
+// reutilizar um número assim dava "duplicate key ... condo_extra_pkey").
+async function proximoNLivre(){
+  let max = Math.max(0, ...DATA.map(d => (typeof d.n === 'number' ? d.n : 0)));
+  if (sb){
+    for (const tabela of ['condo_extra', 'condo_overrides']){
+      try{
+        const { data } = await sb.from(tabela).select('item_n').order('item_n', { ascending: false }).limit(1);
+        if (data && data[0] && Number(data[0].item_n) > max) max = Number(data[0].item_n);
+      }catch(e){ console.error('Falha ao consultar o maior item_n em', tabela, e); }
+    }
+  }
+  return max + 1;
+}
+
 async function completarRodadaPesquisas(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const mes = selectedMes;
@@ -22732,7 +22748,7 @@ async function completarRodadaPesquisas(){
     if (!confirm(`Em ${mesLabelBR(mes)} existem ${doMes.length} condomínio(s) e o Cadastro tem ${ativos.length} ativos.\n\nCriar ${faltando.length} pesquisa(s) pendente(s) que estão faltando em ${mesLabelBR(mes)}? Os que já existem não serão alterados.`)) return;
 
     btn.textContent = 'Criando...';
-    let nextN = Math.max(0, ...DATA.map(d => d.n)) + 1;
+    let nextN = await proximoNLivre();
     const novosItens = faltando.map(c => ({
       n: nextN++, filial: c.filial || 'Não definida', nome: c.nome, nota: '—', dataPesquisa: '',
       statusPesquisa: 'Pendente', crit: 'pendente', setor: 'Não se aplica', motivo: '—', resolvido: null,
@@ -22966,6 +22982,7 @@ async function executarImportacaoPesquisasConfirmada(){
   btn.disabled = true; btn.textContent = 'Importando...';
 
   let novos = 0, atualizados = 0, ignoradosEscolha = 0, semMatchIdx = -1;
+  let proximoN = await proximoNLivre();
   for (const p of linhasPreview){
     const { row, nome } = p;
     const notaTxt = String(row[colNota]||'').trim();
@@ -23006,7 +23023,7 @@ async function executarImportacaoPesquisasConfirmada(){
         if (error) throw error;
         atualizados++;
       } else {
-        const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+        const newN = proximoN++;
         const item = Object.assign({ n: newN, filial, nome }, dadosPesquisa);
         item.humor = classifyHumor(item);
         DATA.push(item);
