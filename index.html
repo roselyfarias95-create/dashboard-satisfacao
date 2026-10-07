@@ -1653,7 +1653,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v111 (2026-10-06) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v112 (2026-10-07) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -6968,11 +6968,28 @@ function mesLabelBR(mes){
   return `${meses[m[2]] || m[2]}/${m[1]}`;
 }
 
+// O Supabase devolve no máximo 1000 linhas por consulta. Como as rodadas mensais já passaram
+// de 1000 linhas no total, um select('*') simples cortava as mais novas (por isso condomínios e
+// notas "sumiam" depois do F5). Aqui busca em páginas de 1000 até acabar.
+async function buscarTodasLinhas(tabela, colunas, ordenarPor){
+  const todas = [];
+  let de = 0;
+  while (true){
+    let consulta = sb.from(tabela).select(colunas || '*').range(de, de + 999);
+    if (ordenarPor) consulta = consulta.order(ordenarPor, { ascending: true });
+    const { data, error } = await consulta;
+    if (error) throw error;
+    if (data && data.length) todas.push(...data);
+    if (!data || data.length < 1000) break;
+    de += 1000;
+  }
+  return todas;
+}
+
 async function pullExtraItemsFromSupabase(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('condo_extra').select('*');
-    if (error) throw error;
+    const data = await buscarTodasLinhas('condo_extra', '*', 'item_n');
     let added = false;
     (data || []).forEach(row=>{
       if (!DATA.some(d => d.n === row.item_n)){
@@ -7232,8 +7249,7 @@ async function syncPesquisaParaCadastro(item){
 async function pullOverridesFromSupabase(){
   if (!sb) { syncStatus = 'offline'; updateSyncTag(); return; }
   try{
-    const { data, error } = await sb.from('condo_overrides').select('*');
-    if (error) throw error;
+    const data = await buscarTodasLinhas('condo_overrides', '*', 'item_n');
     (data || []).forEach(row=>{
       OVERRIDES[row.item_n] = rowToUpdates(row);
     });
@@ -22715,11 +22731,11 @@ function pqConverterDataBRparaISO(dataTxt, mesReferencia){
 // Próximo número livre de condomínio: olha o DATA e também o que já existe nas tabelas do banco
 // (linhas excluídas/ocultas não ficam no DATA, mas continuam ocupando o número no banco —
 // reutilizar um número assim dava "duplicate key ... condo_extra_pkey").
-const BUILD_PQ = 'v111';
+const BUILD_PQ = 'v112';
 async function maiorItemNDaTabela(tabela){
   let max = 0, de = 0;
   while (true){
-    const { data, error } = await sb.from(tabela).select('item_n').range(de, de + 999);
+    const { data, error } = await sb.from(tabela).select('item_n').order('item_n', { ascending: true }).range(de, de + 999);
     if (error || !data || !data.length) break;
     data.forEach(r => { const v = Number(r.item_n); if (!isNaN(v) && v > max) max = v; });
     if (data.length < 1000) break;
