@@ -1742,7 +1742,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v136 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v137 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2064,11 +2064,12 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <input type="text" id="pgUrl" class="search" style="width:100%; box-sizing:border-box; margin-top:4px;" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv">
       </label>
       <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:10px; font-size:12px; color:var(--text-faint);">
-        <label>Mês desta planilha (opcional) <input type="month" id="pgMes" class="search" style="margin-left:6px;"></label>
+        <label>Meses a atualizar <select id="pgEscopo" class="filter-select" style="margin-left:6px;"><option value="recentes">Os 2 mais recentes da planilha</option><option value="mes">Só o mês escolhido ao lado</option><option value="todos">Todos os meses da planilha</option></select></label>
+        <label>Mês <input type="month" id="pgMes" class="search" style="margin-left:6px;"></label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="pgAuto"> Sincronizar sozinho a cada
           <select id="pgMinutos" class="filter-select"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select> com o dashboard aberto</label>
       </div>
-      <p style="font-size:11.5px; color:var(--text-faint); margin:0 0 10px;">Sem mês definido, o dashboard descobre o mês pelas datas da planilha.</p>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:0 0 10px;">Cada linha é atualizada no mês indicado na coluna <strong>Mês</strong> da planilha (ex.: OUTUBRO/2026). Sem essa coluna, vale o mês escolhido ou o mais frequente nas datas.</p>
       <div id="pgStatus" style="font-size:12.5px; line-height:1.6; border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:12px;"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="clearbtn" id="pgSalvar">Salvar</button>
@@ -25431,7 +25432,7 @@ function pqMesmoConjuntoTokens(a, b){
 const PG_CHAVE = 'planilhaGoogleCfg';
 let __pgSincronizando = false, __pgUltimasLinhas = null, __pgNaoEncontradas = [];
 function pgLerCfg(){
-  const base = { url: '', mes: '', auto: false, minutos: 10, ultima: 0, resumo: '', naoEncontradas: [] };
+  const base = { url: '', mes: '', escopo: 'recentes', auto: false, minutos: 10, ultima: 0, resumo: '', naoEncontradas: [] };
   try{ return Object.assign(base, JSON.parse(localStorage.getItem(PG_CHAVE) || '{}')); }catch(e){ return base; }
 }
 function pgSalvarCfg(c){ try{ localStorage.setItem(PG_CHAVE, JSON.stringify(c)); }catch(e){} }
@@ -25445,8 +25446,21 @@ function pgDetectarColunas(linhas){
   const headers = linhas[idxCab].map(h => String(h || '').trim().toLowerCase());
   const acha = (padroes, exceto) => headers.findIndex((h, i) => i !== exceto && padroes.some(p => h.includes(p)));
   const cNota = acha(['nota']);
-  const cols = { idxCab, cNome: acha(['condomín', 'condomin', 'cliente']), cNota, cNota2: acha(['nota'], cNota), cData: acha(['data']), cStatus: acha(['status']), cComent: acha(['coment']), cRetorno: acha(['retorno']) };
+  const cols = { idxCab, cNome: acha(['condomín', 'condomin', 'cliente']), cNota, cNota2: acha(['nota'], cNota), cData: acha(['data']), cStatus: acha(['status']), cComent: acha(['coment']), cRetorno: acha(['retorno']),
+    cMes: headers.findIndex(h => /^m[eê]s\b/.test(h)) };
   return (cols.cNome === -1 || cols.cNota === -1) ? null : cols;
+}
+// "OUTUBRO/2026", "out/26", "10/2026" ou "2026-10" -> "2026-10"
+function pgMesDaCelula(txt){
+  const t = String(txt || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!t) return null;
+  let m = /^(\d{4})-(\d{2})/.exec(t); if (m) return m[1] + '-' + m[2];
+  const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  m = /^([a-z]{3,9})\s*[\/\-. ]\s*(\d{2,4})$/.exec(t);
+  if (m){ const i = nomes.indexOf(m[1].slice(0, 3)); if (i !== -1) return (m[2].length === 2 ? '20' + m[2] : m[2]) + '-' + String(i + 1).padStart(2, '0'); }
+  m = /^(\d{1,2})\s*[\/\-.]\s*(\d{4})$/.exec(t);
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12) return m[2] + '-' + m[1].padStart(2, '0');
+  return null;
 }
 function pgInferirMes(dados, cData){
   if (cData === -1) return null;
@@ -25485,6 +25499,7 @@ function pgDadosDaLinha(r, cols, mes, existente){
     crit: notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok',
   };
 }
+function pgMesAnterior(mes){ const [y, m] = mes.split('-').map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 async function pgSincronizar(silencioso){
   const cfg = pgLerCfg();
   if (!cfg.url){ if (!silencioso) pgAbrirModal(); return null; }
@@ -25499,18 +25514,27 @@ async function pgSincronizar(silencioso){
     const cols = pgDetectarColunas(linhas);
     if (!cols) throw new Error('não encontrei as colunas "Condomínio" e "Nota" na planilha publicada');
     const dados = linhas.slice(cols.idxCab + 1).filter(r => String(r[cols.cNome] || '').trim());
-    const mes = cfg.mes || pgInferirMes(dados, cols.cData) || selectedMes || mesAtualReal();
-    const candidatos = DATA.filter(d => getMes(d) === mes);
-    let iguais = 0, semNota = 0;
-    const atualizar = [], naoEncontradas = [], vistos = new Map();
-    dados.forEach(r => {
+    // mês de cada linha: coluna "Mês" da planilha; sem ela, o mês escolhido ou o mais frequente nas datas
+    const mesPadrao = cfg.mes || pgInferirMes(dados, cols.cData) || selectedMes || mesAtualReal();
+    const comMes = dados.map(r => ({ r, mes: (cols.cMes !== -1 ? pgMesDaCelula(r[cols.cMes]) : null) || mesPadrao }));
+    const comNota = comMes.filter(x => !pgNotaVazia(x.r[cols.cNota]));
+    // quais meses sincronizar: só o escolhido, os dois mais recentes com nota (padrão) ou todos
+    let mesesAlvo;
+    const mesesComNota = [...new Set(comNota.map(x => x.mes))].sort();
+    if (cfg.escopo === 'todos') mesesAlvo = new Set(mesesComNota);
+    else if (cfg.escopo === 'mes' && cfg.mes) mesesAlvo = new Set([cfg.mes]);
+    else { const ultimo = mesesComNota[mesesComNota.length - 1]; mesesAlvo = new Set(ultimo ? [ultimo, pgMesAnterior(ultimo)] : []); }
+    let iguais = 0, semNota = dados.length - comNota.length, foraDoEscopo = 0;
+    const atualizar = [], naoEncontradas = [], naoPorMes = {}, vistos = new Map();
+    comNota.forEach(({ r, mes }) => {
+      if (!mesesAlvo.has(mes)){ foraDoEscopo++; return; }
       const nome = String(r[cols.cNome]).replace(/\s+/g, ' ').trim().toUpperCase();
-      if (pgNotaVazia(r[cols.cNota])){ semNota++; return; }
-      vistos.set(normalizeNomeCondo(nome), { nome, r });   // se o condomínio aparece duas vezes, vale a última linha
+      vistos.set(mes + '|' + normalizeNomeCondo(nome), { nome, r, mes });   // repetido no mesmo mês: vale a última linha
     });
-    vistos.forEach(({ nome, r }) => {
+    vistos.forEach(({ nome, r, mes }) => {
+      const candidatos = DATA.filter(d => getMes(d) === mes);
       const existente = candidatos.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome)) || candidatos.find(d => pqMesmoConjuntoTokens(d.nome, nome));
-      if (!existente){ naoEncontradas.push(nome); return; }
+      if (!existente){ naoEncontradas.push(nome + ' (' + mesLabelBR(mes) + ')'); (naoPorMes[mes] = naoPorMes[mes] || []).push(r); return; }
       const novo = pgDadosDaLinha(r, cols, mes, existente);
       const mudou = Object.keys(novo).some(k => String(existente[k] == null ? '' : existente[k]) !== String(novo[k] == null ? '' : novo[k]));
       if (!mudou){ iguais++; return; }
@@ -25524,12 +25548,14 @@ async function pgSincronizar(silencioso){
     }
     atualizar.forEach(it => { OVERRIDES[it.n] = Object.assign({}, OVERRIDES[it.n], { nota: it.nota, notaPosResolucao: it.notaPosResolucao, statusPesquisa: it.statusPesquisa, comentarioSindico: it.comentarioSindico, comentarioContato: it.comentarioContato, dataPesquisa: it.dataPesquisa, crit: it.crit }); });
     if (atualizar.length){ persistOverrides(OVERRIDES); try{ populateFilterOptions(); }catch(e){} render(); }
-    __pgUltimasLinhas = linhas; __pgNaoEncontradas = naoEncontradas;
-    const resumo = atualizar.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · mês ' + mesLabelBR(mes);
+    __pgUltimasLinhas = { cabecalho: linhas[cols.idxCab], porMes: naoPorMes };
+    __pgNaoEncontradas = naoEncontradas;
+    const meses = [...mesesAlvo].sort().map(mesLabelBR).join(' e ');
+    const resumo = atualizar.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · meses lidos: ' + (meses || 'nenhum com nota') + (foraDoEscopo ? ' · ' + foraDoEscopo + ' linha(s) de outros meses fora do escopo' : '');
     Object.assign(cfg, { ultima: Date.now(), resumo, naoEncontradas: naoEncontradas.slice(0, 40) });
     pgSalvarCfg(cfg);
     pgAtualizarTela();
-    return { atualizadas: atualizar.length, iguais, naoEncontradas, semNota, mes };
+    return { atualizadas: atualizar.length, iguais, naoEncontradas, semNota, foraDoEscopo, meses: [...mesesAlvo].sort() };
   }catch(e){
     console.error('Sincronização da planilha do Google:', e);
     const msg = 'Não consegui ler a planilha: ' + (e && e.message ? e.message : e) + '. Confira se a aba foi publicada na web como CSV e se o link está completo.';
@@ -25555,6 +25581,7 @@ function pgAbrirModal(){
   const cfg = pgLerCfg();
   document.getElementById('pgUrl').value = cfg.url;
   document.getElementById('pgMes').value = cfg.mes || '';
+  document.getElementById('pgEscopo').value = cfg.escopo || 'recentes';
   document.getElementById('pgAuto').checked = !!cfg.auto;
   document.getElementById('pgMinutos').value = String(cfg.minutos || 10);
   pgAtualizarTela();
@@ -25564,7 +25591,7 @@ function pgSalvarFormulario(){
   const url = document.getElementById('pgUrl').value.trim();
   if (url && !/^https:\/\/docs\.google\.com\/spreadsheets\//.test(url)){ alert('O link precisa começar com https://docs.google.com/spreadsheets/ (o link gerado em Arquivo > Compartilhar > Publicar na web).'); return false; }
   const cfg = pgLerCfg();
-  Object.assign(cfg, { url, mes: document.getElementById('pgMes').value || '', auto: document.getElementById('pgAuto').checked, minutos: Number(document.getElementById('pgMinutos').value) || 10 });
+  Object.assign(cfg, { url, mes: document.getElementById('pgMes').value || '', escopo: document.getElementById('pgEscopo').value || 'recentes', auto: document.getElementById('pgAuto').checked, minutos: Number(document.getElementById('pgMinutos').value) || 10 });
   pgSalvarCfg(cfg);
   pgAtualizarTela();
   return true;
@@ -25572,12 +25599,16 @@ function pgSalvarFormulario(){
 async function pgRevisarNaoEncontradas(){
   if (!__pgUltimasLinhas) await pgSincronizar(false);
   if (!__pgUltimasLinhas) return;
-  const cfg = pgLerCfg();
-  const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-  const nomeAba = cfg.mes ? 'Google Planilhas ' + meses[Number(cfg.mes.slice(5, 7)) - 1] + ' ' + cfg.mes.slice(0, 4) : 'Google Planilhas';
+  const meses = Object.keys(__pgUltimasLinhas.porMes).sort();
+  if (!meses.length){ alert('Nenhuma linha não encontrada na última sincronização.'); return; }
+  const mes = meses[meses.length - 1];   // a prévia trabalha com um mês por vez: começa pelo mais recente
+  const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const nomeAba = 'Google Planilhas ' + nomesMeses[Number(mes.slice(5, 7)) - 1] + ' ' + mes.slice(0, 4);
+  const linhasPrev = [__pgUltimasLinhas.cabecalho].concat(__pgUltimasLinhas.porMes[mes]);
   document.getElementById('planilhaGoogleModal').style.display = 'none';
+  if (meses.length > 1) alert('Há linhas não encontradas em ' + meses.length + ' meses. Vou abrir a conferência de ' + mesLabelBR(mes) + '; depois rode "Sincronizar agora" e "Revisar não encontradas" de novo para os outros.');
   const btn = document.getElementById('btnImportarPlanilhaPesquisas');
-  prepararPreviewDeLinhas(__pgUltimasLinhas, nomeAba, btn, btn.textContent);
+  prepararPreviewDeLinhas(linhasPrev, nomeAba, btn, btn.textContent);
 }
 document.getElementById('btnPlanilhaGoogle').addEventListener('click', pgAbrirModal);
 document.getElementById('pgFechar').addEventListener('click', () => { document.getElementById('planilhaGoogleModal').style.display = 'none'; });
