@@ -1741,7 +1741,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v132 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v133 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -9401,14 +9401,17 @@ function prepararImportacaoCarteira(itens){
   });
   window.__carteiraCsv = { itens };
   const semMatch = itens.filter(it => !it.exato);
-  const opcoesTodos = ativos.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map(c => '<option value="' + escapeHtml(String(c.item_id)) + '">' + escapeHtml(c.nome) + '</option>').join('');
+  const CSV_NAO = '⏭️ Não importar esta linha';
+  const ordenados = ativos.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const mapaNomeId = new Map();
+  ordenados.forEach(c => { const k = normTxtCarteira(c.nome); if (!mapaNomeId.has(k)) mapaNomeId.set(k, c.item_id); });
+  window.__carteiraCsv.mapaNomeId = mapaNomeId;
+  const datalistCsv = '<datalist id="carteirasCsvLista"><option value="' + escapeHtml(CSV_NAO) + '"></option>' + ordenados.map(c => '<option value="' + escapeHtml(c.nome) + '"></option>').join('') + '</datalist>';
   out.innerHTML =
     '<p style="font-size:13px; line-height:1.6; margin:0 0 8px;"><strong>' + (itens.length - semMatch.length) + '</strong> de ' + itens.length + ' linha(s) bateram automaticamente com um condomínio do Cadastro.<br>' +
-    (semMatch.length ? '<strong style="color:var(--critico);">' + semMatch.length + '</strong> não bateram — revise abaixo (o padrão é não importar).' : 'Todas bateram. ✅') + '</p>' +
+    (semMatch.length ? '<strong style="color:var(--critico);">' + semMatch.length + '</strong> não bateram: <strong>clique no campo, digite parte do nome</strong> (por exemplo &quot;par&quot;) e escolha na lista. O padrão é não importar.' : 'Todas bateram. ✅') + '</p>' + datalistCsv +
     semMatch.map((it, i) => '<div style="border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px;"><div style="font-size:12.5px; margin-bottom:5px;"><strong>Planilha:</strong> ' + escapeHtml(it.nome) + ' → <em>' + escapeHtml(it.resp || 'sem responsável') + '</em></div>' +
-      '<select class="filter-select" style="width:100%;" data-csv-sem="' + i + '"><option value="">⏭️ Não importar esta linha</option>' +
-      (it.sugestao ? '<option value="' + escapeHtml(String(it.sugestao.item_id)) + '" selected>✅ É o mesmo que: ' + escapeHtml(it.sugestao.nome) + '</option>' : '') +
-      '<option value="" disabled>── ou escolha manualmente ──</option>' + opcoesTodos + '</select></div>').join('') +
+      '<input type="text" list="carteirasCsvLista" data-csv-sem="' + i + '" autocomplete="off" style="width:100%; box-sizing:border-box;" value="' + escapeHtml(it.sugestao ? it.sugestao.nome : CSV_NAO) + '" placeholder="Digite parte do nome do condomínio..." onfocus="this.select()"></div>').join('') +
     '<div style="margin-top:10px;"><button type="button" class="clearbtn" id="carteirasCsvAplicar" style="border-color:var(--ok); color:var(--ok);">✅ Gravar no banco</button></div>';
   window.__carteiraCsv.semMatch = semMatch;
   document.getElementById('carteirasCsvAplicar').addEventListener('click', aplicarCsvCarteira);
@@ -9417,7 +9420,14 @@ async function aplicarCsvCarteira(){
   const st = window.__carteiraCsv;
   if (!st) return;
   const escolhas = {};
-  document.querySelectorAll('#carteirasCsvResultado [data-csv-sem]').forEach(sel => { escolhas[sel.getAttribute('data-csv-sem')] = sel.value; });
+  const invalidasCsv = [];
+  document.querySelectorAll('#carteirasCsvResultado [data-csv-sem]').forEach(inp => {
+    const v = String(inp.value || '').trim();
+    if (!v || v.indexOf('Não importar') !== -1){ escolhas[inp.getAttribute('data-csv-sem')] = ''; return; }
+    const id = st.mapaNomeId ? st.mapaNomeId.get(normTxtCarteira(v)) : undefined;
+    if (id === undefined){ invalidasCsv.push(v); inp.style.borderColor = 'var(--critico)'; } else { inp.style.borderColor = ''; escolhas[inp.getAttribute('data-csv-sem')] = id; }
+  });
+  if (invalidasCsv.length){ alert('Há ' + invalidasCsv.length + ' linha(s) com um nome que não está na lista (marcadas em vermelho). Escolha um condomínio da lista ou deixe "Não importar esta linha".'); return; }
   const grupos = new Map(); // combinação (responsável + supervisor + técnico) -> ids
   let semIdx = -1, ignoradas = 0;
   st.itens.forEach(it => {
@@ -25456,28 +25466,30 @@ async function importarPlanilhaPesquisas(file){
         (ignoradosSemNota ? `<strong>${ignoradosSemNota}</strong> linha(s) sem nota preenchida serão ignoradas.<br>` : '') +
         (semMatch.length ? `<strong style="color:var(--critico);">${semMatch.length}</strong> não bateram com nenhum condomínio de ${mesLabelBR(mesReferencia)} — revise abaixo antes de confirmar.` : `Todas as linhas bateram certinho. ✅`);
 
-      const opcoesCandidatos = candidatosDoMes.slice().sort((a,b)=>a.nome.localeCompare(b.nome))
-        .map(d => `<option value="${d.n}">${escapeHtml(d.nome)}</option>`).join('');
+      // Campo com busca: digitar parte do nome (ex.: "par") já mostra os condomínios que combinam
+      const IMP_NAO = '⏭️ Não importar esta linha', IMP_NOVO = '➕ Criar como condomínio novo';
+      const candidatosOrdenados = candidatosDoMes.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+      const mapaNomeN = new Map();
+      candidatosOrdenados.forEach(d => { const k = normTxtCarteira(d.nome); if (!mapaNomeN.has(k)) mapaNomeN.set(k, d.n); });
+      const listaOpcoes = '<datalist id="impPqLista"><option value="' + escapeHtml(IMP_NAO) + '"></option><option value="' + escapeHtml(IMP_NOVO) + '"></option>' +
+        candidatosOrdenados.map(d => '<option value="' + escapeHtml(d.nome) + '"></option>').join('') + '</datalist>';
 
       const bodyEl = document.getElementById('impPqRevisaoBody');
       if (!semMatch.length){
         bodyEl.innerHTML = '';
       } else {
-        bodyEl.innerHTML = semMatch.map((p, i) => `
+        bodyEl.innerHTML = '<p style="font-size:12px; color:var(--text-faint); margin:0 0 10px;">Para cada linha: <strong>clique no campo, digite parte do nome</strong> do condomínio (por exemplo &quot;par&quot;) e escolha na lista que aparece. Deixe &quot;Não importar&quot; para pular a linha.</p>' + listaOpcoes +
+          semMatch.map((p, i) => `
           <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
             <p style="margin:0 0 6px; font-size:12.5px;"><strong>Planilha:</strong> ${escapeHtml(p.nome)}</p>
-            <select data-imp-idx="${i}" style="width:100%;">
-              <option value="ignorar" ${!p.sugestao?'selected':''}>⏭️ Não importar esta linha</option>
-              <option value="novo">➕ Criar como condomínio novo</option>
-              ${p.sugestao ? `<option value="${p.sugestao.n}" selected>✅ É o mesmo que: ${escapeHtml(p.sugestao.nome)}</option>` : ''}
-              <option value="" disabled>── ou escolha manualmente ──</option>
-              ${opcoesCandidatos}
-            </select>
+            <input type="text" list="impPqLista" data-imp-idx="${i}" autocomplete="off" style="width:100%; box-sizing:border-box;"
+              value="${escapeHtml(p.sugestao ? p.sugestao.nome : IMP_NAO)}" placeholder="Digite parte do nome do condomínio..."
+              onfocus="this.select()" onchange="this.style.borderColor = (resolverEscolhaImp(this.value, window.__importPqState && window.__importPqState.mapaNomeN) === null) ? 'var(--critico)' : ''">
           </div>
         `).join('');
       }
 
-      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal, notaVazia };
+      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal, notaVazia, mapaNomeN };
       };
 
       const inputMes = document.getElementById('impPqMes');
@@ -25493,16 +25505,30 @@ async function importarPlanilhaPesquisas(file){
   reader.readAsArrayBuffer(file);
 }
 
+// Converte o texto do campo de busca em: 'ignorar', 'novo' ou o número do condomínio escolhido (null = nome que não está na lista)
+function resolverEscolhaImp(valor, mapaNomeN){
+  const v = String(valor || '').trim();
+  if (!v || v.indexOf('Não importar') !== -1) return 'ignorar';
+  if (v.indexOf('Criar como condomínio novo') !== -1) return 'novo';
+  const n = mapaNomeN ? mapaNomeN.get(normTxtCarteira(v)) : undefined;
+  return n === undefined ? null : String(n);
+}
 async function executarImportacaoPesquisasConfirmada(){
   const st = window.__importPqState;
   if (!st) return;
   const { linhasPreview, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal } = st;
 
-  // Lê as escolhas feitas nos <select> das linhas sem match automático
-  const escolhas = {};
-  document.querySelectorAll('#impPqRevisaoBody [data-imp-idx]').forEach(sel => {
-    escolhas[sel.getAttribute('data-imp-idx')] = sel.value;
+  // Lê o que foi escolhido (digitado) em cada linha sem match automático
+  const escolhas = {}, invalidas = [];
+  document.querySelectorAll('#impPqRevisaoBody [data-imp-idx]').forEach(inp => {
+    const r = resolverEscolhaImp(inp.value, st.mapaNomeN);
+    if (r === null){ invalidas.push(inp.value || '(vazio)'); inp.style.borderColor = 'var(--critico)'; }
+    else escolhas[inp.getAttribute('data-imp-idx')] = r;
   });
+  if (invalidas.length){
+    alert('Há ' + invalidas.length + ' linha(s) com um nome que não está na lista (marcadas em vermelho). Escolha um condomínio da lista, ou "Não importar esta linha" / "Criar como condomínio novo".');
+    return;
+  }
 
   document.getElementById('impPqPreviewModal').style.display = 'none';
   btn.disabled = true; btn.textContent = 'Importando...';
