@@ -1742,7 +1742,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v137 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v138 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -25531,10 +25531,20 @@ async function pgSincronizar(silencioso){
       const nome = String(r[cols.cNome]).replace(/\s+/g, ' ').trim().toUpperCase();
       vistos.set(mes + '|' + normalizeNomeCondo(nome), { nome, r, mes });   // repetido no mesmo mês: vale a última linha
     });
-    vistos.forEach(({ nome, r, mes }) => {
-      const candidatos = DATA.filter(d => getMes(d) === mes);
-      const existente = candidatos.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome)) || candidatos.find(d => pqMesmoConjuntoTokens(d.nome, nome));
+    // Cada condomínio do dashboard só pode receber uma linha por mês. Linhas com acerto exato no nome vão primeiro;
+    // se outro nome da planilha apontar para o mesmo condomínio, ele é ignorado e listado (evita gravar a mesma linha duas vezes).
+    const candidatosPorMes = {};
+    const pares = [...vistos.values()].map(v => {
+      const cands = candidatosPorMes[v.mes] = candidatosPorMes[v.mes] || DATA.filter(d => getMes(d) === v.mes);
+      const exato = cands.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(v.nome));
+      return Object.assign({}, v, { exato, aprox: exato || cands.find(d => pqMesmoConjuntoTokens(d.nome, v.nome)) || null });
+    }).sort((x, y) => (x.exato ? 0 : 1) - (y.exato ? 0 : 1));
+    const usados = new Set(), repetidas = [];
+    pares.forEach(({ nome, r, mes, aprox }) => {
+      const existente = aprox;
       if (!existente){ naoEncontradas.push(nome + ' (' + mesLabelBR(mes) + ')'); (naoPorMes[mes] = naoPorMes[mes] || []).push(r); return; }
+      if (usados.has(existente.n)){ repetidas.push(nome + ' (' + mesLabelBR(mes) + ')'); return; }
+      usados.add(existente.n);
       const novo = pgDadosDaLinha(r, cols, mes, existente);
       const mudou = Object.keys(novo).some(k => String(existente[k] == null ? '' : existente[k]) !== String(novo[k] == null ? '' : novo[k]));
       if (!mudou){ iguais++; return; }
@@ -25542,8 +25552,10 @@ async function pgSincronizar(silencioso){
       existente.humor = classifyHumor(existente);
       atualizar.push(existente);
     });
-    for (let i = 0; i < atualizar.length; i += 100){
-      const { error } = await sb.from('condo_overrides').upsert(atualizar.slice(i, i + 100).map(it => updatesToRow(it.n, it)));
+    // trava final: nunca envia o mesmo item duas vezes no mesmo lote
+    const unicos = [...new Map(atualizar.map(it => [it.n, it])).values()];
+    for (let i = 0; i < unicos.length; i += 100){
+      const { error } = await sb.from('condo_overrides').upsert(unicos.slice(i, i + 100).map(it => updatesToRow(it.n, it)));
       if (error) throw error;
     }
     atualizar.forEach(it => { OVERRIDES[it.n] = Object.assign({}, OVERRIDES[it.n], { nota: it.nota, notaPosResolucao: it.notaPosResolucao, statusPesquisa: it.statusPesquisa, comentarioSindico: it.comentarioSindico, comentarioContato: it.comentarioContato, dataPesquisa: it.dataPesquisa, crit: it.crit }); });
@@ -25551,11 +25563,11 @@ async function pgSincronizar(silencioso){
     __pgUltimasLinhas = { cabecalho: linhas[cols.idxCab], porMes: naoPorMes };
     __pgNaoEncontradas = naoEncontradas;
     const meses = [...mesesAlvo].sort().map(mesLabelBR).join(' e ');
-    const resumo = atualizar.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · meses lidos: ' + (meses || 'nenhum com nota') + (foraDoEscopo ? ' · ' + foraDoEscopo + ' linha(s) de outros meses fora do escopo' : '');
-    Object.assign(cfg, { ultima: Date.now(), resumo, naoEncontradas: naoEncontradas.slice(0, 40) });
+    const resumo = unicos.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · meses lidos: ' + (meses || 'nenhum com nota') + (foraDoEscopo ? ' · ' + foraDoEscopo + ' linha(s) de outros meses fora do escopo' : '') + (repetidas.length ? ' · ' + repetidas.length + ' nome(s) repetido(s) para o mesmo condomínio (ignorados)' : '');
+    Object.assign(cfg, { ultima: Date.now(), resumo, naoEncontradas: naoEncontradas.slice(0, 40), repetidas: repetidas.slice(0, 40) });
     pgSalvarCfg(cfg);
     pgAtualizarTela();
-    return { atualizadas: atualizar.length, iguais, naoEncontradas, semNota, foraDoEscopo, meses: [...mesesAlvo].sort() };
+    return { atualizadas: unicos.length, iguais, naoEncontradas, repetidas, semNota, foraDoEscopo, meses: [...mesesAlvo].sort() };
   }catch(e){
     console.error('Sincronização da planilha do Google:', e);
     const msg = 'Não consegui ler a planilha: ' + (e && e.message ? e.message : e) + '. Confira se a aba foi publicada na web como CSV e se o link está completo.';
@@ -25575,7 +25587,8 @@ function pgAtualizarTela(){
   if (!st) return;
   if (!cfg.ultima){ st.textContent = cfg.url ? 'Ainda não sincronizou.' : 'Cole o link da planilha publicada para começar.'; return; }
   st.innerHTML = '<strong>Última sincronização às ' + escapeHtml(hora) + '</strong><br>' + escapeHtml(cfg.resumo || '') +
-    (cfg.naoEncontradas && cfg.naoEncontradas.length ? '<br><span style="color:var(--critico);">Não encontradas (clique em "Revisar não encontradas"):</span> ' + escapeHtml(cfg.naoEncontradas.slice(0, 15).join(', ')) + (cfg.naoEncontradas.length > 15 ? '...' : '') : '');
+    (cfg.naoEncontradas && cfg.naoEncontradas.length ? '<br><span style="color:var(--critico);">Não encontradas (clique em "Revisar não encontradas"):</span> ' + escapeHtml(cfg.naoEncontradas.slice(0, 15).join(', ')) + (cfg.naoEncontradas.length > 15 ? '...' : '') : '') +
+    (cfg.repetidas && cfg.repetidas.length ? '<br><span style="color:#f59e0b;">Nomes diferentes da planilha que apontam para o mesmo condomínio (só o de nome mais parecido foi usado; corrija na planilha):</span> ' + escapeHtml(cfg.repetidas.slice(0, 12).join(', ')) + (cfg.repetidas.length > 12 ? '...' : '') : '');
 }
 function pgAbrirModal(){
   const cfg = pgLerCfg();
