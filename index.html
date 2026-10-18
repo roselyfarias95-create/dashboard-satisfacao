@@ -1135,6 +1135,42 @@
     header{ flex-direction:column; align-items:flex-start; }
     .headmeta{ text-align:left; }
   }
+
+  .rank-fisc-bloco{ margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); }
+  .rank-fisc{ font-size:11.5px; padding:5px 7px; margin-bottom:4px; border-radius:6px; background:var(--bg-panel); cursor:pointer; line-height:1.5; }
+  .rank-fisc:hover{ outline:1px solid #a78bfa; }
+  .org-stats{ font-size:10.5px; color:var(--text-faint); margin-top:6px; line-height:1.5; }
+  .org-ativ{ margin-top:6px; font-size:11px; color:#a78bfa; cursor:pointer; text-decoration:underline; }
+  .org-virtual{ border-style:dashed !important; opacity:.92; }
+  .org-novo{ font-size:10px; color:#f59e0b; margin-top:4px; }
+  .rank-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px; }
+  .rank-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; cursor:pointer; transition:border-color .15s, transform .15s; }
+  .rank-card:hover{ border-color:#a78bfa; transform:translateY(-2px); }
+  .rank-sem{ border-style:dashed; opacity:.9; }
+  .rank-topo{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .rank-pos{ font-size:24px; min-width:34px; text-align:center; }
+  .rank-avatar{ position:relative; width:64px; height:64px; min-width:64px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#38bdf8); display:flex; align-items:center; justify-content:center; border:2px solid #a78bfa; }
+  .rank-cam{ position:absolute; right:-4px; bottom:-4px; font-size:12px; background:var(--bg-panel); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); }
+  .rank-nome{ font-size:16px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rank-sub{ font-size:11.5px; color:var(--text-faint); }
+  .rank-media{ display:flex; align-items:baseline; gap:8px; }
+  .rank-media-num{ font-size:34px; font-weight:800; color:var(--accent); line-height:1; }
+  .rank-media-lbl{ font-size:11.5px; color:var(--text-faint); }
+  .rank-barra{ background:var(--bg-panel); border-radius:6px; height:8px; overflow:hidden; }
+  .rank-barra > div{ height:100%; background:linear-gradient(90deg, var(--accent), var(--ok)); border-radius:6px; }
+  .rank-grade{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+  .rank-grade > div{ background:var(--bg-panel); border-radius:8px; padding:6px 4px; text-align:center; }
+  .rank-grade b{ display:block; font-size:17px; }
+  .rank-grade span{ font-size:10.5px; color:var(--text-faint); }
+  .carteira-row{ cursor:pointer; }
+  .carteira-row:hover td{ background:rgba(167,139,250,.10); }
+  .carteira-linha-det{ display:grid; grid-template-columns:28px 1.6fr 80px 56px 86px 110px 110px 150px; gap:8px; align-items:center; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .carteira-sel{ min-width:150px; cursor:pointer; }
+  .carteira-aviso{ margin:10px 0 14px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg-panel-2); font-size:12.5px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .chip-carteira{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:10px; font-size:10.5px; background:rgba(167,139,250,.15); color:#a78bfa; border:1px solid rgba(167,139,250,.35); white-space:nowrap; font-weight:600; }
+  .chip-carteira.sem{ background:rgba(148,163,184,.12); color:var(--text-faint); border-color:var(--border); }
+  .chip-carteira-btn{ cursor:pointer; margin-left:0; font-family:inherit; }
+  .carteira-linha{ display:grid; grid-template-columns:1.5fr 80px 150px 140px 140px; gap:10px; align-items:center; padding:7px 10px; border-bottom:1px solid var(--border); font-size:12.5px; }
 </style>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
@@ -1653,7 +1689,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v111 (2026-10-06) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v127 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1900,12 +1936,80 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   </div>
 
   <div class="toolbar" style="margin-bottom:16px;">
+    <button type="button" class="clearbtn" id="btnCarteirasSC" style="border-color:#a78bfa; color:#a78bfa;" title="Define quem é o responsável de cada condomínio (somente administradores)">👥 Carteiras</button>
     <button type="button" class="clearbtn" id="btnGerarPlanilhaPreencher" style="border-color:var(--ok); color:var(--ok);">📋 Gerar Planilha para Preencher</button>
     <button type="button" class="clearbtn" id="btnCompletarRodadaPq" style="border-color:#a78bfa; color:#a78bfa;" title="Cria a pesquisa pendente dos condomínios do Cadastro que ainda não estão no mês selecionado">➕ Completar Rodada do Mês</button>
     <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
     <input type="file" id="pqImportarPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
     <button type="button" class="clearbtn" id="btnEncontrarDuplicadosPq" style="border-color:#E07B2C; color:#E07B2C;">🔎 Encontrar Duplicados</button>
     <button type="button" class="clearbtn" id="btnExcluirRodadaPq" style="color:var(--critico); border-color:var(--critico);">🗑️ Excluir Rodada</button>
+  </div>
+
+  <div id="atividadesPessoaModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9350; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(820px, 95vw); max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="atividadesPessoaTitulo" style="margin:0;"></h3>
+        <button type="button" class="modal-close" id="atividadesPessoaFechar">×</button>
+      </div>
+      <p id="atividadesPessoaSub" style="font-size:12.5px; color:var(--text-faint); margin:4px 0 8px;"></p>
+      <div id="atividadesPessoaBody"></div>
+    </div>
+  </div>
+
+  <div id="manualFuncoesModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9300; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(860px, 95vw); max-height:90vh; overflow-y:auto;">
+      <h3 style="margin:0 0 4px;">📘 Funções de cada integrante</h3>
+      <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 12px; line-height:1.5;">Conforme o <strong>Manual de Responsabilidades, Tratativas e Distribuição de Carteiras</strong> (versão de 18/10/2026, em validação). Confira o que muda em cada cadastro antes de aplicar. Metas diárias, fotos e logins não são alterados.</p>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:12px;"><input type="checkbox" id="manualFuncoesCargo"> Também trocar o <strong>cargo (título)</strong> pelo nome da função do manual</label>
+      <div id="manualFuncoesBody"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+        <button type="button" class="clearbtn" id="manualFuncoesCancelar">Cancelar</button>
+        <button type="button" class="clearbtn" id="manualFuncoesAplicar" style="border-color:var(--ok); color:var(--ok);">✅ Aplicar funções do Manual</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="carteiraDetalheModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9250; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(1150px, 96vw); max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 id="carteiraDetalheTitulo" style="margin:0;"></h3>
+        <button type="button" class="modal-close" id="carteiraDetalheClose">×</button>
+      </div>
+      <div id="carteiraDetalheFiltros" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+        <input type="text" class="search" id="carteiraDetalheBusca" placeholder="Buscar condomínio..." style="flex:1; min-width:200px;">
+        <select class="filter-select" id="carteiraDetalheFilial"><option value="">Filial: todas</option></select>
+      </div>
+      <div id="carteiraDetalheAcoes" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px; padding:8px 10px; border:1px solid var(--border); border-radius:8px;">
+        <select class="filter-select" id="carteiraDetalheDestino"></select>
+        <button type="button" class="clearbtn" id="carteiraDetalheMover" style="border-color:#a78bfa; color:#a78bfa;">↪ Redirecionar selecionados</button>
+        <span style="font-size:11.5px; color:var(--text-faint);">Marque os condomínios na lista, ou use o menu "Mover para…" em cada linha.</span>
+      </div>
+      <p id="carteiraDetalheResumo" style="font-size:12px; color:var(--text-faint); margin:0 0 6px;"></p>
+      <div id="carteiraDetalheLista"></div>
+    </div>
+  </div>
+
+  <div id="carteirasModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9200; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(1100px, 96vw); max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h3 style="margin:0;">👥 Carteira do Sucesso do Cliente</h3>
+        <button type="button" class="modal-close" id="carteirasModalClose">×</button>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin:4px 0 14px;">Defina quem é o responsável por cada condomínio. O filtro <strong>Carteira</strong> passa a funcionar nas abas Pesquisas, Renovação e Fluxo de Atendimento.</p>
+      <div style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:14px;">
+        <strong>📥 Gravar no banco</strong> <span style="font-size:12px; color:var(--text-faint);">(CSV com colunas nome, responsavel_sc, supervisor_tecnico, tecnico; filial é opcional)</span>
+        <div style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;"><button type="button" class="clearbtn" id="carteirasFiliaisBtn" style="border-color:var(--ok); color:var(--ok);" title="Paula (Secopi), Tayane (Amazonas) e Juliana (Maranhão)">🏢 Gravar responsáveis das filiais</button><button type="button" class="clearbtn" id="carteirasSeedBtn" style="border-color:var(--accent); color:var(--accent);">📋 Revisar e gravar a carteira da planilha do Ceará (167)</button><span style="font-size:12px; color:var(--text-faint);">ou</span><input type="file" id="carteirasCsvInput" accept=".csv,text/csv"></div>
+        <div id="carteirasCsvResultado" style="margin-top:10px;"></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" class="search" id="carteirasBusca" placeholder="Buscar condomínio..." style="flex:1; min-width:200px;">
+        <select class="filter-select" id="carteirasFiltroFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="carteirasFiltroResp"></select>
+      </div>
+      <p id="carteirasContagem" style="font-size:12px; color:var(--text-faint); margin:0 0 6px;"></p>
+      <div id="carteirasLista"></div>
+    </div>
   </div>
 
   <div id="impPqPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9100; align-items:center; justify-content:center;">
@@ -3973,12 +4077,26 @@ CONDOMINIO Y	480	45"></textarea>
     <div class="chart-panel" style="margin:16px 0;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
         <p class="chart-title" style="margin:0;">🧭 Organograma da Equipe</p>
-        <button type="button" class="clearbtn" id="btnNovoMembroEquipe">+ Novo Membro</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="clearbtn" id="btnAplicarManualFuncoes" style="display:none; border-color:#a78bfa; color:#a78bfa;" title="Atualiza área, quem lidera, filiais e responsabilidades de cada integrante conforme o Manual de 18/10/2026">📘 Aplicar funções do Manual</button><button type="button" class="clearbtn" id="btnNovoMembroEquipe">+ Novo Membro</button></div>
       </div>
       <div class="orgchart" id="equipeOrgChart"><p class="empty">Carregando...</p></div>
     </div>
 
     <div class="charts-grid charts-grid-2" id="equipeAreasCards"></div>
+
+    <div class="chart-panel" id="saudeCarteiraPanel" style="margin-top:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+        <p class="chart-title" style="margin:0;">🏆 Ranking e Saúde das Carteiras</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <label style="font-size:12px; color:var(--text-faint);">Ordenar por <select class="filter-select" id="rankingCarteiraOrdem" style="margin-left:6px;"><option value="media">Nota média</option><option value="pct">% de pesquisas realizadas</option><option value="critico">Menor % de críticos</option></select></label>
+          <label style="font-size:12px; color:var(--text-faint);">Mês de referência <input type="month" class="search" id="saudeCarteiraMesSel" style="max-width:160px; margin-left:6px;"></label>
+        </div>
+      </div>
+      <input type="file" id="rankingFotoInput" accept="image/*" style="display:none;">
+      <div id="rankingCarteiraBody" style="margin:10px 0 16px;"></div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:0 0 10px; line-height:1.5;">A saúde dos condomínios de cada carteira (nota média, críticos e evolução em relação ao mês anterior) é o indicador de desempenho de cada Sucesso do Cliente.</p>
+      <div id="saudeCarteiraBody"><p class="empty">Carregando...</p></div>
+    </div>
 
     <div class="chart-panel" style="margin-top:16px;">
       <p class="chart-title">✅ Pesquisas de Hoje x Meta (ao vivo)</p>
@@ -5007,6 +5125,8 @@ async function carregarPerfilUsuario(username){
     const { data, error } = await sb.from('app_users').select('nome_completo,foto_url').eq('username', username).maybeSingle();
     if (error) throw error;
     if (data && data.nome_completo){
+      currentNomeCompleto = data.nome_completo;
+      try{ atualizarSeletoresCarteira(); }catch(e){}
       document.getElementById('roleTag').textContent = `${data.nome_completo} · ${ROLE_LABELS[currentRole] || currentRole}`;
     }
     aplicarFotoPerfil(data && data.foto_url ? data.foto_url : null);
@@ -7090,14 +7210,1570 @@ let cadastroLiveCarregado = false;
 async function carregarCadastroLive(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('cadastro_condominios').select('nome,filial,status,endereco,modalidade,possui_armario,possui_gphone,fila_prioritaria');
+    const { data, error } = await sb.from('cadastro_condominios').select('*');
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
+    try{ invalidarMapaCarteira(); atualizarSeletoresCarteira(); atualizarAvisoCarteira(); }catch(e){}
   }catch(e){
     console.warn('Falha ao carregar cadastro_condominios ao vivo (usando dados congelados como respaldo):', e);
   }
 }
+
+
+// ============================================================================
+// CARTEIRA DO SUCESSO DO CLIENTE (responsável, supervisor técnico e técnico por condomínio)
+// Colunas em cadastro_condominios: responsavel_sc, supervisor_tecnico, tecnico.
+// A planilha do Ceará vem embutida (CARTEIRA_SEED) e vale como padrão enquanto o banco
+// estiver vazio; o que for gravado no banco sempre tem prioridade sobre ela.
+// ============================================================================
+const CARTEIRA_SQL = "ALTER TABLE cadastro_condominios ADD COLUMN IF NOT EXISTS responsavel_sc text, ADD COLUMN IF NOT EXISTS supervisor_tecnico text, ADD COLUMN IF NOT EXISTS tecnico text;";
+const CARTEIRA_SEED = [["AIRTON BEZERRA","Nicolly Silva","Amilton","Pedro"],["ALDEIA DOS VENTOS","Nicolly Silva","Amilton","John"],["ALGARVE","Nicolly Silva","Amilton","John"],["BELECO LAGOA DO BOI (MORADA NOVA)","Nicolly Silva","Amilton","John"],["BELECO OCARA","Nicolly Silva","Amilton","John"],["BELLE VILLE","Josiane Lima","Iranilson","Wilton"],["BENE VI","Josiane Lima","Iranilson","Felipe"],["BENE VII","Josiane Lima","Iranilson","Felipe"],["BRISA DO EUSEBIO","Nicolly Silva","Amilton","John"],["CARMEHIL (ANTONIO SALES)","Josiane Lima","Iranilson","Wilton"],["CARMEHIL (BEZERRA DE MENEZES)","Josiane Lima","Iranilson","Felipe"],["CARMEHIL (GUSTAVO SAMPAIO)","Josiane Lima","Iranilson","Felipe"],["CASCAIS DUNAS VILLAGE","Nicolly Silva","Amilton","Pedro"],["CELSINA","Nicolly Silva","Amilton","John"],["CONDOMINIO ALIPIO BASTOS","Nicolly Silva","Amilton","John"],["CONDOMINIO AMILCA ARAUJO","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO ANTONIO FRADIQUE ACCIOLY","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO ATHENAS","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO CANTO BELLO","Nicolly Silva","Amilton","John"],["CONDOMINIO CRUZEIRO DO SUL","Nicolly Silva","Amilton","John"],["CONDOMINIO DEL MONTE II","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO DUNNAS XXI","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO EDIFICIO ANDROS","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO EDIFICIO AREZZO","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO BIENE","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO COIMBRA","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO CONCORD I","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO EDIFICIO FREI VICENTE SALVADOR","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO EDIFICIO GRAHAM HILL","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO EDIFICIO JOSE MARIA CARDOSO","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO EDIFICIO MARECHAL RONDON","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO MELBOURNE PLACE","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO MONTREAL","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO NATERCIA RIOS","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EDIFICIO SAN SEBASTIAN","A definir","","Pedro"],["CONDOMINIO EMANUELA","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO EUSEBIO PARK","Nicolly Silva","Amilton","John"],["CONDOMINIO GRAND QUARTIER","Nicolly Silva","Amilton","John"],["CONDOMINIO GUILHERME ROCHA","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO IRACEMA RESIDENCE","Nicolly Silva","Amilton","John"],["CONDOMINIO ISLA VERDE","Nicolly Silva","Amilton","John"],["CONDOMINIO JARDIM BOTANICO II","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO JOSE VILAR","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO LE BETULLE","Nicolly Silva","Amilton","John"],["CONDOMINIO LINHARES","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO LUCIANO CARNEIRO","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO LUXOR RESIDENCE","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO MAISON NOVA METROPOLE","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO MARAPONGA","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO MARIA ESTHER","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO MAROQUINHA REBELO","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO MILTON GONDIM","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO MORADA BRISA DO MAR","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO OASI FELICE","Nicolly Silva","Amilton","John"],["CONDOMINIO PAGANINI RESIDENCE","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO PARMA","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO PORTO GUILHERME","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO RESIDENCIAL 3 ESTRELAS","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO RESIDENCIAL CANAA","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO RESIDENCIAL FUNCHAL","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO RESIDENCIAL GRAND CLASSIC","Nicolly Silva","Amilton","John"],["CONDOMINIO RESIDENCIAL JARDIM AMERICA","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO RESIDENCIAL SAN GERARDO","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO RESIDENCIAL SAN MICHAEL","Nicolly Silva","Amilton","John"],["CONDOMINIO RESIDENCIAL SATURNO","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO RESIDENCIAL VILA REAL","Nicolly Silva","Amilton","John"],["CONDOMINIO RESIDENCIAL VILA VERANA","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO SANTANA DA PARNAIBA","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO SOBERANO III","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO SOCORRO VILLAGE","Nicolly Silva","Amilton","Pedro Ricardo Lima Castro"],["CONDOMINIO TICIANA MENDES","Josiane Lima","Iranilson","Wilton"],["CONDOMINIO TM RESIDENCIAL 02","Nicolly Silva","Amilton","John"],["CONDOMINIO VICTOR I","Nicolly Silva","Amilton","John"],["CONDOMINIO VILLA BELAGIO","Josiane Lima","Iranilson","Felipe"],["CONDOMINIO VILLAGE DEL MONTE III","Josiane Lima","Iranilson","Felipe"],["Pendência: Troca do armário para modelo de 18 portas.","Nicolly Silva","Amilton","Pedro"],["CONDOMINIO VILLAGGIO HARMONY RESIDENCES","Nicolly Silva","Amilton","John"],["COPENHAGUE","Nicolly Silva","Amilton","Pedro"],["COSTA AZUL","Nicolly Silva","Amilton","Pedro"],["ECOMAX","Nicolly Silva","Amilton","John"],["EDIFICIO ARMANDO SABOYA FILHO","Nicolly Silva","Amilton","Pedro"],["EDIFICIO ARUA","Nicolly Silva","Amilton","Pedro"],["EDIFICIO ASTORIA","Josiane Lima","Iranilson","Wilton"],["EDIFICIO BAYSIDE","Josiane Lima","Iranilson","Wilton"],["EDIFICIO CANAA","Nicolly Silva","Amilton","Pedro"],["EDIFICIO DAS AMERICAS","Josiane Lima","Iranilson","Wilton"],["EDIFICIO DOS ANJOS CORREIA","Josiane Lima","Iranilson","Felipe"],["EDIFICIO JOAO MESQUITA","Josiane Lima","Iranilson","Felipe"],["EDIFICIO LIRIDA MATOS","Josiane Lima","Iranilson","Wilton"],["EDIFICIO STILO","Josiane Lima","Iranilson","Felipe"],["EDIFICIO TURMALINA","Nicolly Silva","Amilton","Pedro"],["ELIANE","Josiane Lima","Iranilson","Wilton"],["EMPRESA FONNET","Nicolly Silva","Amilton","Pedro"],["EMPRESA MARESIA","Josiane Lima","Iranilson","Felipe"],["EMPRESA TV JANGADEIRO","Josiane Lima","Iranilson","Felipe"],["EPIFANIO ALMEIDA","Nicolly Silva","Amilton","John"],["FLORENCA","Josiane Lima","Iranilson","Wilton"],["GENESIS","Josiane Lima","Iranilson","Wilton"],["GENTIL CARDOSO","Josiane Lima","Iranilson","Wilton"],["GOMES I","Nicolly Silva","Amilton","John"],["GOMES II","Nicolly Silva","Amilton","John"],["GRAND QUARTIER","Nicolly Silva","Amilton","John"],["GRANLARA RESIDENCE","Nicolly Silva","Amilton","John"],["GREEN VISION","Nicolly Silva","Amilton","Pedro"],["HD TROPICAL","Josiane Lima","Iranilson","Felipe"],["HELBOR RESERVA DA PRACA","Nicolly Silva","Amilton","Pedro"],["ITAPERI","Josiane Lima","Iranilson","Felipe"],["LAJE DE PEDRA","Josiane Lima","Iranilson","Wilton"],["LEBLON","Nicolly Silva","Amilton","Pedro"],["LILIAN","Josiane Lima","Iranilson","Wilton"],["LILIAN LEYNE","Josiane Lima","Iranilson","Wilton"],["LISBOA","Nicolly Silva","Amilton","Pedro"],["LUANA RESIDENCE","Josiane Lima","Iranilson","Wilton"],["MADRI","Josiane Lima","Iranilson","Wilton"],["MAGNA VILLARIS I","Nicolly Silva","Amilton","John"],["MAGNA VILLARIS II","Nicolly Silva","Amilton","John"],["MANDACARUS","Josiane Lima","Iranilson","Felipe"],["MANUEL ISAAC PONTES","Josiane Lima","Iranilson","Wilton"],["MARANATA II","Josiane Lima","Iranilson","Wilton"],["MARINO BEACH","Nicolly Silva","Amilton","Pedro"],["MARQUES SANTIAGO","Josiane Lima","Iranilson","Wilton"],["MIGUEL MACHADO","Josiane Lima","Iranilson","Felipe"],["MONTVERNON","Josiane Lima","Iranilson","Wilton"],["MORADA DAS GAIVOTAS","Nicolly Silva","Amilton","Pedro"],["N. SRA GUADALUPE","Josiane Lima","Iranilson","Felipe"],["NADJA AGUIAR","Josiane Lima","Iranilson","Wilton"],["NAPOLI CITY I","Nicolly Silva","Amilton","Pedro"],["PACO DE MESSEJANA","Nicolly Silva","Amilton","John"],["PALAIS ROYAL","Josiane Lima","Iranilson","Wilton"],["PANORAMA","Josiane Lima","Iranilson","Felipe"],["PARANOA","Nicolly Silva","Amilton","Pedro"],["Pendência: Reposicionamento de câmeras. Nota: 8","Nicolly Silva","Amilton","John"],["PAUL RICHARD","Nicolly Silva","Amilton","Pedro"],["PETIT TRIANON","Nicolly Silva","Amilton","Pedro Ricardo Lima Castro"],["PLAZA VERONNESE","Josiane Lima","Iranilson","Wilton"],["PORTA ROMANA RESIDENCE","Nicolly Silva","Amilton","Pedro"],["PORTAL DE LION","Nicolly Silva","Amilton","John"],["PORTAL DE SERRAMBI","Nicolly Silva","Amilton","Pedro"],["PORTAL DO PASSARE","Josiane Lima","Iranilson","Felipe"],["PORTO SEGURO","Nicolly Silva","Amilton","Pedro"],["PRIMAVERA","Nicolly Silva","Amilton","John"],["QUEBEC","Nicolly Silva","Amilton","Pedro"],["RAUL FONTENELLE DOUBLE SPACE","Josiane Lima","Iranilson","Wilton"],["RESIDENCIA RESERVA NATURA","Nicolly Silva","Amilton","John"],["RESIDENCIAL DE ASSIS","Nicolly Silva","Amilton","John"],["RESIDENCIAL MORADA DA MESSEJANA","Nicolly Silva","Amilton","John"],["RESIDENCIAL UIRAPURU","Josiane Lima","Iranilson","Felipe"],["RESIDENCIAL VILAGGIO MONTE LIBANO","Josiane Lima","Iranilson","Felipe"],["RIVIERA DI CAPRI","Nicolly Silva","Amilton","John"],["SABLES BLANC","Nicolly Silva","Amilton","Pedro"],["SAN JULIANO","Nicolly Silva","Amilton","Pedro"],["SAN MAGNUM","Nicolly Silva","Amilton","Pedro"],["SARGITARIUS","Josiane Lima","Iranilson","Felipe"],["SERVIS ELETRONICA","Josiane Lima","Iranilson","Wilton"],["SINDICATO DOS POLICIAIS","Josiane Lima","Iranilson","Felipe"],["SOLAR DOS VENTOS","Josiane Lima","Iranilson","Wilton"],["ST MARCOS","Nicolly Silva","Amilton","Pedro"],["SUNVILLE RESIDENCE","Nicolly Silva","Amilton","John"],["VALENCIA RESIDENCE","Nicolly Silva","Amilton","John"],["VENEZA II","Josiane Lima","Iranilson","Wilton"],["VIA LUMINI","Nicolly Silva","Amilton","John"],["VILLA BORGHESE","Josiane Lima","Iranilson","Wilton"],["VILLA DI FIORI","Nicolly Silva","Amilton","John"],["VILLA PARADISO","Nicolly Silva","Amilton","John"],["VILLA SOLARIUM","Josiane Lima","Iranilson","Felipe"],["VISCONDE DE MAUA","Josiane Lima","Iranilson","Wilton"],["VITORIA PARK","Nicolly Silva","Amilton","Pedro"]]; // [nome, responsável SC, supervisor técnico, técnico]
+// Sucesso do Cliente de cada filial: assume todos os condomínios da filial que não tenham responsável definido.
+const CARTEIRA_FILIAL_PADRAO = { 'SECOPI': 'Paula', 'AMAZONAS': 'Tayane', 'MARANHAO': 'Juliana' };
+// Quem fiscaliza e cobra quem (Manual de 18/10/2026)
+const CARTEIRA_FISCALIZACAO = { 'Josiane Lima': ['Paula', 'Tayane'], 'Nicolly Silva': ['Juliana'] };
+// Nomes formais. Valores antigos (gravados como "Josy" ou "Nicole") continuam funcionando e aparecem com o nome formal.
+const CARTEIRA_NOMES_OFICIAIS = { 'JOSY': 'Josiane Lima', 'JOSIANE': 'Josiane Lima', 'JOSIANE LIMA': 'Josiane Lima', 'NICOLE': 'Nicolly Silva', 'NICOLLY': 'Nicolly Silva', 'NICOLLY SILVA': 'Nicolly Silva' };
+// Como cada uma costuma aparecer no login do sistema
+const CARTEIRA_ALIAS_USUARIO = { 'JOSIANE LIMA': ['JOSY'], 'NICOLLY SILVA': ['NICOLE'] };
+// Filiais que cada fiscalizadora acompanha: as filiais cujo Sucesso do Cliente ela fiscaliza.
+// Ela faz as pesquisas dessas filiais e acompanha o fluxo de atendimento, as reclamações e todas as demandas delas.
+function filiaisFiscalizadas(nome){
+  const alvo = normTxtCarteira(nomeOficialCarteira(nome));
+  const chave = Object.keys(CARTEIRA_FISCALIZACAO).find(f => normTxtCarteira(f) === alvo);
+  if (!chave) return [];
+  return CARTEIRA_FISCALIZACAO[chave]
+    .map(cs => Object.keys(CARTEIRA_FILIAL_PADRAO).find(k => normTxtCarteira(CARTEIRA_FILIAL_PADRAO[k]) === normTxtCarteira(cs)))
+    .filter(Boolean);
+}
+const CARTEIRA_ROTULO_FILIAL = { 'SECOPI': 'Secopi', 'AMAZONAS': 'Manaus', 'MARANHAO': 'Maranhão' };
+function rotuloFiliaisFiscalizadas(nome){ return filiaisFiscalizadas(nome).map(k => CARTEIRA_ROTULO_FILIAL[k] || k).join(' + '); }
+function fiscalizadoraDaFilial(filial){
+  const k = normTxtCarteira(normalizeFilialCanonica(filial));
+  return Object.keys(CARTEIRA_FISCALIZACAO).find(f => filiaisFiscalizadas(f).includes(k)) || '';
+}
+function nomeOficialCarteira(r){
+  const t = String(r || '').trim();
+  if (!t) return '';
+  return CARTEIRA_NOMES_OFICIAIS[normTxtCarteira(t)] || t;
+}
+function respPadraoDaFilial(filial){ return CARTEIRA_FILIAL_PADRAO[normTxtCarteira(normalizeFilialCanonica(filial))] || ''; }
+const CARTEIRA_STOP = new Set(['DO','DA','DE','DOS','DAS','E','EDIFICIO','ED','CONDOMINIO','COND','RESIDENCIAL','RESIDENCE','RES','CLUBE','EMPRESARIAL','CONDOMINIOS','EDF']);
+let carteiraAtiva = '';
+try{ carteiraAtiva = localStorage.getItem('carteiraAtivaSC') || ''; }catch(e){}
+if (carteiraAtiva && !carteiraAtiva.startsWith('__')) carteiraAtiva = nomeOficialCarteira(carteiraAtiva);
+let currentNomeCompleto = null;
+let __mapaCarteira = null;
+let __seedMapa = null;
+let __cacheDadosNome = new Map();
+let __cacheDadosTexto = new Map();
+let __mapaRowsCadastro = null;
+
+function carteiraTokens(nome){
+  return normalizeNomeCondo(nome).split(' ').filter(t => t.length > 1 && !CARTEIRA_STOP.has(t));
+}
+function carteiraSimilaridade(a, b){
+  const ta = new Set(carteiraTokens(a)), tb = new Set(carteiraTokens(b));
+  if (!ta.size || !tb.size) return 0;
+  let inter = 0; ta.forEach(t => { if (tb.has(t)) inter++; });
+  return inter / Math.min(ta.size, tb.size);
+}
+function carteiraMesmoConjunto(a, b){
+  const ta = carteiraTokens(a), tb = carteiraTokens(b);
+  return ta.length > 0 && ta.length === tb.length && ta.every(t => tb.includes(t));
+}
+function normTxtCarteira(s){
+  return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function respSemDono(r){ const n = normTxtCarteira(r); return !n || n === 'A DEFINIR'; }
+function invalidarMapaCarteira(){ __mapaCarteira = null; __mapaRowsCadastro = null; __cacheDadosNome = new Map(); __cacheDadosTexto = new Map(); }
+
+function seedMapa(){
+  if (__seedMapa) return __seedMapa;
+  const m = new Map();
+  CARTEIRA_SEED.forEach(([nome, resp, sup, tec]) => {
+    const k = normalizeNomeCondo(nome);
+    if (k && !m.has(k)) m.set(k, { nome, resp, sup, tec, tokens: carteiraTokens(nome) });
+  });
+  __seedMapa = m;
+  return m;
+}
+function seedDoNome(nome){
+  const m = seedMapa();
+  const k = normalizeNomeCondo(nome);
+  if (m.has(k)) return m.get(k);
+  const tk = carteiraTokens(nome);
+  if (!tk.length) return null;
+  for (const v of m.values()){ if (v.tokens.length === tk.length && v.tokens.every(t => tk.includes(t))) return v; }
+  return null;
+}
+function mapaCarteira(){
+  if (__mapaCarteira) return __mapaCarteira;
+  const m = new Map();
+  CADASTRO_LIVE.forEach(c => {
+    if (!c || !c.nome) return;
+    const k = normalizeNomeCondo(c.nome);
+    if (!k) return;
+    const novo = { resp: c.responsavel_sc || '', sup: c.supervisor_tecnico || '', tec: c.tecnico || '', filial: c.filial || '', tokens: carteiraTokens(c.nome) };
+    if (!m.has(k) || (!m.get(k).resp && novo.resp)) m.set(k, novo);
+  });
+  __mapaCarteira = m;
+  return m;
+}
+function dbDoNome(nome){
+  const m = mapaCarteira();
+  const k = normalizeNomeCondo(nome);
+  if (m.has(k)) return m.get(k);
+  const tk = carteiraTokens(nome);
+  if (tk.length){ for (const v of m.values()){ if (v.tokens.length === tk.length && v.tokens.every(t => tk.includes(t))) return v; } }
+  return null;
+}
+// Valor efetivo: o que está no banco vence; se estiver vazio, vale o da planilha embutida.
+function dadosCarteiraDoNome(nome){
+  const chave = normalizeNomeCondo(nome);
+  if (__cacheDadosNome.has(chave)) return __cacheDadosNome.get(chave);
+  const db = dbDoNome(nome), seed = seedDoNome(nome);
+  const campo = (a, b) => { const x = String(a || '').trim(); return x ? x : String(b || '').trim(); };
+  const out = { resp: nomeOficialCarteira(campo(db && db.resp, seed && seed.resp)), sup: campo(db && db.sup, seed && seed.sup), tec: campo(db && db.tec, seed && seed.tec), filial: (db && db.filial) || '' };
+  if (!out.resp && db && db.filial) out.resp = respPadraoDaFilial(db.filial); // Sucesso do Cliente da filial
+  __cacheDadosNome.set(chave, out);
+  return out;
+}
+function responsavelSCDoNome(nome){ return dadosCarteiraDoNome(nome).resp; }
+function respSCDoCondo(c){
+  const r = nomeOficialCarteira(String((c && c.responsavel_sc) || '').trim());
+  return r ? r : responsavelSCDoNome(c && c.nome);
+}
+function listaResponsaveisSC(){
+  const s = new Map();
+  const add = r => { r = nomeOficialCarteira(String(r || '').trim()); if (!respSemDono(r)) s.set(normTxtCarteira(r), r); };
+  CADASTRO_LIVE.forEach(c => add(c.responsavel_sc));
+  CARTEIRA_SEED.forEach(l => add(l[1]));
+  Object.values(CARTEIRA_FILIAL_PADRAO).forEach(add);
+  return [...s.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+function meuNomeCarteira(){
+  const resps = listaResponsaveisSC();
+  let membro = '';
+  try{
+    if (Array.isArray(equipeMembrosData)){
+      const mm = equipeMembrosData.find(m => m.usuario_login && normTxtCarteira(m.usuario_login) === normTxtCarteira(currentUsername));
+      if (mm) membro = mm.nome;
+    }
+  }catch(e){}
+  const textos = [currentUsername, currentNomeCompleto, membro].filter(Boolean).map(normTxtCarteira);
+  if (!textos.length) return '';
+  const palavras = new Set(textos.join(' ').split(' ').filter(Boolean));
+  return resps.find(r => { const rn = normTxtCarteira(r); return [rn.split(' ')[0]].concat(CARTEIRA_ALIAS_USUARIO[rn] || []).some(k => k && palavras.has(k)); }) || '';
+}
+function mesmaPessoaCarteira(a, b){ return normTxtCarteira(nomeOficialCarteira(a)) === normTxtCarteira(nomeOficialCarteira(b)); }
+// Valores do filtro: '' todas · '__minha__' minha carteira · '__minhafisc__' filiais que fiscalizo ·
+// '__minhatudo__' carteira + filiais · '<Nome>' carteira de alguém · '__fisc__:<Nome>' filiais fiscalizadas por alguém · '__sem__'
+function passaCarteiraItem(nome, filialItem, respExplicito){
+  const v = carteiraAtiva;
+  if (!v) return true;
+  const d = nome ? dadosCarteiraDoNome(nome) : { resp: '', filial: '' };
+  const resp = respExplicito !== undefined ? respExplicito : d.resp;
+  const filial = normTxtCarteira(normalizeFilialCanonica(filialItem || d.filial || ''));
+  const fiscaliza = quem => filiaisFiscalizadas(quem).includes(filial);
+  if (v === '__sem__') return respSemDono(resp);
+  const meu = meuNomeCarteira();
+  if (v === '__minhafisc__') return !meu || fiscaliza(meu);
+  if (v === '__minhatudo__') return !meu || fiscaliza(meu) || mesmaPessoaCarteira(resp, meu);
+  if (v.startsWith('__fisc__:')) return fiscaliza(v.slice(9));
+  const alvo = v === '__minha__' ? meu : v;
+  if (!alvo) return true; // sem correspondência para "minha carteira": não esconde nada
+  return mesmaPessoaCarteira(resp, alvo);
+}
+function passaCarteira(resp){ return passaCarteiraItem('', '', resp); }
+function passaCarteiraPorNome(nome){ return passaCarteiraItem(nome, ''); }
+function passaCarteiraCondo(c){ return passaCarteiraItem(c && c.nome, c && c.filial, respSCDoCondo(c)); }
+
+const CARTEIRA_ANCORAS = ['mesSelector', 'renovFilterResponsavel', 'renovBreveFilterResponsavel', 'renovNegFilterResponsavel', 'renovRenovadosFilterResponsavel', 'faFilterFilial', 'veFilterFilial', 'adFilterFilial', 'incFilterFilial', 'demFilterFilial'];
+function injetarSeletoresCarteira(){
+  CARTEIRA_ANCORAS.forEach(id => {
+    const ancora = document.getElementById(id);
+    if (!ancora || ancora.dataset.carteiraOk) return;
+    ancora.dataset.carteiraOk = '1';
+    const sel = document.createElement('select');
+    sel.className = (ancora.classList.contains('msf-btn') ? 'msf-btn' : 'filter-select') + ' carteira-sel';
+    sel.title = 'Carteira do Sucesso do Cliente';
+    sel.addEventListener('change', () => definirCarteira(sel.value));
+    ancora.insertAdjacentElement('afterend', sel);
+  });
+  atualizarSeletoresCarteira();
+}
+function atualizarSeletoresCarteira(){
+  const meu = meuNomeCarteira();
+  const opcoes = [['', 'Carteira: todas']];
+  if (meu){
+    opcoes.push(['__minha__', '👤 Minha carteira (' + meu + ')']);
+    if (filiaisFiscalizadas(meu).length){
+      opcoes.push(['__minhafisc__', '👁 Filiais que eu fiscalizo (' + rotuloFiliaisFiscalizadas(meu) + ')']);
+      opcoes.push(['__minhatudo__', '⭐ Tudo que eu acompanho (carteira + filiais)']);
+    }
+  }
+  listaResponsaveisSC().forEach(r => opcoes.push([r, 'Carteira: ' + r]));
+  Object.keys(CARTEIRA_FISCALIZACAO).forEach(f => opcoes.push(['__fisc__:' + f, '👁 Fiscalização de ' + f + ' (' + rotuloFiliaisFiscalizadas(f) + ')']));
+  opcoes.push(['__sem__', 'Carteira: sem responsável']);
+  document.querySelectorAll('.carteira-sel').forEach(sel => {
+    sel.innerHTML = opcoes.map(o => '<option value="' + escapeHtml(o[0]) + '">' + escapeHtml(o[1]) + '</option>').join('');
+    sel.value = opcoes.some(o => o[0] === carteiraAtiva) ? carteiraAtiva : '';
+  });
+}
+function atualizarTelasPorCarteira(){
+  try{ render(); }catch(e){}
+  try{ renderRenovVencidos(); }catch(e){}
+  try{ renderRenovVencendoBreve(); }catch(e){}
+  try{ renderRenovNegociacoes(); }catch(e){}
+  try{ renderRenovRenovados(); }catch(e){}
+  try{ renderFluxoAtendimento(); }catch(e){}
+  try{ renderVE(); }catch(e){}
+  try{ renderAdocaoDigital(); }catch(e){}
+  try{ renderIncidentes(); }catch(e){}
+  try{ renderDemandas(); }catch(e){}
+  try{ renderSaudeCarteira(); }catch(e){}
+  agendarAnotacaoCarteira();
+}
+function definirCarteira(valor){
+  carteiraAtiva = valor || '';
+  try{ localStorage.setItem('carteiraAtivaSC', carteiraAtiva); }catch(e){}
+  atualizarSeletoresCarteira();
+  atualizarTelasPorCarteira();
+}
+
+// ----- Aviso das pesquisas pendentes por responsável -----
+function garantirAvisoCarteira(){
+  let el = document.getElementById('carteiraAvisoPq');
+  if (!el){
+    const barra = document.getElementById('sharedFilterBar');
+    if (!barra) return null;
+    el = document.createElement('div');
+    el.id = 'carteiraAvisoPq';
+    el.className = 'carteira-aviso';
+    el.addEventListener('click', e => { const b = e.target.closest('[data-carteira]'); if (b) definirCarteira(b.getAttribute('data-carteira')); });
+    barra.insertAdjacentElement('afterend', el);
+  }
+  return el;
+}
+function descricaoCarteiraAtiva(){
+  const v = carteiraAtiva;
+  if (!v) return null;
+  if (v === '__sem__') return 'Sem responsável';
+  const meu = meuNomeCarteira();
+  if (v === '__minha__') return meu || null;
+  if (v === '__minhafisc__') return (meu && filiaisFiscalizadas(meu).length) ? 'Filiais fiscalizadas por ' + meu + ' (' + rotuloFiliaisFiscalizadas(meu) + ')' : null;
+  if (v === '__minhatudo__') return (meu && filiaisFiscalizadas(meu).length) ? meu + ' · carteira + filiais fiscalizadas' : null;
+  if (v.startsWith('__fisc__:')){ const n = nomeOficialCarteira(v.slice(9)); return 'Filiais fiscalizadas por ' + n + ' (' + rotuloFiliaisFiscalizadas(n) + ')'; }
+  return v;
+}
+function atualizarAvisoCarteira(){
+  const el = garantirAvisoCarteira();
+  if (!el) return;
+  const resps = listaResponsaveisSC();
+  if (!resps.length || !selectedMes){ el.style.display = 'none'; return; }
+  const doMes = DATA.filter(d => getMes(d) === selectedMes);
+  const pendentes = doMes.filter(pesquisaNaoRealizada);
+  const mesTxt = mesLabelBR(selectedMes);
+  const botao = (valor, texto) => '<button type="button" class="chip-carteira chip-carteira-btn" data-carteira="' + escapeHtml(valor) + '">' + escapeHtml(texto) + '</button>';
+  const desc = descricaoCarteiraAtiva();
+  let html;
+  if (desc){
+    const dosResp = doMes.filter(d => passaCarteiraItem(d.nome, d.filial));
+    const pend = dosResp.filter(pesquisaNaoRealizada).length;
+    html = '👤 <strong>' + escapeHtml(desc) + '</strong>: ' + pend + ' pesquisa(s) pendente(s) de ' + dosResp.length + ' condomínio(s) em ' + escapeHtml(mesTxt) + ' ' + botao('', 'ver todas as carteiras');
+  } else {
+    const cont = new Map(resps.map(r => [r, 0])); let sem = 0;
+    pendentes.forEach(d => {
+      const r = responsavelSCDoNome(d.nome);
+      if (respSemDono(r)) sem++; else { const k = resps.find(x => normTxtCarteira(x) === normTxtCarteira(r)); if (k) cont.set(k, cont.get(k) + 1); }
+    });
+    html = '<span>Pesquisas pendentes em ' + escapeHtml(mesTxt) + ' por responsável:</span> ' +
+      [...cont.entries()].map(([r, n]) => botao(r, r + ' · ' + n)).join(' ') + (sem ? ' ' + botao('__sem__', 'Sem responsável · ' + sem) : '');
+    const fisc = Object.keys(CARTEIRA_FISCALIZACAO).map(f => {
+      const fl = filiaisFiscalizadas(f);
+      const n = pendentes.filter(d => fl.includes(normTxtCarteira(normalizeFilialCanonica(d.filial || (dadosCarteiraDoNome(d.nome).filial))))).length;
+      return botao('__fisc__:' + f, f + ' · ' + n + ' (' + rotuloFiliaisFiscalizadas(f) + ')');
+    }).join(' ');
+    html += '<span style="flex-basis:100%;"></span><span>👁 Pesquisas das filiais a realizar pela fiscalização:</span> ' + fisc;
+  }
+  el.innerHTML = html;
+  el.style.display = 'flex';
+}
+try{
+  const renderOriginal = render;
+  render = function(){
+    const r = renderOriginal.apply(this, arguments);
+    try{ atualizarAvisoCarteira(); }catch(e){}
+    agendarAnotacaoCarteira();
+    return r;
+  };
+}catch(e){ console.warn('Aviso da carteira não foi acoplado ao render:', e); }
+
+// ----- Etiqueta do responsável em TODAS as abas (inclui o Cadastro embutido) -----
+const CARTEIRA_CHIP_STYLE = 'display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;font-size:10.5px;background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.35);white-space:nowrap;font-weight:600;font-family:inherit;';
+function dadosCarteiraDoTexto(texto){
+  if (__cacheDadosTexto.has(texto)) return __cacheDadosTexto.get(texto);
+  let out = null;
+  if (texto.length >= 4 && texto.length <= 80 && /[A-Za-zÀ-ú]/.test(texto) && !/^\d/.test(texto)){
+    if (dbDoNome(texto) || seedDoNome(texto)){
+      const d = dadosCarteiraDoNome(texto);
+      if (!respSemDono(d.resp)) out = d;
+    }
+  }
+  __cacheDadosTexto.set(texto, out);
+  return out;
+}
+function nomeDiretoDoElemento(el){
+  let t = '';
+  el.childNodes.forEach(n => { if (n.nodeType === 3) t += n.textContent; });
+  t = t.replace(/\s+/g, ' ').trim();
+  if (!t && el.children.length === 1 && !el.children[0].children.length) t = (el.children[0].textContent || '').replace(/\s+/g, ' ').trim();
+  return t;
+}
+function anotarCarteiraNoDocumento(doc){
+  if (!doc || !doc.body || !listaResponsaveisSC().length) return;
+  const inline = doc !== document;
+  doc.querySelectorAll('td, .name, .ck-name').forEach(el => {
+    if (el.closest('#carteirasModal, .carteira-aviso, select, option, button, textarea, [data-no-chip]')) return;
+    const painel = el.closest('.tab-panel');
+    if (painel && painel.style.display === 'none') return;
+    if (el.querySelector('.chip-carteira')) return;
+    const nome = nomeDiretoDoElemento(el);
+    if (!nome) return;
+    const d = dadosCarteiraDoTexto(nome);
+    if (!d) return;
+    const chip = doc.createElement('span');
+    chip.className = 'chip-carteira';
+    if (inline) chip.setAttribute('style', CARTEIRA_CHIP_STYLE);
+    const fiscal = fiscalizadoraDaFilial(d.filial);
+    chip.title = 'Responsável SC: ' + d.resp + (fiscal && normTxtCarteira(fiscal) !== normTxtCarteira(d.resp) ? '\nFiscalização: ' + fiscal : '') + '\nSupervisor técnico: ' + (d.sup || '—') + '\nTécnico: ' + (d.tec || '—');
+    chip.textContent = '👤 ' + d.resp;
+    el.appendChild(chip);
+  });
+}
+let __anotarTimer = null, __anotando = false, __obsPrincipal = null, __obsFrame = null;
+function agendarAnotacaoCarteira(){
+  clearTimeout(__anotarTimer);
+  __anotarTimer = setTimeout(executarAnotacaoCarteira, 300);
+}
+function executarAnotacaoCarteira(){
+  if (__anotando) return;
+  __anotando = true;
+  try{
+    anotarCarteiraNoDocumento(document);
+    const f = document.getElementById('cadastroFrame');
+    if (f && f.contentDocument) anotarCarteiraNoDocumento(f.contentDocument);
+  }catch(e){ /* quadro ainda carregando ou inacessível */ }
+  finally{
+    __anotando = false;
+    try{ if (__obsPrincipal) __obsPrincipal.takeRecords(); if (__obsFrame) __obsFrame.takeRecords(); }catch(e){}
+  }
+}
+function iniciarObservadoresCarteira(){
+  try{
+    __obsPrincipal = new MutationObserver(agendarAnotacaoCarteira);
+    __obsPrincipal.observe(document.body, { childList: true, subtree: true });
+    const f = document.getElementById('cadastroFrame');
+    const ligarFrame = () => {
+      try{
+        if (!f.contentDocument || !f.contentDocument.body) return;
+        if (__obsFrame) __obsFrame.disconnect();
+        __obsFrame = new MutationObserver(agendarAnotacaoCarteira);
+        __obsFrame.observe(f.contentDocument.body, { childList: true, subtree: true });
+        agendarAnotacaoCarteira();
+      }catch(e){}
+    };
+    if (f){ f.addEventListener('load', ligarFrame); ligarFrame(); }
+  }catch(e){ console.warn('Observadores da carteira não iniciados:', e); }
+  agendarAnotacaoCarteira();
+}
+
+// ----- Saúde da carteira por Sucesso do Cliente (aba Equipe & Metas) -----
+function mesRelativoCarteira(mes, deslocamento){
+  const [a, m] = mes.split('-').map(Number);
+  const d = new Date(a, m - 1 + deslocamento, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+// Uma linha por condomínio no mês (se houver repetido, vale a que tem nota)
+function itensDoMesDeduplicados(mes){
+  const mapa = new Map();
+  const temNota = x => x.nota && x.nota !== '—';
+  dadosCombinadosDoMes(mes).forEach(d => {
+    const k = normalizeNomeCondo(d.nome);
+    const atual = mapa.get(k);
+    if (!atual || (!temNota(atual) && temNota(d))) mapa.set(k, d);
+  });
+  return [...mapa.values()];
+}
+function classeSaudeItem(d){
+  if (pesquisaNaoRealizada(d)) return 'pendente';
+  return ['critico', 'atencao', 'ok'].includes(d.crit) ? d.crit : 'pendente';
+}
+function statsCarteiraDoMes(mes, aceita){
+  const itens = itensDoMesDeduplicados(mes).filter(d => aceita(responsavelSCDoNome(d.nome)));
+  const s = computeStats(itens);
+  const cont = { critico: 0, atencao: 0, ok: 0, pendente: 0 };
+  itens.forEach(d => { cont[classeSaudeItem(d)]++; });
+  const numeros = itens.map(d => parseFloat(String(d.nota).replace(',', '.'))).filter(n => !isNaN(n));
+  return {
+    total: itens.length, realizadas: s.realizadas, pct: s.pct, media: s.mediaCount ? s.media : null,
+    crit: cont.critico, atencao: cont.atencao, ok: cont.ok, pendentes: cont.pendente,
+    notas: numeros.length, f9: numeros.filter(n => n >= 9).length, f7: numeros.filter(n => n >= 7 && n < 9).length, f6: numeros.filter(n => n < 7).length,
+  };
+}
+function renderSaudeCarteira(){
+  const corpo = document.getElementById('saudeCarteiraBody');
+  if (!corpo) return;
+  const inputMes = document.getElementById('saudeCarteiraMesSel');
+  if (!inputMes.value) inputMes.value = selectedMes || mesAtualReal();
+  const mes = inputMes.value;
+  try{ renderRankingCarteira(); }catch(e){ console.warn('Ranking das carteiras:', e); }
+  const btnManual = document.getElementById('btnAplicarManualFuncoes');
+  if (btnManual) btnManual.style.display = currentRole === 'admin' ? '' : 'none';
+  try{ atualizarAvisoManualFuncoes(); }catch(e){}
+  const meses = [mesRelativoCarteira(mes, -2), mesRelativoCarteira(mes, -1), mes];
+  const resps = listaResponsaveisSC();
+  if (!resps.length){ corpo.innerHTML = '<p class="empty">Nenhum responsável definido ainda. Use o botão 👥 Carteiras na aba Pesquisas.</p>'; return; }
+  const grupos = resps.map(r => ({ nome: r, chave: r, aceita: x => normTxtCarteira(x) === normTxtCarteira(r) }))
+    .concat([{ nome: 'Sem responsável', chave: '__sem__', aceita: x => respSemDono(x) }]);
+  const fmt = n => n === null ? '—' : n.toFixed(1).replace('.', ',');
+  const linhas = grupos.map(g => {
+    const st = meses.map(m => statsCarteiraDoMes(m, g.aceita));
+    const atual = st[2], ant = st[1];
+    let evo = '—';
+    if (atual.media !== null && ant.media !== null){
+      const diff = atual.media - ant.media;
+      evo = Math.abs(diff) < 0.05 ? '<span style="color:var(--text-faint);">= estável</span>'
+        : (diff > 0 ? '<span style="color:var(--ok);">▲ ' + diff.toFixed(1).replace('.', ',') + '</span>' : '<span style="color:var(--critico);">▼ ' + Math.abs(diff).toFixed(1).replace('.', ',') + '</span>');
+    }
+    const pctCrit = atual.realizadas ? Math.round((atual.crit / atual.realizadas) * 100) : 0;
+    return '<tr class="carteira-row" data-carteira-grupo="' + escapeHtml(g.chave) + '" title="Clique para ver os condomínios e redirecionar"><td><strong>' + escapeHtml(g.nome) + '</strong></td>' +
+      '<td style="text-align:center;">' + atual.total + '</td>' +
+      '<td style="text-align:center;">' + atual.realizadas + ' (' + atual.pct + '%)</td>' +
+      st.map(x => '<td style="text-align:center;">' + fmt(x.media) + '</td>').join('') +
+      '<td style="text-align:center;">' + evo + '</td>' +
+      '<td data-filtro="critico" style="text-align:center; color:var(--critico);">' + atual.crit + ' (' + pctCrit + '%)</td>' +
+      '<td data-filtro="atencao" style="text-align:center; color:#f59e0b;">' + atual.atencao + '</td>' +
+      '<td data-filtro="ok" style="text-align:center; color:var(--ok);">' + atual.ok + '</td></tr>';
+  }).join('');
+  corpo.innerHTML = '<div class="checklist-table-wrap"><table class="checklist-table"><thead><tr><th>Sucesso do Cliente</th><th style="text-align:center;">Condomínios</th><th style="text-align:center;">Pesquisas realizadas</th>' +
+    meses.map(m => '<th style="text-align:center;">Nota média ' + escapeHtml(mesLabelBR(m)) + '</th>').join('') +
+    '<th style="text-align:center;">Evolução</th><th style="text-align:center;">Críticos</th><th style="text-align:center;">Atenção</th><th style="text-align:center;">OK</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+    '<p style="font-size:11.5px; color:var(--text-faint); margin:8px 0 0;">👆 Clique numa linha para ver os condomínios da carteira e redirecioná-los para outro Sucesso do Cliente. Clique em Críticos, Atenção ou OK para abrir já filtrado.</p>';
+}
+
+// ----- Ranking das carteiras (foto, nome e indicadores de cada Sucesso do Cliente) -----
+let __veRankingSolicitado = false;
+let __incRankingSolicitado = false;
+let __demRankingSolicitado = false;
+let __fotoRankingResp = '';
+function membroDaCarteira(resp){
+  const r = normTxtCarteira(nomeOficialCarteira(resp));
+  if (!r) return null;
+  let membros = [];
+  try{ if (Array.isArray(equipeMembrosData)) membros = equipeMembrosData; }catch(e){}
+  const tokens = t => t.split(' ').filter(Boolean);
+  const nomeN = m => normTxtCarteira(m.nome);
+  const rt = tokens(r), primeiro = rt[0];
+  const aliases = (CARTEIRA_ALIAS_USUARIO[r] || []);
+  const unico = lista => lista.length === 1 ? lista[0] : null;
+  return membros.find(m => nomeN(m) === r)
+    || membros.find(m => { const l = normTxtCarteira(m.usuario_login); return l && (l === r || l === primeiro || aliases.includes(l)); })
+    || membros.find(m => { const mt = tokens(nomeN(m)); return mt.length && (rt.every(t => mt.includes(t)) || mt.every(t => rt.includes(t))); })
+    || unico(membros.filter(m => tokens(nomeN(m))[0] === primeiro))
+    || unico(membros.filter(m => aliases.includes(tokens(nomeN(m))[0])))
+    || null;
+}
+function visitasDaCarteira(aceita, mes){
+  const lista = (typeof veData !== 'undefined' && Array.isArray(veData)) ? veData : [];
+  let feitas = 0, abertas = 0;
+  lista.forEach(v => {
+    if (!aceita(responsavelSCDoNome(v.condominio))) return;
+    if (normTxtCarteira(v.status) !== 'CONCLUIDO') abertas++;
+    if (normTxtCarteira(v.realizada) === 'SIM' && String(v.data_visita || '').slice(0, 7) === mes) feitas++;
+  });
+  return { feitas, abertas };
+}
+function renderRankingCarteira(){
+  const corpo = document.getElementById('rankingCarteiraBody');
+  if (!corpo) return;
+  const inputMes = document.getElementById('saudeCarteiraMesSel');
+  const mes = inputMes.value || selectedMes || mesAtualReal();
+  const mesAnt = mesRelativoCarteira(mes, -1);
+  const resps = listaResponsaveisSC();
+  if (!resps.length){ corpo.innerHTML = ''; return; }
+  // as visitas emergenciais são carregadas só quando alguém abre a aba delas; busca uma vez aqui
+  if (!veLoaded && !__veRankingSolicitado && typeof loadVE === 'function' && sb){
+    __veRankingSolicitado = true;
+    Promise.resolve(loadVE()).then(() => renderRankingCarteira()).catch(() => {});
+  }
+  const ordem = (document.getElementById('rankingCarteiraOrdem') || {}).value || 'media';
+  const dados = resps.map(r => {
+    const aceita = x => normTxtCarteira(x) === normTxtCarteira(r);
+    const atual = statsCarteiraDoMes(mes, aceita), ant = statsCarteiraDoMes(mesAnt, aceita);
+    const contFilial = {};
+    itensDoMesDeduplicados(mes).filter(d => aceita(responsavelSCDoNome(d.nome))).forEach(d => { const f = normalizeFilialCanonica(d.filial) || '—'; contFilial[f] = (contFilial[f] || 0) + 1; });
+    const filialDominante = Object.entries(contFilial).sort((x, y) => y[1] - x[1])[0];
+    return { nome: r, membro: membroDaCarteira(r), atual, ant, vis: visitasDaCarteira(aceita, mes), filial: filialDominante ? filialDominante[0] : '',
+      pctCrit: atual.realizadas ? (atual.crit / atual.realizadas) * 100 : null };
+  });
+  const porNome = new Map(dados.map(d => [normTxtCarteira(d.nome), d]));
+  const fiscalizadaPor = nome => Object.keys(CARTEIRA_FISCALIZACAO).find(f => CARTEIRA_FISCALIZACAO[f].some(x => normTxtCarteira(x) === normTxtCarteira(nome)));
+  const valor = d => ordem === 'pct' ? d.atual.pct : (ordem === 'critico' ? (d.pctCrit === null ? -1 : 100 - d.pctCrit) : (d.atual.media === null ? -1 : d.atual.media));
+  const desempate = d => ordem === 'media' ? d.atual.pct : (d.atual.media === null ? -1 : d.atual.media);
+  dados.sort((a, b) => (valor(b) - valor(a)) || (desempate(b) - desempate(a)) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const medalhas = ['🥇', '🥈', '🥉'];
+  const fmt = n => n === null ? '—' : n.toFixed(1).replace('.', ',');
+  const podeFoto = currentRole === 'admin';
+  // incidentes e demandas só são carregados quando a aba deles é aberta; busca uma vez aqui
+  if (sb){
+    if (!incLoaded && !__incRankingSolicitado && typeof loadIncidentes === 'function'){ __incRankingSolicitado = true; Promise.resolve(loadIncidentes()).then(() => renderRankingCarteira()).catch(() => {}); }
+    if (!demLoaded && !__demRankingSolicitado && typeof loadDemandas === 'function'){ __demRankingSolicitado = true; Promise.resolve(loadDemandas()).then(() => renderRankingCarteira()).catch(() => {}); }
+  }
+  const acompanhamentoDaFilial = chave => {
+    const daFilial = x => normTxtCarteira(normalizeFilialCanonica(x.filial)) === chave;
+    const itens = itensDoMesDeduplicados(mes).filter(daFilial);
+    const s2 = computeStats(itens);
+    return {
+      total: itens.length, realizadas: s2.realizadas, pct: s2.pct,
+      reclamacoes: itens.filter(x => x.houveReclamacao).length,
+      incidentes: (typeof incData !== 'undefined' ? incData : []).filter(x => daFilial(x) && normTxtCarteira(x.status) !== 'RESOLVIDO').length,
+      demandas: (typeof demData !== 'undefined' ? demData : []).filter(x => daFilial(x) && normTxtCarteira(x.status) !== 'CONCLUIDA').length,
+    };
+  };
+  const blocoFiscalizacao = d => {
+    const supervisionadas = (Object.entries(CARTEIRA_FISCALIZACAO).find(([f]) => normTxtCarteira(f) === normTxtCarteira(d.nome)) || [null, []])[1];
+    if (supervisionadas.length){
+      const filiaisChaves = filiaisFiscalizadas(d.nome);
+      const totalFil = filiaisChaves.map(acompanhamentoDaFilial).reduce((t, x) => ({ total: t.total + x.total, realizadas: t.realizadas + x.realizadas }), { total: 0, realizadas: 0 });
+      const pctFil = totalFil.total ? Math.round((totalFil.realizadas / totalFil.total) * 100) : 0;
+      const linhas = supervisionadas.map(n => {
+        const x = porNome.get(normTxtCarteira(n));
+        if (!x) return '';
+        const chaveFilial = Object.keys(CARTEIRA_FILIAL_PADRAO).find(k => normTxtCarteira(CARTEIRA_FILIAL_PADRAO[k]) === normTxtCarteira(n));
+        const ac = chaveFilial ? acompanhamentoDaFilial(chaveFilial) : { reclamacoes: 0, incidentes: 0, demandas: 0 };
+        const cobrar = x.atual.pendentes > 0 || x.vis.abertas > 0 || x.atual.crit > 0;
+        return '<div class="rank-fisc" data-carteira-grupo="' + escapeHtml(x.nome) + '" data-carteira-filtro="' + (x.atual.pendentes ? 'pendente' : '') + '" title="Clique para ver a carteira de ' + escapeHtml(x.nome) + '">' +
+          '<b>' + escapeHtml(x.nome) + '</b> <span style="color:var(--text-faint);">· ' + escapeHtml(CARTEIRA_ROTULO_FILIAL[chaveFilial] || x.filial || 'sem condomínios') + '</span><br>' +
+          '<span' + (cobrar ? ' style="color:#f59e0b;"' : '') + '>' + x.atual.pendentes + ' pesquisa(s) pendente(s)</span> · <span style="color:var(--critico);">' + x.atual.crit + ' crítico(s)</span> · nota ' + fmt(x.atual.media) + '<br>' +
+          ac.reclamacoes + ' reclamação(ões) · ' + ac.incidentes + ' incidente(s) aberto(s) · ' + ac.demandas + ' demanda(s) aberta(s) · ' + x.vis.abertas + ' visita(s) em aberto</div>';
+      }).join('');
+      return '<div class="rank-fisc-bloco"><div style="font-size:11.5px; font-weight:700; margin-bottom:2px;">👁 Fiscaliza e cobra · faz as pesquisas das filiais</div>' +
+        '<div style="font-size:11.5px; color:var(--text-faint); margin-bottom:6px;">📝 Pesquisas das filiais (' + escapeHtml(rotuloFiliaisFiscalizadas(d.nome)) + '): <b>' + totalFil.realizadas + '</b> de ' + totalFil.total + ' realizadas (' + pctFil + '%)</div>' + linhas + '</div>';
+    }
+    const fisc = fiscalizadaPor(d.nome);
+    return fisc ? '<div style="font-size:11.5px; color:var(--text-faint); margin-top:6px;">👁 Fiscalizada por <b>' + escapeHtml(fisc) + '</b></div>' : '';
+  };
+  const cartoes = dados.map((d, i) => {
+    const m = d.membro;
+    const inicial = escapeHtml(d.nome.trim().charAt(0).toUpperCase());
+    const avatar = m && m.foto_url
+      ? '<img src="' + escapeHtml(m.foto_url) + '" alt="' + escapeHtml(d.nome) + '" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">'
+      : '<span style="font-size:26px; font-weight:700; color:#fff;">' + inicial + '</span>';
+    let evo = '<span style="color:var(--text-faint);">sem comparação</span>';
+    if (d.atual.media !== null && d.ant.media !== null){
+      const diff = d.atual.media - d.ant.media;
+      evo = Math.abs(diff) < 0.05 ? '<span style="color:var(--text-faint);">= estável vs ' + escapeHtml(mesLabelBR(mesAnt)) + '</span>'
+        : (diff > 0 ? '<span style="color:var(--ok);">▲ ' + diff.toFixed(1).replace('.', ',') + ' vs ' + escapeHtml(mesLabelBR(mesAnt)) + '</span>' : '<span style="color:var(--critico);">▼ ' + Math.abs(diff).toFixed(1).replace('.', ',') + ' vs ' + escapeHtml(mesLabelBR(mesAnt)) + '</span>');
+    }
+    const posicao = d.atual.realizadas ? (medalhas[i] || ('#' + (i + 1))) : '—';
+    const a = d.atual;
+    return '<div class="rank-card" data-carteira-grupo="' + escapeHtml(d.nome) + '" title="Clique para ver os condomínios desta carteira">' +
+      '<div class="rank-topo"><div class="rank-pos">' + posicao + '</div>' +
+      '<div class="rank-avatar"' + (podeFoto ? ' data-rank-foto="' + escapeHtml(d.nome) + '" title="Clique para trocar a foto"' : '') + '>' + avatar + (podeFoto ? '<span class="rank-cam">📷</span>' : '') + '</div>' +
+      '<div style="min-width:0;"><div class="rank-nome">' + escapeHtml(d.nome) + '</div>' +
+      '<div class="rank-sub">' + (d.filial ? 'Carteira ' + escapeHtml(d.filial) + ' · ' : '') + 'Sucesso do Cliente</div></div></div>' +
+      '<div class="rank-media"><span class="rank-media-num">' + fmt(a.media) + '</span><span class="rank-media-lbl">nota média da carteira</span></div>' +
+      '<div style="font-size:11.5px; margin:2px 0 8px;">' + evo + '</div>' +
+      '<div class="rank-barra"><div style="width:' + Math.min(100, a.pct) + '%;"></div></div>' +
+      '<div style="font-size:11.5px; color:var(--text-faint); margin:3px 0 8px;">' + a.realizadas + ' de ' + a.total + ' pesquisas realizadas (' + a.pct + '%)</div>' +
+      '<div class="rank-grade">' +
+        '<div><b>' + a.total + '</b><span>condomínios</span></div>' +
+        '<div><b>' + a.notas + '</b><span>notas lançadas</span></div>' +
+        '<div><b>' + a.pendentes + '</b><span>pendentes</span></div>' +
+        '<div><b style="color:var(--critico);">' + a.crit + '</b><span>críticos</span></div>' +
+        '<div><b style="color:#f59e0b;">' + a.atencao + '</b><span>atenção</span></div>' +
+        '<div><b style="color:var(--ok);">' + a.ok + '</b><span>OK</span></div>' +
+      '</div>' +
+      '<div style="font-size:11.5px; color:var(--text-faint); margin-top:8px;">Notas: <b style="color:var(--ok);">' + a.f9 + '</b> de 9–10 · <b style="color:#f59e0b;">' + a.f7 + '</b> de 7–8,9 · <b style="color:var(--critico);">' + a.f6 + '</b> abaixo de 7</div>' +
+      '<div style="font-size:11.5px; color:var(--text-faint); margin-top:4px;">🚨 Visitas emergenciais: <b>' + d.vis.feitas + '</b> realizadas no mês · <b>' + d.vis.abertas + '</b> em aberto</div>' +
+      blocoFiscalizacao(d) +
+      '</div>';
+  }).join('');
+  const sem = statsCarteiraDoMes(mes, x => respSemDono(x));
+  const semCard = sem.total ? '<div class="rank-card rank-sem" data-carteira-grupo="__sem__" title="Clique para atribuir estes condomínios"><div class="rank-nome">Sem responsável</div><div class="rank-sub" style="margin-bottom:8px;">' + sem.total + ' condomínio(s) ainda sem dono · ' + sem.pendentes + ' pesquisa(s) pendente(s)</div><div style="font-size:12px; color:var(--text-faint);">Clique para ver e atribuir a um Sucesso do Cliente.</div></div>' : '';
+  corpo.innerHTML = '<div class="rank-grid">' + cartoes + semCard + '</div>';
+}
+async function trocarFotoCarteira(resp, file){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (currentRole !== 'admin'){ alert('Só administradores podem trocar a foto.'); return; }
+  try{
+    let membro = membroDaCarteira(resp);
+    if (!membro && !confirm('"' + resp + '" ainda não está cadastrada na aba Equipe & Metas. Cadastrar agora com esta foto?')) return;
+    const registro = await uploadAnexo(file, 'equipe_membro', membro ? membro.id : ('carteira_' + normTxtCarteira(resp).replace(/ /g, '_')));
+    let r;
+    if (membro) r = await sb.from('equipe_membros').update({ foto_url: registro.url }).eq('id', membro.id);
+    else r = await sb.from('equipe_membros').insert({ nome: resp, cargo: 'Sucesso do Cliente', foto_url: registro.url, meta_pesquisas_dia: 0, ordem: equipeMembrosData.length, ativo: true });
+    if (r.error) throw r.error;
+    await carregarEquipeMembros();
+    renderRankingCarteira();
+    try{ renderEquipeOrgChart(); renderEquipeMetasCards(); }catch(e){}
+  }catch(e){
+    alert('Erro ao salvar a foto: ' + e.message);
+  }
+}
+
+// ----- Funções de cada integrante (Manual de Responsabilidades, Tratativas e Carteiras · 18/10/2026) -----
+const MANUAL_FUNCOES = [
+ {
+  "chave": "Rosely",
+  "nome": "Rosely",
+  "funcao": "Gestão do Sucesso do Cliente",
+  "area": "Gestão do Sucesso do Cliente · todas as carteiras e filiais",
+  "lidera": null,
+  "filiais": "",
+  "resp": [
+   "# Resumo oficial da função",
+   "Rosely — Gestão do Sucesso do Cliente: responsável pela gestão estratégica da área de Sucesso do Cliente da Servis, incluindo liderança e acompanhamento da equipe, fiscalização das carteiras, gestão de indicadores, monitoramento da satisfação dos condomínios, condução de negociações contratuais, retenção de clientes, gestão de ocorrências críticas e implementação de melhorias contínuas nos processos de atendimento e relacionamento.",
+   "Atua como referência gerencial para situações escalonadas, garantindo a execução adequada das tratativas, o cumprimento dos prazos e a preservação do relacionamento e da carteira de clientes.",
+   "Não precisa ser a executora de todas as demandas: sua função é assegurar que cada responsável realize suas atividades, que os clientes recebam as devolutivas necessárias e que os casos estratégicos ou críticos tenham sua intervenção.",
+   "# 1. Gestão e liderança da equipe de Sucesso do Cliente",
+   "Coordenar as atividades de Josiane Lima, Nicolly Silva e das representantes das filiais.",
+   "Distribuir responsabilidades e acompanhar a execução das atividades.",
+   "Monitorar pendências, prazos, reclamações e demandas não solucionadas.",
+   "Fiscalizar a qualidade das tratativas e das devolutivas aos síndicos.",
+   "Orientar a equipe sobre procedimentos e fluxos de atendimento.",
+   "Acompanhar a produtividade e os resultados individuais.",
+   "Atuar nos casos escalonados pela equipe.",
+   "# 2. Gestão estratégica das carteiras",
+   "Acompanhar a saúde de todos os condomínios.",
+   "Identificar clientes estáveis, em atenção e críticos.",
+   "Monitorar reclamações reincidentes e riscos de cancelamento.",
+   "Avaliar os resultados das pesquisas de satisfação.",
+   "Elaborar e acompanhar planos de ação para clientes insatisfeitos.",
+   "Realizar contatos estratégicos, visitas e reuniões com síndicos.",
+   "Garantir que as responsáveis mantenham o relacionamento e as tratativas atualizados.",
+   "# 3. Renovações, negociações e retenção contratual (uma das principais responsabilidades)",
+   "Conduzir negociações de renovação e fidelização.",
+   "Negociar reduções de mensalidades, abonos e condições comerciais.",
+   "Avaliar propostas de modernização e ampliação de equipamentos.",
+   "Solicitar e acompanhar a elaboração de aditivos contratuais.",
+   "Acompanhar assinaturas e encaminhar pedidos aos setores responsáveis.",
+   "Atuar diretamente nas tentativas de cancelamento e retenção.",
+   "Submeter condições excepcionais à Diretoria para aprovação.",
+   "# 4. Gestão de ocorrências críticas e violações",
+   "Liderar o acompanhamento do fluxo de violação.",
+   "Verificar se a Central realizou a comunicação, abriu a O.S. e encaminhou as evidências.",
+   "Cobrar os pareceres da Qualidade e os laudos técnicos.",
+   "Acompanhar os prazos estabelecidos para os setores envolvidos.",
+   "Entrar em contato com síndicos quando houver impacto relevante no relacionamento.",
+   "Conduzir reuniões e tratativas em casos de furtos, falhas graves ou reincidências.",
+   "Negociar ressarcimentos, compensações e medidas corretivas, mediante autorização.",
+   "Escalonar situações de maior gravidade à Gerência e à Diretoria.",
+   "# 5. Fiscalização de demandas, O.S. e preventivas",
+   "Sua responsabilidade é garantir que as tratativas aconteçam adequadamente, sem precisar assumir todas as demandas operacionais.",
+   "Monitorar O.S. abertas, atrasadas e reincidentes.",
+   "Cobrar tratativas técnicas e retornos aos síndicos.",
+   "Acompanhar a execução das manutenções preventivas.",
+   "Fiscalizar os registros realizados por Josiane Lima, Nicolly Silva e representantes locais.",
+   "Verificar se as demandas possuem responsável, prazo e histórico.",
+   "Garantir que uma O.S. só seja considerada concluída após o registro da tratativa técnica e da devolutiva ao síndico.",
+   "# 6. Indicadores e relatórios gerenciais",
+   "Acompanhar pesquisas de satisfação e notas médias.",
+   "Monitorar quantidade de reclamações e pendências.",
+   "Acompanhar indicadores de atendimento da Central, incluindo TMA.",
+   "Avaliar a evolução de clientes críticos.",
+   "Analisar o desempenho das carteiras e das integrantes da equipe.",
+   "Elaborar relatórios gerenciais e o fechamento mensal.",
+   "Apresentar resultados, riscos e propostas de melhoria à gestão.",
+   "# 7. Fiscalização regional",
+   "Ceará — carteira Josiane Lima: execução Josiane Lima · fiscalização Rosely · gestão Rosely.",
+   "Ceará — carteira Nicolly Silva: execução Nicolly Silva · fiscalização Rosely · gestão Rosely.",
+   "Secopi: execução Paula · fiscalização Josiane Lima · gestão Rosely.",
+   "Manaus: execução Tayane · fiscalização Josiane Lima · gestão Rosely.",
+   "Maranhão: execução Juliana · fiscalização Nicolly Silva · gestão Rosely.",
+   "Acompanha os resultados gerais de todas as filiais, enquanto cada responsável executa as demandas da própria carteira.",
+   "# 8. Melhoria contínua dos processos",
+   "Estruturar e atualizar os fluxos do Sucesso do Cliente.",
+   "Padronizar registros de reclamações, pesquisas, visitas e O.S.",
+   "Definir procedimentos de escalonamento.",
+   "Implantar indicadores e controles no dashboard gerencial.",
+   "Identificar falhas recorrentes e propor melhorias operacionais.",
+   "Acompanhar mudanças de sistemas, migrações e modernizações que impactem os condomínios.",
+   "# Observação",
+   "Esta é a divisão de responsabilidades estruturada para a operação; a formalização definitiva das atribuições depende da validação da gestão da Servis."
+  ],
+  "manterExistentes": true
+ },
+ {
+  "chave": "Josiane Lima",
+  "renomear": true,
+  "nome": "Josiane Lima",
+  "funcao": "Operação Ceará e fiscalização Secopi/Manaus",
+  "area": "Carteira Ceará (Josiane Lima) · fiscaliza, cobra e faz as pesquisas de Secopi e Manaus",
+  "lidera": "Rosely",
+  "filiais": "Ceará",
+  "resp": [
+   "# Nova organização a partir de 1º de novembro: carteira do Ceará + fiscalização das filiais Secopi e Manaus",
+   "# 1. ATENDIMENTO E RELACIONAMENTO — CARTEIRA CEARÁ",
+   "1. Realizar atendimento aos síndicos e responsáveis pelos condomínios.",
+   "2. Monitorar e responder às mensagens dos grupos de WhatsApp.",
+   "3. Verificar diariamente as mensagens do SAC/Gear.",
+   "4. Receber, registrar e acompanhar reclamações e solicitações.",
+   "5. Resolver demandas operacionais dentro da sua autonomia.",
+   "6. Encaminhar solicitações aos setores responsáveis.",
+   "7. Cobrar retornos de demandas pendentes.",
+   "8. Manter os síndicos informados sobre o andamento das solicitações.",
+   "9. Realizar contatos preventivos de relacionamento.",
+   "10. Confirmar com os síndicos se os problemas foram solucionados.",
+   "11. Identificar condomínios insatisfeitos.",
+   "12. Comunicar à gestão situações que apresentem risco de cancelamento.",
+   "# 2. ORDENS DE SERVIÇO E MANUTENÇÕES",
+   "13. Acompanhar todas as ordens de serviço da sua carteira.",
+   "14. Cobrar ordens de serviço atrasadas.",
+   "15. Verificar o andamento dos atendimentos técnicos.",
+   "16. Confirmar a conclusão dos serviços com os síndicos.",
+   "17. Acompanhar as manutenções preventivas.",
+   "18. Cobrar preventivas pendentes ou não realizadas.",
+   "19. Identificar e acompanhar ordens de serviço reincidentes.",
+   "20. Monitorar problemas técnicos recorrentes.",
+   "21. Acompanhar reclamações relacionadas à Central de Monitoramento.",
+   "22. Acompanhar solicitações de manutenção e substituição de equipamentos.",
+   "23. Alimentar mensalmente o fluxo de atendimento dos condomínios.",
+   "24. Encaminhar à Central as solicitações que necessitem de abertura de ordem de serviço.",
+   "25. Acompanhar as demandas até a confirmação da resolução.",
+   "# 3. CONTRATOS, AMPLIAÇÕES E EQUIPAMENTOS",
+   "26. Identificar contratos próximos do vencimento.",
+   "27. Acompanhar as renovações contratuais da sua carteira e cobrar retornos pendentes.",
+   "28. Verificar reajustes contratuais quando solicitado.",
+   "29. Conferir informações e condições contratuais para encaminhamento à gestão.",
+   "30. Realizar o lançamento dos equipamentos solicitados para ampliação dos clientes da sua carteira.",
+   "31. Realizar o levantamento de custos dos equipamentos e materiais das ampliações.",
+   "32. Encaminhar os levantamentos para análise e negociação da Rosely.",
+   "33. Acompanhar a execução de melhorias e instalações aprovadas.",
+   "34. Enviar os comunicados relacionados aos armários dos condomínios.",
+   "35. Acompanhar e cobrar o esvaziamento dos armários da sua carteira.",
+   "36. Verificar o cumprimento dos prazos de melhorias aprovadas.",
+   "# 4. CADASTROS, SISTEMAS E SOLICITAÇÕES INTERNAS",
+   "37. Realizar e acompanhar solicitações de atualização cadastral.",
+   "38. Acompanhar demandas relacionadas a faciais, controles, tags e aplicativos.",
+   "39. Verificar pendências de cadastro e acesso.",
+   "40. Abrir tarefas para o Backoffice.",
+   "41. Abrir tarefas para o TI.",
+   "42. Acompanhar a resolução das tarefas abertas.",
+   "43. Registrar todas as tratativas no sistema.",
+   "44. Atualizar o status das solicitações.",
+   "45. Acompanhar problemas operacionais relacionados aos sistemas.",
+   "46. Apoiar os condomínios em processos de atualização e adaptação tecnológica, conforme orientação da gestão.",
+   "# 5. GESTÃO OPERACIONAL DA CARTEIRA CEARÁ",
+   "47. Manter o controle das pendências dos seus condomínios.",
+   "48. Monitorar reclamações e reincidências.",
+   "49. Acompanhar o cumprimento dos prazos.",
+   "50. Identificar clientes críticos.",
+   "51. Acompanhar os planos de ação definidos pela gestão.",
+   "52. Executar as demandas encaminhadas pela Rosely.",
+   "53. Apoiar Nicolly Silva e demais integrantes quando necessário.",
+   "54. Atualizar os indicadores operacionais da carteira.",
+   "55. Elaborar relatórios de acompanhamento.",
+   "56. Apresentar semanalmente as pendências, resultados e situações críticas à gestão.",
+   "# 6. FISCALIZAÇÃO DAS FILIAIS SECOPI E MANAUS (Secopi — Paula · Manaus — Tayane)",
+   "57. Fiscalizar o andamento das pendências das duas filiais.",
+   "58. Acompanhar as ordens de serviço pendentes e atrasadas.",
+   "59. Cobrar os retornos necessários das representantes locais.",
+   "60. Acompanhar preventivas pendentes e reincidências.",
+   "61. Verificar o cumprimento dos prazos.",
+   "62. Fiscalizar as reclamações em aberto.",
+   "63. Acompanhar as renovações da filial Secopi e cobrar os retornos pendentes.",
+   "64. Realizar pesquisas de satisfação dos condomínios das duas filiais.",
+   "65. Registrar fielmente as notas informadas pelos síndicos.",
+   "66. Registrar elogios, reclamações e pendências identificadas.",
+   "67. Encaminhar às representantes locais as pendências identificadas nas pesquisas.",
+   "68. Cobrar a resolução das reclamações e acompanhar os retornos.",
+   "69. Identificar condomínios críticos e comunicar à gestão.",
+   "70. Apresentar semanalmente os resultados e as pendências da fiscalização.",
+   "# ORIENTAÇÕES IMPORTANTES",
+   "A execução das demandas operacionais da Secopi e Manaus continua sob responsabilidade de Paula e Tayane; a atuação nessas filiais é de fiscalização, cobrança de pendências e pesquisas de satisfação.",
+   "Na carteira do Ceará, responsável pelo acompanhamento operacional das demandas até a conclusão.",
+   "Violações, negociações contratuais, reclamações graves, migrações de sistemas e pendências prolongadas que necessitem de intervenção são encaminhadas à Rosely.",
+   "A divisão das carteiras não impede o atendimento de condomínios de outras integrantes: o trabalho continua compartilhado sempre que necessário.",
+   "Todas as informações devem permanecer registradas e atualizadas no sistema."
+  ]
+ },
+ {
+  "chave": "Nicolly Silva",
+  "renomear": true,
+  "nome": "Nicolly Silva",
+  "funcao": "Operação Ceará e fiscalização Maranhão",
+  "area": "Carteira Ceará (Nicolly Silva) · fiscaliza, cobra e faz as pesquisas do Maranhão",
+  "lidera": "Rosely",
+  "filiais": "Ceará",
+  "resp": [
+   "# Nova organização a partir de 1º de novembro: carteira do Ceará + fiscalização da filial Maranhão",
+   "# 1. ATENDIMENTO E RELACIONAMENTO — CARTEIRA CEARÁ",
+   "1. Realizar atendimento aos síndicos e responsáveis pelos condomínios.",
+   "2. Monitorar e responder às mensagens dos grupos de WhatsApp.",
+   "3. Verificar diariamente as mensagens do SAC/Gear.",
+   "4. Receber, registrar e acompanhar reclamações e solicitações.",
+   "5. Resolver demandas operacionais dentro da sua autonomia.",
+   "6. Encaminhar solicitações aos setores responsáveis.",
+   "7. Cobrar retornos de demandas pendentes.",
+   "8. Manter os síndicos informados sobre o andamento das solicitações.",
+   "9. Realizar contatos preventivos de relacionamento.",
+   "10. Confirmar com os síndicos se os problemas foram solucionados.",
+   "11. Identificar condomínios insatisfeitos.",
+   "12. Comunicar à gestão situações que apresentem risco de cancelamento.",
+   "# 2. ORDENS DE SERVIÇO E MANUTENÇÕES",
+   "13. Acompanhar todas as ordens de serviço da sua carteira.",
+   "14. Cobrar ordens de serviço atrasadas.",
+   "15. Verificar o andamento dos atendimentos técnicos.",
+   "16. Confirmar a conclusão dos serviços com os síndicos.",
+   "17. Acompanhar as manutenções preventivas.",
+   "18. Cobrar preventivas pendentes ou não realizadas.",
+   "19. Identificar e acompanhar ordens de serviço reincidentes.",
+   "20. Monitorar problemas técnicos recorrentes.",
+   "21. Acompanhar reclamações relacionadas à Central de Monitoramento.",
+   "22. Acompanhar solicitações de manutenção e substituição de equipamentos.",
+   "23. Alimentar mensalmente o fluxo de atendimento dos condomínios.",
+   "24. Encaminhar à Central as solicitações que necessitem de abertura de ordem de serviço.",
+   "25. Acompanhar as demandas até a confirmação da resolução.",
+   "# 3. CONTRATOS, AMPLIAÇÕES E EQUIPAMENTOS",
+   "26. Identificar contratos próximos do vencimento.",
+   "27. Acompanhar as renovações contratuais da sua carteira e cobrar retornos pendentes.",
+   "28. Verificar reajustes contratuais quando solicitado.",
+   "29. Conferir informações e condições contratuais para encaminhamento à gestão.",
+   "30. Realizar o lançamento dos equipamentos solicitados para ampliação dos clientes da sua carteira.",
+   "31. Realizar o levantamento de custos dos equipamentos e materiais das ampliações.",
+   "32. Encaminhar os levantamentos para análise e negociação da Rosely.",
+   "33. Acompanhar a execução de melhorias e instalações aprovadas.",
+   "34. Enviar os comunicados relacionados aos armários dos condomínios.",
+   "35. Acompanhar e cobrar o esvaziamento dos armários da sua carteira.",
+   "36. Verificar o cumprimento dos prazos de melhorias aprovadas.",
+   "# 4. CADASTROS, SISTEMAS E SOLICITAÇÕES INTERNAS",
+   "37. Realizar e acompanhar solicitações de atualização cadastral.",
+   "38. Acompanhar demandas relacionadas a faciais, controles, tags e aplicativos.",
+   "39. Verificar pendências de cadastro e acesso.",
+   "40. Abrir tarefas para o Backoffice.",
+   "41. Abrir tarefas para o TI.",
+   "42. Acompanhar a resolução das tarefas abertas.",
+   "43. Registrar todas as tratativas no sistema.",
+   "44. Atualizar o status das solicitações.",
+   "45. Acompanhar problemas operacionais relacionados aos sistemas.",
+   "46. Apoiar os condomínios em processos de atualização e adaptação tecnológica, conforme orientação da gestão.",
+   "# 5. GESTÃO OPERACIONAL DA CARTEIRA CEARÁ",
+   "47. Manter o controle das pendências dos seus condomínios.",
+   "48. Monitorar reclamações e reincidências.",
+   "49. Acompanhar o cumprimento dos prazos.",
+   "50. Identificar clientes críticos.",
+   "51. Acompanhar os planos de ação definidos pela gestão.",
+   "52. Executar as demandas encaminhadas pela Rosely.",
+   "53. Apoiar Josiane Lima e demais integrantes quando necessário.",
+   "54. Atualizar os indicadores operacionais da carteira.",
+   "55. Elaborar relatórios de acompanhamento.",
+   "56. Apresentar semanalmente as pendências, resultados e situações críticas à gestão.",
+   "# 6. FISCALIZAÇÃO DA FILIAL MARANHÃO (Maranhão — Juliana)",
+   "57. Fiscalizar o andamento das pendências da filial.",
+   "58. Acompanhar as ordens de serviço pendentes e atrasadas.",
+   "59. Cobrar os retornos necessários da representante local.",
+   "60. Acompanhar preventivas pendentes e reincidências.",
+   "61. Verificar o cumprimento dos prazos.",
+   "62. Fiscalizar as reclamações em aberto.",
+   "63. Acompanhar as renovações da filial Maranhão e cobrar os retornos pendentes.",
+   "64. Realizar pesquisas de satisfação dos condomínios da filial Maranhão.",
+   "65. Registrar fielmente as notas informadas pelos síndicos.",
+   "66. Registrar elogios, reclamações e pendências identificadas.",
+   "67. Encaminhar à representante local as pendências identificadas nas pesquisas.",
+   "68. Cobrar a resolução das reclamações e acompanhar os retornos.",
+   "69. Identificar condomínios críticos e comunicar à gestão.",
+   "70. Apresentar semanalmente os resultados e as pendências da fiscalização.",
+   "# ORIENTAÇÕES IMPORTANTES",
+   "A execução das demandas operacionais do Maranhão continua sob responsabilidade de Juliana; a atuação nessa filial é de fiscalização, cobrança de pendências e pesquisas de satisfação.",
+   "Na carteira do Ceará, responsável pelo acompanhamento operacional das demandas até a conclusão.",
+   "Violações, negociações contratuais, reclamações graves, migrações de sistemas e pendências prolongadas que necessitem de intervenção são encaminhadas à Rosely.",
+   "A divisão das carteiras não impede o atendimento de condomínios de outras integrantes: o trabalho continua compartilhado sempre que necessário.",
+   "Todas as informações devem permanecer registradas e atualizadas no sistema."
+  ]
+ },
+ {
+  "chave": "Paula",
+  "nome": "Paula",
+  "funcao": "Sucesso do Cliente — Secopi",
+  "area": "Sucesso do Cliente da filial Secopi · fiscalizada por Josiane Lima",
+  "lidera": "Josiane Lima",
+  "filiais": "SECOPI",
+  "resp": [
+   "Responsável pela carteira de todos os condomínios da filial Secopi.",
+   "Atendimento e relacionamento direto com síndicos; registrar solicitações e providenciar devolutivas.",
+   "Acompanhar O.S., preventivas, reincidências, Central, cadastros, equipamentos, TI/Backoffice e melhorias.",
+   "Manter pendências, prazos, tratativas e evidências atualizados; prestar informações à fiscalização de Josiane Lima.",
+   "Encaminhar negociações e questões fora de autonomia à gestão, com contexto e histórico."
+  ]
+ },
+ {
+  "chave": "Tayane",
+  "nome": "Tayane",
+  "funcao": "Sucesso do Cliente — Manaus (Amazonas)",
+  "area": "Sucesso do Cliente da filial Amazonas (Manaus) · fiscalizada por Josiane Lima",
+  "lidera": "Josiane Lima",
+  "filiais": "Amazonas",
+  "resp": [
+   "Responsável pela carteira de todos os condomínios da filial Amazonas (Manaus).",
+   "Atendimento e relacionamento direto com síndicos; acompanhar rotina operacional, chamados e retornos.",
+   "Acompanhar O.S., preventivas, reincidências, cadastro, acessos, TI/Backoffice, demandas da Central e melhorias.",
+   "Atualizar prazos, status, evidências e devolutivas; prestar informações à Josiane Lima, responsável pela fiscalização.",
+   "Escalar situações críticas, riscos de cancelamento e negociações à Rosely."
+  ]
+ },
+ {
+  "chave": "Juliana",
+  "nome": "Juliana",
+  "funcao": "Sucesso do Cliente — Maranhão",
+  "area": "Sucesso do Cliente da filial Maranhão · fiscalizada por Nicolly Silva",
+  "lidera": "Nicolly Silva",
+  "filiais": "Maranhão",
+  "resp": [
+   "Responsável pela carteira de todos os condomínios da filial Maranhão.",
+   "Atendimento ao síndico, WhatsApp/SAC e registro de solicitações, acompanhando solução e retorno.",
+   "Controlar O.S., preventivas, reincidências, chamados, cadastros, equipamentos, melhorias e rotina contratual.",
+   "Realizar visitas e acompanhamentos presenciais quando necessários; preservar registros, evidências e prazos.",
+   "Informar Nicolly Silva, responsável pela fiscalização, e escalar casos críticos à gestão."
+  ]
+ }
+];
+function planoManualFuncoes(){
+  const itens = MANUAL_FUNCOES.map(p => ({ p, membro: membroDaCarteira(p.chave) }));
+  const nomeFinal = {};
+  itens.forEach(i => {
+    const renomeia = i.p.renomear && i.membro && i.membro.nome !== i.p.nome;
+    i.nomeNovo = renomeia ? i.p.nome : null;
+    nomeFinal[i.p.chave] = i.nomeNovo || (i.membro ? i.membro.nome : i.p.nome);
+  });
+  const MARCA_MANTIDAS = '📌 Atividades já cadastradas (mantidas)';
+  return itens.map(i => {
+    const geradas = i.p.resp.map(l => l.startsWith('# ') ? '📌 ' + l.slice(2) : '✅ ' + l);
+    let mantidas = [];
+    if (i.p.manterExistentes && i.membro && i.membro.responsabilidades){
+      const jaGeradas = new Set(geradas);
+      mantidas = String(i.membro.responsabilidades).split('\n').map(l => l.trim()).filter(l => l && l !== MARCA_MANTIDAS && !jaGeradas.has(l));
+    }
+    return {
+      p: i.p, membro: i.membro, nomeNovo: i.nomeNovo, mantidas: mantidas.length,
+      novo: {
+        area: i.p.area,
+        lidera: i.p.lidera ? nomeFinal[i.p.lidera] : null,
+        filiais_responsavel: i.p.filiais || null,
+        responsabilidades: geradas.concat(mantidas.length ? [MARCA_MANTIDAS].concat(mantidas) : []).join('\n'),
+      },
+    };
+  });
+}
+// Quem ainda tem cadastro antigo em relação ao manual (alguém fora da Equipe, ou responsabilidades diferentes)
+function pendenciasManualFuncoes(){
+  return planoManualFuncoes().filter(x => !x.membro || x.nomeNovo || String(x.membro.responsabilidades || '').indexOf(x.p.resp.find(l => !l.startsWith('# '))) === -1);
+}
+function abrirManualFuncoes(){
+  if (currentRole !== 'admin'){ alert('Só administradores podem atualizar as funções da equipe.'); return; }
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  const plano = planoManualFuncoes();
+  const linha = (rotulo, atual, novo) => '<div style="font-size:12px; margin:2px 0;"><span style="color:var(--text-faint);">' + rotulo + ':</span> ' +
+    (String(atual || '') === String(novo || '') ? '<span style="color:var(--text-faint);">sem mudança (' + escapeHtml(String(novo || '—')) + ')</span>'
+      : '<span style="text-decoration:line-through; color:var(--text-faint);">' + escapeHtml(String(atual || '—')) + '</span> → <strong>' + escapeHtml(String(novo || '—')) + '</strong>') + '</div>';
+  document.getElementById('manualFuncoesBody').innerHTML = plano.map(({ p, membro, novo, nomeNovo, mantidas }) => {
+    const linhasAtuais = membro && membro.responsabilidades ? membro.responsabilidades.split('\n').filter(l => l.trim()).length : 0;
+    return '<div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">' +
+      '<div style="font-weight:700; margin-bottom:4px;">' + escapeHtml(p.chave) + ' — ' + escapeHtml(p.funcao) + ' ' +
+      (membro ? '<span style="font-weight:400; font-size:11.5px; color:var(--text-faint);">(atualiza o cadastro de ' + escapeHtml(membro.nome) + ')</span>'
+              : '<span style="font-weight:400; font-size:11.5px; color:#f59e0b;">(ainda não está na Equipe — será cadastrada)</span>') + '</div>' +
+      (membro && nomeNovo ? linha('Nome', membro.nome, nomeNovo) : '') +
+      linha('Área', membro && membro.area, novo.area) +
+      linha('Quem lidera', membro && membro.lidera, novo.lidera) +
+      linha('Filiais', membro && membro.filiais_responsavel, novo.filiais_responsavel) +
+      '<div style="font-size:12px; margin:2px 0;"><span style="color:var(--text-faint);">Responsabilidades:</span> ' + (p.manterExistentes ? (mantidas ? 'mantém as ' + mantidas + ' linha(s) atuais (no final) e acrescenta ' : 'serão cadastradas ') : (linhasAtuais ? linhasAtuais + ' linha(s) atuais serão substituídas por ' : 'serão cadastradas ')) + '<strong>' + p.resp.filter(l => !l.startsWith('# ')).length + ' itens do manual</strong></div>' +
+      (membro ? linha('Cargo (título)', membro.cargo, document.getElementById('manualFuncoesCargo').checked ? p.funcao : membro.cargo) : '') +
+      '</div>';
+  }).join('');
+  document.getElementById('manualFuncoesModal').style.display = 'flex';
+}
+async function aplicarManualFuncoes(){
+  const btn = document.getElementById('manualFuncoesAplicar');
+  const trocarCargo = document.getElementById('manualFuncoesCargo').checked;
+  const plano = planoManualFuncoes();
+  btn.disabled = true; btn.textContent = 'Aplicando...';
+  try{
+    let ordemBase = equipeMembrosData.length;
+    for (const { p, membro, novo, nomeNovo } of plano){
+      if (membro){
+        const campos = Object.assign({}, novo);
+        if (nomeNovo) campos.nome = nomeNovo;
+        if (trocarCargo) campos.cargo = p.funcao;
+        const { error } = await sb.from('equipe_membros').update(campos).eq('id', membro.id);
+        if (error) throw error;
+      } else {
+        const { error } = await sb.from('equipe_membros').insert(Object.assign({ nome: p.nome, cargo: p.funcao, meta_pesquisas_dia: 0, ordem: ordemBase++, ativo: true }, novo));
+        if (error) throw error;
+      }
+    }
+    // quem lidera por um nome que mudou (e não está no plano) passa a apontar para o nome novo
+    const renomeados = new Map(plano.filter(x => x.membro && x.nomeNovo).map(x => [x.membro.nome, x.nomeNovo]));
+    const idsDoPlano = new Set(plano.filter(x => x.membro).map(x => String(x.membro.id)));
+    for (const m of equipeMembrosData){
+      if (!idsDoPlano.has(String(m.id)) && renomeados.has(m.lidera)){
+        const { error } = await sb.from('equipe_membros').update({ lidera: renomeados.get(m.lidera) }).eq('id', m.id);
+        if (error) throw error;
+      }
+    }
+    document.getElementById('manualFuncoesModal').style.display = 'none';
+    await carregarEquipeMembros();
+    try{ renderEquipeOrgChart(); renderEquipeMetasCards(); renderEquipeAreasCards(); renderEquipeFilialTabela(); renderRankingCarteira(); atualizarAvisoManualFuncoes(); }catch(e){}
+    alert('Funções atualizadas conforme o Manual para ' + plano.length + ' integrantes.');
+  }catch(e){
+    alert('Erro ao atualizar as funções: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✅ Aplicar funções do Manual';
+  }
+}
+// Aviso no topo da aba Equipe & Metas enquanto houver cadastro desatualizado em relação ao manual
+function atualizarAvisoManualFuncoes(){
+  let el = document.getElementById('manualFuncoesAviso');
+  const ancora = document.getElementById('equipeStatsTop');
+  if (!ancora) return;
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'manualFuncoesAviso';
+    el.className = 'carteira-aviso';
+    el.style.cssText = 'margin:10px 0; border-color:#f59e0b; background:rgba(245,158,11,.10);';
+    ancora.insertAdjacentElement('afterend', el);
+  }
+  const pend = (currentRole === 'admin' && equipeMembrosData.length) ? pendenciasManualFuncoes() : [];
+  if (!pend.length){ el.style.display = 'none'; return; }
+el.innerHTML = '📘 O organograma abaixo já mostra a nova divisão do Manual, mas o cadastro da Equipe ainda não foi atualizado (' + pend.map(x => escapeHtml(x.p.chave)).join(', ') + '). Clique para gravar as atividades, as filiais e quem lidera. <button type="button" class="chip-carteira chip-carteira-btn" id="manualFuncoesAvisoBtn">Revisar e aplicar</button>';
+  el.style.display = 'flex';
+  document.getElementById('manualFuncoesAvisoBtn').addEventListener('click', abrirManualFuncoes);
+}
+// Linha extra nas caixas do organograma: quem fiscaliza quem
+function juntarNomesCarteira(lista){ return lista.length > 1 ? lista.slice(0, -1).join(', ') + ' e ' + lista[lista.length - 1] : (lista[0] || ''); }
+function linhaFiscalizacaoOrg(m){
+  try{
+    for (const [fisc, lista] of Object.entries(CARTEIRA_FISCALIZACAO)){
+      const mf = membroDaCarteira(fisc);
+      if (mf && String(mf.id) === String(m.id)) return '<div class="org-info" style="color:#a78bfa;">👁 Fiscaliza: ' + escapeHtml(juntarNomesCarteira(lista)) + '</div>';
+      for (const cs of lista){
+        const mc = membroDaCarteira(cs);
+        if (mc && String(mc.id) === String(m.id)) return '<div class="org-info" style="color:#a78bfa;">👁 Fiscalização: ' + escapeHtml(fisc) + '</div>';
+      }
+    }
+  }catch(e){}
+  return '';
+}
+
+// ----- Organograma conforme a nova divisão (Manual de 18/10/2026) -----
+let __orgTentouCarregar = false;
+function garantirDadosOrganograma(){
+  if (!sb || __orgTentouCarregar) return;
+  const pendentes = [];
+  if (!veLoaded && typeof loadVE === 'function') pendentes.push(loadVE());
+  if (!incLoaded && typeof loadIncidentes === 'function') pendentes.push(loadIncidentes());
+  if (!demLoaded && typeof loadDemandas === 'function') pendentes.push(loadDemandas());
+  if (!pendentes.length) return;
+  __orgTentouCarregar = true;
+  Promise.allSettled(pendentes).then(() => { try{ renderEquipeOrgChart(); }catch(e){} });
+}
+function montarNosOrganograma(){
+  const plano = planoManualFuncoes();
+  const porNome = new Map();
+  const reg = (nome, no) => { const k = normTxtCarteira(nome); if (k && !porNome.has(k)) porNome.set(k, no); };
+  const nos = plano.map(x => {
+    const no = { chave: x.p.chave, p: x.p, m: x.membro, virtual: !x.membro, filhos: [],
+      nome: x.p.renomear ? x.p.nome : (x.membro ? x.membro.nome : x.p.nome),
+      cargo: (x.membro && x.membro.cargo) || x.p.funcao, area: x.p.area };
+    reg(no.nome, no); if (x.membro) reg(x.membro.nome, no); reg(x.p.chave, no);
+    return no;
+  });
+  const porChave = new Map(nos.map(n => [n.chave, n]));
+  const raizes = [];
+  nos.forEach(n => { const pai = n.p.lidera ? porChave.get(n.p.lidera) : null; (pai ? pai.filhos : raizes).push(n); });
+  const idsPlano = new Set(plano.filter(x => x.membro).map(x => String(x.membro.id)));
+  const outros = equipeMembrosData.filter(m => !idsPlano.has(String(m.id)))
+    .map(m => ({ chave: null, p: null, m, virtual: false, filhos: [], nome: m.nome, cargo: m.cargo || '', area: m.area || '', paiNome: m.lidera || '' }));
+  outros.forEach(n => reg(n.nome, n));
+  outros.forEach(n => {
+    const pai = n.paiNome ? porNome.get(normTxtCarteira(n.paiNome)) : null;
+    (pai && pai !== n ? pai.filhos : raizes).push(n);
+  });
+  return raizes;
+}
+function estatisticasOrg(no, mes){
+  if (!no.chave) return null;
+  const fl = filiaisFiscalizadas(no.chave);
+  const dentro = no.chave === 'Rosely' ? () => true : (nomeCondo, filial) => {
+    if (mesmaPessoaCarteira(responsavelSCDoNome(nomeCondo), no.chave)) return true;
+    const f = normTxtCarteira(normalizeFilialCanonica(filial || dadosCarteiraDoNome(nomeCondo).filial || ''));
+    return fl.includes(f);
+  };
+  const itens = itensDoMesDeduplicados(mes).filter(d => dentro(d.nome, d.filial));
+  return {
+    pend: itens.filter(pesquisaNaoRealizada).length,
+    crit: itens.filter(d => classeSaudeItem(d) === 'critico').length,
+    dem: (typeof demData !== 'undefined' && Array.isArray(demData) ? demData : []).filter(d => normTxtCarteira(d.status) !== 'CONCLUIDA' && dentro(d.condominio, d.filial)).length,
+    inc: (typeof incData !== 'undefined' && Array.isArray(incData) ? incData : []).filter(d => normTxtCarteira(d.status) !== 'RESOLVIDO' && dentro(d.condominio, d.filial)).length,
+    vis: (typeof veData !== 'undefined' && Array.isArray(veData) ? veData : []).filter(v => normTxtCarteira(v.status) !== 'CONCLUIDO' && dentro(v.condominio, v.filial)).length,
+  };
+}
+function fiscalizacaoDoNoOrg(no){
+  if (!no.chave) return '';
+  if (CARTEIRA_FISCALIZACAO[no.chave]) return '<div class="org-info" style="color:#a78bfa;">👁 Fiscaliza: ' + escapeHtml(juntarNomesCarteira(CARTEIRA_FISCALIZACAO[no.chave])) + '</div>';
+  const fisc = Object.keys(CARTEIRA_FISCALIZACAO).find(f => CARTEIRA_FISCALIZACAO[f].some(c => normTxtCarteira(c) === normTxtCarteira(no.chave)));
+  return fisc ? '<div class="org-info" style="color:#a78bfa;">👁 Fiscalização: ' + escapeHtml(fisc) + '</div>' : '';
+}
+function renderOrganogramaNovaDivisao(){
+  const el = document.getElementById('equipeOrgChart');
+  if (!el) return;
+  if (!equipeMembrosData.length){ el.innerHTML = '<p class="empty">Nenhum membro cadastrado ainda. Clique em "+ Novo Membro" pra começar.</p>'; return; }
+  garantirDadosOrganograma();
+  const mes = (document.getElementById('saudeCarteiraMesSel') || {}).value || selectedMes || mesAtualReal();
+  const caixa = no => {
+    const m = no.m;
+    const foto = m && m.foto_url
+      ? '<img src="' + escapeHtml(m.foto_url) + '" style="width:40px; height:40px; border-radius:50%; object-fit:cover; margin-bottom:6px;">'
+      : '<div style="width:40px; height:40px; border-radius:50%; background:var(--bg-panel); display:flex; align-items:center; justify-content:center; font-size:18px; margin:0 auto 6px;">👤</div>';
+    const st = estatisticasOrg(no, mes);
+    const stats = st ? '<div class="org-stats" title="' + (no.chave === 'Rosely' ? 'Todas as carteiras e filiais' : 'Carteira + filiais que fiscaliza') + '">📋 ' + st.dem + ' demanda(s) · 🚨 ' + st.inc + ' incidente(s)<br>📝 ' + st.pend + ' pesquisa(s) pendente(s) · 🔴 ' + st.crit + ' crítico(s)' + (st.vis ? '<br>🚪 ' + st.vis + ' visita(s) em aberto' : '') + '</div>' : '';
+    const ativ = no.p ? '<div class="org-ativ" data-atividades="' + escapeHtml(no.chave) + '">📋 Ver atividades</div>' : '';
+    const attr = no.virtual ? ' data-aplicar-manual="1" title="Ainda não está na Equipe — clique para revisar e aplicar o Manual"' : (m ? ' data-editar-membro="' + m.id + '" title="Clique pra editar"' : '');
+    return '<div class="org-box' + (no.virtual ? ' org-virtual' : '') + '"' + attr + ' style="cursor:pointer;">' + foto +
+      '<div class="org-nome">' + escapeHtml(no.nome) + '</div>' +
+      '<div class="org-cargo">' + escapeHtml(no.cargo || '') + '</div>' +
+      (no.area ? '<div class="org-info">' + escapeHtml(no.area) + '</div>' : '') +
+      fiscalizacaoDoNoOrg(no) + stats + ativ +
+      (no.virtual ? '<div class="org-novo">novo · ainda não cadastrada</div>' : '') + '</div>';
+  };
+  const nivel = lista => lista.length ? '<ul>' + lista.map(n => '<li>' + caixa(n) + (n.filhos.length ? nivel(n.filhos) : '') + '</li>').join('') + '</ul>' : '';
+  el.innerHTML = '<ul><li><div class="org-box org-root"><div class="org-nome">Equipe Customer Success</div><div class="org-cargo">Servis Tecnologia em Segurança</div></div>' + nivel(montarNosOrganograma()) + '</li></ul>' +
+    '<p style="font-size:11.5px; color:var(--text-faint); margin:12px 0 0;">Divisão conforme o Manual de 18/10/2026 · 👁 = fiscaliza e cobra · as caixas de baixo são o Sucesso do Cliente de cada filial · os números mostram as demandas abertas da carteira de cada uma (a Josiane e a Nicolly incluem as filiais que fiscalizam).</p>';
+}
+function abrirAtividadesPessoa(chave){
+  const p = MANUAL_FUNCOES.find(x => x.chave === chave);
+  if (!p) return;
+  document.getElementById('atividadesPessoaTitulo').textContent = '📋 Atividades — ' + p.nome;
+  document.getElementById('atividadesPessoaSub').textContent = p.funcao + ' · ' + p.area;
+  document.getElementById('atividadesPessoaBody').innerHTML = p.resp.map(l => l.startsWith('# ')
+    ? '<div style="font-weight:700; margin:12px 0 4px; color:#a78bfa;">📌 ' + escapeHtml(l.slice(2)) + '</div>'
+    : '<div style="font-size:12.5px; margin:3px 0; line-height:1.5;">✅ ' + escapeHtml(l) + '</div>').join('');
+  document.getElementById('atividadesPessoaModal').style.display = 'flex';
+}
+
+// ----- Detalhe da carteira: ver condomínios e redirecionar -----
+let __detCarteira = { grupo: '', filtro: '' };
+const __detSel = new Set();
+function cadastroRowDoNome(nome){
+  if (!__mapaRowsCadastro){
+    const m = new Map();
+    CADASTRO_LIVE.forEach(c => {
+      if (!c || !c.nome || c.item_id === undefined) return;
+      const k = normalizeNomeCondo(c.nome);
+      if (k && (!m.has(k) || (m.get(k).status === 'Inativo' && c.status !== 'Inativo'))) m.set(k, c);
+    });
+    __mapaRowsCadastro = m;
+  }
+  const k = normalizeNomeCondo(nome);
+  if (__mapaRowsCadastro.has(k)) return __mapaRowsCadastro.get(k);
+  const tk = carteiraTokens(nome);
+  if (!tk.length) return null;
+  for (const c of __mapaRowsCadastro.values()){
+    const t2 = carteiraTokens(c.nome);
+    if (t2.length === tk.length && t2.every(t => tk.includes(t))) return c;
+  }
+  return null;
+}
+const SAUDE_ROTULO = { critico: ['Crítico', '#ef4444'], atencao: ['Atenção', '#f59e0b'], ok: ['OK', '#22c55e'], pendente: ['Pendente', '#94a3b8'] };
+function opcoesDestinoCarteira(excluir){
+  return '<option value="">Mover para…</option>' +
+    listaResponsaveisSC().filter(r => !excluir || normTxtCarteira(r) !== normTxtCarteira(excluir)).map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('') +
+    (excluir === '__sem__' ? '' : '<option value="__nenhum__">— sem responsável —</option>') +
+    '<option value="__novo__">➕ Novo responsável...</option>';
+}
+function renderCarteiraDetalhe(){
+  const { grupo, filtro } = __detCarteira;
+  const mes = document.getElementById('saudeCarteiraMesSel').value || selectedMes || mesAtualReal();
+  document.getElementById('carteiraDetalheTitulo').textContent = '👤 Carteira de ' + (grupo === '__sem__' ? 'Sem responsável' : grupo) + ' · ' + mesLabelBR(mes);
+  const todos = itensDoMesDeduplicados(mes).filter(d => {
+    const r = responsavelSCDoNome(d.nome);
+    return grupo === '__sem__' ? respSemDono(r) : normTxtCarteira(r) === normTxtCarteira(grupo);
+  });
+  const cont = { critico: 0, atencao: 0, ok: 0, pendente: 0 };
+  todos.forEach(d => { cont[classeSaudeItem(d)]++; });
+  const chips = [['', 'Todos', todos.length], ['critico', 'Críticos', cont.critico], ['atencao', 'Atenção', cont.atencao], ['ok', 'OK', cont.ok], ['pendente', 'Pendentes', cont.pendente]];
+  document.getElementById('carteiraDetalheFiltros').innerHTML = chips.map(c =>
+    '<button type="button" class="chip-carteira chip-carteira-btn" data-det-filtro="' + c[0] + '" style="' + (filtro === c[0] ? 'background:rgba(167,139,250,.45); color:#fff;' : '') + '">' + c[1] + ' · ' + c[2] + '</button>').join(' ');
+  const selFilial = document.getElementById('carteiraDetalheFilial');
+  const filialAtual = selFilial.value;
+  const filiais = [...new Set(todos.map(d => normalizeFilialCanonica(d.filial)).filter(Boolean))].sort();
+  selFilial.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f => '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>').join('');
+  selFilial.value = filiais.includes(filialAtual) ? filialAtual : '';
+  const q = normalizeNomeCondo(document.getElementById('carteiraDetalheBusca').value);
+  const ordem = { critico: 0, atencao: 1, pendente: 2, ok: 3 };
+  const lista = todos
+    .filter(d => !filtro || classeSaudeItem(d) === filtro)
+    .filter(d => !q || normalizeNomeCondo(d.nome).includes(q))
+    .filter(d => !selFilial.value || normalizeFilialCanonica(d.filial) === selFilial.value)
+    .sort((a, b) => (ordem[classeSaudeItem(a)] - ordem[classeSaudeItem(b)]) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const podeMover = currentRole === 'admin';
+  document.getElementById('carteiraDetalheResumo').textContent = lista.length + ' condomínio(s) exibido(s) · ' + __detSel.size + ' selecionado(s)';
+  document.getElementById('carteiraDetalheLista').innerHTML =
+    '<div class="carteira-linha-det" style="font-weight:600; color:var(--text-faint);"><span>' + (podeMover ? '<input type="checkbox" id="carteiraDetalheTodos">' : '') + '</span><span>Condomínio</span><span>Filial</span><span>Nota</span><span>Saúde</span><span>Supervisor</span><span>Técnico</span><span>' + (podeMover ? 'Redirecionar' : '') + '</span></div>' +
+    (lista.map(d => {
+      const row = cadastroRowDoNome(d.nome);
+      const id = row ? escapeHtml(String(row.item_id)) : '';
+      const dd = dadosCarteiraDoNome(d.nome);
+      const sc = SAUDE_ROTULO[classeSaudeItem(d)];
+      const nota = (d.nota && d.nota !== '—') ? escapeHtml(String(d.nota)) : '—';
+      return '<div class="carteira-linha-det"><span>' + (podeMover && row ? '<input type="checkbox" data-det-chk="' + id + '"' + (__detSel.has(String(row.item_id)) ? ' checked' : '') + '>' : '') + '</span>' +
+        '<span>' + escapeHtml(d.nome) + (row ? '' : ' <em style="color:var(--text-faint); font-size:11px;" title="Este nome não foi encontrado no Cadastro, então não dá pra redirecionar por aqui">(fora do Cadastro)</em>') + '</span>' +
+        '<span style="color:var(--text-faint);">' + escapeHtml(normalizeFilialCanonica(d.filial) || '—') + '</span>' +
+        '<span>' + nota + '</span>' +
+        '<span style="color:' + sc[1] + '; font-weight:600;">' + sc[0] + '</span>' +
+        '<span style="color:var(--text-faint);">' + escapeHtml(dd.sup || '—') + '</span>' +
+        '<span style="color:var(--text-faint);">' + escapeHtml(dd.tec || '—') + '</span>' +
+        '<span>' + (podeMover && row ? '<select class="filter-select" data-det-mover="' + id + '">' + opcoesDestinoCarteira(grupo) + '</select>' : '') + '</span></div>';
+    }).join('') || '<p class="empty">Nenhum condomínio nesta seleção.</p>');
+}
+async function moverCondominiosCarteira(ids, destino){
+  if (currentRole !== 'admin'){ alert('Só administradores podem redirecionar condomínios.'); return false; }
+  let valor = destino;
+  if (valor === '__novo__'){
+    const nome = prompt('Nome do novo responsável (ex.: Josiane Lima):');
+    if (!nome || !nome.trim()) return false;
+    valor = nome.trim();
+  }
+  try{
+    await salvarCarteiraCondos(ids, { responsavel_sc: valor === '__nenhum__' ? 'A definir' : valor });
+  }catch(e){
+    if (erroColunaCarteira(e)) avisarColunaCarteira(); else alert('Erro ao redirecionar: ' + e.message);
+    return false;
+  }
+  ids.forEach(i => __detSel.delete(String(i)));
+  atualizarSeletoresCarteira(); atualizarAvisoCarteira(); atualizarTelasPorCarteira();
+  if (document.getElementById('carteiraDetalheModal').style.display === 'flex'){ popularDestinoDetalhe(); renderCarteiraDetalhe(); }
+  return true;
+}
+function popularDestinoDetalhe(){
+  const sel = document.getElementById('carteiraDetalheDestino');
+  sel.innerHTML = opcoesDestinoCarteira(__detCarteira.grupo).replace('Mover para…', 'Redirecionar selecionados para…');
+}
+async function abrirCarteiraDetalhe(grupo, filtro){
+  if (sb && !cadastroLiveCarregado) await carregarCadastroLive();
+  __detCarteira = { grupo, filtro: filtro || '' };
+  __detSel.clear();
+  document.getElementById('carteiraDetalheBusca').value = '';
+  document.getElementById('carteiraDetalheFilial').value = '';
+  document.getElementById('carteiraDetalheAcoes').style.display = currentRole === 'admin' ? 'flex' : 'none';
+  popularDestinoDetalhe();
+  renderCarteiraDetalhe();
+  document.getElementById('carteiraDetalheModal').style.display = 'flex';
+}
+
+// ----- Tela de gerenciamento: atribuir por condomínio e importar CSV -----
+function erroColunaCarteira(e){
+  const msg = (e && e.message) || '';
+  return (e && e.code === 'PGRST204') || /responsavel_sc|supervisor_tecnico|tecnico/i.test(msg);
+}
+function avisarColunaCarteira(){
+  alert('As colunas da carteira ainda não existem no banco. Rode este comando no SQL Editor do Supabase e tente de novo:\n\n' + CARTEIRA_SQL);
+}
+function aplicarLocalCarteira(itemIds, campos){
+  const ids = new Set(itemIds.map(String));
+  [CADASTRO_LIVE, (typeof renovAllCondos !== 'undefined' ? renovAllCondos : []), (typeof renovVencidos !== 'undefined' ? renovVencidos : []), (typeof renovVencendoBreve !== 'undefined' ? renovVencendoBreve : [])]
+    .forEach(lista => lista.forEach(c => { if (c && ids.has(String(c.item_id))) Object.assign(c, campos); }));
+  invalidarMapaCarteira();
+}
+async function salvarCarteiraCondos(itemIds, campos){
+  for (let i = 0; i < itemIds.length; i += 100){
+    const { error } = await sb.from('cadastro_condominios').update(campos).in('item_id', itemIds.slice(i, i + 100));
+    if (error) throw error;
+  }
+  aplicarLocalCarteira(itemIds, campos);
+}
+function popularFiltrosCarteirasModal(){
+  const filiais = [...new Set(CADASTRO_LIVE.map(c => normalizeFilialCanonica(c.filial)).filter(Boolean))].sort();
+  const fs = document.getElementById('carteirasFiltroFilial');
+  const atualF = fs.value;
+  fs.innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f => '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>').join('');
+  fs.value = filiais.includes(atualF) ? atualF : '';
+  const rs = document.getElementById('carteirasFiltroResp');
+  const atualR = rs.value;
+  const resps = listaResponsaveisSC();
+  rs.innerHTML = '<option value="">Responsável: todos</option><option value="__sem__">Sem responsável</option>' + resps.map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('');
+  rs.value = (atualR === '__sem__' || resps.includes(atualR)) ? atualR : '';
+}
+function renderListaCarteiras(){
+  const q = normalizeNomeCondo(document.getElementById('carteirasBusca').value);
+  const fFilial = document.getElementById('carteirasFiltroFilial').value;
+  const fResp = document.getElementById('carteirasFiltroResp').value;
+  const resps = listaResponsaveisSC();
+  const ativos = CADASTRO_LIVE.filter(c => c.status !== 'Inativo' && c.nome && c.item_id !== undefined);
+  const lista = ativos
+    .filter(c => !q || normalizeNomeCondo(c.nome).includes(q))
+    .filter(c => !fFilial || normalizeFilialCanonica(c.filial) === fFilial)
+    .filter(c => { const r = dadosCarteiraDoNome(c.nome).resp; return !fResp || (fResp === '__sem__' ? respSemDono(r) : normTxtCarteira(r) === normTxtCarteira(fResp)); })
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const semDono = ativos.filter(c => respSemDono(dadosCarteiraDoNome(c.nome).resp)).length;
+  const soPlanilha = ativos.filter(c => !String(c.responsavel_sc || '').trim() && !respSemDono(dadosCarteiraDoNome(c.nome).resp)).length;
+  document.getElementById('carteirasContagem').textContent = lista.length + ' condomínio(s) exibido(s) · ' + semDono + ' sem responsável · ' + soPlanilha + ' com responsável vindo só da planilha embutida (ainda não gravado no banco)';
+  document.getElementById('carteirasLista').innerHTML = lista.map(c => {
+    const d = dadosCarteiraDoNome(c.nome);
+    const atual = respSemDono(d.resp) ? '' : d.resp;
+    const opcoes = ['<option value="">— sem responsável —</option>']
+      .concat(resps.map(r => '<option value="' + escapeHtml(r) + '"' + (normTxtCarteira(r) === normTxtCarteira(atual) ? ' selected' : '') + '>' + escapeHtml(r) + '</option>'))
+      .concat(['<option value="__novo__">➕ Novo responsável...</option>']);
+    const id = escapeHtml(String(c.item_id));
+    return '<div class="carteira-linha"><span>' + escapeHtml(c.nome) + '</span><span style="color:var(--text-faint);">' + escapeHtml(normalizeFilialCanonica(c.filial) || '—') + '</span>' +
+      '<select class="filter-select" data-carteira-item="' + id + '">' + opcoes.join('') + '</select>' +
+      '<input type="text" class="search" placeholder="Supervisor técnico" value="' + escapeHtml(d.sup) + '" data-carteira-campo="supervisor_tecnico" data-carteira-item="' + id + '">' +
+      '<input type="text" class="search" placeholder="Técnico" value="' + escapeHtml(d.tec) + '" data-carteira-campo="tecnico" data-carteira-item="' + id + '"></div>';
+  }).join('') || '<p class="empty">Nenhum condomínio encontrado.</p>';
+}
+async function gravarResponsaveisDasFiliais(){
+  if (currentRole !== 'admin'){ alert('Só administradores podem alterar a carteira.'); return; }
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (!cadastroLiveCarregado) await carregarCadastroLive();
+  const grupos = Object.entries(CARTEIRA_FILIAL_PADRAO).map(([chave, nome]) => ({
+    nome,
+    ids: CADASTRO_LIVE.filter(c => c.status !== 'Inativo' && c.item_id !== undefined && normTxtCarteira(normalizeFilialCanonica(c.filial)) === chave && !String(c.responsavel_sc || '').trim()).map(c => c.item_id),
+  })).filter(g => g.ids.length);
+  if (!grupos.length){ alert('Todos os condomínios das filiais já têm responsável gravado no banco.'); return; }
+  const resumo = grupos.map(g => g.nome + ': ' + g.ids.length + ' condomínio(s)').join('\n');
+  if (!confirm('Gravar no banco o Sucesso do Cliente de cada filial?\n\n' + resumo + '\n\nSó entram os condomínios que ainda estão sem responsável.')) return;
+  try{
+    for (const g of grupos) await salvarCarteiraCondos(g.ids, { responsavel_sc: g.nome });
+    atualizarSeletoresCarteira(); atualizarAvisoCarteira(); atualizarTelasPorCarteira();
+    popularFiltrosCarteirasModal(); renderListaCarteiras();
+    alert('Responsáveis das filiais gravados:\n\n' + resumo);
+  }catch(e){
+    if (erroColunaCarteira(e)) avisarColunaCarteira(); else alert('Erro ao gravar: ' + e.message);
+  }
+}
+async function abrirCarteirasModal(){
+  if (currentRole !== 'admin'){ alert('Só administradores podem alterar a carteira.'); return; }
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  await carregarCadastroLive();
+  document.getElementById('carteirasCsvResultado').innerHTML = '';
+  popularFiltrosCarteirasModal();
+  renderListaCarteiras();
+  document.getElementById('carteirasModal').style.display = 'flex';
+}
+function parseCsvSimples(texto){
+  const linhas = []; let campo = '', linha = [], aspas = false;
+  texto = String(texto).replace(/^\uFEFF/, '');
+  for (let i = 0; i < texto.length; i++){
+    const ch = texto[i];
+    if (aspas){
+      if (ch === '"'){ if (texto[i + 1] === '"'){ campo += '"'; i++; } else aspas = false; }
+      else campo += ch;
+    } else if (ch === '"') aspas = true;
+    else if (ch === ',' || ch === ';'){ linha.push(campo); campo = ''; }
+    else if (ch === '\n'){ linha.push(campo); linhas.push(linha); linha = []; campo = ''; }
+    else if (ch !== '\r') campo += ch;
+  }
+  if (campo !== '' || linha.length){ linha.push(campo); linhas.push(linha); }
+  return linhas.filter(l => l.some(x => String(x).trim() !== ''));
+}
+function processarCsvCarteira(texto){
+  const out = document.getElementById('carteirasCsvResultado');
+  const linhas = parseCsvSimples(texto);
+  if (linhas.length < 2){ out.innerHTML = '<p style="color:var(--critico);">Arquivo vazio ou sem linhas de dados.</p>'; return; }
+  const cab = linhas[0].map(h => normTxtCarteira(h));
+  const iNome = cab.findIndex(h => h === 'NOME');
+  const iResp = cab.findIndex(h => h.startsWith('RESPONSAVEL'));
+  const iSup = cab.findIndex(h => h.startsWith('SUPERVISOR'));
+  const iTec = cab.findIndex(h => h === 'TECNICO');
+  const iFilial = cab.findIndex(h => h === 'FILIAL');
+  if (iNome === -1 || iResp === -1){ out.innerHTML = '<p style="color:var(--critico);">O CSV precisa ter as colunas <strong>nome</strong> e <strong>responsavel_sc</strong>.</p>'; return; }
+  const col = (l, i) => i === -1 ? '' : String(l[i] || '').trim();
+  const itens = linhas.slice(1).map(l => ({ nome: col(l, iNome), resp: col(l, iResp), sup: col(l, iSup), tec: col(l, iTec), filial: col(l, iFilial) })).filter(x => x.nome);
+  prepararImportacaoCarteira(itens);
+}
+function prepararImportacaoCarteira(itens){
+  const out = document.getElementById('carteirasCsvResultado');
+  const ativos = CADASTRO_LIVE.filter(c => c.status !== 'Inativo' && c.nome && c.item_id !== undefined);
+  itens.forEach(it => {
+    const candidatos = it.filial ? ativos.filter(c => normalizeFilialCanonica(c.filial) === normalizeFilialCanonica(it.filial)) : ativos;
+    const achar = lista => lista.find(c => normalizeNomeCondo(c.nome) === normalizeNomeCondo(it.nome)) || lista.find(c => carteiraMesmoConjunto(c.nome, it.nome));
+    it.exato = achar(candidatos) || achar(ativos) || null;
+    it.sugestao = null;
+    if (!it.exato){
+      let melhor = 0;
+      candidatos.forEach(c => { const sim = carteiraSimilaridade(c.nome, it.nome); if (sim >= 0.6 && sim > melhor){ melhor = sim; it.sugestao = c; } });
+    }
+  });
+  window.__carteiraCsv = { itens };
+  const semMatch = itens.filter(it => !it.exato);
+  const opcoesTodos = ativos.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map(c => '<option value="' + escapeHtml(String(c.item_id)) + '">' + escapeHtml(c.nome) + '</option>').join('');
+  out.innerHTML =
+    '<p style="font-size:13px; line-height:1.6; margin:0 0 8px;"><strong>' + (itens.length - semMatch.length) + '</strong> de ' + itens.length + ' linha(s) bateram automaticamente com um condomínio do Cadastro.<br>' +
+    (semMatch.length ? '<strong style="color:var(--critico);">' + semMatch.length + '</strong> não bateram — revise abaixo (o padrão é não importar).' : 'Todas bateram. ✅') + '</p>' +
+    semMatch.map((it, i) => '<div style="border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px;"><div style="font-size:12.5px; margin-bottom:5px;"><strong>Planilha:</strong> ' + escapeHtml(it.nome) + ' → <em>' + escapeHtml(it.resp || 'sem responsável') + '</em></div>' +
+      '<select class="filter-select" style="width:100%;" data-csv-sem="' + i + '"><option value="">⏭️ Não importar esta linha</option>' +
+      (it.sugestao ? '<option value="' + escapeHtml(String(it.sugestao.item_id)) + '" selected>✅ É o mesmo que: ' + escapeHtml(it.sugestao.nome) + '</option>' : '') +
+      '<option value="" disabled>── ou escolha manualmente ──</option>' + opcoesTodos + '</select></div>').join('') +
+    '<div style="margin-top:10px;"><button type="button" class="clearbtn" id="carteirasCsvAplicar" style="border-color:var(--ok); color:var(--ok);">✅ Gravar no banco</button></div>';
+  window.__carteiraCsv.semMatch = semMatch;
+  document.getElementById('carteirasCsvAplicar').addEventListener('click', aplicarCsvCarteira);
+}
+async function aplicarCsvCarteira(){
+  const st = window.__carteiraCsv;
+  if (!st) return;
+  const escolhas = {};
+  document.querySelectorAll('#carteirasCsvResultado [data-csv-sem]').forEach(sel => { escolhas[sel.getAttribute('data-csv-sem')] = sel.value; });
+  const grupos = new Map(); // combinação (responsável + supervisor + técnico) -> ids
+  let semIdx = -1, ignoradas = 0;
+  st.itens.forEach(it => {
+    let itemId = it.exato ? it.exato.item_id : null;
+    if (!it.exato){ semIdx++; const e = escolhas[semIdx]; if (e) itemId = e; }
+    if (itemId === null || itemId === undefined || itemId === ''){ ignoradas++; return; }
+    const campos = { responsavel_sc: respSemDono(it.resp) ? 'A definir' : it.resp.trim(), supervisor_tecnico: it.sup || null, tecnico: it.tec || null };
+    const chave = JSON.stringify(campos);
+    if (!grupos.has(chave)) grupos.set(chave, { campos, ids: new Set() });
+    grupos.get(chave).ids.add(itemId);
+  });
+  const btn = document.getElementById('carteirasCsvAplicar');
+  btn.disabled = true; btn.textContent = 'Gravando...';
+  let total = 0;
+  try{
+    for (const g of grupos.values()){ await salvarCarteiraCondos([...g.ids], g.campos); total += g.ids.size; }
+    atualizarSeletoresCarteira(); atualizarAvisoCarteira(); atualizarTelasPorCarteira();
+    popularFiltrosCarteirasModal(); renderListaCarteiras();
+    document.getElementById('carteirasCsvResultado').innerHTML = '<p style="color:var(--ok);">✅ ' + total + ' condomínio(s) gravado(s) no banco' + (ignoradas ? ' · ' + ignoradas + ' linha(s) não importada(s)' : '') + '.</p>';
+  }catch(e){
+    if (erroColunaCarteira(e)) avisarColunaCarteira(); else alert('Erro ao gravar a carteira: ' + e.message);
+    btn.disabled = false; btn.textContent = '✅ Gravar no banco';
+  }
+}
+document.getElementById('btnCarteirasSC').addEventListener('click', abrirCarteirasModal);
+document.getElementById('carteirasModalClose').addEventListener('click', () => { document.getElementById('carteirasModal').style.display = 'none'; });
+document.getElementById('carteirasBusca').addEventListener('input', renderListaCarteiras);
+document.getElementById('carteirasFiltroFilial').addEventListener('change', renderListaCarteiras);
+document.getElementById('carteirasFiltroResp').addEventListener('change', renderListaCarteiras);
+document.getElementById('carteirasFiliaisBtn').addEventListener('click', gravarResponsaveisDasFiliais);
+document.getElementById('carteirasSeedBtn').addEventListener('click', async () => {
+  if (!cadastroLiveCarregado) await carregarCadastroLive();
+  prepararImportacaoCarteira(CARTEIRA_SEED.map(l => ({ nome: l[0], resp: l[1], sup: l[2], tec: l[3], filial: 'Ceará' })));
+});
+document.getElementById('carteirasCsvInput').addEventListener('change', async ev => {
+  const arq = ev.target.files && ev.target.files[0];
+  if (!arq) return;
+  if (!cadastroLiveCarregado) await carregarCadastroLive();
+  processarCsvCarteira(await arq.text());
+  ev.target.value = '';
+});
+async function salvarCampoCarteiraDoModal(itemId, campos){
+  try{
+    await salvarCarteiraCondos([itemId], campos);
+    atualizarSeletoresCarteira(); atualizarAvisoCarteira(); atualizarTelasPorCarteira();
+    popularFiltrosCarteirasModal(); renderListaCarteiras();
+  }catch(e){
+    if (erroColunaCarteira(e)) avisarColunaCarteira(); else alert('Erro ao salvar: ' + e.message);
+    renderListaCarteiras();
+  }
+}
+document.getElementById('carteirasLista').addEventListener('change', async ev => {
+  const alvo = ev.target;
+  const itemId = alvo.getAttribute && alvo.getAttribute('data-carteira-item');
+  if (!itemId) return;
+  const campo = alvo.getAttribute('data-carteira-campo');
+  if (campo){ // supervisor técnico / técnico
+    alvo.disabled = true;
+    await salvarCampoCarteiraDoModal(itemId, { [campo]: alvo.value.trim() || null });
+    return;
+  }
+  let valor = alvo.value;
+  if (valor === '__novo__'){
+    const nome = prompt('Nome do novo responsável (ex.: Josiane Lima):');
+    if (!nome || !nome.trim()){ renderListaCarteiras(); return; }
+    valor = nome.trim();
+  }
+  alvo.disabled = true;
+  await salvarCampoCarteiraDoModal(itemId, { responsavel_sc: valor ? valor : 'A definir' });
+});
+document.getElementById('rankingCarteiraBody').addEventListener('click', ev => {
+  const foto = ev.target.closest('[data-rank-foto]');
+  if (foto){ ev.stopPropagation(); __fotoRankingResp = foto.getAttribute('data-rank-foto'); document.getElementById('rankingFotoInput').click(); return; }
+  const cartao = ev.target.closest('[data-carteira-grupo]');
+  if (cartao) abrirCarteiraDetalhe(cartao.getAttribute('data-carteira-grupo'), cartao.getAttribute('data-carteira-filtro') || '');
+});
+document.getElementById('rankingFotoInput').addEventListener('change', async ev => {
+  const arq = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (arq && __fotoRankingResp) await trocarFotoCarteira(__fotoRankingResp, arq);
+});
+document.getElementById('rankingCarteiraOrdem').addEventListener('change', renderRankingCarteira);
+// Os painéis (modais) nasceram dentro da aba Pesquisas; quando outra aba está aberta eles ficam escondidos
+// junto com ela. Move para o mesmo lugar do painel de edição de membros, fora de qualquer aba.
+['atividadesPessoaModal', 'manualFuncoesModal', 'carteiraDetalheModal', 'carteirasModal'].forEach(id => {
+  const el = document.getElementById(id);
+  const alvo = document.querySelector('.content-area');
+  if (el && alvo && el.parentElement !== alvo) alvo.appendChild(el);
+});
+document.getElementById('equipeOrgChart').addEventListener('click', ev => {
+  const ativ = ev.target.closest('[data-atividades]');
+  if (ativ){ ev.stopPropagation(); abrirAtividadesPessoa(ativ.getAttribute('data-atividades')); return; }
+  const virt = ev.target.closest('[data-aplicar-manual]');
+  if (virt){ abrirManualFuncoes(); return; }
+  const box = ev.target.closest('[data-editar-membro]');
+  if (box) abrirEquipeMembroModal(equipeMembrosData.find(m => String(m.id) === box.getAttribute('data-editar-membro')));
+});
+document.getElementById('atividadesPessoaFechar').addEventListener('click', () => { document.getElementById('atividadesPessoaModal').style.display = 'none'; });
+document.getElementById('btnAplicarManualFuncoes').addEventListener('click', abrirManualFuncoes);
+document.getElementById('manualFuncoesCancelar').addEventListener('click', () => { document.getElementById('manualFuncoesModal').style.display = 'none'; });
+document.getElementById('manualFuncoesCargo').addEventListener('change', abrirManualFuncoes);
+document.getElementById('manualFuncoesAplicar').addEventListener('click', aplicarManualFuncoes);
+document.getElementById('saudeCarteiraBody').addEventListener('click', ev => {
+  const tr = ev.target.closest('tr[data-carteira-grupo]');
+  if (!tr) return;
+  const td = ev.target.closest('td[data-filtro]');
+  abrirCarteiraDetalhe(tr.getAttribute('data-carteira-grupo'), td ? td.getAttribute('data-filtro') : '');
+});
+document.getElementById('carteiraDetalheClose').addEventListener('click', () => { document.getElementById('carteiraDetalheModal').style.display = 'none'; });
+document.getElementById('carteiraDetalheBusca').addEventListener('input', renderCarteiraDetalhe);
+document.getElementById('carteiraDetalheFilial').addEventListener('change', renderCarteiraDetalhe);
+document.getElementById('carteiraDetalheFiltros').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-det-filtro]');
+  if (!b) return;
+  __detCarteira.filtro = b.getAttribute('data-det-filtro');
+  renderCarteiraDetalhe();
+});
+document.getElementById('carteiraDetalheLista').addEventListener('change', async ev => {
+  const alvo = ev.target;
+  if (alvo.id === 'carteiraDetalheTodos'){
+    document.querySelectorAll('#carteiraDetalheLista [data-det-chk]').forEach(c => { c.checked = alvo.checked; if (alvo.checked) __detSel.add(c.getAttribute('data-det-chk')); else __detSel.delete(c.getAttribute('data-det-chk')); });
+    document.getElementById('carteiraDetalheResumo').textContent = document.getElementById('carteiraDetalheResumo').textContent.replace(/\d+ selecionado\(s\)/, __detSel.size + ' selecionado(s)');
+    return;
+  }
+  const chk = alvo.getAttribute && alvo.getAttribute('data-det-chk');
+  if (chk){
+    if (alvo.checked) __detSel.add(chk); else __detSel.delete(chk);
+    document.getElementById('carteiraDetalheResumo').textContent = document.getElementById('carteiraDetalheResumo').textContent.replace(/\d+ selecionado\(s\)/, __detSel.size + ' selecionado(s)');
+    return;
+  }
+  const mover = alvo.getAttribute && alvo.getAttribute('data-det-mover');
+  if (mover && alvo.value){
+    alvo.disabled = true;
+    const ok = await moverCondominiosCarteira([mover], alvo.value);
+    if (!ok) renderCarteiraDetalhe();
+  }
+});
+document.getElementById('carteiraDetalheMover').addEventListener('click', async () => {
+  const ids = [...__detSel];
+  const destino = document.getElementById('carteiraDetalheDestino').value;
+  if (!ids.length){ alert('Marque pelo menos um condomínio na lista.'); return; }
+  if (!destino){ alert('Escolha pra quem redirecionar.'); return; }
+  const rotulo = destino === '__nenhum__' ? 'sem responsável' : (destino === '__novo__' ? 'um novo responsável' : destino);
+  if (!confirm('Redirecionar ' + ids.length + ' condomínio(s) para ' + rotulo + '?')) return;
+  await moverCondominiosCarteira(ids, destino);
+});
+document.getElementById('saudeCarteiraMesSel').addEventListener('change', renderSaudeCarteira);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); });
+else { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); }
 function buscarEnderecoPorNomeCondo(nome){
   if (!nome) return '';
   const norm = normalizeNomeCondo(nome);
@@ -8600,6 +10276,7 @@ function populateFilterOptions(){
 
 function baseMatches(item, q){
   if (selectedMes && getMes(item) !== selectedMes) return false;
+  if (!passaCarteiraItem(item.nome, item.filial)) return false;
   if (selectedStatuses.length && !selectedStatuses.includes(item.statusPesquisa)) return false;
   if (selectedFiliais.length && !selectedFiliais.includes(item.filial)) return false;
   if (selectedNotaFaixas.length && !selectedNotaFaixas.includes(String(notaFaixaIndex(item)))) return false;
@@ -11752,6 +13429,7 @@ function getFilteredRenovVencidos(){
     if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
     if (fFilial && normalizeFilialCanonica(c.filial) !== fFilial) return false;
     if (fResp && c.responsavel !== fResp) return false;
+    if (!passaCarteiraCondo(c)) return false;
     if (q && !(c.nome && c.nome.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -11767,6 +13445,7 @@ function getFilteredRenovBreve(){
     if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
     if (fFilial && normalizeFilialCanonica(c.filial) !== fFilial) return false;
     if (fResp && c.responsavel !== fResp) return false;
+    if (!passaCarteiraCondo(c)) return false;
     if (q && !(c.nome && c.nome.toLowerCase().includes(q))) return false;
     if (fFaixa){
       const dias = diasParaVencer(c.contrato_fim);
@@ -11837,6 +13516,7 @@ function getFilteredRenovNegociacoes(){
     if (fResp && n.responsavel !== fResp) return false;
     if (fStatus && n.status !== fStatus) return false;
     if (fTempo && String(n.tempo_renovado_meses||'') !== fTempo) return false;
+    if (!(condo ? passaCarteiraCondo(condo) : passaCarteiraItem(n.condo_nome || '', ''))) return false;
     if (q && !(condo && condo.nome.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -12368,6 +14048,7 @@ function getFilteredRenovRenovados(){
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     const filial = condo ? normalizeFilialCanonica(condo.filial) : null;
     if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
+    if (!(condo ? passaCarteiraCondo(condo) : passaCarteiraItem(n.condo_nome || '', ''))) return false;
     if (fFilial && filial !== fFilial) return false;
     if (fResp && n.responsavel !== fResp) return false;
     if (fStatus && n.status !== fStatus) return false;
@@ -13080,6 +14761,7 @@ function initTabs(){
       }
       if (tab === 'equipeMetas'){
         if (typeof renderEquipeMetasBarras === 'function') renderEquipeMetasBarras();
+        if (typeof renderSaudeCarteira === 'function') renderSaudeCarteira();
       }
       if (tab === 'fechamentoMensal'){
         if (typeof loadFechamentoMensal === 'function') loadFechamentoMensal();
@@ -14448,6 +16130,7 @@ function getFilteredVE(){
   const fDiagnostico = (document.getElementById('veFilterDiagnostico').value || '').trim().toLowerCase();
   return veData.filter(v=>{
     if (q && !((v.condominio||'').toLowerCase().includes(q) || (v.responsavel||'').toLowerCase().includes(q) || (v.diagnostico||'').toLowerCase().includes(q))) return false;
+    if (!passaCarteiraItem(v.condominio, v.filial)) return false;
     if (fFilial && normalizeFilialCanonica(v.filial) !== fFilial) return false;
     if (fStatus && v.status !== fStatus) return false;
     if (fSetor && !(v.setor||'').split(/[,/]/).map(s=>s.trim()).includes(fSetor)) return false;
@@ -15807,6 +17490,7 @@ function getFilteredFluxoAtendimento(){
   return faData.filter(f=>{
     if (excluidos.has(normalizeNomeCondo(f.condominio))) return false;
     if (q && !(f.condominio||'').toLowerCase().includes(q)) return false;
+    if (!passaCarteiraItem(f.condominio, f.filial)) return false;
     if (fFilial && normalizeFilialCanonica(f.filial) !== fFilial) return false;
     if (fMes && String(f.mes_referencia||'').slice(0,7) !== fMes) return false;
     if (fStatus && faStatus(f) !== fStatus) return false;
@@ -16522,7 +18206,7 @@ function normalizarResponsavelEquipe(nomeRaw){
   if (!n) return null;
   if (n.includes('rosely') || n.includes('rose')) return 'Maria Rosely (Analista)';
   if (n.includes('josiane') || n.includes('josy') || n.includes('josi')) return 'Josiane Alves (Assistente)';
-  if (n.includes('nicole')) return 'Nicole (Aprendiz Manhã)';
+  if (n.includes('nicole') || n.includes('nicolly')) return 'Nicole (Aprendiz Manhã)';
   if (n.includes('geovanna') || n.includes('geovana')) return 'Geovanna (Aprendiz Tarde)';
   return null;
 }
@@ -16557,6 +18241,9 @@ function sincronizarResponsaveisComEquipe(){
 }
 
 function renderEquipeOrgChart(){
+  try{ renderOrganogramaNovaDivisao(); }catch(e){ console.warn('Organograma da nova divisão falhou; usando o antigo:', e); renderEquipeOrgChartLegado(); }
+}
+function renderEquipeOrgChartLegado(){
   const el = document.getElementById('equipeOrgChart');
   if (!el) return;
   if (!equipeMembrosData.length){
@@ -16575,6 +18262,7 @@ function renderEquipeOrgChart(){
       <div class="org-nome">${escapeHtml(m.nome)}</div>
       <div class="org-cargo">${escapeHtml(m.cargo||'')}</div>
       ${m.area ? `<div class="org-info">${escapeHtml(m.area)}</div>` : ''}
+      ${linhaFiscalizacaoOrg(m)}
     </div>`;
   };
 
@@ -16804,10 +18492,13 @@ function renderEquipeFilialTabela(){
   const linhas = filiaisCanonicas.map(f => {
     const qtd = fonteCondos.filter(c => normalizeFilialCanonica(c.filial) === f).length;
     const responsaveis = equipeMembrosData.filter(m => (m.filiais_responsavel||'').split(',').map(s=>s.trim()).includes(f)).map(m=>m.nome);
-    return { filial: f, qtd, responsavel: responsaveis.join(', ') || '—' };
+    const chaveF = normTxtCarteira(normalizeFilialCanonica(f));
+    const respTxt = responsaveis.join(', ') || CARTEIRA_FILIAL_PADRAO[chaveF] || '';
+    const fiscal = fiscalizadoraDaFilial(f) || (chaveF === 'CEARA' ? 'Rosely' : '');
+    return { filial: f, qtd, responsavel: respTxt || '—', fiscal };
   }).filter(l => l.qtd > 0);
   const total = linhas.reduce((a,l)=>a+l.qtd, 0);
-  el.innerHTML = linhas.map(l => `<tr><td class="ck-name">${escapeHtml(l.filial)}</td><td style="text-align:center;">${l.qtd}</td><td>${escapeHtml(l.responsavel)}</td></tr>`).join('')
+  el.innerHTML = linhas.map(l => `<tr><td class="ck-name">${escapeHtml(l.filial)}</td><td style="text-align:center;">${l.qtd}</td><td>${escapeHtml(l.responsavel)}${l.fiscal ? `<div style="font-size:11px; color:#a78bfa; margin-top:2px;">👁 Fiscalização: ${escapeHtml(l.fiscal)}</div>` : ''}</td></tr>`).join('')
     + `<tr style="font-weight:700;"><td class="ck-name">Total</td><td style="text-align:center;">${total}</td><td>—</td></tr>`;
 }
 
@@ -16821,6 +18512,7 @@ async function renderEquipeMetasBarras(){
   renderEquipeStatsTop();
   renderEquipeAreasCards();
   renderEquipeFilialTabela();
+  try{ renderSaudeCarteira(); }catch(e){}
   await carregarFluxoReclamacoesEtapas();
 
   const totalMeta = equipeMembrosData.reduce((a,m)=>a+(m.meta_pesquisas_dia||0), 0) || 1;
@@ -17398,6 +19090,7 @@ function getFilteredAdocaoDigital(){
   const fStatus = document.getElementById('adFilterStatus').value;
   return adData.filter(a=>{
     if (!condominioEstaAtivo(a.condominio)) return false;
+    if (!passaCarteiraItem(a.condominio, a.filial)) return false;
     if (q && !(a.condominio||'').toLowerCase().includes(q)) return false;
     if (fFilial && normalizeFilialCanonica(a.filial) !== fFilial) return false;
     if (fStatus && classificarSaude(calcScoreDigital(a), a) !== fStatus) return false;
@@ -18027,6 +19720,7 @@ function getFilteredIncidentesBase(){
   const fFilial = document.getElementById('incFilterFilial').value;
   return incData.filter(i=>{
     if (q && !((i.condominio||'').toLowerCase().includes(q) || (i.tipo||'').toLowerCase().includes(q))) return false;
+    if (!passaCarteiraItem(i.condominio, i.filial)) return false;
     if (fGravidade && i.gravidade !== fGravidade) return false;
     if (fStatus && i.status !== fStatus) return false;
     if (fFilial && normalizeFilialCanonica(i.filial) !== fFilial) return false;
@@ -18974,11 +20668,11 @@ function calcularAnaliseFilial(demandas){
 }
 
 function demGetMetricas(){
-  const assinaturaFiltro = JSON.stringify(DemFilterStore.get());
+  const assinaturaFiltro = JSON.stringify(DemFilterStore.get()) + '|' + carteiraAtiva;
   if (_demMetricasCacheVersion === demVersion && _demMetricasCacheFiltro === assinaturaFiltro && _demMetricasCache){
     return _demMetricasCache;
   }
-  const filtradas = DemFilterStore.apply(demData);
+  const filtradas = DemFilterStore.apply(demData.filter(d => passaCarteiraItem(d.condominio, d.filial)));
   _demMetricasCache = {
     filtradas,
     metricas: calcularMetricas(filtradas),
