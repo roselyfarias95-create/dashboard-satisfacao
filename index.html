@@ -1143,6 +1143,46 @@
   .org-ativ{ margin-top:6px; font-size:11px; color:#a78bfa; cursor:pointer; text-decoration:underline; }
   .org-virtual{ border-style:dashed !important; opacity:.92; }
   .org-novo{ font-size:10px; color:#f59e0b; margin-top:4px; }
+  .rc-card{ cursor:pointer; transition:border-color .15s; }
+  .rc-card:hover{ border-color:#a78bfa; }
+  .rc-aberto{ grid-column:1 / -1; border-color:#a78bfa; cursor:default; }
+  .rc-dica{ font-size:11px; color:#a78bfa; margin-top:8px; cursor:pointer; }
+  .rc-detalhe-card{ margin-top:10px; max-height:380px; overflow:auto; border-top:1px dashed var(--border); padding-top:8px; cursor:auto; }
+  .rc-detalhe-card .rc-tabela{ font-size:12px; }
+  .rc-oculto{ display:none !important; }
+  .rc-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin:6px 0 12px; }
+  .rc-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .rc-sem{ border-style:dashed; opacity:.9; }
+  .rc-topo{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .rc-avatar{ width:56px; height:56px; min-width:56px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#38bdf8); display:flex; align-items:center; justify-content:center; border:2px solid #a78bfa; overflow:hidden; }
+  .rc-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .rc-avatar span{ font-size:22px; font-weight:700; color:#fff; }
+  .rc-nome{ font-size:15px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rc-sub{ font-size:11.5px; color:var(--text-faint); }
+  .rc-kpi{ margin-left:auto; text-align:right; }
+  .rc-kpi b{ display:block; font-size:24px; color:var(--accent); line-height:1.1; }
+  .rc-kpi span{ font-size:10.5px; color:var(--text-faint); }
+  .rc-graf{ margin-bottom:10px; }
+  .rc-graf-t{ font-size:11.5px; color:var(--text-faint); margin-bottom:4px; }
+  .rc-emp{ display:flex; height:16px; border-radius:8px; overflow:hidden; background:var(--bg-panel); }
+  .rc-emp > div{ height:100%; }
+  .rc-leg{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; margin-top:4px; color:var(--text-faint); }
+  .rc-leg i{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; }
+  .rc-leg b{ color:var(--text); }
+  .rc-med{ display:grid; grid-template-columns:90px 1fr 42px; gap:8px; align-items:center; font-size:11.5px; margin:4px 0; color:var(--text-faint); }
+  .rc-med-barra{ background:var(--bg-panel); border-radius:6px; height:10px; overflow:hidden; }
+  .rc-med-barra > div{ height:100%; background:linear-gradient(90deg, var(--accent), var(--ok)); }
+  .rc-sla{ font-size:11.5px; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:8px; margin-top:6px; }
+  .rc-sla b{ color:var(--text); }
+  .rc-detalhes{ margin-top:6px; }
+  .rc-detalhes summary{ cursor:pointer; font-size:12px; color:var(--text-faint); margin-bottom:6px; }
+  .rc-painel{ margin:10px 0 14px; border:1px solid var(--border); border-radius:10px; padding:8px 12px; background:var(--bg-panel-2); }
+  .rc-painel summary{ cursor:pointer; font-weight:700; font-size:13px; }
+  .rc-controles{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin:10px 0; font-size:12px; color:var(--text-faint); }
+  .rc-tabela{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .rc-tabela th, .rc-tabela td{ padding:6px 8px; border-bottom:1px solid var(--border); text-align:center; }
+  .rc-tabela th{ color:var(--text-faint); font-weight:600; font-size:11.5px; }
+  .rc-nota{ font-size:11.5px; color:var(--text-faint); margin:8px 0 0; line-height:1.5; }
   .rank-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px; }
   .rank-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; cursor:pointer; transition:border-color .15s, transform .15s; }
   .rank-card:hover{ border-color:#a78bfa; transform:translateY(-2px); }
@@ -1689,7 +1729,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v127 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v131 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2591,6 +2631,9 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Tratativa
           <textarea id="negTratativa" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="O que está sendo feito / próximos passos dessa negociação"></textarea>
         </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Conclusão da tratativa (fim do SLA · o início é a data da negociação)
+          <input type="date" id="negConclusao" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Observações
           <textarea id="negObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Notas sobre a negociação (opcional)"></textarea>
         </label>
@@ -3128,6 +3171,12 @@ CONDOMINIO Y	480	45"></textarea>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">O que foi feito / tratativa realizada
           <textarea id="faTratativaTexto" rows="5" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Ex: contato feito com o síndico, equipamento verificado, técnico agendado, etc."></textarea>
         </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Início da tratativa (SLA)
+          <input type="datetime-local" id="faTratIni" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Conclusão da tratativa (SLA)
+          <input type="datetime-local" id="faTratFim" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
           <select id="faTratativaResponsavel" style="width:100%; margin-top:4px;">
             <option value="Maria Rosely (Analista)">Maria Rosely (Analista)</option>
@@ -3542,6 +3591,12 @@ CONDOMINIO Y	480	45"></textarea>
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Tratativa / Medidas Adotadas
           <textarea id="incTratativa" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Início da tratativa (SLA)
+          <input type="datetime-local" id="incTratIni" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Conclusão da tratativa (SLA)
+          <input type="datetime-local" id="incTratFim" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Responsável
           <select id="incResponsavel" style="width:100%; margin-top:4px;">
@@ -4094,6 +4149,7 @@ CONDOMINIO Y	480	45"></textarea>
       </div>
       <input type="file" id="rankingFotoInput" accept="image/*" style="display:none;">
       <div id="rankingCarteiraBody" style="margin:10px 0 16px;"></div>
+      <div id="resultadoFinalCarteira" style="margin:0 0 16px;"></div>
       <p style="font-size:11.5px; color:var(--text-faint); margin:0 0 10px; line-height:1.5;">A saúde dos condomínios de cada carteira (nota média, críticos e evolução em relação ao mês anterior) é o indicador de desempenho de cada Sucesso do Cliente.</p>
       <div id="saudeCarteiraBody"><p class="empty">Carregando...</p></div>
     </div>
@@ -4832,6 +4888,9 @@ CONDOMINIO Y	480	45"></textarea>
             <option value="Em Andamento">Em Andamento</option>
             <option value="Concluído">Concluído</option>
           </select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Conclusão da tratativa (fim do SLA · o início é a data da visita)
+          <input type="date" id="veConclusao" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
           <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📎 Anexos (PDF, foto ou qualquer arquivo)</label>
@@ -7805,6 +7864,7 @@ function renderRankingCarteira(){
   const sem = statsCarteiraDoMes(mes, x => respSemDono(x));
   const semCard = sem.total ? '<div class="rank-card rank-sem" data-carteira-grupo="__sem__" title="Clique para atribuir estes condomínios"><div class="rank-nome">Sem responsável</div><div class="rank-sub" style="margin-bottom:8px;">' + sem.total + ' condomínio(s) ainda sem dono · ' + sem.pendentes + ' pesquisa(s) pendente(s)</div><div style="font-size:12px; color:var(--text-faint);">Clique para ver e atribuir a um Sucesso do Cliente.</div></div>' : '';
   corpo.innerHTML = '<div class="rank-grid">' + cartoes + semCard + '</div>';
+  try{ renderResultadoFinalCarteira(mes); }catch(e){ console.warn('Resultado final das carteiras:', e); }
 }
 async function trocarFotoCarteira(resp, file){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
@@ -8363,6 +8423,617 @@ function abrirAtividadesPessoa(chave){
   document.getElementById('atividadesPessoaModal').style.display = 'flex';
 }
 
+// ----- SLA de tratativa e Resultado por carteira (Incidentes, Fluxo, Vida do Condomínio, Adoção Digital, Renovação) -----
+// A partir de novembro cada responsável tem um SLA de tratativa: toda tratativa precisa de início e conclusão.
+const SLA_SQL = "ALTER TABLE incidentes ADD COLUMN IF NOT EXISTS tratativa_inicio timestamptz, ADD COLUMN IF NOT EXISTS tratativa_conclusao timestamptz;\n" +
+  "ALTER TABLE fluxo_atendimento ADD COLUMN IF NOT EXISTS tratativa_inicio timestamptz, ADD COLUMN IF NOT EXISTS tratativa_conclusao timestamptz;\n" +
+  "ALTER TABLE negociacoes_contrato ADD COLUMN IF NOT EXISTS tratativa_conclusao timestamptz;\n" +
+  "ALTER TABLE visitas_emergenciais ADD COLUMN IF NOT EXISTS tratativa_conclusao timestamptz;";
+function paraInputDT(v){
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d)) return String(v).slice(0, 16);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function deInputDT(v){
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d) ? null : d.toISOString();
+}
+function slaMeta(chave){
+  try{ const v = parseFloat(localStorage.getItem('slaMetaDias_' + chave)); return isNaN(v) ? null : v; }catch(e){ return null; }
+}
+function diasEntreRC(a, b){
+  if (!a || !b) return null;
+  const x = new Date(a), y = new Date(b);
+  if (isNaN(x) || isNaN(y)) return null;
+  const d = (y - x) / 86400000;
+  return d < 0 ? null : d;
+}
+// Calcula o SLA de uma lista de tratativas: getIni/getFim devolvem as datas de início e de conclusão de cada uma.
+function slaDeLista(lista, getIni, getFim, meta){
+  let comInicio = 0, concluidas = 0, soma = 0, dentro = 0, semInicio = 0;
+  lista.forEach(r => {
+    const ini = getIni(r), fim = getFim(r);
+    if (!ini){ semInicio++; return; }
+    comInicio++;
+    const d = diasEntreRC(ini, fim);
+    if (fim && d !== null){ concluidas++; soma += d; if (meta !== null && d <= meta) dentro++; }
+  });
+  return { total: lista.length, comInicio, concluidas, abertas: comInicio - concluidas, semInicio,
+    media: concluidas ? soma / concluidas : null, pctDentro: (meta !== null && concluidas) ? Math.round(dentro / concluidas * 100) : null };
+}
+function respKeyDoNomeRC(nome){ const r = responsavelSCDoNome(nome); return respSemDono(r) ? '__sem__' : normTxtCarteira(r); }
+function respKeyDoCondoRC(c){ const r = respSCDoCondo(c); return respSemDono(r) ? '__sem__' : normTxtCarteira(r); }
+function gruposResultadoRC(){
+  const g = listaResponsaveisSC().map(r => ({ chave: normTxtCarteira(r), nome: r }));
+  g.push({ chave: '__sem__', nome: 'Sem responsável' });
+  return g;
+}
+function condosDaCarteiraRC(g){
+  return (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.status !== 'Inativo' && c.nome && respKeyDoNomeRC(c.nome) === g.chave);
+}
+const arrRC = {
+  inc: () => (typeof incData !== 'undefined' && Array.isArray(incData)) ? incData : [],
+  fa: () => (typeof faData !== 'undefined' && Array.isArray(faData)) ? faData : [],
+  ad: () => (typeof adData !== 'undefined' && Array.isArray(adData)) ? adData : [],
+  venc: () => (typeof renovVencidos !== 'undefined' && Array.isArray(renovVencidos)) ? renovVencidos : [],
+  breve: () => (typeof renovVencendoBreve !== 'undefined' && Array.isArray(renovVencendoBreve)) ? renovVencendoBreve : [],
+  neg: () => (typeof renovNegociacoes !== 'undefined' && Array.isArray(renovNegociacoes)) ? renovNegociacoes : [],
+  condos: () => (typeof renovAllCondos !== 'undefined' && Array.isArray(renovAllCondos)) ? renovAllCondos : [],
+};
+function rcIncidentes(g, mes){
+  const meus = arrRC.inc().filter(i => respKeyDoNomeRC(i.condominio) === g.chave);
+  const doMes = meus.filter(i => String(i.data_hora || '').slice(0, 7) === mes);
+  const resolvido = i => normTxtCarteira(i.status) === 'RESOLVIDO';
+  const abertos = meus.filter(i => !resolvido(i));
+  const comRetorno = doMes.filter(i => String(i.tratativa || '').trim()).length;
+  const sla = slaDeLista(doMes, i => i.tratativa_inicio || i.data_hora, i => i.tratativa_conclusao || (resolvido(i) ? i.resolved_at : null), slaMeta('incidentes'));
+  return { peso: meus.length, n: doMes.length, abertos: abertos.length, altaAb: abertos.filter(i => i.gravidade === 'Alta').length,
+    res: doMes.filter(resolvido).length, ab: doMes.filter(i => !resolvido(i)).length, comRet: comRetorno,
+    pctRes: doMes.length ? Math.round(doMes.filter(resolvido).length / doMes.length * 100) : null,
+    pctRet: doMes.length ? Math.round(comRetorno / doMes.length * 100) : null, sla };
+}
+function rcFluxo(g, mes){
+  const condos = condosDaCarteiraRC(g);
+  const regs = arrRC.fa().filter(f => String(f.mes_referencia || '').slice(0, 7) === mes && respKeyDoNomeRC(f.condominio) === g.chave);
+  const lanc = regs.filter(f => f.atendimentos !== null && f.atendimentos !== undefined);
+  const tmas = lanc.map(f => f.tma).filter(v => v !== null && v !== undefined);
+  const comTrat = regs.filter(f => String(f.tratativa || '').trim());
+  const sla = slaDeLista(comTrat, f => f.tratativa_inicio, f => f.tratativa_conclusao, slaMeta('fluxo'));
+  return { peso: condos.length, condos: condos.length, lancados: lanc.length,
+    pctLanc: condos.length ? Math.round(lanc.length / condos.length * 100) : null,
+    atend: lanc.reduce((t, f) => t + (f.atendimentos || 0), 0), tma: tmas.length ? tmas.reduce((a, b) => a + b, 0) / tmas.length : null,
+    foraMeta: tmas.filter(t => t > 8).length, tratativas: comTrat.length, sla,
+    pend: Math.max(0, condos.length - lanc.length), dentroMeta: tmas.length - tmas.filter(t => t > 8).length };
+}
+function rcVida(g){
+  const condos = condosDaCarteiraRC(g);
+  let baixo = 0, medio = 0, alto = 0, pts = 0, n = 0;
+  condos.forEach(c => {
+    try{
+      const r = calcularNivelRisco(coletarDadosRiscoCondominio(normalizeNomeCondo(c.nome)));
+      const nv = normTxtCarteira(r.nivel);
+      if (nv === 'ALTO') alto++; else if (nv === 'MEDIO') medio++; else baixo++;
+      pts += r.pontos || 0; n++;
+    }catch(e){ /* condomínio sem dados suficientes */ }
+  });
+  return { peso: n, n, baixo, medio, alto, pctBaixo: n ? Math.round(baixo / n * 100) : null, pontos: n ? pts / n : null };
+}
+function rcAdocao(g, mes){
+  const condos = condosDaCarteiraRC(g);
+  const porCondo = new Map();
+  arrRC.ad().forEach(a => {
+    if (respKeyDoNomeRC(a.condominio) !== g.chave) return;
+    const m = String(a.mes_referencia || '').slice(0, 7);
+    if (m && m > mes) return;
+    const k = normalizeNomeCondo(a.condominio), at = porCondo.get(k);
+    if (!at || String(at.mes_referencia || '') < String(a.mes_referencia || '')) porCondo.set(k, a);
+  });
+  const regs = [...porCondo.values()];
+  const preench = regs.filter(a => !adRegistroPendente(a));
+  const media = campo => { const v = preench.map(a => a[campo]).filter(x => x !== null && x !== undefined && !isNaN(x)); return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null; };
+  const cont = { 'Saudável': 0, 'Atenção': 0, 'Crítico': 0 };
+  preench.forEach(a => { const st = classificarSaude(calcScoreDigital(a), a); if (st in cont) cont[st]++; });
+  return { peso: condos.length, condos: condos.length, preench: preench.length, semDados: Math.max(0, condos.length - preench.length), app: media('pct_app'), facial: media('pct_facial'), sau: cont['Saudável'], aten: cont['Atenção'], crit: cont['Crítico'] };
+}
+function rcRenovacao(g){
+  const chaveNeg = n => { const c = arrRC.condos().find(x => String(x.item_id) === String(n.condo_id)); return c ? respKeyDoCondoRC(c) : respKeyDoNomeRC(n.condo_nome); };
+  const venc = arrRC.venc().filter(c => respKeyDoCondoRC(c) === g.chave);
+  const breve = arrRC.breve().filter(c => respKeyDoCondoRC(c) === g.chave);
+  const negs = arrRC.neg().filter(n => chaveNeg(n) === g.chave);
+  const andamento = negs.filter(negociacaoEmAndamento), renovadas = negs.filter(n => ehStatusRenovado(n.status));
+  const base = renovadas.length + andamento.length + venc.length;
+  const sla = slaDeLista(negs, n => n.data_negociacao, n => n.tratativa_conclusao, slaMeta('renovacao'));
+  return { peso: venc.length + breve.length + negs.length, venc: venc.length, breve: breve.length, andamento: andamento.length, renovadas: renovadas.length,
+    taxa: base ? Math.round(renovadas.length / base * 100) : null, sla };
+}
+const rcFmtPct = n => (n === null || n === undefined) ? '—' : n + '%';
+const rcFmtNum = (n, d) => (n === null || n === undefined) ? '—' : Number(n).toFixed(d === undefined ? 1 : d).replace('.', ',');
+const rcFmtDias = n => (n === null || n === undefined) ? '—' : (n < 1 ? Math.round(n * 24) + ' h' : rcFmtNum(n, 1) + ' d');
+const rcColsSla = [
+  ['Tratativas (concluídas · abertas)', b => b.sla.total ? b.sla.concluidas + ' · ' + b.sla.abertas + (b.sla.semInicio ? ' · ' + b.sla.semInicio + ' sem início' : '') : '—'],
+  ['Tempo médio', b => rcFmtDias(b.sla.media)],
+  ['Dentro da meta de SLA', b => b.sla.pctDentro !== null ? b.sla.pctDentro + '%' : (b.sla.concluidas ? 'defina a meta' : '—')],
+];
+const RC_ABAS = {
+  incidentes: { aba: 'incidentes', painel: 'tabIncidentes', titulo: 'Incidentes', sla: true, calc: rcIncidentes,
+    cols: [['Incidentes no mês', b => b.n], ['Abertos agora', b => b.abertos], ['Alta gravidade abertos', b => b.altaAb], ['% resolvidos', b => rcFmtPct(b.pctRes)], ['% com retorno (tratativa)', b => rcFmtPct(b.pctRet)]].concat(rcColsSla),
+    nota: 'Início da tratativa = campo "Início da tratativa" do incidente (se vazio, a data da ocorrência); conclusão = campo "Conclusão da tratativa" (se vazio, a data em que foi marcado como Resolvido).' },
+  fluxo: { aba: 'fluxoAtendimento', painel: 'tabFluxoAtendimento', titulo: 'Fluxo de Atendimento', sla: true, calc: rcFluxo,
+    cols: [['Condomínios', b => b.condos], ['Fluxo lançado no mês', b => b.lancados + ' de ' + b.condos + ' (' + rcFmtPct(b.pctLanc) + ')'], ['Atendimentos', b => b.atend], ['TMA médio', b => b.tma === null ? '—' : rcFmtNum(b.tma, 1)], ['Fora da meta (TMA > 8)', b => b.foraMeta], ['Tratativas registradas', b => b.tratativas]].concat(rcColsSla),
+    nota: 'O SLA do fluxo só conta tratativas que têm "Início" e "Conclusão" preenchidos no registro da tratativa.' },
+  vida: { aba: 'vidaCondominio', painel: 'tabVidaCondominio', titulo: 'Vida do Condomínio', sla: false, calc: rcVida,
+    cols: [['Condomínios', b => b.n], ['Risco baixo', b => b.baixo], ['Risco médio', b => b.medio], ['Risco alto', b => b.alto], ['% em risco baixo', b => rcFmtPct(b.pctBaixo)], ['Pontos de risco (média)', b => rcFmtNum(b.pontos, 1)]],
+    nota: 'Usa o mesmo nível de risco da linha do tempo de cada condomínio (nota, reclamações, incidentes, visitas, fluxo e demandas).' },
+  adocao: { aba: 'adocaoDigital', painel: 'tabAdocaoDigital', titulo: 'Adoção Digital', sla: false, calc: rcAdocao,
+    cols: [['Condomínios', b => b.condos], ['Com dados lançados', b => b.preench + ' de ' + b.condos], ['Uso do app (média %)', b => b.app === null ? '—' : Math.round(b.app) + '%'], ['Faciais (média %)', b => b.facial === null ? '—' : Math.round(b.facial) + '%'], ['Saudável', b => b.sau], ['Atenção', b => b.aten], ['Crítico', b => b.crit]],
+    nota: 'Considera o último registro de cada condomínio até o mês escolhido.' },
+  renovacao: { aba: 'renovacao', painel: 'tabRenovacao', titulo: 'Renovação', sla: true, calc: rcRenovacao,
+    cols: [['Vencidos', b => b.venc], ['Vencendo em 12 meses', b => b.breve], ['Em negociação', b => b.andamento], ['Renovados', b => b.renovadas], ['Taxa de renovação', b => rcFmtPct(b.taxa)]].concat(rcColsSla),
+    nota: 'Taxa de renovação = renovados ÷ (renovados + em negociação + vencidos). Início da tratativa = data da negociação; conclusão = campo "Conclusão da tratativa" da negociação.' },
+};
+const RC_COR = { ok: 'var(--ok)', at: '#f59e0b', cr: 'var(--critico)', cz: '#64748b', az: 'var(--accent)' };
+RC_ABAS.incidentes.rotuloOriginal = '📋 Incidentes';
+RC_ABAS.incidentes.kpi = b => ['resolvidos', rcFmtPct(b.pctRes)];
+RC_ABAS.incidentes.graficos = b => [
+  { t: 'Status dos incidentes do mês', segs: [['Resolvidos', b.res, RC_COR.ok], ['Abertos', b.ab, RC_COR.cr]] },
+  { t: 'Retorno ao síndico (tratativa registrada)', segs: [['Com retorno', b.comRet, RC_COR.ok], ['Sem retorno', Math.max(0, b.n - b.comRet), RC_COR.at]] }];
+RC_ABAS.fluxo.kpi = b => ['do fluxo lançado', rcFmtPct(b.pctLanc)];
+RC_ABAS.fluxo.graficos = b => [
+  { t: 'Fluxo de atendimento do mês', segs: [['Lançados', b.lancados, RC_COR.ok], ['Pendentes', b.pend, RC_COR.at]] },
+  { t: 'TMA dos lançados', segs: [['Dentro da meta', b.dentroMeta, RC_COR.ok], ['Fora da meta', b.foraMeta, RC_COR.cr]] }];
+RC_ABAS.vida.rotuloOriginal = '🕒 Linha do tempo';
+RC_ABAS.vida.kpi = b => ['em risco baixo', rcFmtPct(b.pctBaixo)];
+RC_ABAS.vida.graficos = b => [{ t: 'Risco dos condomínios da carteira', segs: [['Baixo', b.baixo, RC_COR.ok], ['Médio', b.medio, RC_COR.at], ['Alto', b.alto, RC_COR.cr]] }];
+RC_ABAS.adocao.rotuloOriginal = '📋 Registros';
+RC_ABAS.adocao.kpi = b => ['Uso do app', b.app === null ? '—' : Math.round(b.app) + '%'];
+RC_ABAS.adocao.graficos = b => [
+  { t: 'Saúde digital dos condomínios', segs: [['Saudável', b.sau, RC_COR.ok], ['Atenção', b.aten, RC_COR.at], ['Crítico', b.crit, RC_COR.cr], ['Sem dados', b.semDados, RC_COR.cz]] },
+  { t: 'Adoção média', medidores: [['Uso do app', b.app], ['Faciais', b.facial]] }];
+RC_ABAS.renovacao.kpi = b => ['Taxa de renovação', rcFmtPct(b.taxa)];
+RC_ABAS.renovacao.graficos = b => [{ t: 'Situação dos contratos da carteira', segs: [['Renovados', b.renovadas, RC_COR.ok], ['Em negociação', b.andamento, RC_COR.az], ['Vencendo em 12 meses', b.breve, RC_COR.at], ['Vencidos', b.venc, RC_COR.cr]] }];
+// ----- Resultado por carteira nas demais abas (Dashboard, Pesquisas, Cadastro, Check List, Visitas, Demandas, Lembretes, Fechamento) -----
+arrRC.ve = () => (typeof veData !== 'undefined' && Array.isArray(veData)) ? veData : [];
+arrRC.dem = () => (typeof demData !== 'undefined' && Array.isArray(demData)) ? demData : [];
+arrRC.lem = () => (typeof lembretesData !== 'undefined' && Array.isArray(lembretesData)) ? lembretesData : [];
+arrRC.ck = () => (typeof checklistCondos !== 'undefined' && Array.isArray(checklistCondos)) ? checklistCondos : [];
+const RC_PALETA = ['var(--accent)', '#a78bfa', '#22c55e', '#f59e0b', '#ef4444', '#38bdf8'];
+const rcSim = v => v === true || /^(s|sim|true|1|x)$/i.test(String(v == null ? '' : v).trim());
+const rcPctDe = (n, t) => t ? Math.round(n / t * 100) : null;
+
+function rcPesquisas(g, mes){
+  const itens = itensDoMesDeduplicados(mes).filter(d => respKeyDoNomeRC(d.nome) === g.chave);
+  const st = computeStats(itens);
+  const cont = { critico: 0, atencao: 0, ok: 0, pendente: 0 };
+  itens.forEach(d => { cont[classeSaudeItem(d)]++; });
+  const nums = itens.map(d => parseFloat(String(d.nota).replace(',', '.'))).filter(n => !isNaN(n));
+  return { peso: itens.length, total: itens.length, realizadas: st.realizadas, pct: st.pct, media: st.mediaCount ? st.media : null,
+    crit: cont.critico, aten: cont.atencao, ok: cont.ok, pend: cont.pendente,
+    reclam: itens.filter(d => d.houveReclamacao).length, elogios: itens.filter(d => d.houveElogio).length,
+    f9: nums.filter(n => n >= 9).length, f7: nums.filter(n => n >= 7 && n < 9).length, f6: nums.filter(n => n < 7).length };
+}
+function rcDetPesquisas(g, mes){
+  const ordem = { critico: 0, atencao: 1, pendente: 2, ok: 3 };
+  const lista = itensDoMesDeduplicados(mes).filter(d => respKeyDoNomeRC(d.nome) === g.chave)
+    .sort((a, b) => (ordem[classeSaudeItem(a)] - ordem[classeSaudeItem(b)]) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  return { cols: ['Condomínio', 'Filial', 'Nota 1', 'Nota 2', 'Data', 'Saúde', 'Reclamação', 'Status da pesquisa'],
+    rows: lista.map(d => [d.nome, normalizeFilialCanonica(d.filial) || '—', (d.nota && d.nota !== '—') ? d.nota : '—', d.notaPosResolucao || '—', rcFmtData(d.dataPesquisa), SAUDE_ROTULO[classeSaudeItem(d)][0], d.houveReclamacao ? 'Sim' : '—', d.statusPesquisa || '—']) };
+}
+function rcCadastro(g){
+  const todos = (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.nome && respKeyDoNomeRC(c.nome) === g.chave);
+  const ativos = todos.filter(c => c.status !== 'Inativo');
+  const porFilial = {};
+  ativos.forEach(c => { const f = normalizeFilialCanonica(c.filial) || 'Sem filial'; porFilial[f] = (porFilial[f] || 0) + 1; });
+  return { peso: todos.length, ativos: ativos.length, inativos: todos.length - ativos.length, porFilial,
+    armario: ativos.filter(c => rcSim(c.possui_armario)).length, gphone: ativos.filter(c => rcSim(c.possui_gphone)).length,
+    fila: ativos.filter(c => rcSim(c.fila_prioritaria)).length, semSup: ativos.filter(c => !dadosCarteiraDoNome(c.nome).sup).length };
+}
+function rcDetCadastro(g){
+  const lista = (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.nome && respKeyDoNomeRC(c.nome) === g.chave)
+    .sort((a, b) => ((a.status === 'Inativo') - (b.status === 'Inativo')) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  return { cols: ['Condomínio', 'Filial', 'Status', 'Supervisor técnico', 'Técnico', 'Armário', 'Gphone', 'Fila prioritária'],
+    rows: lista.map(c => { const d = dadosCarteiraDoNome(c.nome); return [c.nome, normalizeFilialCanonica(c.filial) || '—', c.status || 'Ativo', d.sup || '—', d.tec || '—', rcSim(c.possui_armario) ? 'Sim' : '—', rcSim(c.possui_gphone) ? 'Sim' : '—', rcSim(c.fila_prioritaria) ? 'Sim' : '—']; }) };
+}
+function rcChecklist(g){
+  const condos = arrRC.ck().filter(c => respKeyDoNomeRC(c.nome) === g.chave);
+  let feitos = 0, possiveis = 0, completos = 0, zero = 0;
+  condos.forEach(c => { const pr = checklistRowProgress(c.id); feitos += pr.done; possiveis += pr.total; if (pr.total && pr.done === pr.total) completos++; else if (pr.done === 0) zero++; });
+  return { peso: condos.length, condos: condos.length, feitos, possiveis, pct: rcPctDe(feitos, possiveis), completos, zero, parcial: condos.length - completos - zero };
+}
+function rcDetChecklist(g){
+  const linhas = arrRC.ck().filter(c => respKeyDoNomeRC(c.nome) === g.chave).map(c => { const pr = checklistRowProgress(c.id); return { pct: pr.total ? pr.done / pr.total : 0, cels: [c.nome, normalizeFilialCanonica(c.filial) || '—', pr.done + ' de ' + pr.total, rcFmtPct(rcPctDe(pr.done, pr.total))] }; })
+    .sort((a, b) => a.pct - b.pct || a.cels[0].localeCompare(b.cels[0], 'pt-BR'));
+  return { cols: ['Condomínio', 'Filial', 'Itens concluídos', '% do checklist'], rows: linhas.map(x => x.cels) };
+}
+function rcVisitas(g, mes){
+  const meus = arrRC.ve().filter(v => respKeyDoNomeRC(v.condominio) === g.chave);
+  const doMes = meus.filter(v => String(v.data_visita || '').slice(0, 7) === mes);
+  const concl = v => normTxtCarteira(v.status) === 'CONCLUIDO';
+  const stIs = (v, t) => normTxtCarteira(v.status) === t;
+  const sla = slaDeLista(doMes, v => v.data_visita, v => v.tratativa_conclusao, slaMeta('visitas'));
+  return { peso: meus.length, n: doMes.length, realizadas: doMes.filter(v => normTxtCarteira(v.realizada) === 'SIM').length,
+    concl: doMes.filter(concl).length, andamento: doMes.filter(v => stIs(v, 'EM ANDAMENTO')).length, agendadas: doMes.filter(v => stIs(v, 'VISITA AGENDADA')).length,
+    abertas: meus.filter(v => !concl(v)).length, sla };
+}
+function rcDetVisitas(g, mes){
+  const concl = v => normTxtCarteira(v.status) === 'CONCLUIDO';
+  const lista = arrRC.ve().filter(v => respKeyDoNomeRC(v.condominio) === g.chave && (String(v.data_visita || '').slice(0, 7) === mes || !concl(v)))
+    .sort((a, b) => (concl(a) - concl(b)) || String(b.data_visita || '').localeCompare(String(a.data_visita || '')));
+  return { cols: ['Condomínio', 'Filial', 'Data da visita', 'Realizada', 'Setor', 'Status', 'Conclusão', 'Tempo'],
+    rows: lista.map(v => [v.condominio, normalizeFilialCanonica(v.filial) || '—', rcFmtData(v.data_visita), v.realizada || '—', v.setor || '—', v.status || '—', rcFmtData(v.tratativa_conclusao), rcFmtDias(diasEntreRC(v.data_visita, v.tratativa_conclusao))]) };
+}
+function rcDemandas(g, mes){
+  const meus = arrRC.dem().filter(d => respKeyDoNomeRC(d.condominio) === g.chave);
+  const doMes = meus.filter(d => String(d.data_abertura || '').slice(0, 7) === mes);
+  const por = nome => doMes.filter(d => normTxtCarteira(d.status) === nome).length;
+  const sla = slaDeLista(doMes, d => d.data_abertura, d => d.data_conclusao, slaMeta('demandas'));
+  return { peso: meus.length, n: doMes.length, abertas: por('ABERTA'), andamento: por('EM ANDAMENTO'), aguard: por('AGUARDANDO'), concl: por('CONCLUIDA'),
+    abertasAgora: meus.filter(d => normTxtCarteira(d.status) !== 'CONCLUIDA').length, sla };
+}
+function rcDetDemandas(g, mes){
+  const concl = d => normTxtCarteira(d.status) === 'CONCLUIDA';
+  const lista = arrRC.dem().filter(d => respKeyDoNomeRC(d.condominio) === g.chave && (String(d.data_abertura || '').slice(0, 7) === mes || !concl(d)))
+    .sort((a, b) => (concl(a) - concl(b)) || String(b.data_abertura || '').localeCompare(String(a.data_abertura || '')));
+  return { cols: ['Condomínio', 'Tipo', 'Prioridade', 'Status', 'Abertura', 'Conclusão', 'Tempo', 'Responsável'],
+    rows: lista.map(d => [d.condominio, d.tipo || '—', d.prioridade || '—', d.status || '—', rcFmtData(d.data_abertura, true), rcFmtData(d.data_conclusao, true), rcFmtDias(diasEntreRC(d.data_abertura, d.data_conclusao)), rcCortar(d.responsavel, 28)]) };
+}
+function rcLembretes(g){
+  const lista = arrRC.lem().filter(l => (l.condominio ? respKeyDoNomeRC(l.condominio) : '__sem__') === g.chave);
+  const concl = l => normTxtCarteira(l.status) === 'CONCLUIDO';
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const vencido = l => !concl(l) && l.data_vencimento && new Date(String(l.data_vencimento).slice(0, 10) + 'T00:00:00') < hoje;
+  return { peso: lista.length, total: lista.length, concl: lista.filter(concl).length, pend: lista.filter(l => !concl(l)).length, venc: lista.filter(vencido).length };
+}
+function rcDetLembretes(g){
+  const lista = arrRC.lem().filter(l => (l.condominio ? respKeyDoNomeRC(l.condominio) : '__sem__') === g.chave)
+    .sort((a, b) => (normTxtCarteira(a.status) === 'CONCLUIDO') - (normTxtCarteira(b.status) === 'CONCLUIDO') || String(a.data_vencimento || '9999').localeCompare(String(b.data_vencimento || '9999')));
+  return { cols: ['Título', 'Condomínio', 'Vencimento', 'Status', 'Observação'], rows: lista.map(l => [rcCortar(l.titulo, 40), l.condominio || '—', rcFmtData(l.data_vencimento), l.status || '—', rcCortar(l.observacao, 50)]) };
+}
+function rcFechamento(g, mes){ return { peso: g.chave === '__sem__' ? 0 : 1, d: rcResultadoFinal(g, mes) }; }
+function rcDetFechamento(g, mes){
+  const d = rcResultadoFinal(g, mes);
+  const v = x => x === null || x === undefined ? '—' : x;
+  return { cols: ['Indicador', 'Valor (0 a 100)', 'Como é calculado'], rows: [
+    ['Satisfação', v(d.satisfacao), 'nota média das pesquisas da carteira × 10'],
+    ['Pesquisas realizadas', v(d.pesquisas), '% de pesquisas realizadas (para quem fiscaliza: nas filiais que fiscaliza)'],
+    ['Renovações', v(d.renovacao), 'renovados ÷ (renovados + em negociação + vencidos)'],
+    ['Adoção digital', v(d.adocao), 'média do % de uso do app e do % de faciais'],
+    ['Incidentes', v(d.incidentes), 'média entre % resolvidos e % com retorno registrado'],
+    ['SLA de tratativa', v(d.sla), '% das tratativas concluídas dentro da meta de SLA'],
+    ['Resultado geral', v(d.geral), 'média das dimensões que têm dados (pesos iguais)']] };
+}
+function rcDashboard(g, mes){ return { peso: rcPesquisas(g, mes).total, d: rcResultadoFinal(g, mes), p: rcPesquisas(g, mes), r: rcRenovacao(g) }; }
+const rcNumDim = x => (x === null || x === undefined) ? '—' : x;
+Object.assign(RC_ABAS, {
+  dashboard: { aba: 'dashboard', painel: 'tabDashboard', titulo: 'Dashboard Executivo', sla: false, calc: rcDashboard, detalhe: (g, mes) => rcDetPesquisas(g, mes),
+    kpi: b => ['resultado geral', rcNumDim(b.d.geral)],
+    graficos: b => [
+      { t: 'Saúde dos condomínios (pela nota)', segs: [['OK', b.p.ok, RC_COR.ok], ['Atenção', b.p.aten, RC_COR.at], ['Crítico', b.p.crit, RC_COR.cr], ['Pendente', b.p.pend, RC_COR.cz]] },
+      { t: 'Contratos', segs: [['Renovados', b.r.renovadas, RC_COR.ok], ['Em negociação', b.r.andamento, RC_COR.az], ['Vencendo em 12 meses', b.r.breve, RC_COR.at], ['Vencidos', b.r.venc, RC_COR.cr]] },
+      { t: 'Resultado (0 a 100)', medidores: [['Geral', b.d.geral], ['Satisfação', b.d.satisfacao], ['SLA', b.d.sla]] }],
+    cols: [['Nota média', b => rcFmtNum(b.p.media, 1)], ['Críticos', b => b.p.crit], ['Pendentes', b => b.p.pend], ['Taxa de renovação', b => rcFmtPct(b.r.taxa)], ['Resultado geral', b => rcNumDim(b.d.geral)]],
+    nota: 'Visão executiva de cada carteira: saúde pelas notas das pesquisas, situação dos contratos e o resultado geral (veja como é calculado na aba Equipe & Metas).' },
+  pesquisa: { aba: 'pesquisa', painel: 'tabPesquisa', titulo: 'Pesquisas', sla: false, calc: rcPesquisas, detalhe: rcDetPesquisas,
+    kpi: b => ['nota média', rcFmtNum(b.media, 1)],
+    graficos: b => [
+      { t: 'Pesquisas do mês', segs: [['Realizadas', b.realizadas, RC_COR.ok], ['Pendentes', b.pend, RC_COR.at]] },
+      { t: 'Saúde pela nota', segs: [['OK', b.ok, RC_COR.ok], ['Atenção', b.aten, RC_COR.at], ['Crítico', b.crit, RC_COR.cr]] },
+      { t: 'Notas lançadas', segs: [['9 a 10', b.f9, RC_COR.ok], ['7 a 8,9', b.f7, RC_COR.at], ['Abaixo de 7', b.f6, RC_COR.cr]] }],
+    cols: [['Condomínios', b => b.total], ['Realizadas', b => b.realizadas + ' de ' + b.total + ' (' + b.pct + '%)'], ['Pendentes', b => b.pend], ['Nota média', b => rcFmtNum(b.media, 1)], ['Críticos', b => b.crit], ['Atenção', b => b.aten], ['OK', b => b.ok], ['Reclamações', b => b.reclam], ['Elogios', b => b.elogios]],
+    nota: 'Pesquisas do mês escolhido, uma linha por condomínio da carteira.' },
+  cadastro: { aba: 'cadastro', painel: 'tabCadastro', titulo: 'Cadastro de Condomínios', sla: false, calc: rcCadastro, detalhe: rcDetCadastro, rotuloOriginal: '🏢 Cadastro',
+    kpi: b => ['condomínios ativos', b.ativos],
+    graficos: b => [
+      { t: 'Condomínios ativos por filial', segs: Object.entries(b.porFilial).map(([f, n], i) => [f, n, RC_PALETA[i % RC_PALETA.length]]) },
+      { t: 'Equipamentos e prioridade (% dos ativos)', medidores: [['Armário', rcPctDe(b.armario, b.ativos)], ['Gphone', rcPctDe(b.gphone, b.ativos)], ['Fila prioritária', rcPctDe(b.fila, b.ativos)]] }],
+    cols: [['Condomínios ativos', b => b.ativos], ['Inativos', b => b.inativos], ['Por filial', b => Object.entries(b.porFilial).map(([f, n]) => f + ' ' + n).join(' · ') || '—'], ['Com armário', b => b.armario], ['Com Gphone', b => b.gphone], ['Fila prioritária', b => b.fila], ['Sem supervisor técnico', b => b.semSup]],
+    nota: 'Composição da carteira de cada responsável, conforme o Cadastro de Condomínios.' },
+  checklist: { aba: 'checklist', painel: 'tabChecklist', titulo: 'Check List Condomínios', sla: false, calc: rcChecklist, detalhe: rcDetChecklist, rotuloOriginal: '✅ Check List',
+    kpi: b => ['do checklist concluído', rcFmtPct(b.pct)],
+    graficos: b => [
+      { t: 'Situação dos checklists', segs: [['Completos', b.completos, RC_COR.ok], ['Em andamento', b.parcial, RC_COR.at], ['Não iniciados', b.zero, RC_COR.cr]] },
+      { t: 'Itens concluídos', medidores: [['Checklist', b.pct]] }],
+    cols: [['Condomínios', b => b.condos], ['Itens concluídos', b => b.feitos + ' de ' + b.possiveis], ['% do checklist', b => rcFmtPct(b.pct)], ['Completos', b => b.completos], ['Em andamento', b => b.parcial], ['Não iniciados', b => b.zero]],
+    nota: 'Progresso do checklist de cada condomínio da carteira.' },
+  visitas: { aba: 'visitasEmergenciais', painel: 'tabVisitasEmergenciais', titulo: 'Visitas Emergenciais', sla: true, calc: rcVisitas, detalhe: rcDetVisitas,
+    kpi: b => ['visitas em aberto', b.abertas],
+    graficos: b => [
+      { t: 'Status das visitas do mês', segs: [['Concluídas', b.concl, RC_COR.ok], ['Em andamento', b.andamento, RC_COR.az], ['Agendadas', b.agendadas, RC_COR.at]] },
+      { t: 'A visita foi realizada?', segs: [['Realizadas', b.realizadas, RC_COR.ok], ['Não realizadas', Math.max(0, b.n - b.realizadas), RC_COR.cr]] }],
+    cols: [['Visitas no mês', b => b.n], ['Realizadas', b => b.realizadas], ['Concluídas', b => b.concl], ['Em andamento', b => b.andamento], ['Agendadas', b => b.agendadas], ['Em aberto (todas)', b => b.abertas]].concat(rcColsSla),
+    nota: 'Início da tratativa = data da visita; conclusão = campo "Conclusão da tratativa" da visita.' },
+  demandas: { aba: 'demandas', painel: 'tabDemandas', titulo: 'Demandas', sla: true, calc: rcDemandas, detalhe: rcDetDemandas,
+    kpi: b => ['demandas abertas', b.abertasAgora],
+    graficos: b => [{ t: 'Status das demandas abertas no mês', segs: [['Concluídas', b.concl, RC_COR.ok], ['Em andamento', b.andamento, RC_COR.az], ['Aguardando', b.aguard, RC_COR.at], ['Abertas', b.abertas, RC_COR.cr]] }],
+    cols: [['Demandas no mês', b => b.n], ['Abertas agora (todas)', b => b.abertasAgora], ['Abertas', b => b.abertas], ['Em andamento', b => b.andamento], ['Aguardando', b => b.aguard], ['Concluídas', b => b.concl]].concat(rcColsSla),
+    nota: 'Início da tratativa = data de abertura; conclusão = data de conclusão da demanda.' },
+  lembretes: { aba: 'lembretes', painel: 'tabLembretes', titulo: 'Lembretes', sla: false, calc: rcLembretes, detalhe: rcDetLembretes, rotuloOriginal: '🔔 Lembretes',
+    kpi: b => ['vencidos', b.venc],
+    graficos: b => [{ t: 'Situação dos lembretes', segs: [['Concluídos', b.concl, RC_COR.ok], ['Pendentes no prazo', Math.max(0, b.pend - b.venc), RC_COR.at], ['Vencidos', b.venc, RC_COR.cr]] }],
+    cols: [['Lembretes', b => b.total], ['Concluídos', b => b.concl], ['Pendentes', b => b.pend], ['Vencidos', b => b.venc]],
+    nota: 'Lembretes ligados a um condomínio entram na carteira dele; os sem condomínio ficam em "Sem responsável".' },
+  fechamento: { aba: 'fechamentoMensal', painel: 'tabFechamentoMensal', titulo: 'Fechamento do Mês', sla: false, calc: rcFechamento, detalhe: rcDetFechamento, rotuloOriginal: '📅 Fechamento',
+    kpi: b => ['resultado geral', rcNumDim(b.d.geral)],
+    graficos: b => [{ t: 'Indicadores do mês (0 a 100)', medidores: [['Satisfação', b.d.satisfacao], ['Pesquisas', b.d.pesquisas], ['Renovações', b.d.renovacao], ['Adoção digital', b.d.adocao], ['Incidentes', b.d.incidentes], ['SLA', b.d.sla], ['Geral', b.d.geral]] }],
+    cols: [['Satisfação', b => rcNumDim(b.d.satisfacao)], ['Pesquisas', b => rcNumDim(b.d.pesquisas)], ['Renovações', b => rcNumDim(b.d.renovacao)], ['Adoção digital', b => rcNumDim(b.d.adocao)], ['Incidentes', b => rcNumDim(b.d.incidentes)], ['SLA', b => rcNumDim(b.d.sla)], ['Resultado geral', b => rcNumDim(b.d.geral)]],
+    nota: 'Fechamento do mês de cada responsável: soma dos indicadores das demais abas, com pesos iguais (provisório até a gestão definir os pesos).' },
+});
+const __rcCarregando = {};
+let __rcEquipePedida = false;
+function rcCarregadores(chave){
+  const L = [];
+  const add = (loaded, fn) => { if (!loaded && typeof fn === 'function') L.push(fn); };
+  const todos = ['todos', 'dashboard', 'fechamento'].includes(chave);
+  if (chave === 'incidentes' || chave === 'vida' || todos) add(incLoaded, loadIncidentes);
+  if (chave === 'fluxo' || chave === 'vida' || todos) add(faLoaded, loadFluxoAtendimento);
+  if (chave === 'adocao' || todos) add(adLoaded, loadAdocaoDigital);
+  if (chave === 'renovacao' || todos) add(renovLoaded, loadRenovacaoData);
+  if (chave === 'vida'){ add(veLoaded, loadVE); add(demLoaded, loadDemandas); }
+  if (chave === 'visitas') add(veLoaded, loadVE);
+  if (chave === 'demandas') add(demLoaded, loadDemandas);
+  if (chave === 'checklist') add(checklistLoaded, loadChecklistData);
+  if (chave === 'lembretes') add(arrRC.lem().length > 0, loadLembretes);
+  if (chave === 'cadastro') add(cadastroLiveCarregado, carregarCadastroLive);
+  return L;
+}
+function rcGarantirDados(chave, aoTerminar){
+  if (!sb || __rcCarregando[chave]) return;
+  const L = rcCarregadores(chave);
+  if (!L.length) return;
+  __rcCarregando[chave] = true;
+  Promise.allSettled(L.map(f => f())).then(() => { try{ aoTerminar(); }catch(e){} });
+}
+
+// ----- Detalhe de cada carteira (aparece ao clicar no cartão da responsável) -----
+function rcFmtData(v, comHora){
+  if (!v) return '—';
+  const so = /^\d{4}-\d{2}-\d{2}$/.test(String(v));
+  const d = so ? new Date(Number(String(v).slice(0, 4)), Number(String(v).slice(5, 7)) - 1, Number(String(v).slice(8, 10))) : new Date(v);
+  if (isNaN(d)) return '—';
+  const p = n => String(n).padStart(2, '0');
+  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ((comHora && !so) ? ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) : '');
+}
+const rcCortar = (t, n) => { t = String(t || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : (t || '—'); };
+function rcDetIncidentes(g, mes){
+  const resolvido = i => normTxtCarteira(i.status) === 'RESOLVIDO';
+  const lista = arrRC.inc().filter(i => respKeyDoNomeRC(i.condominio) === g.chave && (String(i.data_hora || '').slice(0, 7) === mes || !resolvido(i)))
+    .sort((a, b) => (resolvido(a) - resolvido(b)) || String(b.data_hora || '').localeCompare(String(a.data_hora || '')));
+  return { cols: ['Condomínio', 'Tipo', 'Gravidade', 'Status', 'Ocorrência', 'Início da tratativa', 'Conclusão', 'Tempo', 'Retorno'],
+    rows: lista.map(i => {
+      const ini = i.tratativa_inicio || i.data_hora, fim = i.tratativa_conclusao || (resolvido(i) ? i.resolved_at : null);
+      return [i.condominio, i.tipo || '—', i.gravidade || '—', i.status || '—', rcFmtData(i.data_hora, true), rcFmtData(i.tratativa_inicio, true), rcFmtData(fim, true), rcFmtDias(diasEntreRC(ini, fim)), String(i.tratativa || '').trim() ? '✅' : '—'];
+    }) };
+}
+function rcDetFluxo(g, mes){
+  const regs = arrRC.fa().filter(f => String(f.mes_referencia || '').slice(0, 7) === mes);
+  const ordem = { 'Pendente': 0, 'Fora da Meta': 1, 'Preenchido': 2 };
+  const linhas = condosDaCarteiraRC(g).map(c => {
+    const r = regs.find(x => normalizeNomeCondo(x.condominio) === normalizeNomeCondo(c.nome)) || null;
+    const st = r ? faStatus(r) : 'Pendente';
+    return { st, cels: [c.nome, st, r && r.atendimentos != null ? r.atendimentos : '—', r && r.tma != null ? rcFmtNum(r.tma, 1) : '—', rcCortar(r && r.tratativa, 50), rcFmtData(r && r.tratativa_inicio, true), rcFmtData(r && r.tratativa_conclusao, true), r ? rcFmtDias(diasEntreRC(r.tratativa_inicio, r.tratativa_conclusao)) : '—'] };
+  }).sort((a, b) => (ordem[a.st] - ordem[b.st]) || a.cels[0].localeCompare(b.cels[0], 'pt-BR'));
+  return { cols: ['Condomínio', 'Situação do fluxo', 'Atendimentos', 'TMA', 'Tratativa', 'Início', 'Conclusão', 'Tempo'], rows: linhas.map(x => x.cels) };
+}
+function rcDetVida(g){
+  const linhas = [];
+  condosDaCarteiraRC(g).forEach(c => {
+    try{
+      const r = calcularNivelRisco(coletarDadosRiscoCondominio(normalizeNomeCondo(c.nome)));
+      linhas.push({ pts: r.pontos || 0, cels: [c.nome, r.nivel, r.pontos || 0, (r.motivos || []).slice(0, 3).join('; ') || '—'] });
+    }catch(e){ /* sem dados */ }
+  });
+  linhas.sort((a, b) => b.pts - a.pts || a.cels[0].localeCompare(b.cels[0], 'pt-BR'));
+  return { cols: ['Condomínio', 'Risco', 'Pontos', 'Principais motivos'], rows: linhas.map(x => x.cels) };
+}
+function rcDetAdocao(g, mes){
+  const ultimo = new Map();
+  arrRC.ad().forEach(a => {
+    const m = String(a.mes_referencia || '').slice(0, 7);
+    if (m && m > mes) return;
+    const k = normalizeNomeCondo(a.condominio), at = ultimo.get(k);
+    if (!at || String(at.mes_referencia || '') < String(a.mes_referencia || '')) ultimo.set(k, a);
+  });
+  const ordem = { 'Crítico': 0, 'Atenção': 1, 'Sem dados': 2, 'Saudável': 3 };
+  const linhas = condosDaCarteiraRC(g).map(c => {
+    const a = ultimo.get(normalizeNomeCondo(c.nome));
+    const tem = a && !adRegistroPendente(a);
+    const st = tem ? classificarSaude(calcScoreDigital(a), a) : 'Sem dados';
+    const num = v => (v === null || v === undefined || isNaN(v)) ? '—' : Math.round(v) + '%';
+    return { st, cels: [c.nome, st, tem && a.moradores != null ? a.moradores : '—', tem && a.apps_cadastrados != null ? a.apps_cadastrados : '—', tem ? num(a.pct_app) : '—', tem ? num(a.pct_facial) : '—', a && String(a.mes_referencia || '').slice(0, 7) ? mesLabelBR(String(a.mes_referencia).slice(0, 7)) : '—'] };
+  }).sort((a, b) => (ordem[a.st] - ordem[b.st]) || a.cels[0].localeCompare(b.cels[0], 'pt-BR'));
+  return { cols: ['Condomínio', 'Saúde digital', 'Moradores', 'Apps cadastrados', 'Uso do app', 'Faciais', 'Registro de'], rows: linhas.map(x => x.cels) };
+}
+function rcDetRenovacao(g){
+  const condoDe = n => arrRC.condos().find(x => String(x.item_id) === String(n.condo_id));
+  const chaveNeg = n => { const c = condoDe(n); return c ? respKeyDoCondoRC(c) : respKeyDoNomeRC(n.condo_nome); };
+  const ordem = { 'Vencido': 0, 'Em negociação': 1, 'Vencendo': 2, 'Renovado': 3 };
+  const linhas = [];
+  arrRC.venc().filter(c => respKeyDoCondoRC(c) === g.chave).forEach(c => linhas.push({ t: 'Vencido', cels: ['Vencido', c.nome, rcFmtData(c.contrato_fim), '—', '—', '—', '—'] }));
+  arrRC.breve().filter(c => respKeyDoCondoRC(c) === g.chave).forEach(c => linhas.push({ t: 'Vencendo', cels: ['Vencendo em 12 meses', c.nome, rcFmtData(c.contrato_fim), '—', '—', '—', '—'] }));
+  arrRC.neg().filter(n => chaveNeg(n) === g.chave).forEach(n => {
+    const c = condoDe(n), ren = ehStatusRenovado(n.status);
+    linhas.push({ t: ren ? 'Renovado' : 'Em negociação', cels: [ren ? 'Renovado' : 'Em negociação', n.condo_nome || (c && c.nome) || '—', c ? rcFmtData(c.contrato_fim) : '—', n.status || '—', rcFmtData(n.data_negociacao), rcFmtData(n.tratativa_conclusao), rcFmtDias(diasEntreRC(n.data_negociacao, n.tratativa_conclusao))] });
+  });
+  linhas.sort((a, b) => (ordem[a.t] - ordem[b.t]) || String(a.cels[1]).localeCompare(String(b.cels[1]), 'pt-BR'));
+  return { cols: ['Situação', 'Condomínio', 'Fim do contrato', 'Status da negociação', 'Início', 'Conclusão', 'Tempo'], rows: linhas.map(x => x.cels) };
+}
+RC_ABAS.incidentes.detalhe = rcDetIncidentes;
+RC_ABAS.fluxo.detalhe = rcDetFluxo;
+RC_ABAS.vida.detalhe = rcDetVida;
+RC_ABAS.adocao.detalhe = rcDetAdocao;
+RC_ABAS.renovacao.detalhe = rcDetRenovacao;
+const __rcAbertos = {};
+function rcHtmlDetalhe(cfg, g, mes){
+  let d;
+  try{ d = cfg.detalhe(g, mes); }catch(e){ return '<p class="rc-nota">Não foi possível montar o detalhe.</p>'; }
+  if (!d.rows.length) return '<p class="rc-nota">Nenhum registro nesta carteira.</p>';
+  return '<div class="rc-detalhe-card"><div class="rc-nota" style="margin:0 0 6px;">' + d.rows.length + ' registro(s)</div><table class="rc-tabela"><thead><tr>' + d.cols.map(c => '<th' + (c === d.cols[0] || c === d.cols[1] ? ' style="text-align:left;"' : '') + '>' + escapeHtml(c) + '</th>').join('') + '</tr></thead><tbody>' +
+    d.rows.map(r => '<tr>' + r.map((c, i) => '<td' + (i < 2 ? ' style="text-align:left;"' : '') + '>' + escapeHtml(String(c)) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+}
+function rcBarraEmpilhada(g){
+  const total = g.segs.reduce((t, x) => t + (x[1] || 0), 0);
+  const barra = total
+    ? g.segs.filter(x => x[1] > 0).map(x => '<div style="width:' + (x[1] / total * 100) + '%; background:' + x[2] + ';" title="' + escapeHtml(x[0]) + ': ' + x[1] + '"></div>').join('')
+    : '<div style="width:100%; background:var(--bg-panel);" title="sem dados"></div>';
+  const legenda = g.segs.map(x => '<span><i style="background:' + x[2] + ';"></i>' + escapeHtml(x[0]) + ' <b>' + (x[1] || 0) + '</b></span>').join('');
+  return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div><div class="rc-emp">' + barra + '</div><div class="rc-leg">' + legenda + '</div></div>';
+}
+function rcMedidores(g){
+  return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div>' + g.medidores.map(m =>
+    '<div class="rc-med"><span>' + escapeHtml(m[0]) + '</span><div class="rc-med-barra"><div style="width:' + Math.min(100, Math.round(m[1] || 0)) + '%;"></div></div><b>' + (m[1] === null || m[1] === undefined ? '—' : Math.round(m[1]) + '%') + '</b></div>').join('') + '</div>';
+}
+function renderRC(chave){
+  const cfg = RC_ABAS[chave], det = document.getElementById('rc_' + chave);
+  if (!cfg || !det) return;
+  rcGarantirDados(chave, () => renderRC(chave));
+  // as fotos vêm do cadastro da Equipe; carrega uma vez se ainda não foi aberta a aba Equipe & Metas
+  try{
+    if (!equipeMembrosData.length && sb && !__rcEquipePedida && typeof carregarEquipeMembros === 'function'){
+      __rcEquipePedida = true;
+      Promise.resolve(carregarEquipeMembros()).then(() => renderRC(chave)).catch(() => {});
+    }
+  }catch(e){}
+  const corpo = det.querySelector('.rc-corpo');
+  const mes = (det.querySelector('.rc-mes') || {}).value || selectedMes || mesAtualReal();
+  const linhas = gruposResultadoRC().map(g => ({ g, b: cfg.calc(g, mes) })).filter(x => x.g.chave !== '__sem__' || x.b.peso > 0);
+  const cartoes = linhas.map(({ g, b }) => {
+    const m = g.chave === '__sem__' ? null : membroDaCarteira(g.nome);
+    const avatar = m && m.foto_url
+      ? '<img src="' + escapeHtml(m.foto_url) + '" alt="' + escapeHtml(g.nome) + '">'
+      : '<span>' + escapeHtml(g.nome.trim().charAt(0).toUpperCase()) + '</span>';
+    const kpi = cfg.kpi(b);
+    const sla = cfg.sla ? '<div class="rc-sla">⏱ SLA · tempo médio <b>' + rcFmtDias(b.sla.media) + '</b> · dentro da meta <b>' + (b.sla.pctDentro !== null ? b.sla.pctDentro + '%' : (b.sla.concluidas ? 'defina a meta' : '—')) + '</b> · ' + b.sla.concluidas + ' concluída(s) / ' + b.sla.abertas + ' aberta(s)' + (b.sla.semInicio ? ' / ' + b.sla.semInicio + ' sem início' : '') + '</div>' : '';
+    const aberto = !!(__rcAbertos[chave] && __rcAbertos[chave][g.chave]);
+    return '<div class="rc-card' + (g.chave === '__sem__' ? ' rc-sem' : '') + (aberto ? ' rc-aberto' : '') + '" data-rc-card="' + escapeHtml(g.chave) + '"><div class="rc-topo"><div class="rc-avatar">' + avatar + '</div>' +
+      '<div style="min-width:0;"><div class="rc-nome">' + escapeHtml(g.nome) + '</div><div class="rc-sub">' + condosDaCarteiraRC(g).length + ' condomínio(s) na carteira</div></div>' +
+      '<div class="rc-kpi"><b>' + escapeHtml(String(kpi[1])) + '</b><span>' + escapeHtml(kpi[0]) + '</span></div></div>' +
+      cfg.graficos(b).map(gr => gr.medidores ? rcMedidores(gr) : rcBarraEmpilhada(gr)).join('') + sla +
+      '<div class="rc-dica">' + (aberto ? '▾ clique para recolher' : '▸ clique para ver os registros') + '</div>' + (aberto ? rcHtmlDetalhe(cfg, g, mes) : '') + '</div>';
+  }).join('');
+  const tabela = '<div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + cfg.cols.map(c => '<th>' + escapeHtml(c[0]) + '</th>').join('') + '</tr></thead><tbody>' +
+    linhas.map(x => '<tr><td style="text-align:left;"><strong>' + escapeHtml(x.g.nome) + '</strong></td>' + cfg.cols.map(c => '<td>' + escapeHtml(String(c[1](x.b))) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  corpo.innerHTML = '<div class="rc-grid">' + cartoes + '</div>' +
+    '<details class="rc-detalhes"><summary>Ver tabela detalhada</summary>' + tabela + '</details>' +
+    '<p class="rc-nota">' + escapeHtml(cfg.nota) + '</p>';
+}
+// Cria a sub-aba "Resultado por carteira" dentro de cada aba (junto das sub-abas que ela já tem, ou numa faixa nova)
+function montarPaineisResultadoCarteira(){
+  Object.entries(RC_ABAS).forEach(([chave, cfg]) => {
+    const painel = document.getElementById(cfg.painel);
+    if (!painel || document.getElementById('rc_' + chave)) return;
+    let nav = painel.querySelector(':scope > .subtab-nav');
+    let criada = false;
+    if (!nav){
+      nav = document.createElement('div');
+      nav.className = 'subtab-nav';
+      nav.innerHTML = '<button type="button" class="subtab-btn active" data-rc-original="1">' + escapeHtml(cfg.rotuloOriginal || '📋 Visão geral') + '</button>';
+      const ref = painel.querySelector(':scope > p') || painel.querySelector(':scope > header');
+      if (ref) ref.insertAdjacentElement('afterend', nav); else painel.insertBefore(nav, painel.firstChild);
+      criada = true;
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'subtab-btn'; btn.setAttribute('data-rc-subtab', chave);
+    btn.textContent = '📊 Resultado por carteira';
+    nav.appendChild(btn);
+    const vista = document.createElement('div');
+    vista.id = 'rc_' + chave;
+    vista.className = 'rc-vista';
+    vista.style.display = 'none';
+    vista.innerHTML = '<div class="rc-controles"><label>Mês <input type="month" class="rc-mes"></label>' +
+      (cfg.sla ? '<label>Meta de SLA (dias) <input type="number" min="0" step="0.5" class="rc-meta" style="width:80px;" placeholder="definir"></label>' : '') +
+      '<span style="font-size:11.5px; color:var(--text-faint);">Cada cartão é a carteira de uma responsável nesta aba; isso compõe o resultado final dela na aba Equipe & Metas.</span></div><div class="rc-corpo"></div>';
+    nav.insertAdjacentElement('afterend', vista);
+    vista.querySelector('.rc-mes').value = selectedMes || mesAtualReal();
+    vista.querySelector('.rc-mes').addEventListener('change', () => renderRC(chave));
+    vista.querySelector('.rc-corpo').addEventListener('click', ev => {
+      if (ev.target.closest('.rc-detalhe-card')) return;          // cliques dentro da tabela não recolhem
+      const cartao = ev.target.closest('[data-rc-card]');
+      if (!cartao) return;
+      const k = cartao.getAttribute('data-rc-card');
+      __rcAbertos[chave] = __rcAbertos[chave] || {};
+      __rcAbertos[chave][k] = !__rcAbertos[chave][k];
+      renderRC(chave);
+    });
+    const meta = vista.querySelector('.rc-meta');
+    if (meta){
+      const salvo = slaMeta(chave);
+      if (salvo !== null) meta.value = salvo;
+      meta.addEventListener('change', () => {
+        try{ if (meta.value === '') localStorage.removeItem('slaMetaDias_' + chave); else localStorage.setItem('slaMetaDias_' + chave, meta.value); }catch(e){}
+        renderRC(chave);
+        try{ renderRankingCarteira(); }catch(e){}
+      });
+    }
+    const ocultar = () => [...painel.children].forEach(c => { if (c.tagName !== 'HEADER' && c.tagName !== 'P' && !c.classList.contains('dash-exec-header') && c !== nav && c !== vista) c.classList.add('rc-oculto'); });
+    const mostrar = () => painel.querySelectorAll(':scope > .rc-oculto').forEach(c => c.classList.remove('rc-oculto'));
+    const entrar = () => {
+      ocultar();
+      vista.style.display = '';
+      nav.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderRC(chave);
+    };
+    const sair = () => { mostrar(); vista.style.display = 'none'; btn.classList.remove('active'); };
+    btn.addEventListener('click', entrar);
+    // clicar em qualquer outra sub-aba volta ao conteúdo normal (cada sub-aba antiga cuida do próprio destaque)
+    nav.addEventListener('click', ev => {
+      const outro = ev.target.closest('.subtab-btn');
+      if (!outro || outro === btn || vista.style.display === 'none') return;
+      sair();
+      if (outro.hasAttribute('data-rc-original')){ nav.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active')); outro.classList.add('active'); }
+    });
+    // ao reabrir a aba com a sub-aba de carteira ativa, atualiza os números
+    document.querySelectorAll('.tab-btn[data-tab="' + cfg.aba + '"]').forEach(b => b.addEventListener('click', () => setTimeout(() => { if (vista.style.display !== 'none') renderRC(chave); }, 700)));
+  });
+}
+// ----- Resultado final de cada responsável (soma de satisfação, renovação, adoção, incidentes e SLA) -----
+function rcResultadoFinal(g, mes){
+  const aceita = g.chave === '__sem__' ? (x => respSemDono(x)) : (x => normTxtCarteira(x) === g.chave);
+  const sat = statsCarteiraDoMes(mes, aceita);
+  const ren = rcRenovacao(g), ad = rcAdocao(g, mes), inc = rcIncidentes(g, mes), fl = rcFluxo(g, mes);
+  const mediaDe = lista => { const v = lista.filter(x => x !== null && x !== undefined); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+  // As pesquisas das filiais são feitas por quem fiscaliza (Josiane e Nicolly): o item "Pesquisas realizadas" mede a fiscalizadora
+  // sobre os condomínios das filiais que ela fiscaliza, e não conta contra as responsáveis de filial.
+  const filiaisFisc = filiaisFiscalizadas(g.nome);
+  const ehRespFilial = Object.values(CARTEIRA_FILIAL_PADRAO).some(n => mesmaPessoaCarteira(n, g.nome));
+  let pesquisas = sat.total ? sat.pct : null;
+  if (ehRespFilial) pesquisas = null;
+  else if (filiaisFisc.length){
+    const dasFiliais = itensDoMesDeduplicados(mes).filter(d => filiaisFisc.includes(normTxtCarteira(normalizeFilialCanonica(d.filial || dadosCarteiraDoNome(d.nome).filial || ''))));
+    pesquisas = dasFiliais.length ? computeStats(dasFiliais).pct : null;
+  }
+  const dims = {
+    satisfacao: sat.media !== null ? Math.round(sat.media * 10) : null,
+    pesquisas,
+    renovacao: ren.taxa,
+    adocao: mediaDe([ad.app === null ? null : Math.round(ad.app), ad.facial === null ? null : Math.round(ad.facial)]),
+    incidentes: mediaDe([inc.pctRes, inc.pctRet]),
+    sla: mediaDe([inc.sla.pctDentro, fl.sla.pctDentro, ren.sla.pctDentro]),
+  };
+  dims.geral = mediaDe(Object.values(dims));
+  return dims;
+}
+function renderResultadoFinalCarteira(mes){
+  const el = document.getElementById('resultadoFinalCarteira');
+  if (!el) return;
+  rcGarantirDados('todos', () => renderResultadoFinalCarteira(mes));
+  const grupos = gruposResultadoRC().filter(g => g.chave !== '__sem__');
+  if (!grupos.length){ el.innerHTML = ''; return; }
+  const linhas = grupos.map(g => ({ g, d: rcResultadoFinal(g, mes) }))
+    .sort((a, b) => ((b.d.geral === null ? -1 : b.d.geral) - (a.d.geral === null ? -1 : a.d.geral)) || a.g.nome.localeCompare(b.g.nome, 'pt-BR'));
+  const cor = v => v === null ? 'var(--text-faint)' : (v >= 80 ? 'var(--ok)' : (v >= 60 ? '#f59e0b' : 'var(--critico)'));
+  const cel = v => '<td style="color:' + cor(v) + ';">' + (v === null ? '—' : v) + '</td>';
+  el.innerHTML = '<p class="chart-title" style="margin:6px 0 6px;">🎯 Resultado final por responsável · ' + escapeHtml(mesLabelBR(mes)) + '</p>' +
+    '<div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th><th>Satisfação</th><th>Pesquisas realizadas</th><th>Renovações</th><th>Adoção digital</th><th>Incidentes</th><th>SLA de tratativa</th><th>Resultado geral</th></tr></thead><tbody>' +
+    linhas.map(({ g, d }) => '<tr><td style="text-align:left;"><strong>' + escapeHtml(g.nome) + '</strong></td>' + cel(d.satisfacao) + cel(d.pesquisas) + cel(d.renovacao) + cel(d.adocao) + cel(d.incidentes) + cel(d.sla) +
+      '<td><strong style="color:' + cor(d.geral) + '; font-size:15px;">' + (d.geral === null ? '—' : d.geral) + '</strong></td></tr>').join('') +
+    '</tbody></table></div>' +
+    '<p class="rc-nota">Notas de 0 a 100. Resultado geral = média das dimensões que têm dados (pesos iguais, provisório até a gestão definir os pesos). Satisfação = nota média × 10; Pesquisas = % realizadas nas filiais que a responsável fiscaliza (Josiane e Nicolly; as responsáveis de filial não entram nesse item, porque as pesquisas das filiais são feitas pela fiscalização); Renovações = renovados ÷ (renovados + em negociação + vencidos); Adoção = média do % de app e de faciais; Incidentes = média de (% resolvidos, % com retorno); SLA = % das tratativas concluídas dentro da meta definida em cada aba (Incidentes, Fluxo, Renovação).</p>' +
+    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:12px; color:var(--text-faint);">SQL para ativar início e conclusão das tratativas (rodar uma vez no Supabase)</summary><pre style="white-space:pre-wrap; font-size:11px;">' + escapeHtml(SLA_SQL) + '</pre></details>';
+}
+
 // ----- Detalhe da carteira: ver condomínios e redirecionar -----
 let __detCarteira = { grupo: '', filtro: '' };
 const __detSel = new Set();
@@ -8772,8 +9443,8 @@ document.getElementById('carteiraDetalheMover').addEventListener('click', async 
   await moverCondominiosCarteira(ids, destino);
 });
 document.getElementById('saudeCarteiraMesSel').addEventListener('change', renderSaudeCarteira);
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); });
-else { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); montarPaineisResultadoCarteira(); });
+else { injetarSeletoresCarteira(); iniciarObservadoresCarteira(); montarPaineisResultadoCarteira(); }
 function buscarEnderecoPorNomeCondo(nome){
   if (!nome) return '';
   const norm = normalizeNomeCondo(nome);
@@ -14498,6 +15169,7 @@ function openNegociacaoModal(condoId){
   document.getElementById('negNovaData').value = '';
   document.getElementById('negValorCusto').value = '';
   document.getElementById('negTratativa').value = '';
+  document.getElementById('negConclusao').value = '';
   document.getElementById('negObs').value = '';
   document.getElementById('negAmpliacaoMaterial').value = '';
   document.getElementById('negAmpliacaoPedido').value = '';
@@ -14525,6 +15197,7 @@ function editNegociacao(id){
   document.getElementById('negNovaData').value = n.nova_data || '';
   document.getElementById('negValorCusto').value = formatarMoedaParaInputRenov(n.valor_custo);
   document.getElementById('negTratativa').value = n.tratativa || '';
+  document.getElementById('negConclusao').value = n.tratativa_conclusao ? String(n.tratativa_conclusao).slice(0,10) : '';
   document.getElementById('negObs').value = n.obs || '';
   document.getElementById('negAmpliacaoMaterial').value = n.ampliacao_material || '';
   document.getElementById('negAmpliacaoPedido').value = n.ampliacao_pedido || '';
@@ -14584,6 +15257,9 @@ async function salvarNegociacao(){
     updated_at: new Date().toISOString()
   };
 
+  const fimNeg = document.getElementById('negConclusao').value || null;
+  const anteriorNeg = negociacaoEditingId ? renovNegociacoes.find(n => String(n.id) === String(negociacaoEditingId)) : null;
+  if (fimNeg || (anteriorNeg && anteriorNeg.tratativa_conclusao)) registro.tratativa_conclusao = fimNeg;
   if (negociacaoEditingId){
     const idx = renovNegociacoes.findIndex(n => String(n.id) === String(negociacaoEditingId));
     if (idx > -1) renovNegociacoes[idx] = registro; else renovNegociacoes.unshift(registro);
@@ -16351,6 +17027,7 @@ async function openVEModal(v){
   document.getElementById('veRetorno').value = v ? (v.retorno || '') : '';
   document.getElementById('veTratativa').value = v ? (v.tratativa || '') : '';
   document.getElementById('veStatus').value = v ? (v.status || 'Visita Agendada') : 'Visita Agendada';
+  document.getElementById('veConclusao').value = v && v.tratativa_conclusao ? String(v.tratativa_conclusao).slice(0,10) : '';
   document.getElementById('veDeleteBtn').style.display = v ? '' : 'none';
   renderAnexosBox('veAnexosBox', 'visita', v ? v.id : null);
   document.getElementById('veModalOverlay').style.display = 'flex';
@@ -16399,6 +17076,9 @@ function initVECrudUI(){
       tratativa: document.getElementById('veTratativa').value.trim() || null,
       status: document.getElementById('veStatus').value,
     };
+    const fimVe = document.getElementById('veConclusao').value || null;
+    const anteriorVe = id ? ((veData || []).find(x => String(x.id) === String(id)) || {}) : {};
+    if (fimVe || anteriorVe.tratativa_conclusao) payload.tratativa_conclusao = fimVe;
     if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
     try{
       const { error } = id
@@ -17413,6 +18093,8 @@ function abrirTratativaFluxoModal(registro){
   document.getElementById('faTratativaId').value = registro.id;
   document.getElementById('faTratativaContexto').textContent = `${registro.condominio} · ${registro.filial || '—'} · ${mesLabelBR(String(registro.mes_referencia||'').slice(0,7))}`;
   document.getElementById('faTratativaTexto').value = registro.tratativa || '';
+  document.getElementById('faTratIni').value = registro.tratativa_inicio ? paraInputDT(registro.tratativa_inicio) : '';
+  document.getElementById('faTratFim').value = registro.tratativa_conclusao ? paraInputDT(registro.tratativa_conclusao) : '';
   document.getElementById('faTratativaResponsavel').value = registro.tratativa_responsavel || 'Maria Rosely (Analista)';
   document.getElementById('faTratativaError').style.display = 'none';
   document.getElementById('faTratativaModalOverlay').style.display = 'flex';
@@ -17428,6 +18110,10 @@ async function salvarTratativaFluxo(){
     tratativa_responsavel: document.getElementById('faTratativaResponsavel').value,
     tratativa_data: new Date().toISOString(),
   };
+  const iniFa = deInputDT(document.getElementById('faTratIni').value), fimFa = deInputDT(document.getElementById('faTratFim').value);
+  const anteriorFa = faData.find(r => String(r.id) === String(id)) || {};
+  if (iniFa || anteriorFa.tratativa_inicio) payload.tratativa_inicio = iniFa;
+  if (fimFa || anteriorFa.tratativa_conclusao) payload.tratativa_conclusao = fimFa;
   const btn = document.getElementById('faTratativaSaveBtn');
   btn.disabled = true;
   try{
@@ -20334,6 +21020,8 @@ function abrirIncidenteModal(i){
   document.getElementById('incDescricao').value = i ? (i.descricao || '') : '';
   document.getElementById('incSetor').value = i ? (i.setor || 'Central') : 'Central';
   document.getElementById('incTratativa').value = i ? (i.tratativa || '') : '';
+  document.getElementById('incTratIni').value = i && i.tratativa_inicio ? paraInputDT(i.tratativa_inicio) : '';
+  document.getElementById('incTratFim').value = i && i.tratativa_conclusao ? paraInputDT(i.tratativa_conclusao) : '';
   document.getElementById('incStatus').value = i ? (i.status || 'Em análise') : 'Em análise';
   document.getElementById('incResponsavel').value = i ? (i.responsavel || 'Maria Rosely (Analista)') : 'Maria Rosely (Analista)';
   document.getElementById('incDeleteBtn').style.display = i ? '' : 'none';
@@ -20385,6 +21073,10 @@ document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
     resolved_at: resolvedAt,
     updated_at: agora,
   };
+  // SLA: só grava as colunas novas quando preenchidas (ou quando já existiam), pra não quebrar quem ainda não rodou o SQL do SLA
+  const iniTrat = deInputDT(document.getElementById('incTratIni').value), fimTrat = deInputDT(document.getElementById('incTratFim').value);
+  if (iniTrat || (incEditingOriginal && incEditingOriginal.tratativa_inicio)) payload.tratativa_inicio = iniTrat;
+  if (fimTrat || (incEditingOriginal && incEditingOriginal.tratativa_conclusao)) payload.tratativa_conclusao = fimTrat;
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
   try{
     const { error } = id
