@@ -1725,6 +1725,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       Mês da nova rodada
       <input type="month" id="rodadaMesInput" style="background:#eef1fb; border:1px solid transparent; border-radius:8px; padding:9px 11px; font-size:13px; color:#1a2333; font-family:inherit;">
     </label>
+    <p id="rodadaHint" style="font-size:12px; color:var(--text-faint); margin:8px 0 10px; line-height:1.5;"></p>
     <button type="button" id="rodadaConfirmBtn" class="login-btn users-add-btn">Criar rodada</button>
     <p class="users-error" id="rodadaError" style="display:none;"></p>
     <p id="rodadaProgress" style="font-size:12px; color:var(--text-faint); text-align:center; margin-top:10px; display:none;"></p>
@@ -1741,7 +1742,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v134 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v136 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -1989,6 +1990,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
 
   <div class="toolbar" style="margin-bottom:16px;">
     <button type="button" class="clearbtn" id="btnCarteirasSC" style="border-color:#a78bfa; color:#a78bfa;" title="Define quem é o responsável de cada condomínio (somente administradores)">👥 Carteiras</button>
+    <button type="button" class="clearbtn" id="btnPlanilhaGoogle" style="border-color:#22c55e; color:#22c55e;" title="Vincula a planilha de pesquisa do Google para atualizar o dashboard">🔗 Planilha Google</button>
     <button type="button" class="clearbtn" id="btnGerarPlanilhaPreencher" style="border-color:var(--ok); color:var(--ok);">📋 Gerar Planilha para Preencher</button>
     <button type="button" class="clearbtn" id="btnCompletarRodadaPq" style="border-color:#a78bfa; color:#a78bfa;" title="Cria a pesquisa pendente dos condomínios do Cadastro que ainda não estão no mês selecionado">➕ Completar Rodada do Mês</button>
     <button type="button" class="clearbtn" id="btnImportarPlanilhaPesquisas" style="border-color:var(--accent); color:var(--accent);">📥 Importar Planilha de Pesquisas</button>
@@ -2039,6 +2041,40 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       </div>
       <p id="carteiraDetalheResumo" style="font-size:12px; color:var(--text-faint); margin:0 0 6px;"></p>
       <div id="carteiraDetalheLista"></div>
+    </div>
+  </div>
+
+  <div id="planilhaGoogleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9300; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border-radius:10px; padding:20px; width:min(760px, 95vw); max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0;">🔗 Planilha do Google</h3>
+        <button type="button" class="modal-close" id="pgFechar">×</button>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 12px; line-height:1.5;">O dashboard lê a aba da pesquisa que você publicou na web e atualiza nota, data, status e comentários dos condomínios que já existem no mês. Célula vazia na planilha não apaga o que já está no dashboard.</p>
+      <details style="margin-bottom:12px;"><summary style="cursor:pointer; font-size:12.5px; font-weight:600;">Como publicar a aba da planilha (uma vez)</summary>
+        <ol style="font-size:12.5px; line-height:1.6; margin:8px 0 0 18px; padding:0;">
+          <li>Abra a planilha no Google Planilhas.</li>
+          <li>Clique em <strong>Arquivo &gt; Compartilhar &gt; Publicar na Web</strong>.</li>
+          <li>Em <strong>Link</strong>, escolha a <strong>aba da pesquisa</strong> (não "Documento inteiro") e o formato <strong>Valores separados por vírgula (.csv)</strong>. Clique em Publicar.</li>
+          <li>Copie o link gerado e cole abaixo.</li>
+        </ol>
+        <p style="font-size:11.5px; color:var(--text-faint); margin:8px 0 0;">Atenção: quem tiver o link consegue ler a aba publicada (nomes, notas e comentários). Não divulgue fora da equipe. Para parar, use Arquivo &gt; Compartilhar &gt; Publicar na Web &gt; Interromper publicação. O Google atualiza a versão publicada a cada cerca de 5 minutos.</p>
+      </details>
+      <label style="display:block; font-size:12px; color:var(--text-faint); margin-bottom:10px;">Link da aba publicada (CSV)
+        <input type="text" id="pgUrl" class="search" style="width:100%; box-sizing:border-box; margin-top:4px;" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv">
+      </label>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:10px; font-size:12px; color:var(--text-faint);">
+        <label>Mês desta planilha (opcional) <input type="month" id="pgMes" class="search" style="margin-left:6px;"></label>
+        <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="pgAuto"> Sincronizar sozinho a cada
+          <select id="pgMinutos" class="filter-select"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option></select> com o dashboard aberto</label>
+      </div>
+      <p style="font-size:11.5px; color:var(--text-faint); margin:0 0 10px;">Sem mês definido, o dashboard descobre o mês pelas datas da planilha.</p>
+      <div id="pgStatus" style="font-size:12.5px; line-height:1.6; border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="clearbtn" id="pgSalvar">Salvar</button>
+        <button type="button" class="clearbtn" id="pgSincronizar" style="border-color:var(--ok); color:var(--ok);">Sincronizar agora</button>
+        <button type="button" class="clearbtn" id="pgRevisar" style="border-color:#f59e0b; color:#f59e0b;">Revisar não encontradas</button>
+      </div>
     </div>
   </div>
 
@@ -9355,7 +9391,8 @@ async function abrirCarteirasModal(){
   renderListaCarteiras();
   document.getElementById('carteirasModal').style.display = 'flex';
 }
-function parseCsvSimples(texto){
+function parseCsvSimples(texto, delims){
+  delims = delims || ',;';
   const linhas = []; let campo = '', linha = [], aspas = false;
   texto = String(texto).replace(/^\uFEFF/, '');
   for (let i = 0; i < texto.length; i++){
@@ -9364,7 +9401,7 @@ function parseCsvSimples(texto){
       if (ch === '"'){ if (texto[i + 1] === '"'){ campo += '"'; i++; } else aspas = false; }
       else campo += ch;
     } else if (ch === '"') aspas = true;
-    else if (ch === ',' || ch === ';'){ linha.push(campo); campo = ''; }
+    else if (delims.indexOf(ch) !== -1){ linha.push(campo); campo = ''; }
     else if (ch === '\n'){ linha.push(campo); linhas.push(linha); linha = []; campo = ''; }
     else if (ch !== '\r') campo += ch;
   }
@@ -9512,7 +9549,7 @@ document.getElementById('rankingFotoInput').addEventListener('change', async ev 
 document.getElementById('rankingCarteiraOrdem').addEventListener('change', renderRankingCarteira);
 // Os painéis (modais) nasceram dentro da aba Pesquisas; quando outra aba está aberta eles ficam escondidos
 // junto com ela. Move para o mesmo lugar do painel de edição de membros, fora de qualquer aba.
-['atividadesPessoaModal', 'manualFuncoesModal', 'carteiraDetalheModal', 'carteirasModal'].forEach(id => {
+['atividadesPessoaModal', 'manualFuncoesModal', 'carteiraDetalheModal', 'carteirasModal', 'planilhaGoogleModal'].forEach(id => {
   const el = document.getElementById(id);
   const alvo = document.querySelector('.content-area');
   if (el && alvo && el.parentElement !== alvo) alvo.appendChild(el);
@@ -11328,6 +11365,25 @@ function newItemFormHTML(){
   `;
 }
 
+// Situação de um mês: quantas pesquisas já existem e quantos condomínios ativos do Cadastro ainda não estão nele
+function rodadaSituacaoDoMes(mes){
+  const itens = DATA.filter(d => getMes(d) === mes);
+  const ativos = (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.status !== 'Inativo' && c.nome);
+  const faltando = ativos.filter(c => !itens.some(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(c.nome) || pqMesmoConjuntoTokens(d.nome, c.nome))).length;
+  return { n: itens.length, ativos: ativos.length, faltando };
+}
+async function atualizarHintRodada(){
+  const hint = document.getElementById('rodadaHint');
+  const mes = document.getElementById('rodadaMesInput').value;
+  if (!hint) return;
+  if (!mes){ hint.textContent = ''; return; }
+  if (!cadastroLiveCarregado && sb){ try{ await carregarCadastroLive(); }catch(e){} }
+  const sit = rodadaSituacaoDoMes(mes);
+  if (!sit.n){ hint.style.color = 'var(--text-faint)'; hint.textContent = 'Este mês ainda não tem rodada: serão criadas ' + sit.ativos + ' pesquisas pendentes (uma por condomínio ativo do Cadastro).'; }
+  else if (sit.faltando > 0){ hint.style.color = '#f59e0b'; hint.innerHTML = '⚠️ ' + escapeHtml(mesLabelBR(mes)) + ' <b>já tem ' + sit.n + ' pesquisa(s)</b>, mas o Cadastro tem ' + sit.ativos + ' condomínios ativos (<b>faltam ' + sit.faltando + '</b>). Ao clicar em Criar rodada você poderá completar só os que faltam.'; }
+  else { hint.style.color = 'var(--ok)'; hint.textContent = '✅ ' + mesLabelBR(mes) + ' já tem a rodada completa (' + sit.n + ' pesquisas).'; }
+}
+document.getElementById('rodadaMesInput').addEventListener('input', atualizarHintRodada);
 document.getElementById('newRodadaBtn').addEventListener('click', ()=>{
   document.getElementById('rodadaError').style.display = 'none';
   document.getElementById('rodadaProgress').style.display = 'none';
@@ -11338,6 +11394,7 @@ document.getElementById('newRodadaBtn').addEventListener('click', ()=>{
   const sugestao = `${proxDate.getFullYear()}-${String(proxDate.getMonth()+1).padStart(2,'0')}`;
   document.getElementById('rodadaMesInput').value = sugestao;
   document.getElementById('rodadaModal').style.display = 'flex';
+  atualizarHintRodada();
 });
 document.getElementById('closeRodadaBtn').addEventListener('click', ()=>{
   document.getElementById('rodadaModal').style.display = 'none';
@@ -11349,8 +11406,15 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
   const novoMes = document.getElementById('rodadaMesInput').value;
   if (!novoMes){ errEl.textContent = 'Escolha um mês.'; errEl.style.display = 'block'; return; }
   if (DATA.some(d => getMes(d) === novoMes)){
-    errEl.textContent = `Já existe uma rodada para ${mesLabelBR(novoMes)}.`;
+    if (!cadastroLiveCarregado && sb){ try{ await carregarCadastroLive(); }catch(e){} }
+    const sit = rodadaSituacaoDoMes(novoMes);
+    errEl.innerHTML = 'Já existe uma rodada para ' + escapeHtml(mesLabelBR(novoMes)) + ' (' + sit.n + ' pesquisa(s)).' +
+      (sit.faltando > 0
+        ? ' O Cadastro tem ' + sit.ativos + ' condomínios ativos e <b>faltam ' + sit.faltando + '</b>. <button type="button" id="rodadaCompletarBtn" class="clearbtn" style="margin-left:6px;">➕ Completar com os que faltam</button>'
+        : ' Ela já está completa: escolha ' + escapeHtml(mesLabelBR(novoMes)) + ' no seletor de mês para ver.');
     errEl.style.display = 'block';
+    const bc = document.getElementById('rodadaCompletarBtn');
+    if (bc) bc.addEventListener('click', () => { document.getElementById('rodadaModal').style.display = 'none'; completarRodadaPesquisas(novoMes); });
     return;
   }
   if (!sb){
@@ -25264,9 +25328,9 @@ async function proximoNLivre(){
   return max + 1;
 }
 
-async function completarRodadaPesquisas(){
+async function completarRodadaPesquisas(mesAlvo){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
-  const mes = selectedMes;
+  const mes = (typeof mesAlvo === 'string' && /^\d{4}-\d{2}$/.test(mesAlvo)) ? mesAlvo : selectedMes;
   const btn = document.getElementById('btnCompletarRodadaPq');
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Buscando Cadastro...';
@@ -25306,6 +25370,7 @@ async function completarRodadaPesquisas(){
       lote.forEach(item => DATA.push(item));
       btn.textContent = `Salvando... ${Math.min(i+50, novosItens.length)} de ${novosItens.length}`;
     }
+    if (mes !== selectedMes) selectedMes = mes;   // vindo do Nova rodada mensal: passa a mostrar o mês completado
     populateFilterOptions();
     render();
     alert(`${novosItens.length} pesquisa(s) pendente(s) criada(s) em ${mesLabelBR(mes)}.`);
@@ -25315,7 +25380,7 @@ async function completarRodadaPesquisas(){
     btn.disabled = false; btn.textContent = textoOriginal;
   }
 }
-document.getElementById('btnCompletarRodadaPq').addEventListener('click', completarRodadaPesquisas);
+document.getElementById('btnCompletarRodadaPq').addEventListener('click', () => completarRodadaPesquisas());
 
 function gerarPlanilhaParaPreencher(){
   if (typeof XLSX === 'undefined'){
@@ -25362,6 +25427,292 @@ function pqMesmoConjuntoTokens(a, b){
   return ta.length > 0 && ta.length === tb.length && ta.every(t => tb.includes(t));
 }
 
+// ===== Planilha do Google (caminho A): o dashboard lê a aba publicada como CSV e atualiza as pesquisas =====
+const PG_CHAVE = 'planilhaGoogleCfg';
+let __pgSincronizando = false, __pgUltimasLinhas = null, __pgNaoEncontradas = [];
+function pgLerCfg(){
+  const base = { url: '', mes: '', auto: false, minutos: 10, ultima: 0, resumo: '', naoEncontradas: [] };
+  try{ return Object.assign(base, JSON.parse(localStorage.getItem(PG_CHAVE) || '{}')); }catch(e){ return base; }
+}
+function pgSalvarCfg(c){ try{ localStorage.setItem(PG_CHAVE, JSON.stringify(c)); }catch(e){} }
+function pgNotaVazia(t){
+  const x = String(t || '').trim();
+  return !x || /^[-–—\s]+$/.test(x) || /^#?n\/?a$/i.test(x) || /^sem nota$/i.test(x) || isNaN(parseFloat(x.replace(',', '.')));
+}
+function pgDetectarColunas(linhas){
+  const idxCab = linhas.findIndex(row => row.some(cel => /condom/i.test(String(cel))));
+  if (idxCab === -1) return null;
+  const headers = linhas[idxCab].map(h => String(h || '').trim().toLowerCase());
+  const acha = (padroes, exceto) => headers.findIndex((h, i) => i !== exceto && padroes.some(p => h.includes(p)));
+  const cNota = acha(['nota']);
+  const cols = { idxCab, cNome: acha(['condomín', 'condomin', 'cliente']), cNota, cNota2: acha(['nota'], cNota), cData: acha(['data']), cStatus: acha(['status']), cComent: acha(['coment']), cRetorno: acha(['retorno']) };
+  return (cols.cNome === -1 || cols.cNota === -1) ? null : cols;
+}
+function pgInferirMes(dados, cData){
+  if (cData === -1) return null;
+  const contagem = {}, anoBase = (selectedMes || mesAtualReal()).slice(0, 4);
+  dados.forEach(r => {
+    const m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(r[cData] || '').trim());
+    if (!m) return;
+    const ano = m[3] ? (m[3].length === 2 ? '20' + m[3] : m[3]) : anoBase;
+    const k = ano + '-' + m[2].padStart(2, '0');
+    contagem[k] = (contagem[k] || 0) + 1;
+  });
+  const top = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0];
+  return top ? top[0] : null;
+}
+async function pgBuscarLinhas(url){
+  const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('o Google respondeu ' + r.status);
+  const txt = await r.text();
+  if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error('o link devolveu uma página e não o CSV; confira se publicou a aba da pesquisa no formato CSV');
+  return parseCsvSimples(txt, ',');
+}
+// Campos da planilha que atualizam a pesquisa; célula vazia na planilha nunca apaga o que já está no dashboard
+function pgDadosDaLinha(r, cols, mes, existente){
+  const g = i => i === -1 ? '' : String(r[i] || '').trim();
+  const notaTxt = g(cols.cNota), nota2 = g(cols.cNota2), statusTxt = g(cols.cStatus);
+  const notaNum = parseFloat(notaTxt.replace(',', '.'));
+  const novaData = pqConverterDataBRparaISO(g(cols.cData), mes);
+  return {
+    nota: notaTxt,
+    notaPosResolucao: pgNotaVazia(nota2) ? (existente.notaPosResolucao || '') : nota2,
+    statusPesquisa: /conclu/i.test(statusTxt) ? 'Concluída' : (statusTxt || 'Concluída'),
+    comentarioSindico: g(cols.cComent) || existente.comentarioSindico || '',
+    comentarioContato: g(cols.cRetorno) || existente.comentarioContato || '',
+    dataPesquisa: novaData || existente.dataPesquisa || '',
+    mesReferencia: mes,
+    crit: notaNum <= 4 ? 'critico' : notaNum <= 6 ? 'atencao' : 'ok',
+  };
+}
+async function pgSincronizar(silencioso){
+  const cfg = pgLerCfg();
+  if (!cfg.url){ if (!silencioso) pgAbrirModal(); return null; }
+  if (!['admin', 'editor'].includes(currentRole)){ if (!silencioso) alert('Só administradores e editores podem sincronizar a planilha.'); return null; }
+  if (!sb){ if (!silencioso) alert('Sem conexão com o servidor.'); return null; }
+  if (__pgSincronizando) return null;
+  __pgSincronizando = true;
+  const statusEl = document.getElementById('pgStatus');
+  if (statusEl && !silencioso) statusEl.textContent = 'Lendo a planilha do Google...';
+  try{
+    const linhas = await pgBuscarLinhas(cfg.url);
+    const cols = pgDetectarColunas(linhas);
+    if (!cols) throw new Error('não encontrei as colunas "Condomínio" e "Nota" na planilha publicada');
+    const dados = linhas.slice(cols.idxCab + 1).filter(r => String(r[cols.cNome] || '').trim());
+    const mes = cfg.mes || pgInferirMes(dados, cols.cData) || selectedMes || mesAtualReal();
+    const candidatos = DATA.filter(d => getMes(d) === mes);
+    let iguais = 0, semNota = 0;
+    const atualizar = [], naoEncontradas = [], vistos = new Map();
+    dados.forEach(r => {
+      const nome = String(r[cols.cNome]).replace(/\s+/g, ' ').trim().toUpperCase();
+      if (pgNotaVazia(r[cols.cNota])){ semNota++; return; }
+      vistos.set(normalizeNomeCondo(nome), { nome, r });   // se o condomínio aparece duas vezes, vale a última linha
+    });
+    vistos.forEach(({ nome, r }) => {
+      const existente = candidatos.find(d => normalizeNomeCondo(d.nome) === normalizeNomeCondo(nome)) || candidatos.find(d => pqMesmoConjuntoTokens(d.nome, nome));
+      if (!existente){ naoEncontradas.push(nome); return; }
+      const novo = pgDadosDaLinha(r, cols, mes, existente);
+      const mudou = Object.keys(novo).some(k => String(existente[k] == null ? '' : existente[k]) !== String(novo[k] == null ? '' : novo[k]));
+      if (!mudou){ iguais++; return; }
+      Object.assign(existente, novo);
+      existente.humor = classifyHumor(existente);
+      atualizar.push(existente);
+    });
+    for (let i = 0; i < atualizar.length; i += 100){
+      const { error } = await sb.from('condo_overrides').upsert(atualizar.slice(i, i + 100).map(it => updatesToRow(it.n, it)));
+      if (error) throw error;
+    }
+    atualizar.forEach(it => { OVERRIDES[it.n] = Object.assign({}, OVERRIDES[it.n], { nota: it.nota, notaPosResolucao: it.notaPosResolucao, statusPesquisa: it.statusPesquisa, comentarioSindico: it.comentarioSindico, comentarioContato: it.comentarioContato, dataPesquisa: it.dataPesquisa, crit: it.crit }); });
+    if (atualizar.length){ persistOverrides(OVERRIDES); try{ populateFilterOptions(); }catch(e){} render(); }
+    __pgUltimasLinhas = linhas; __pgNaoEncontradas = naoEncontradas;
+    const resumo = atualizar.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · mês ' + mesLabelBR(mes);
+    Object.assign(cfg, { ultima: Date.now(), resumo, naoEncontradas: naoEncontradas.slice(0, 40) });
+    pgSalvarCfg(cfg);
+    pgAtualizarTela();
+    return { atualizadas: atualizar.length, iguais, naoEncontradas, semNota, mes };
+  }catch(e){
+    console.error('Sincronização da planilha do Google:', e);
+    const msg = 'Não consegui ler a planilha: ' + (e && e.message ? e.message : e) + '. Confira se a aba foi publicada na web como CSV e se o link está completo.';
+    if (statusEl) statusEl.textContent = msg;
+    if (!silencioso) alert(msg);
+    return null;
+  }finally{
+    __pgSincronizando = false;
+  }
+}
+function pgAtualizarTela(){
+  const cfg = pgLerCfg();
+  const hora = cfg.ultima ? new Date(cfg.ultima).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const btn = document.getElementById('btnPlanilhaGoogle');
+  if (btn) btn.textContent = '🔗 Planilha Google' + (cfg.url && hora ? ' · ' + hora : '');
+  const st = document.getElementById('pgStatus');
+  if (!st) return;
+  if (!cfg.ultima){ st.textContent = cfg.url ? 'Ainda não sincronizou.' : 'Cole o link da planilha publicada para começar.'; return; }
+  st.innerHTML = '<strong>Última sincronização às ' + escapeHtml(hora) + '</strong><br>' + escapeHtml(cfg.resumo || '') +
+    (cfg.naoEncontradas && cfg.naoEncontradas.length ? '<br><span style="color:var(--critico);">Não encontradas (clique em "Revisar não encontradas"):</span> ' + escapeHtml(cfg.naoEncontradas.slice(0, 15).join(', ')) + (cfg.naoEncontradas.length > 15 ? '...' : '') : '');
+}
+function pgAbrirModal(){
+  const cfg = pgLerCfg();
+  document.getElementById('pgUrl').value = cfg.url;
+  document.getElementById('pgMes').value = cfg.mes || '';
+  document.getElementById('pgAuto').checked = !!cfg.auto;
+  document.getElementById('pgMinutos').value = String(cfg.minutos || 10);
+  pgAtualizarTela();
+  document.getElementById('planilhaGoogleModal').style.display = 'flex';
+}
+function pgSalvarFormulario(){
+  const url = document.getElementById('pgUrl').value.trim();
+  if (url && !/^https:\/\/docs\.google\.com\/spreadsheets\//.test(url)){ alert('O link precisa começar com https://docs.google.com/spreadsheets/ (o link gerado em Arquivo > Compartilhar > Publicar na web).'); return false; }
+  const cfg = pgLerCfg();
+  Object.assign(cfg, { url, mes: document.getElementById('pgMes').value || '', auto: document.getElementById('pgAuto').checked, minutos: Number(document.getElementById('pgMinutos').value) || 10 });
+  pgSalvarCfg(cfg);
+  pgAtualizarTela();
+  return true;
+}
+async function pgRevisarNaoEncontradas(){
+  if (!__pgUltimasLinhas) await pgSincronizar(false);
+  if (!__pgUltimasLinhas) return;
+  const cfg = pgLerCfg();
+  const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const nomeAba = cfg.mes ? 'Google Planilhas ' + meses[Number(cfg.mes.slice(5, 7)) - 1] + ' ' + cfg.mes.slice(0, 4) : 'Google Planilhas';
+  document.getElementById('planilhaGoogleModal').style.display = 'none';
+  const btn = document.getElementById('btnImportarPlanilhaPesquisas');
+  prepararPreviewDeLinhas(__pgUltimasLinhas, nomeAba, btn, btn.textContent);
+}
+document.getElementById('btnPlanilhaGoogle').addEventListener('click', pgAbrirModal);
+document.getElementById('pgFechar').addEventListener('click', () => { document.getElementById('planilhaGoogleModal').style.display = 'none'; });
+document.getElementById('pgSalvar').addEventListener('click', () => { if (pgSalvarFormulario()) alert('Configuração salva neste navegador.'); });
+document.getElementById('pgSincronizar').addEventListener('click', async () => { if (!pgSalvarFormulario()) return; const r = await pgSincronizar(false); if (r) pgAtualizarTela(); });
+document.getElementById('pgRevisar').addEventListener('click', async () => { if (pgSalvarFormulario()) await pgRevisarNaoEncontradas(); });
+// Sincronização automática: confere a cada minuto se já passou o intervalo escolhido (só com o dashboard aberto)
+setInterval(() => {
+  const c = pgLerCfg();
+  if (!c.auto || !c.url || document.hidden) return;
+  if (Date.now() - (c.ultima || 0) < (c.minutos || 10) * 60000) return;
+  pgSincronizar(true);
+}, 60000);
+setTimeout(pgAtualizarTela, 500);
+
+// Etapa 2 da importação: recebe as linhas já lidas (de um arquivo .xlsx ou do Google Planilhas) e abre a prévia de conferência
+function prepararPreviewDeLinhas(linhasRaw, nomeAba, btn, textoOriginal){
+  let headerRowIdx = linhasRaw.findIndex(row => row.some(cel => /condom/i.test(String(cel))));
+  if (headerRowIdx === -1){ alert('Não encontrei a linha de cabeçalho (procurei por uma coluna "Condomínio").'); return; }
+  const headers = linhasRaw[headerRowIdx].map(h => String(h||'').trim().toLowerCase());
+
+  const achaColuna = (padroes, excetoIdx) => headers.findIndex((h,i) => i !== excetoIdx && padroes.some(p => h.includes(p)));
+  const colStatus = achaColuna(['status']);
+  const colCondominio = achaColuna(['condomín', 'condomin', 'cliente']);
+  const colFilial = achaColuna(['filial']);
+  const colData = achaColuna(['data']);
+  const colNota = achaColuna(['nota']);
+  const colNota2 = achaColuna(['nota'], colNota);
+  const colComentario = achaColuna(['coment']);
+  const colRetorno = achaColuna(['retorno']);
+
+  if (colCondominio === -1 || colNota === -1){
+    alert('Não consegui identificar as colunas de Condomínio e/ou Nota nessa aba. Confira se os títulos batem com "Condomínio/Cliente" e "Nota".');
+    return;
+  }
+
+  const linhasDados = linhasRaw.slice(headerRowIdx+1).filter(row => row[colCondominio] && String(row[colCondominio]).trim());
+
+  // Mês de referência: 1) mês escrito no nome da aba; 2) mês mais frequente na coluna de data
+  // da própria planilha; 3) mês que está selecionado na tela. (Antes caía no mês real de hoje,
+  // o que mandava a planilha de setembro pra outubro.) Dá pra trocar na prévia.
+  const nomeAbaTemMes = /janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro/i.test(nomeAba);
+  let mesInicial;
+  if (nomeAbaTemMes){
+    mesInicial = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
+  } else {
+    const contagem = {};
+    const anoBase = (selectedMes || mesAtualReal()).slice(0,4);
+    linhasDados.forEach(row => {
+      const m = colData !== -1 ? /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(row[colData]||'').trim()) : null;
+      if (!m) return;
+      const ano = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : anoBase;
+      const chave = `${ano}-${m[2].padStart(2,'0')}`;
+      contagem[chave] = (contagem[chave]||0) + 1;
+    });
+    const maisFrequente = Object.entries(contagem).sort((a,b)=>b[1]-a[1])[0];
+    mesInicial = maisFrequente ? maisFrequente[0] : (selectedMes || mesAtualReal());
+  }
+
+  const notaVazia = (t) => {
+    const x = String(t||'').trim();
+    return !x || /^[-–—\s]+$/.test(x) || /^#?n\/?a$/i.test(x) || /^sem nota$/i.test(x) || isNaN(parseFloat(x.replace(',','.')));
+  };
+
+  const montarPreview = (mesReferencia) => {
+
+  // Monta a lista de linhas com nota preenchida (as sem nota são ignoradas, como antes)
+  // e já resolve, pra cada uma, se bate com um condomínio existente no mês ou não —
+  // isso é mostrado numa prévia ANTES de gravar qualquer coisa, pra evitar duplicados
+  // quando o nome da planilha não é idêntico ao nome já cadastrado.
+  const candidatosDoMes = DATA.filter(d => getMes(d) === mesReferencia);
+  let ignoradosSemNota = 0;
+  const linhasPreview = [];
+  for (const row of linhasDados){
+    const nome = String(row[colCondominio]).replace(/\s+/g,' ').trim().toUpperCase();
+    const notaTxt = String(row[colNota]||'').trim();
+    if (notaVazia(notaTxt)){ ignoradosSemNota++; continue; }
+    const nomeNorm = normalizeNomeCondo(nome);
+    const exato = candidatosDoMes.find(d => normalizeNomeCondo(d.nome) === nomeNorm)
+      || candidatosDoMes.find(d => pqMesmoConjuntoTokens(d.nome, nome));
+    let sugestao = null;
+    if (!exato && nomeNorm){
+      let melhor = 0;
+      candidatosDoMes.forEach(d => {
+        const sim = pqSimilaridadeNome(d.nome, nome);
+        if (sim >= 0.6 && sim > melhor){ melhor = sim; sugestao = d; }
+      });
+    }
+    linhasPreview.push({ row, nome, exato, sugestao });
+  }
+
+  const semMatch = linhasPreview.filter(p => !p.exato);
+  const comMatch = linhasPreview.filter(p => p.exato);
+
+  // Preenche o modal de prévia
+  const avisoPoucos = (candidatosDoMes.length < linhasPreview.length * 0.5)
+    ? `<div style="background:rgba(239,68,68,.12); border:1px solid var(--critico); border-radius:8px; padding:8px 10px; margin-bottom:8px; color:var(--text);">⚠️ Só existem <strong>${candidatosDoMes.length}</strong> condomínio(s) cadastrados em ${mesLabelBR(mesReferencia)} e a planilha tem <strong>${linhasPreview.length}</strong> com nota. A rodada desse mês parece incompleta — por isso quase nada bate. Cancele e clique em <strong>➕ Completar Rodada do Mês</strong> antes de importar.</div>`
+    : '';
+  document.getElementById('impPqResumo').innerHTML = avisoPoucos +
+    `<strong>${comMatch.length}</strong> vão atualizar a pesquisa de um condomínio já existente automaticamente.<br>` +
+    (ignoradosSemNota ? `<strong>${ignoradosSemNota}</strong> linha(s) sem nota preenchida serão ignoradas.<br>` : '') +
+    (semMatch.length ? `<strong style="color:var(--critico);">${semMatch.length}</strong> não bateram com nenhum condomínio de ${mesLabelBR(mesReferencia)} — revise abaixo antes de confirmar.` : `Todas as linhas bateram certinho. ✅`);
+
+  // Campo com busca: digitar parte do nome (ex.: "par") já mostra os condomínios que combinam
+  const IMP_NAO = '⏭️ Não importar esta linha', IMP_NOVO = '➕ Criar como condomínio novo';
+  const candidatosOrdenados = candidatosDoMes.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+  const mapaNomeN = new Map();
+  candidatosOrdenados.forEach(d => { const k = normTxtCarteira(d.nome); if (!mapaNomeN.has(k)) mapaNomeN.set(k, d.n); });
+  const listaOpcoes = '<datalist id="impPqLista"><option value="' + escapeHtml(IMP_NAO) + '"></option><option value="' + escapeHtml(IMP_NOVO) + '"></option>' +
+    candidatosOrdenados.map(d => '<option value="' + escapeHtml(d.nome) + '"></option>').join('') + '</datalist>';
+
+  const bodyEl = document.getElementById('impPqRevisaoBody');
+  if (!semMatch.length){
+    bodyEl.innerHTML = '';
+  } else {
+    bodyEl.innerHTML = '<p style="font-size:12px; color:var(--text-faint); margin:0 0 10px;">Para cada linha: <strong>clique no campo, digite parte do nome</strong> do condomínio (por exemplo &quot;par&quot;) e escolha na lista que aparece. Deixe &quot;Não importar&quot; para pular a linha.</p>' + listaOpcoes +
+      semMatch.map((p, i) => `
+      <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
+        <p style="margin:0 0 6px; font-size:12.5px;"><strong>Planilha:</strong> ${escapeHtml(p.nome)}</p>
+        <input type="text" list="impPqLista" data-imp-idx="${i}" autocomplete="off" style="width:100%; box-sizing:border-box;"
+          value="${escapeHtml(p.sugestao ? p.sugestao.nome : IMP_NAO)}" placeholder="Digite parte do nome do condomínio..."
+          onfocus="this.select()" onchange="this.style.borderColor = (resolverEscolhaImp(this.value, window.__importPqState && window.__importPqState.mapaNomeN) === null) ? 'var(--critico)' : ''">
+      </div>
+    `).join('');
+  }
+
+  window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal, notaVazia, mapaNomeN };
+  };
+
+  const inputMes = document.getElementById('impPqMes');
+  inputMes.value = mesInicial;
+  inputMes.onchange = () => { if (/^\d{4}-\d{2}$/.test(inputMes.value)) montarPreview(inputMes.value); };
+  montarPreview(mesInicial);
+  document.getElementById('impPqPreviewModal').style.display = 'flex';
+}
 async function importarPlanilhaPesquisas(file){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   const reader = new FileReader();
@@ -25388,123 +25739,7 @@ async function importarPlanilhaPesquisas(file){
       const sheet = wb.Sheets[nomeAba];
       const linhasRaw = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
 
-      let headerRowIdx = linhasRaw.findIndex(row => row.some(cel => /condom/i.test(String(cel))));
-      if (headerRowIdx === -1){ alert('Não encontrei a linha de cabeçalho (procurei por uma coluna "Condomínio").'); return; }
-      const headers = linhasRaw[headerRowIdx].map(h => String(h||'').trim().toLowerCase());
-
-      const achaColuna = (padroes, excetoIdx) => headers.findIndex((h,i) => i !== excetoIdx && padroes.some(p => h.includes(p)));
-      const colStatus = achaColuna(['status']);
-      const colCondominio = achaColuna(['condomín', 'condomin', 'cliente']);
-      const colFilial = achaColuna(['filial']);
-      const colData = achaColuna(['data']);
-      const colNota = achaColuna(['nota']);
-      const colNota2 = achaColuna(['nota'], colNota);
-      const colComentario = achaColuna(['coment']);
-      const colRetorno = achaColuna(['retorno']);
-
-      if (colCondominio === -1 || colNota === -1){
-        alert('Não consegui identificar as colunas de Condomínio e/ou Nota nessa aba. Confira se os títulos batem com "Condomínio/Cliente" e "Nota".');
-        return;
-      }
-
-      const linhasDados = linhasRaw.slice(headerRowIdx+1).filter(row => row[colCondominio] && String(row[colCondominio]).trim());
-
-      // Mês de referência: 1) mês escrito no nome da aba; 2) mês mais frequente na coluna de data
-      // da própria planilha; 3) mês que está selecionado na tela. (Antes caía no mês real de hoje,
-      // o que mandava a planilha de setembro pra outubro.) Dá pra trocar na prévia.
-      const nomeAbaTemMes = /janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro/i.test(nomeAba);
-      let mesInicial;
-      if (nomeAbaTemMes){
-        mesInicial = pqDeduzirMesReferenciaDoNomeAba(nomeAba);
-      } else {
-        const contagem = {};
-        const anoBase = (selectedMes || mesAtualReal()).slice(0,4);
-        linhasDados.forEach(row => {
-          const m = colData !== -1 ? /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/.exec(String(row[colData]||'').trim()) : null;
-          if (!m) return;
-          const ano = m[3] ? (m[3].length === 2 ? '20'+m[3] : m[3]) : anoBase;
-          const chave = `${ano}-${m[2].padStart(2,'0')}`;
-          contagem[chave] = (contagem[chave]||0) + 1;
-        });
-        const maisFrequente = Object.entries(contagem).sort((a,b)=>b[1]-a[1])[0];
-        mesInicial = maisFrequente ? maisFrequente[0] : (selectedMes || mesAtualReal());
-      }
-
-      const notaVazia = (t) => {
-        const x = String(t||'').trim();
-        return !x || /^[-–—\s]+$/.test(x) || /^#?n\/?a$/i.test(x) || /^sem nota$/i.test(x) || isNaN(parseFloat(x.replace(',','.')));
-      };
-
-      const montarPreview = (mesReferencia) => {
-
-      // Monta a lista de linhas com nota preenchida (as sem nota são ignoradas, como antes)
-      // e já resolve, pra cada uma, se bate com um condomínio existente no mês ou não —
-      // isso é mostrado numa prévia ANTES de gravar qualquer coisa, pra evitar duplicados
-      // quando o nome da planilha não é idêntico ao nome já cadastrado.
-      const candidatosDoMes = DATA.filter(d => getMes(d) === mesReferencia);
-      let ignoradosSemNota = 0;
-      const linhasPreview = [];
-      for (const row of linhasDados){
-        const nome = String(row[colCondominio]).replace(/\s+/g,' ').trim().toUpperCase();
-        const notaTxt = String(row[colNota]||'').trim();
-        if (notaVazia(notaTxt)){ ignoradosSemNota++; continue; }
-        const nomeNorm = normalizeNomeCondo(nome);
-        const exato = candidatosDoMes.find(d => normalizeNomeCondo(d.nome) === nomeNorm)
-          || candidatosDoMes.find(d => pqMesmoConjuntoTokens(d.nome, nome));
-        let sugestao = null;
-        if (!exato && nomeNorm){
-          let melhor = 0;
-          candidatosDoMes.forEach(d => {
-            const sim = pqSimilaridadeNome(d.nome, nome);
-            if (sim >= 0.6 && sim > melhor){ melhor = sim; sugestao = d; }
-          });
-        }
-        linhasPreview.push({ row, nome, exato, sugestao });
-      }
-
-      const semMatch = linhasPreview.filter(p => !p.exato);
-      const comMatch = linhasPreview.filter(p => p.exato);
-
-      // Preenche o modal de prévia
-      const avisoPoucos = (candidatosDoMes.length < linhasPreview.length * 0.5)
-        ? `<div style="background:rgba(239,68,68,.12); border:1px solid var(--critico); border-radius:8px; padding:8px 10px; margin-bottom:8px; color:var(--text);">⚠️ Só existem <strong>${candidatosDoMes.length}</strong> condomínio(s) cadastrados em ${mesLabelBR(mesReferencia)} e a planilha tem <strong>${linhasPreview.length}</strong> com nota. A rodada desse mês parece incompleta — por isso quase nada bate. Cancele e clique em <strong>➕ Completar Rodada do Mês</strong> antes de importar.</div>`
-        : '';
-      document.getElementById('impPqResumo').innerHTML = avisoPoucos +
-        `<strong>${comMatch.length}</strong> vão atualizar a pesquisa de um condomínio já existente automaticamente.<br>` +
-        (ignoradosSemNota ? `<strong>${ignoradosSemNota}</strong> linha(s) sem nota preenchida serão ignoradas.<br>` : '') +
-        (semMatch.length ? `<strong style="color:var(--critico);">${semMatch.length}</strong> não bateram com nenhum condomínio de ${mesLabelBR(mesReferencia)} — revise abaixo antes de confirmar.` : `Todas as linhas bateram certinho. ✅`);
-
-      // Campo com busca: digitar parte do nome (ex.: "par") já mostra os condomínios que combinam
-      const IMP_NAO = '⏭️ Não importar esta linha', IMP_NOVO = '➕ Criar como condomínio novo';
-      const candidatosOrdenados = candidatosDoMes.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
-      const mapaNomeN = new Map();
-      candidatosOrdenados.forEach(d => { const k = normTxtCarteira(d.nome); if (!mapaNomeN.has(k)) mapaNomeN.set(k, d.n); });
-      const listaOpcoes = '<datalist id="impPqLista"><option value="' + escapeHtml(IMP_NAO) + '"></option><option value="' + escapeHtml(IMP_NOVO) + '"></option>' +
-        candidatosOrdenados.map(d => '<option value="' + escapeHtml(d.nome) + '"></option>').join('') + '</datalist>';
-
-      const bodyEl = document.getElementById('impPqRevisaoBody');
-      if (!semMatch.length){
-        bodyEl.innerHTML = '';
-      } else {
-        bodyEl.innerHTML = '<p style="font-size:12px; color:var(--text-faint); margin:0 0 10px;">Para cada linha: <strong>clique no campo, digite parte do nome</strong> do condomínio (por exemplo &quot;par&quot;) e escolha na lista que aparece. Deixe &quot;Não importar&quot; para pular a linha.</p>' + listaOpcoes +
-          semMatch.map((p, i) => `
-          <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">
-            <p style="margin:0 0 6px; font-size:12.5px;"><strong>Planilha:</strong> ${escapeHtml(p.nome)}</p>
-            <input type="text" list="impPqLista" data-imp-idx="${i}" autocomplete="off" style="width:100%; box-sizing:border-box;"
-              value="${escapeHtml(p.sugestao ? p.sugestao.nome : IMP_NAO)}" placeholder="Digite parte do nome do condomínio..."
-              onfocus="this.select()" onchange="this.style.borderColor = (resolverEscolhaImp(this.value, window.__importPqState && window.__importPqState.mapaNomeN) === null) ? 'var(--critico)' : ''">
-          </div>
-        `).join('');
-      }
-
-      window.__importPqState = { linhasPreview, semMatch, mesReferencia, colNota, colNota2, colFilial, colData, colStatus, colComentario, colRetorno, btn, textoOriginal, notaVazia, mapaNomeN };
-      };
-
-      const inputMes = document.getElementById('impPqMes');
-      inputMes.value = mesInicial;
-      inputMes.onchange = () => { if (/^\d{4}-\d{2}$/.test(inputMes.value)) montarPreview(inputMes.value); };
-      montarPreview(mesInicial);
-      document.getElementById('impPqPreviewModal').style.display = 'flex';
+      prepararPreviewDeLinhas(linhasRaw, nomeAba, btn, textoOriginal);
     }catch(err){
       alert('Erro ao ler a planilha: ' + err.message);
       document.getElementById('pqImportarPlanilhaInput').value = '';
