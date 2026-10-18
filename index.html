@@ -1149,6 +1149,18 @@
   .rc-dica{ font-size:11px; color:#a78bfa; margin-top:8px; cursor:pointer; }
   .rc-detalhe-card{ margin-top:10px; max-height:380px; overflow:auto; border-top:1px dashed var(--border); padding-top:8px; cursor:auto; }
   .rc-detalhe-card .rc-tabela{ font-size:12px; }
+  .rc-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .rc-chip{ background:var(--bg-panel); border:1px solid var(--border); border-radius:999px; padding:3px 10px; font-size:11.5px; color:var(--text-faint); cursor:pointer; font-family:inherit; }
+  .rc-chip b{ color:var(--text); }
+  .rc-chip-on{ border-color:#a78bfa; background:rgba(167,139,250,.18); color:var(--text); }
+  .rc-colunas{ display:flex; align-items:stretch; gap:8px; height:96px; }
+  .rc-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .rc-col-b{ width:70%; border-radius:4px 4px 0 0; }
+  .rc-col-v{ font-size:10.5px; color:var(--text); margin-bottom:2px; }
+  .rc-col-l{ font-size:10px; color:var(--text-faint); margin-top:3px; white-space:nowrap; }
+  .rc-mini{ margin:0 0 16px; }
+  .rc-av-mini{ display:inline-block; width:24px; height:24px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:6px; border:1px solid #a78bfa; }
+  .rc-av-ini{ background:linear-gradient(135deg,#7c3aed,#38bdf8); color:#fff; font-size:11px; font-weight:700; text-align:center; line-height:22px; }
   .rc-oculto{ display:none !important; }
   .rc-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin:6px 0 12px; }
   .rc-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
@@ -1729,7 +1741,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v131 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v132 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -8603,23 +8615,41 @@ const RC_PALETA = ['var(--accent)', '#a78bfa', '#22c55e', '#f59e0b', '#ef4444', 
 const rcSim = v => v === true || /^(s|sim|true|1|x)$/i.test(String(v == null ? '' : v).trim());
 const rcPctDe = (n, t) => t ? Math.round(n / t * 100) : null;
 
+function rcHistoricoCarteira(g, mes, n){
+  const out = [];
+  for (let k = n - 1; k >= 0; k--){
+    const m = mesRelativoCarteira(mes, -k);
+    const itens = itensDoMesDeduplicados(m).filter(d => respKeyDoNomeRC(d.nome) === g.chave);
+    const st = computeStats(itens);
+    out.push({ mes: m, media: st.mediaCount ? st.media : null, n: itens.length });
+  }
+  return out;
+}
+const rcMesCurto = m => mesLabelBR(m).replace('/20', '/');
 function rcPesquisas(g, mes){
   const itens = itensDoMesDeduplicados(mes).filter(d => respKeyDoNomeRC(d.nome) === g.chave);
   const st = computeStats(itens);
   const cont = { critico: 0, atencao: 0, ok: 0, pendente: 0 };
   itens.forEach(d => { cont[classeSaudeItem(d)]++; });
   const nums = itens.map(d => parseFloat(String(d.nota).replace(',', '.'))).filter(n => !isNaN(n));
+  let motivos = [];
+  try{
+    const dist = computeDistribution(itens, classifyGrupoMotivo);
+    motivos = Object.entries(dist.counts).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([rot, n]) => [rot, dist.total ? Math.round(n / dist.total * 100) : 0]);
+  }catch(e){ /* sem motivos */ }
   return { peso: itens.length, total: itens.length, realizadas: st.realizadas, pct: st.pct, media: st.mediaCount ? st.media : null,
     crit: cont.critico, aten: cont.atencao, ok: cont.ok, pend: cont.pendente,
-    reclam: itens.filter(d => d.houveReclamacao).length, elogios: itens.filter(d => d.houveElogio).length,
-    f9: nums.filter(n => n >= 9).length, f7: nums.filter(n => n >= 7 && n < 9).length, f6: nums.filter(n => n < 7).length };
+    recl: itens.filter(temReclamacao).length, pendDiag: itens.filter(temPendencia).length, elog: itens.filter(temElogio).length,
+    f9: nums.filter(n => n >= 9).length, f7: nums.filter(n => n >= 7 && n < 9).length, f6: nums.filter(n => n < 7).length,
+    hist: rcHistoricoCarteira(g, mes, 6), motivos };
 }
-function rcDetPesquisas(g, mes){
+function rcDetPesquisas(g, mes, filtro){
   const ordem = { critico: 0, atencao: 1, pendente: 2, ok: 3 };
-  const lista = itensDoMesDeduplicados(mes).filter(d => respKeyDoNomeRC(d.nome) === g.chave)
+  const teste = { reclamacoes: temReclamacao, pendencias: temPendencia, elogios: temElogio }[filtro] || (() => true);
+  const lista = itensDoMesDeduplicados(mes).filter(d => respKeyDoNomeRC(d.nome) === g.chave && teste(d))
     .sort((a, b) => (ordem[classeSaudeItem(a)] - ordem[classeSaudeItem(b)]) || a.nome.localeCompare(b.nome, 'pt-BR'));
-  return { cols: ['Condomínio', 'Filial', 'Nota 1', 'Nota 2', 'Data', 'Saúde', 'Reclamação', 'Status da pesquisa'],
-    rows: lista.map(d => [d.nome, normalizeFilialCanonica(d.filial) || '—', (d.nota && d.nota !== '—') ? d.nota : '—', d.notaPosResolucao || '—', rcFmtData(d.dataPesquisa), SAUDE_ROTULO[classeSaudeItem(d)][0], d.houveReclamacao ? 'Sim' : '—', d.statusPesquisa || '—']) };
+  return { cols: ['Condomínio', 'Filial', 'Nota 1', 'Nota 2', 'Data', 'Saúde', 'Reclamação', 'Pendência', 'Elogio', 'Status da pesquisa'],
+    rows: lista.map(d => [d.nome, normalizeFilialCanonica(d.filial) || '—', (d.nota && d.nota !== '—') ? d.nota : '—', d.notaPosResolucao || '—', rcFmtData(d.dataPesquisa), SAUDE_ROTULO[classeSaudeItem(d)][0], temReclamacao(d) ? 'Sim' : '—', temPendencia(d) ? 'Sim' : '—', temElogio(d) ? 'Sim' : '—', d.statusPesquisa || '—']) };
 }
 function rcCadastro(g){
   const todos = (cadastroLiveCarregado ? CADASTRO_LIVE : []).filter(c => c.nome && respKeyDoNomeRC(c.nome) === g.chave);
@@ -8718,11 +8748,14 @@ Object.assign(RC_ABAS, {
   pesquisa: { aba: 'pesquisa', painel: 'tabPesquisa', titulo: 'Pesquisas', sla: false, calc: rcPesquisas, detalhe: rcDetPesquisas,
     kpi: b => ['nota média', rcFmtNum(b.media, 1)],
     graficos: b => [
+      { t: 'Abas de Pesquisas (clique para filtrar a lista)', chips: [['', 'Todos', b.total], ['reclamacoes', '📣 Reclamações', b.recl], ['pendencias', '⚠️ Pendências', b.pendDiag], ['elogios', '😊 Elogios', b.elog]] },
       { t: 'Pesquisas do mês', segs: [['Realizadas', b.realizadas, RC_COR.ok], ['Pendentes', b.pend, RC_COR.at]] },
       { t: 'Saúde pela nota', segs: [['OK', b.ok, RC_COR.ok], ['Atenção', b.aten, RC_COR.at], ['Crítico', b.crit, RC_COR.cr]] },
-      { t: 'Notas lançadas', segs: [['9 a 10', b.f9, RC_COR.ok], ['7 a 8,9', b.f7, RC_COR.at], ['Abaixo de 7', b.f6, RC_COR.cr]] }],
-    cols: [['Condomínios', b => b.total], ['Realizadas', b => b.realizadas + ' de ' + b.total + ' (' + b.pct + '%)'], ['Pendentes', b => b.pend], ['Nota média', b => rcFmtNum(b.media, 1)], ['Críticos', b => b.crit], ['Atenção', b => b.aten], ['OK', b => b.ok], ['Reclamações', b => b.reclam], ['Elogios', b => b.elogios]],
-    nota: 'Pesquisas do mês escolhido, uma linha por condomínio da carteira.' },
+      { t: 'Mini Dashboard · distribuição das notas', segs: [['9 a 10', b.f9, RC_COR.ok], ['7 a 8,9', b.f7, RC_COR.at], ['Abaixo de 7', b.f6, RC_COR.cr]] },
+      { t: 'Mini Dashboard · top motivos (% das ocorrências)', medidores: b.motivos.length ? b.motivos : [['Sem motivos registrados', null]] },
+      { t: '🗂 Histórico · nota média dos últimos 6 meses', colunas: b.hist.map(h => [rcMesCurto(h.mes), h.media, h.media === null ? '—' : rcFmtNum(h.media, 1)]) }],
+    cols: [['Todos', b => b.total], ['📣 Reclamações', b => b.recl], ['⚠️ Pendências', b => b.pendDiag], ['😊 Elogios', b => b.elog], ['Realizadas', b => b.realizadas + ' de ' + b.total + ' (' + b.pct + '%)'], ['Não realizadas', b => b.pend], ['Nota média', b => rcFmtNum(b.media, 1)], ['Críticos', b => b.crit], ['Atenção', b => b.aten], ['OK', b => b.ok]],
+    nota: 'Pesquisas do mês escolhido, uma linha por condomínio da carteira. As categorias Todos, Reclamações, Pendências e Elogios são as mesmas abas da lista de Pesquisas; o histórico usa as notas arquivadas de cada mês.' },
   cadastro: { aba: 'cadastro', painel: 'tabCadastro', titulo: 'Cadastro de Condomínios', sla: false, calc: rcCadastro, detalhe: rcDetCadastro, rotuloOriginal: '🏢 Cadastro',
     kpi: b => ['condomínios ativos', b.ativos],
     graficos: b => [
@@ -8867,9 +8900,10 @@ RC_ABAS.renovacao.detalhe = rcDetRenovacao;
 const __rcAbertos = {};
 function rcHtmlDetalhe(cfg, g, mes){
   let d;
-  try{ d = cfg.detalhe(g, mes); }catch(e){ return '<p class="rc-nota">Não foi possível montar o detalhe.</p>'; }
+  const filtro = (__rcFiltros[cfg.chaveRC] || {})[g.chave] || '';
+  try{ d = cfg.detalhe(g, mes, filtro); }catch(e){ return '<p class="rc-nota">Não foi possível montar o detalhe.</p>'; }
   if (!d.rows.length) return '<p class="rc-nota">Nenhum registro nesta carteira.</p>';
-  return '<div class="rc-detalhe-card"><div class="rc-nota" style="margin:0 0 6px;">' + d.rows.length + ' registro(s)</div><table class="rc-tabela"><thead><tr>' + d.cols.map(c => '<th' + (c === d.cols[0] || c === d.cols[1] ? ' style="text-align:left;"' : '') + '>' + escapeHtml(c) + '</th>').join('') + '</tr></thead><tbody>' +
+  return '<div class="rc-detalhe-card"><div class="rc-nota" style="margin:0 0 6px;">' + d.rows.length + ' registro(s)' + (filtro ? ' · filtro: ' + escapeHtml(filtro) + ' (clique em "Todos" para limpar)' : '') + '</div><table class="rc-tabela"><thead><tr>' + d.cols.map(c => '<th' + (c === d.cols[0] || c === d.cols[1] ? ' style="text-align:left;"' : '') + '>' + escapeHtml(c) + '</th>').join('') + '</tr></thead><tbody>' +
     d.rows.map(r => '<tr>' + r.map((c, i) => '<td' + (i < 2 ? ' style="text-align:left;"' : '') + '>' + escapeHtml(String(c)) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
 }
 function rcBarraEmpilhada(g){
@@ -8880,6 +8914,16 @@ function rcBarraEmpilhada(g){
   const legenda = g.segs.map(x => '<span><i style="background:' + x[2] + ';"></i>' + escapeHtml(x[0]) + ' <b>' + (x[1] || 0) + '</b></span>').join('');
   return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div><div class="rc-emp">' + barra + '</div><div class="rc-leg">' + legenda + '</div></div>';
 }
+function rcChips(g, ativo){
+  return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div><div class="rc-chips">' + g.chips.map(c =>
+    '<button type="button" class="rc-chip' + (c[0] === (ativo || '') ? ' rc-chip-on' : '') + '" data-rc-filtro="' + escapeHtml(c[0]) + '">' + escapeHtml(c[1]) + ' <b>' + c[2] + '</b></button>').join('') + '</div></div>';
+}
+function rcColunas(g){
+  const cor = v => v === null ? 'var(--bg-panel)' : (v >= 9 ? 'var(--ok)' : (v >= 7 ? '#f59e0b' : 'var(--critico)'));
+  return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div><div class="rc-colunas">' + g.colunas.map(c =>
+    '<div class="rc-col"><span class="rc-col-v">' + escapeHtml(String(c[2])) + '</span><div class="rc-col-b" style="height:' + (c[1] === null ? 3 : Math.max(5, Math.round(c[1] / 10 * 100))) + '%; background:' + cor(c[1]) + ';"></div><span class="rc-col-l">' + escapeHtml(c[0]) + '</span></div>').join('') + '</div></div>';
+}
+const __rcFiltros = {};
 function rcMedidores(g){
   return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div>' + g.medidores.map(m =>
     '<div class="rc-med"><span>' + escapeHtml(m[0]) + '</span><div class="rc-med-barra"><div style="width:' + Math.min(100, Math.round(m[1] || 0)) + '%;"></div></div><b>' + (m[1] === null || m[1] === undefined ? '—' : Math.round(m[1]) + '%') + '</b></div>').join('') + '</div>';
@@ -8909,7 +8953,7 @@ function renderRC(chave){
     return '<div class="rc-card' + (g.chave === '__sem__' ? ' rc-sem' : '') + (aberto ? ' rc-aberto' : '') + '" data-rc-card="' + escapeHtml(g.chave) + '"><div class="rc-topo"><div class="rc-avatar">' + avatar + '</div>' +
       '<div style="min-width:0;"><div class="rc-nome">' + escapeHtml(g.nome) + '</div><div class="rc-sub">' + condosDaCarteiraRC(g).length + ' condomínio(s) na carteira</div></div>' +
       '<div class="rc-kpi"><b>' + escapeHtml(String(kpi[1])) + '</b><span>' + escapeHtml(kpi[0]) + '</span></div></div>' +
-      cfg.graficos(b).map(gr => gr.medidores ? rcMedidores(gr) : rcBarraEmpilhada(gr)).join('') + sla +
+      cfg.graficos(b).map(gr => gr.medidores ? rcMedidores(gr) : (gr.chips ? rcChips(gr, (__rcFiltros[chave] || {})[g.chave]) : (gr.colunas ? rcColunas(gr) : rcBarraEmpilhada(gr)))).join('') + sla +
       '<div class="rc-dica">' + (aberto ? '▾ clique para recolher' : '▸ clique para ver os registros') + '</div>' + (aberto ? rcHtmlDetalhe(cfg, g, mes) : '') + '</div>';
   }).join('');
   const tabela = '<div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + cfg.cols.map(c => '<th>' + escapeHtml(c[0]) + '</th>').join('') + '</tr></thead><tbody>' +
@@ -8947,7 +8991,16 @@ function montarPaineisResultadoCarteira(){
     nav.insertAdjacentElement('afterend', vista);
     vista.querySelector('.rc-mes').value = selectedMes || mesAtualReal();
     vista.querySelector('.rc-mes').addEventListener('change', () => renderRC(chave));
+    cfg.chaveRC = chave;
     vista.querySelector('.rc-corpo').addEventListener('click', ev => {
+      const chip = ev.target.closest('[data-rc-filtro]');
+      if (chip){
+        const k = chip.closest('[data-rc-card]').getAttribute('data-rc-card');
+        __rcFiltros[chave] = __rcFiltros[chave] || {}; __rcFiltros[chave][k] = chip.getAttribute('data-rc-filtro');
+        __rcAbertos[chave] = __rcAbertos[chave] || {}; __rcAbertos[chave][k] = true;
+        renderRC(chave);
+        return;
+      }
       if (ev.target.closest('.rc-detalhe-card')) return;          // cliques dentro da tabela não recolhem
       const cartao = ev.target.closest('[data-rc-card]');
       if (!cartao) return;
@@ -8988,6 +9041,75 @@ function montarPaineisResultadoCarteira(){
     document.querySelectorAll('.tab-btn[data-tab="' + cfg.aba + '"]').forEach(b => b.addEventListener('click', () => setTimeout(() => { if (vista.style.display !== 'none') renderRC(chave); }, 700)));
   });
 }
+// ----- Informação por carteira dentro dos resultados já existentes (Mini Dashboards, Histórico, Produtividade...) -----
+function rcAvatarMini(g){
+  const m = g.chave === '__sem__' ? null : membroDaCarteira(g.nome);
+  return m && m.foto_url ? '<img class="rc-av-mini" src="' + escapeHtml(m.foto_url) + '" alt="">' : '<span class="rc-av-mini rc-av-ini">' + escapeHtml(g.nome.trim().charAt(0).toUpperCase()) + '</span>';
+}
+const RC_MINI = {
+  pesquisa: { container: 'pesquisaMiniDash', titulo: 'Pesquisas por carteira' },
+  fluxo: { container: 'faViewMiniDash', titulo: 'Fluxo de atendimento por carteira' },
+  renovacao: { container: 'renovViewMiniDash', titulo: 'Renovações por carteira' },
+  visitas: { container: 'veViewMiniDash', titulo: 'Visitas emergenciais por carteira' },
+  demandas: { container: 'demViewProdutividade', titulo: 'Demandas por carteira' },
+  incidentes: { container: 'incViewComparativo', titulo: 'Incidentes por carteira' },
+  dashboard: { container: 'dashViewGeral', titulo: 'Resultado por carteira' },
+};
+function rcHtmlMini(chave, mes){
+  const cfg = RC_ABAS[chave];
+  const linhas = gruposResultadoRC().map(g => ({ g, b: cfg.calc(g, mes) })).filter(x => x.g.chave !== '__sem__' || x.b.peso > 0);
+  const extraHist = chave === 'pesquisa';
+  return '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + cfg.cols.map(c => '<th>' + escapeHtml(c[0]) + '</th>').join('') + (extraHist ? '<th>Histórico (3 meses)</th>' : '') + '</tr></thead><tbody>' +
+    linhas.map(x => '<tr><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(x.g) + '<strong>' + escapeHtml(x.g.nome) + '</strong></td>' + cfg.cols.map(c => '<td>' + escapeHtml(String(c[1](x.b))) + '</td>').join('') +
+      (extraHist ? '<td style="white-space:nowrap;">' + x.b.hist.slice(-3).map(h => escapeHtml(rcMesCurto(h.mes)) + ' ' + (h.media === null ? '—' : rcFmtNum(h.media, 1))).join(' · ') + '</td>' : '') + '</tr>').join('') + '</tbody></table>';
+}
+function rcRenderMini(chave){
+  const mc = RC_MINI[chave], cfg = RC_ABAS[chave];
+  const cont = document.getElementById(mc.container), painel = document.getElementById(cfg.painel);
+  if (!cont || !painel || painel.style.display === 'none' || cont.style.display === 'none') return;
+  rcGarantirDados(chave, () => rcRenderMini(chave));
+  let bloco = cont.querySelector(':scope > .rc-mini');
+  if (!bloco){
+    bloco = document.createElement('div');
+    bloco.className = 'rc-mini chart-panel';
+    cont.insertAdjacentElement('afterbegin', bloco);
+  }
+  const mes = selectedMes || mesAtualReal();
+  bloco.innerHTML = '<p class="chart-title" style="margin:0 0 8px;">👩 ' + escapeHtml(mc.titulo) + ' · ' + escapeHtml(mesLabelBR(mes)) + '</p><div style="overflow-x:auto;">' + rcHtmlMini(chave, mes) + '</div>' +
+    '<p class="rc-nota">Use este quadro para medir a produtividade de cada responsável e direcionar as demandas; o detalhe de cada uma está na sub-aba "Resultado por carteira".</p>';
+}
+function rcRenderHistoricoCarteira(){
+  const cont = document.getElementById('historicoView');
+  if (!cont || cont.style.display === 'none') return;
+  let bloco = document.getElementById('rcHistoricoCarteira');
+  if (!bloco){
+    bloco = document.createElement('div');
+    bloco.id = 'rcHistoricoCarteira'; bloco.className = 'rc-mini chart-panel';
+    cont.insertAdjacentElement('afterbegin', bloco);
+  }
+  const mes = selectedMes || mesAtualReal();
+  const grupos = gruposResultadoRC().filter(g => g.chave !== '__sem__');
+  const meses = Array.from({ length: 6 }, (_, i) => mesRelativoCarteira(mes, i - 5));
+  bloco.innerHTML = '<p class="chart-title" style="margin:0 0 8px;">🗂 Histórico por carteira · nota média por mês</p><div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + meses.map(m => '<th>' + escapeHtml(rcMesCurto(m)) + '</th>').join('') + '</tr></thead><tbody>' +
+    grupos.map(g => { const h = rcHistoricoCarteira(g, mes, 6); return '<tr><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(g) + '<strong>' + escapeHtml(g.nome) + '</strong></td>' + h.map(x => '<td>' + (x.media === null ? '—' : rcFmtNum(x.media, 1)) + '</td>').join('') + '</tr>'; }).join('') +
+    '</tbody></table></div>';
+}
+function rcAtualizarMiniBlocos(){
+  Object.keys(RC_MINI).forEach(k => { try{ rcRenderMini(k); }catch(e){ console.warn('Bloco por carteira (' + k + '):', e); } });
+  try{ rcRenderHistoricoCarteira(); }catch(e){ console.warn('Histórico por carteira:', e); }
+}
+document.addEventListener('click', ev => { if (ev.target.closest('.tab-btn, .subtab-btn')) setTimeout(rcAtualizarMiniBlocos, 600); });
+try{
+  const mesSel = document.getElementById('mesSelector');
+  if (mesSel) mesSel.addEventListener('change', () => setTimeout(rcAtualizarMiniBlocos, 400));
+}catch(e){}
+try{
+  const miniOriginal = renderPesquisaMiniDash;
+  renderPesquisaMiniDash = function(){ const r = miniOriginal.apply(this, arguments); setTimeout(rcAtualizarMiniBlocos, 50); return r; };
+  const histOriginal = renderHistoricoFolders;
+  renderHistoricoFolders = function(){ const r = histOriginal.apply(this, arguments); setTimeout(rcAtualizarMiniBlocos, 50); return r; };
+}catch(e){ console.warn('Ganchos do Mini Dashboard/Histórico não acoplados:', e); }
+
 // ----- Resultado final de cada responsável (soma de satisfação, renovação, adoção, incidentes e SLA) -----
 function rcResultadoFinal(g, mes){
   const aceita = g.chave === '__sem__' ? (x => respSemDono(x)) : (x => normTxtCarteira(x) === g.chave);
