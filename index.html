@@ -1742,7 +1742,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v138 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v139 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -7196,11 +7196,47 @@ function mesLabelBR(mes){
   return `${meses[m[2]] || m[2]}/${m[1]}`;
 }
 
+// ----- Leitura completa das tabelas -----
+// O Supabase devolve no máximo 1000 linhas por consulta (mesmo com .limit(5000)). Como as rodadas mensais passaram de 1000 linhas,
+// um select simples cortava as mais novas e elas "sumiam" depois do F5. Aqui a leitura é feita página por página.
+// Se uma página falhar, NÃO descarta o que já leu: usa o que veio e mostra o motivo (o v112 perdia tudo nesse caso).
+async function paginar(fabrica, simples){
+  const todas = [];
+  for (let de = 0, pag = 0; pag < 200; de += 1000, pag++){
+    const { data, error } = await fabrica().range(de, de + 999);
+    if (error){
+      const fimDaLista = error.code === 'PGRST103' || error.status === 416 || /range not satisfiable/i.test(error.message || '');
+      if (fimDaLista) break;
+      if (!todas.length && simples) return await simples();   // 1ª página falhou: volta ao jeito antigo
+      if (todas.length){ avisarCargaIncompleta(error, todas.length); return { data: todas, error: null }; }
+      return { data: null, error };
+    }
+    if (data && data.length) todas.push(...data);
+    if (!data || data.length < 1000) break;
+  }
+  return { data: todas, error: null };
+}
+function avisarCargaIncompleta(error, lidas){
+  console.error('Leitura paginada interrompida:', error);
+  try{ mostrarErroPersistenteOuter('Atenção: a leitura dos dados foi interrompida depois de ' + lidas + ' linhas (' + (error && error.message ? error.message : error) + '). Alguns registros podem não aparecer. Dê F5 e, se repetir, me envie este aviso.'); }catch(e){}
+}
+// Compara quantas linhas existem no banco com quantas foram carregadas; avisa se faltou alguma
+async function verificarContagem(tabela, lidas){
+  try{
+    const { count, error } = await sb.from(tabela).select('item_n', { count: 'exact', head: true });
+    if (error || count == null) return;
+    window.__cargaInfo = window.__cargaInfo || {};
+    window.__cargaInfo[tabela] = { lidas, total: count };
+    if (count > lidas) mostrarErroPersistenteOuter('Atenção: a tabela ' + tabela + ' tem ' + count + ' linhas no banco, mas o dashboard carregou ' + lidas + '. Dê F5 e, se repetir, me envie este aviso.');
+  }catch(e){ /* contagem é só conferência */ }
+}
+
 async function pullExtraItemsFromSupabase(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('condo_extra').select('*');
+    const { data, error } = await paginar(() => sb.from('condo_extra').select('*').order('item_n', { ascending: true }), () => sb.from('condo_extra').select('*'));
     if (error) throw error;
+    verificarContagem('condo_extra', (data || []).length);
     let added = false;
     (data || []).forEach(row=>{
       if (!DATA.some(d => d.n === row.item_n)){
@@ -9669,14 +9705,14 @@ function condominiosAtivosObjetos(){
 async function carregarStatusCondominios(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('condo_overrides').select('item_n,status');
+    const { data, error } = await paginar(() => sb.from('condo_overrides').select('item_n,status').order('item_n', { ascending: true }), () => sb.from('condo_overrides').select('item_n,status'));
     if (error) throw error;
     (data||[]).forEach(row=>{
       if (!row.status) return;
       const nome = SEED_ID_TO_NOME[row.item_n];
       if (nome) STATUS_POR_CONDOMINIO[nome] = row.status;
     });
-    const { data: extras } = await sb.from('condo_extra').select('nome,status');
+    const { data: extras } = await paginar(() => sb.from('condo_extra').select('item_n,nome,status').order('item_n', { ascending: true }), () => sb.from('condo_extra').select('nome,status'));
     (extras||[]).forEach(row=>{
       if (row.nome && row.status) STATUS_POR_CONDOMINIO[row.nome] = row.status;
     });
@@ -9749,8 +9785,9 @@ async function syncPesquisaParaCadastro(item){
 async function pullOverridesFromSupabase(){
   if (!sb) { syncStatus = 'offline'; updateSyncTag(); return; }
   try{
-    const { data, error } = await sb.from('condo_overrides').select('*');
+    const { data, error } = await paginar(() => sb.from('condo_overrides').select('*').order('item_n', { ascending: true }), () => sb.from('condo_overrides').select('*'));
     if (error) throw error;
+    verificarContagem('condo_overrides', (data || []).length);
     (data || []).forEach(row=>{
       OVERRIDES[row.item_n] = rowToUpdates(row);
     });
@@ -12910,7 +12947,7 @@ footer.note{text-align:center; font-size:11.5px; color:#9AA7B8; margin-top:22px;
   async function addToPesquisaAtual(condo){
     if (!sb) return;
     try{
-      const res = await sb.from('condo_extra').select('mes_referencia');
+      const res = await paginar(() => sb.from('condo_extra').select('item_n,mes_referencia').order('item_n', { ascending: true }), () => sb.from('condo_extra').select('mes_referencia'));
       const meses = (res && res.data ? res.data : []).map(function(r){ return r.mes_referencia; }).filter(Boolean);
       meses.push('2026-06'); // piso: mês base sempre existe, mesmo sem linha correspondente no condo_extra
       meses.sort();
@@ -18347,7 +18384,7 @@ async function loadFluxoAtendimento(){
   try{
     if (!statusCondominiosCarregado) await carregarStatusCondominios();
     await carregarCadastroLive();
-    let { data, error } = await sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).limit(5000);
+    let { data, error } = await paginar(() => sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).order('id', { ascending:true }), () => sb.from('fluxo_atendimento').select('*').order('mes_referencia', { ascending:false }).limit(1000));
     if (error) throw error;
     faData = data || [];
     faLoaded = true;
@@ -18830,7 +18867,7 @@ async function importarPlanilhaFluxo(){
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Importando...';
   try{
-    const { data: existentesData, error: errSel } = await sb.from('fluxo_atendimento').select('id,condominio,mes_referencia').limit(5000);
+    const { data: existentesData, error: errSel } = await paginar(() => sb.from('fluxo_atendimento').select('id,condominio,mes_referencia').order('id', { ascending:true }), () => sb.from('fluxo_atendimento').select('id,condominio,mes_referencia').limit(1000));
     if (errSel) throw errSel;
     const existentes = new Map((existentesData||[]).map(r => [`${normalizeNomeCondo(r.condominio)}|||${String(r.mes_referencia||'').slice(0,7)}`, r]));
 
@@ -19510,7 +19547,7 @@ async function renderMetasHoje(){
   box.innerHTML = '<p style="font-size:11.5px; color:var(--text-faint);">Carregando pesquisas de hoje...</p>';
   try{
     const hoje = new Date().toISOString().slice(0,10);
-    const { data, error } = await sb.from('condo_extra').select('data_pesquisa,responsavel_pesquisa,excluido');
+    const { data, error } = await paginar(() => sb.from('condo_extra').select('item_n,data_pesquisa,responsavel_pesquisa,excluido').order('item_n', { ascending: true }), () => sb.from('condo_extra').select('data_pesquisa,responsavel_pesquisa,excluido'));
     if (error) throw error;
     const contagem = { 'Maria Rosely (Analista)': 0, 'Josiane Alves (Assistente)': 0 };
     (data || []).forEach(row=>{
@@ -19940,13 +19977,13 @@ async function loadAdocaoDigital(){
   try{
     if (!statusCondominiosCarregado) await carregarStatusCondominios();
     await carregarCadastroLive();
-    let { data, error } = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
+    let { data, error } = await paginar(() => sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).order('id', { ascending:true }), () => sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(1000));
     if (error) throw error;
     adData = data || [];
     sincronizarArmarioGphoneComCadastro(adData);
     const houveMerge = await mesclarDuplicatasAdocao();
     if (houveMerge){
-      const r3 = await sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(5000);
+      const r3 = await paginar(() => sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).order('id', { ascending:true }), () => sb.from('adocao_digital').select('*').order('condominio', { ascending:true }).limit(1000));
       if (!r3.error) adData = r3.data || [];
       sincronizarArmarioGphoneComCadastro(adData);
     }
@@ -20379,7 +20416,7 @@ async function importarPlanilhaAdocao(){
   const textoOriginal = btn.textContent;
   btn.disabled = true; btn.textContent = 'Importando...';
   try{
-    const { data: existentesData, error: errSel } = await sb.from('adocao_digital').select('id,condominio,mes_referencia').limit(5000);
+    const { data: existentesData, error: errSel } = await paginar(() => sb.from('adocao_digital').select('id,condominio,mes_referencia').order('id', { ascending:true }), () => sb.from('adocao_digital').select('id,condominio,mes_referencia').limit(1000));
     if (errSel) throw errSel;
     const existentes = new Map((existentesData||[]).map(r => [`${normalizeNomeCondo(r.condominio)}|||${String(r.mes_referencia||'').slice(0,7)}`, r.id]));
 
@@ -20588,7 +20625,7 @@ async function loadIncidentes(){
     return;
   }
   try{
-    const { data, error } = await sb.from('incidentes').select('*').order('data_hora', { ascending:false }).limit(5000);
+    const { data, error } = await paginar(() => sb.from('incidentes').select('*').order('data_hora', { ascending:false }).order('id', { ascending:true }), () => sb.from('incidentes').select('*').order('data_hora', { ascending:false }).limit(1000));
     if (error) throw error;
     incData = data || [];
     incLoaded = true;
@@ -21399,7 +21436,7 @@ async function loadDemandas(){
     return;
   }
   try{
-    const { data, error } = await sb.from('demandas').select('*').order('data_abertura', { ascending:false }).limit(5000);
+    const { data, error } = await paginar(() => sb.from('demandas').select('*').order('data_abertura', { ascending:false }).order('id', { ascending:true }), () => sb.from('demandas').select('*').order('data_abertura', { ascending:false }).limit(1000));
     if (error) throw error;
     demData = data || [];
     demVersion++;
@@ -25558,15 +25595,25 @@ async function pgSincronizar(silencioso){
       const { error } = await sb.from('condo_overrides').upsert(unicos.slice(i, i + 100).map(it => updatesToRow(it.n, it)));
       if (error) throw error;
     }
+    // confere se o banco realmente guardou (uma gravação recusada em silêncio apareceria aqui)
+    let naoPersistiu = 0;
+    for (let i = 0; i < unicos.length; i += 80){
+      const lote = unicos.slice(i, i + 80);
+      const { data: conf, error: errConf } = await sb.from('condo_overrides').select('item_n,nota').in('item_n', lote.map(it => it.n));
+      if (errConf) break;
+      const guardado = new Map((conf || []).map(r => [Number(r.item_n), String(r.nota == null ? '' : r.nota)]));
+      lote.forEach(it => { if (guardado.get(Number(it.n)) !== String(it.nota == null ? '' : it.nota)) naoPersistiu++; });
+    }
     atualizar.forEach(it => { OVERRIDES[it.n] = Object.assign({}, OVERRIDES[it.n], { nota: it.nota, notaPosResolucao: it.notaPosResolucao, statusPesquisa: it.statusPesquisa, comentarioSindico: it.comentarioSindico, comentarioContato: it.comentarioContato, dataPesquisa: it.dataPesquisa, crit: it.crit }); });
     if (atualizar.length){ persistOverrides(OVERRIDES); try{ populateFilterOptions(); }catch(e){} render(); }
     __pgUltimasLinhas = { cabecalho: linhas[cols.idxCab], porMes: naoPorMes };
     __pgNaoEncontradas = naoEncontradas;
     const meses = [...mesesAlvo].sort().map(mesLabelBR).join(' e ');
-    const resumo = unicos.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · meses lidos: ' + (meses || 'nenhum com nota') + (foraDoEscopo ? ' · ' + foraDoEscopo + ' linha(s) de outros meses fora do escopo' : '') + (repetidas.length ? ' · ' + repetidas.length + ' nome(s) repetido(s) para o mesmo condomínio (ignorados)' : '');
+    const resumo = unicos.length + ' atualizada(s) · ' + iguais + ' já iguais · ' + naoEncontradas.length + ' não encontrada(s) · ' + semNota + ' sem nota (ignoradas) · meses lidos: ' + (meses || 'nenhum com nota') + (foraDoEscopo ? ' · ' + foraDoEscopo + ' linha(s) de outros meses fora do escopo' : '') + (repetidas.length ? ' · ' + repetidas.length + ' nome(s) repetido(s) para o mesmo condomínio (ignorados)' : '') + (naoPersistiu ? ' · ATENÇÃO: ' + naoPersistiu + ' gravação(ões) NÃO ficaram no banco (confira a permissão da tabela condo_overrides)' : '');
     Object.assign(cfg, { ultima: Date.now(), resumo, naoEncontradas: naoEncontradas.slice(0, 40), repetidas: repetidas.slice(0, 40) });
     pgSalvarCfg(cfg);
     pgAtualizarTela();
+    if (naoPersistiu) mostrarErroPersistenteOuter('Atenção: ' + naoPersistiu + ' atualização(ões) da planilha não ficaram gravadas no banco (tabela condo_overrides). Elas vão sumir no F5. Me envie este aviso.');
     return { atualizadas: unicos.length, iguais, naoEncontradas, repetidas, semNota, foraDoEscopo, meses: [...mesesAlvo].sort() };
   }catch(e){
     console.error('Sincronização da planilha do Google:', e);
