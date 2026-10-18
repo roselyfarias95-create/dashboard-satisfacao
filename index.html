@@ -1741,7 +1741,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v133 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v134 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -11371,7 +11371,8 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
       document.getElementById('rodadaConfirmBtn').disabled = false;
       return;
     }
-    let nextN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+    // número livre consultado no banco: linhas excluídas ou ocultas não aparecem na tela, mas continuam ocupando o número
+    let nextN = await proximoNLivre();
     const novosItens = condos
       .filter(c => (c.status || 'Ativo') !== 'Inativo')
       .map(c => ({
@@ -11391,15 +11392,22 @@ document.getElementById('rodadaConfirmBtn').addEventListener('click', async ()=>
         mesReferencia: novoMes,
       }));
     progEl.textContent = `Criando ${novosItens.length} pesquisas para ${mesLabelBR(novoMes)}...`;
-    novosItens.forEach(item => { item.humor = classifyHumor(item); DATA.push(item); });
-    const rows = novosItens.map(itemToExtraRow);
+    novosItens.forEach(item => { item.humor = classifyHumor(item); });
     const chunkSize = 50;
-    for (let i = 0; i < rows.length; i += chunkSize){
-      const chunk = rows.slice(i, i + chunkSize);
-      const { error: insErr } = await sb.from('condo_extra').insert(chunk);
-      if (insErr) throw insErr;
-      progEl.textContent = `Salvando... ${Math.min(i+chunkSize, rows.length)} de ${rows.length}`;
+    let tentativasRodada = 0;
+    for (let i = 0; i < novosItens.length; i += chunkSize){
+      while (true){
+        const { error: insErr } = await sb.from('condo_extra').insert(novosItens.slice(i, i + chunkSize).map(itemToExtraRow));
+        if (!insErr) break;
+        const colisao = insErr.code === '23505' || /duplicate key/i.test(insErr.message || '');
+        if (!colisao || ++tentativasRodada > 6) throw insErr;
+        // número já ocupado: renumera o que falta e tenta de novo
+        const baseLivre = await proximoNLivre();
+        novosItens.slice(i).forEach((it, k) => { it.n = baseLivre + k; });
+      }
+      progEl.textContent = `Salvando... ${Math.min(i+chunkSize, novosItens.length)} de ${novosItens.length}`;
     }
+    novosItens.forEach(item => DATA.push(item));   // só entra na tela depois de gravado no banco
     selectedMes = novoMes;
     selectedFiliais = []; selectedStatuses = []; selectedSetores = []; selectedMotivos = []; selectedResolvidos = []; selectedNotaFaixas = []; selectedNota2Faixas = []; selectedPendencias = [];
     activeCrit = null; activeSetorBar = null; activeMotivoBar = null;
@@ -16047,7 +16055,7 @@ document.getElementById('pqSaveBtn').addEventListener('click', async ()=>{
     syncPesquisaParaCadastro(pqEditingItem);
     itemSalvo = pqEditingItem;
   } else {
-    const newN = Math.max(0, ...DATA.map(d=>d.n)) + 1;
+    const newN = await proximoNLivre();
     const matchExistente = DATA.find(d => d.nome.toLowerCase() === nome.toLowerCase());
     const item = Object.assign({ n: newN, filial: matchExistente ? matchExistente.filial : '', nome }, dados);
     item.humor = classifyHumor(item);
