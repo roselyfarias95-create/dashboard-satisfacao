@@ -1761,7 +1761,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v150 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v152 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -7778,6 +7778,7 @@ function atualizarAvisoCarteira(){
   // a faixa de pendentes só aparece onde estão os filtros (Dashboard Executivo e Pesquisas), não nas demais abas
   const btnAtivo = document.querySelector('.tab-btn.active');
   const abaAtiva = btnAtivo ? btnAtivo.dataset.tab : 'dashboard';
+  try{ atualizarAvisoDuplicados(); }catch(e){}
   if (abaAtiva !== 'dashboard' && abaAtiva !== 'pesquisa'){ el.style.display = 'none'; return; }
   const resps = listaResponsaveisSC();
   if (!resps.length || !selectedMes){ el.style.display = 'none'; return; }
@@ -8343,6 +8344,7 @@ const MANUAL_FUNCOES = [
   "chave": "Nicolly Silva",
   "renomear": true,
   "nome": "Nicolly Silva",
+  "cargo": "Auxiliar Administrativa",
   "funcao": "Operação Ceará e fiscalização Maranhão",
   "area": "Carteira Ceará (Nicolly Silva) · fiscaliza, cobra e faz as pesquisas do Maranhão",
   "lidera": "Rosely",
@@ -8508,7 +8510,7 @@ function planoManualFuncoes(){
 }
 // Quem ainda tem cadastro antigo em relação ao manual (alguém fora da Equipe, ou responsabilidades diferentes)
 function pendenciasManualFuncoes(){
-  return planoManualFuncoes().filter(x => !x.membro || x.nomeNovo || String(x.membro.responsabilidades || '').indexOf(x.p.resp.find(l => !l.startsWith('# '))) === -1);
+  return planoManualFuncoes().filter(x => !x.membro || x.nomeNovo || (x.p.cargo && x.membro.cargo !== x.p.cargo) || String(x.membro.responsabilidades || '').indexOf(x.p.resp.find(l => !l.startsWith('# '))) === -1);
 }
 function abrirManualFuncoes(){
   if (currentRole !== 'admin'){ alert('Só administradores podem atualizar as funções da equipe.'); return; }
@@ -8520,7 +8522,7 @@ function abrirManualFuncoes(){
   document.getElementById('manualFuncoesBody').innerHTML = plano.map(({ p, membro, novo, nomeNovo, mantidas }) => {
     const linhasAtuais = membro && membro.responsabilidades ? membro.responsabilidades.split('\n').filter(l => l.trim()).length : 0;
     return '<div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px;">' +
-      '<div style="font-weight:700; margin-bottom:4px;">' + escapeHtml(p.chave) + ' — ' + escapeHtml(p.funcao) + ' ' +
+      '<div style="font-weight:700; margin-bottom:4px;">' + escapeHtml(p.chave) + ' — ' + escapeHtml(p.cargo || p.funcao) + ' ' +
       (membro ? '<span style="font-weight:400; font-size:11.5px; color:var(--text-faint);">(atualiza o cadastro de ' + escapeHtml(membro.nome) + ')</span>'
               : '<span style="font-weight:400; font-size:11.5px; color:#f59e0b;">(ainda não está na Equipe — será cadastrada)</span>') + '</div>' +
       (membro && nomeNovo ? linha('Nome', membro.nome, nomeNovo) : '') +
@@ -8528,7 +8530,7 @@ function abrirManualFuncoes(){
       linha('Quem lidera', membro && membro.lidera, novo.lidera) +
       linha('Filiais', membro && membro.filiais_responsavel, novo.filiais_responsavel) +
       '<div style="font-size:12px; margin:2px 0;"><span style="color:var(--text-faint);">Responsabilidades:</span> ' + (p.manterExistentes ? (mantidas ? 'mantém as ' + mantidas + ' linha(s) atuais (no final) e acrescenta ' : 'serão cadastradas ') : (linhasAtuais ? linhasAtuais + ' linha(s) atuais serão substituídas por ' : 'serão cadastradas ')) + '<strong>' + p.resp.filter(l => !l.startsWith('# ')).length + ' itens do manual</strong></div>' +
-      (membro ? linha('Cargo (título)', membro.cargo, document.getElementById('manualFuncoesCargo').checked ? p.funcao : membro.cargo) : '') +
+      (membro ? linha('Cargo (título)', membro.cargo, p.cargo || (document.getElementById('manualFuncoesCargo').checked ? p.funcao : membro.cargo)) : '') +
       '</div>';
   }).join('');
   document.getElementById('manualFuncoesModal').style.display = 'flex';
@@ -8544,11 +8546,11 @@ async function aplicarManualFuncoes(){
       if (membro){
         const campos = Object.assign({}, novo);
         if (nomeNovo) campos.nome = nomeNovo;
-        if (trocarCargo) campos.cargo = p.funcao;
+        if (p.cargo || trocarCargo) campos.cargo = p.cargo || p.funcao;   // cargo oficial definido no manual vale sempre
         const { error } = await sb.from('equipe_membros').update(campos).eq('id', membro.id);
         if (error) throw error;
       } else {
-        const { error } = await sb.from('equipe_membros').insert(Object.assign({ nome: p.nome, cargo: p.funcao, meta_pesquisas_dia: 0, ordem: ordemBase++, ativo: true }, novo));
+        const { error } = await sb.from('equipe_membros').insert(Object.assign({ nome: p.nome, cargo: p.cargo || p.funcao, meta_pesquisas_dia: 0, ordem: ordemBase++, ativo: true }, novo));
         if (error) throw error;
       }
     }
@@ -8624,7 +8626,7 @@ function montarNosOrganograma(){
   const nos = plano.map(x => {
     const no = { chave: x.p.chave, p: x.p, m: x.membro, virtual: !x.membro, filhos: [],
       nome: x.p.renomear ? x.p.nome : (x.membro ? x.membro.nome : x.p.nome),
-      cargo: (x.membro && x.membro.cargo) || x.p.funcao, area: x.p.area };
+      cargo: x.p.cargo || (x.membro && x.membro.cargo) || x.p.funcao, area: x.p.area };
     reg(no.nome, no); if (x.membro) reg(x.membro.nome, no); reg(x.p.chave, no);
     return no;
   });
@@ -8694,7 +8696,7 @@ function abrirAtividadesPessoa(chave){
   const p = MANUAL_FUNCOES.find(x => x.chave === chave);
   if (!p) return;
   document.getElementById('atividadesPessoaTitulo').textContent = '📋 Atividades — ' + p.nome;
-  document.getElementById('atividadesPessoaSub').textContent = p.funcao + ' · ' + p.area;
+  document.getElementById('atividadesPessoaSub').textContent = (p.cargo ? p.cargo + ' · ' : '') + p.funcao + ' · ' + p.area;
   document.getElementById('atividadesPessoaBody').innerHTML = p.resp.map(l => l.startsWith('# ')
     ? '<div style="font-weight:700; margin:12px 0 4px; color:#a78bfa;">📌 ' + escapeHtml(l.slice(2)) + '</div>'
     : '<div style="font-size:12.5px; margin:3px 0; line-height:1.5;">✅ ' + escapeHtml(l) + '</div>').join('');
@@ -27072,6 +27074,71 @@ async function excluirRodadaPesquisas(){
 document.getElementById('btnExcluirRodadaPq').addEventListener('click', excluirRodadaPesquisas);
 
 // ===== Encontrar e excluir duplicados na aba Pesquisas =====
+// ----- Pesquisas repetidas: resumo por mês, limpeza que junta as informações das cópias e aviso automático -----
+function dupVazio(v){ return v === undefined || v === null || String(v).trim() === '' || v === '—' || v === 'Não se aplica'; }
+function dupPontuar(it){
+  const temNota = !dupVazio(it.nota);
+  return (temNota ? 100 : 0) + (it.statusPesquisa && it.statusPesquisa !== 'Pendente' ? 10 : 0) + ((it.houveReclamacao || it.houvePendencia || it.houveElogio) ? 5 : 0);
+}
+function dupResumoPorMes(){
+  const porMes = new Map();
+  DATA.forEach(d => {
+    const m = getMes(d);
+    if (!porMes.has(m)) porMes.set(m, new Map());
+    const k = normalizeNomeCondo(d.nome), mp = porMes.get(m);
+    mp.set(k, (mp.get(k) || 0) + 1);
+  });
+  return [...porMes.entries()].map(([mes, mp]) => {
+    let linhas = 0, repetidos = 0, extras = 0;
+    mp.forEach(c => { linhas += c; if (c > 1){ repetidos++; extras += c - 1; } });
+    return { mes, linhas, condominios: mp.size, repetidos, extras };
+  }).filter(x => x.extras > 0).sort((a, b) => a.mes.localeCompare(b.mes));
+}
+// Para cada condomínio repetido: fica a melhor linha e ela recebe o que só existia nas outras cópias (nota, data, comentários...)
+function dupPlanoLimpeza(grupos){
+  const remover = [], mesclar = [];
+  let conflitos = 0, notasRecuperadas = 0;
+  const camposTexto = ['comentarioSindico', 'comentarioContato', 'comentarioContato2', 'responsavelPesquisa', 'pend', 'resolucao', 'resolvido', 'statusTratativa'];
+  const flags = ['houveReclamacao', 'houvePendencia', 'houveElogio'];
+  grupos.forEach(grupo => {
+    const ordem = grupo.slice().sort((a, b) => (dupPontuar(b) - dupPontuar(a)) || (a.n - b.n));
+    const fica = ordem[0], doadoras = ordem.slice(1), ganhos = {};
+    doadoras.forEach(dd => {
+      if (dupVazio(fica.nota) && dupVazio(ganhos.nota) && !dupVazio(dd.nota)){
+        ['nota', 'statusPesquisa', 'crit', 'dataPesquisa'].forEach(k => { if (dd[k] !== undefined && dd[k] !== null) ganhos[k] = dd[k]; });
+        notasRecuperadas++;
+      } else if (!dupVazio(fica.nota) && !dupVazio(dd.nota) && String(dd.nota) !== String(fica.nota)) conflitos++;
+      if (dupVazio(fica.notaPosResolucao) && dupVazio(ganhos.notaPosResolucao) && !dupVazio(dd.notaPosResolucao)) ganhos.notaPosResolucao = dd.notaPosResolucao;
+      camposTexto.forEach(k => { if (dupVazio(fica[k]) && dupVazio(ganhos[k]) && !dupVazio(dd[k])) ganhos[k] = dd[k]; });
+      flags.forEach(k => { if (!fica[k] && !ganhos[k] && dd[k]) ganhos[k] = true; });
+    });
+    if (Object.keys(ganhos).length) mesclar.push({ item: fica, ganhos });
+    remover.push(...doadoras);
+  });
+  return { remover, mesclar, conflitos, notasRecuperadas };
+}
+let __dupAvisoChave = '';
+function atualizarAvisoDuplicados(){
+  let el = document.getElementById('avisoDupPq');
+  const base = document.getElementById('carteiraAvisoPq') || document.getElementById('sharedFilterBar');
+  const btnAtivo = document.querySelector('.tab-btn.active');
+  const aba = btnAtivo ? btnAtivo.dataset.tab : 'dashboard';
+  if (!base || aba !== 'pesquisa' || !selectedMes){ if (el) el.style.display = 'none'; return; }
+  if (!el){
+    el = document.createElement('div'); el.id = 'avisoDupPq'; el.className = 'carteira-aviso';
+    el.style.cssText = 'margin:10px 0; border-color:#f59e0b; background:rgba(245,158,11,.10);';
+    el.addEventListener('click', e => { if (e.target.closest('[data-dup-abrir]')){ renderDupModalPq(); document.getElementById('dupModalPq').style.display = 'flex'; } });
+    base.insertAdjacentElement('afterend', el);
+  }
+  const chave = [selectedMes, DATA.length, __rcVersao].join('|');
+  if (chave !== __dupAvisoChave){
+    __dupAvisoChave = chave;
+    const r = dupResumoPorMes().find(x => x.mes === selectedMes);
+    el.innerHTML = r ? '⚠️ <strong>' + escapeHtml(mesLabelBR(selectedMes)) + '</strong> tem <strong>' + r.linhas + ' linhas para ' + r.condominios + ' condomínios</strong>: ' + r.extras + ' estão repetidas e distorcem as notas, os pendentes e o ranking. <button type="button" class="clearbtn" data-dup-abrir="1" style="border-color:#f59e0b; color:#f59e0b;">🔎 Ver e resolver repetidas</button>' : '';
+    el.dataset.tem = r ? '1' : '';
+  }
+  el.style.display = el.dataset.tem ? 'block' : 'none';
+}
 function renderDupModalPq(){
   document.getElementById('dupModalPqMes').innerHTML = `<strong>Mês selecionado:</strong> ${mesLabelBR(selectedMes)}`;
   const doMes = DATA.filter(d => getMes(d) === selectedMes);
@@ -27083,8 +27150,12 @@ function renderDupModalPq(){
   });
   const duplicados = [...grupos.values()].filter(g => g.length > 1);
   const body = document.getElementById('dupModalPqBody');
+  const outrosMeses = dupResumoPorMes().filter(x => x.mes !== selectedMes);
+  const blocoMeses = outrosMeses.length ? '<div style="font-size:12px; color:var(--text-faint); margin-bottom:12px;">Outros meses com repetição: ' + outrosMeses.map(x => '<button type="button" class="clearbtn" data-dup-mes="' + escapeHtml(x.mes) + '" style="margin:2px;">' + escapeHtml(mesLabelBR(x.mes)) + ' · ' + x.extras + ' a mais</button>').join('') + '</div>' : '';
+  const irParaMes = () => body.querySelectorAll('[data-dup-mes]').forEach(b => b.addEventListener('click', () => { const sel = document.getElementById('mesSelector'); if (sel){ sel.value = b.getAttribute('data-dup-mes'); sel.dispatchEvent(new Event('change')); } setTimeout(renderDupModalPq, 50); }));
   if (!duplicados.length){
-    body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>`;
+    body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>` + blocoMeses;
+    irParaMes();
     return;
   }
   const totalExtras = duplicados.reduce((acc, g) => acc + g.length - 1, 0);
@@ -27093,7 +27164,7 @@ function renderDupModalPq(){
       <div style="font-size:13px;"><strong>${duplicados.length}</strong> condomínio(s) repetido(s) — <strong>${totalExtras}</strong> linha(s) a mais.</div>
       <button type="button" class="clearbtn" id="btnLimparDupAuto" style="border-color:var(--critico); color:var(--critico);">🧹 Limpar automaticamente (manter a melhor de cada)</button>
     </div>`;
-  body.innerHTML = cabecalho + duplicados.map((grupo, gi) => `
+  body.innerHTML = cabecalho + blocoMeses + duplicados.map((grupo, gi) => `
     <div style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:12px;">
       <p style="font-weight:600; margin:0 0 8px;">${escapeHtml(grupo[0].nome)} <span style="color:var(--text-faint); font-weight:400;">— ${grupo.length} registros</span></p>
       ${grupo.map((item) => `
@@ -27106,21 +27177,19 @@ function renderDupModalPq(){
       `).join('')}
     </div>
   `).join('');
+  irParaMes();
   document.getElementById('btnLimparDupAuto').addEventListener('click', async ()=>{
-    const pontuar = (it) => {
-      const temNota = it.nota && it.nota !== '—' && String(it.nota).trim() !== '';
-      return (temNota ? 100 : 0) + (it.statusPesquisa && it.statusPesquisa !== 'Pendente' ? 10 : 0)
-        + ((it.houveReclamacao || it.houvePendencia || it.houveElogio) ? 5 : 0);
-    };
-    const remover = [];
-    duplicados.forEach(grupo => {
-      const ordenado = grupo.slice().sort((a,b) => (pontuar(b) - pontuar(a)) || (a.n - b.n));
-      remover.push(...ordenado.slice(1));
-    });
-    if (!confirm(`Vou manter 1 linha de cada condomínio repetido (a que tem nota/dados; se empatar, a mais antiga) e EXCLUIR ${remover.length} linha(s) de ${mesLabelBR(selectedMes)}.\n\nNão dá pra desfazer. Continuar?`)) return;
+    const plano = dupPlanoLimpeza(duplicados);
+    const remover = plano.remover;
+    if (!confirm(`Vou manter 1 linha de cada condomínio repetido em ${mesLabelBR(selectedMes)} e EXCLUIR ${remover.length} linha(s).\n\nAntes de excluir, as informações que só existem nas cópias vão para a linha que fica: ${plano.mesclar.length} condomínio(s) recebem dados das outras cópias (${plano.notasRecuperadas} nota(s) recuperada(s)).${plano.conflitos ? '\n' + plano.conflitos + ' condomínio(s) têm notas diferentes nas cópias: fica a da linha com mais dados.' : ''}\n\nRecomendo fazer o Backup do Sistema (HTML) antes. Não dá pra desfazer. Continuar?`)) return;
     const b = document.getElementById('btnLimparDupAuto');
     b.disabled = true;
     try{
+      for (const m of plano.mesclar){
+        Object.assign(m.item, m.ganhos);
+        OVERRIDES[m.item.n] = Object.assign({}, OVERRIDES[m.item.n], m.ganhos);
+        await pushOverrideToSupabase(m.item.n, Object.assign({}, m.item));
+      }
       for (let i = 0; i < remover.length; i += 50){
         const lote = remover.slice(i, i + 50);
         b.textContent = `Excluindo... ${Math.min(i+50, remover.length)} de ${remover.length}`;
@@ -27137,7 +27206,7 @@ function renderDupModalPq(){
       populateFilterOptions();
       render();
       renderDupModalPq();
-      alert(`${remover.length} linha(s) duplicada(s) excluída(s).`);
+      alert(`${remover.length} linha(s) duplicada(s) excluída(s); ${plano.notasRecuperadas} nota(s) das cópias foram mantidas.`);
     }catch(e){
       alert('Erro ao limpar duplicados: ' + e.message);
       b.disabled = false; b.textContent = '🧹 Limpar automaticamente (manter a melhor de cada)';
