@@ -1742,7 +1742,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v139 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v141 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -8694,7 +8694,7 @@ function rcHistoricoCarteira(g, mes, n){
     const m = mesRelativoCarteira(mes, -k);
     const itens = itensDoMesDeduplicados(m).filter(d => respKeyDoNomeRC(d.nome) === g.chave);
     const st = computeStats(itens);
-    out.push({ mes: m, media: st.mediaCount ? st.media : null, n: itens.length });
+    out.push({ mes: m, media: st.mediaCount ? st.media : null, n: itens.length, real: st.realizadas });
   }
   return out;
 }
@@ -8826,7 +8826,7 @@ Object.assign(RC_ABAS, {
       { t: 'Saúde pela nota', segs: [['OK', b.ok, RC_COR.ok], ['Atenção', b.aten, RC_COR.at], ['Crítico', b.crit, RC_COR.cr]] },
       { t: 'Mini Dashboard · distribuição das notas', segs: [['9 a 10', b.f9, RC_COR.ok], ['7 a 8,9', b.f7, RC_COR.at], ['Abaixo de 7', b.f6, RC_COR.cr]] },
       { t: 'Mini Dashboard · top motivos (% das ocorrências)', medidores: b.motivos.length ? b.motivos : [['Sem motivos registrados', null]] },
-      { t: '🗂 Histórico · nota média dos últimos 6 meses', colunas: b.hist.map(h => [rcMesCurto(h.mes), h.media, h.media === null ? '—' : rcFmtNum(h.media, 1)]) }],
+      { t: '🗂 Histórico · nota média dos últimos 6 meses', colunas: b.hist.map(h => [rcMesCurto(h.mes), h.media, h.media === null ? '—' : rcFmtNum(h.media, 1), h.real + ' pesq.']) }],
     cols: [['Todos', b => b.total], ['📣 Reclamações', b => b.recl], ['⚠️ Pendências', b => b.pendDiag], ['😊 Elogios', b => b.elog], ['Realizadas', b => b.realizadas + ' de ' + b.total + ' (' + b.pct + '%)'], ['Não realizadas', b => b.pend], ['Nota média', b => rcFmtNum(b.media, 1)], ['Críticos', b => b.crit], ['Atenção', b => b.aten], ['OK', b => b.ok]],
     nota: 'Pesquisas do mês escolhido, uma linha por condomínio da carteira. As categorias Todos, Reclamações, Pendências e Elogios são as mesmas abas da lista de Pesquisas; o histórico usa as notas arquivadas de cada mês.' },
   cadastro: { aba: 'cadastro', painel: 'tabCadastro', titulo: 'Cadastro de Condomínios', sla: false, calc: rcCadastro, detalhe: rcDetCadastro, rotuloOriginal: '🏢 Cadastro',
@@ -8994,7 +8994,7 @@ function rcChips(g, ativo){
 function rcColunas(g){
   const cor = v => v === null ? 'var(--bg-panel)' : (v >= 9 ? 'var(--ok)' : (v >= 7 ? '#f59e0b' : 'var(--critico)'));
   return '<div class="rc-graf"><div class="rc-graf-t">' + escapeHtml(g.t) + '</div><div class="rc-colunas">' + g.colunas.map(c =>
-    '<div class="rc-col"><span class="rc-col-v">' + escapeHtml(String(c[2])) + '</span><div class="rc-col-b" style="height:' + (c[1] === null ? 3 : Math.max(5, Math.round(c[1] / 10 * 100))) + '%; background:' + cor(c[1]) + ';"></div><span class="rc-col-l">' + escapeHtml(c[0]) + '</span></div>').join('') + '</div></div>';
+    '<div class="rc-col"><span class="rc-col-v">' + escapeHtml(String(c[2])) + '</span><div class="rc-col-b" style="height:' + (c[1] === null ? 3 : Math.max(5, Math.round(c[1] / 10 * 100))) + '%; background:' + cor(c[1]) + ';"></div><span class="rc-col-l">' + escapeHtml(c[0]) + '</span>' + (c[3] ? '<span class="rc-col-l" style="margin-top:0;">' + escapeHtml(String(c[3])) + '</span>' : '') + '</div>').join('') + '</div></div>';
 }
 const __rcFiltros = {};
 function rcMedidores(g){
@@ -9134,7 +9134,7 @@ function rcHtmlMini(chave, mes){
   const extraHist = chave === 'pesquisa';
   return '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + cfg.cols.map(c => '<th>' + escapeHtml(c[0]) + '</th>').join('') + (extraHist ? '<th>Histórico (3 meses)</th>' : '') + '</tr></thead><tbody>' +
     linhas.map(x => '<tr><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(x.g) + '<strong>' + escapeHtml(x.g.nome) + '</strong></td>' + cfg.cols.map(c => '<td>' + escapeHtml(String(c[1](x.b))) + '</td>').join('') +
-      (extraHist ? '<td style="white-space:nowrap;">' + x.b.hist.slice(-3).map(h => escapeHtml(rcMesCurto(h.mes)) + ' ' + (h.media === null ? '—' : rcFmtNum(h.media, 1))).join(' · ') + '</td>' : '') + '</tr>').join('') + '</tbody></table>';
+      (extraHist ? '<td style="white-space:nowrap;">' + x.b.hist.slice(-3).map(h => escapeHtml(rcMesCurto(h.mes)) + ' ' + (h.media === null ? '—' : rcFmtNum(h.media, 1) + ' (' + h.real + ')')).join(' · ') + '</td>' : '') + '</tr>').join('') + '</tbody></table>';
 }
 function rcRenderMini(chave){
   const mc = RC_MINI[chave], cfg = RC_ABAS[chave];
@@ -9163,9 +9163,9 @@ function rcRenderHistoricoCarteira(){
   const mes = selectedMes || mesAtualReal();
   const grupos = gruposResultadoRC().filter(g => g.chave !== '__sem__');
   const meses = Array.from({ length: 6 }, (_, i) => mesRelativoCarteira(mes, i - 5));
-  bloco.innerHTML = '<p class="chart-title" style="margin:0 0 8px;">🗂 Histórico por carteira · nota média por mês</p><div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + meses.map(m => '<th>' + escapeHtml(rcMesCurto(m)) + '</th>').join('') + '</tr></thead><tbody>' +
-    grupos.map(g => { const h = rcHistoricoCarteira(g, mes, 6); return '<tr><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(g) + '<strong>' + escapeHtml(g.nome) + '</strong></td>' + h.map(x => '<td>' + (x.media === null ? '—' : rcFmtNum(x.media, 1)) + '</td>').join('') + '</tr>'; }).join('') +
-    '</tbody></table></div>';
+  bloco.innerHTML = '<p class="chart-title" style="margin:0 0 8px;">🗂 Histórico por carteira · nota média (pesquisas realizadas) por mês</p><div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + meses.map(m => '<th>' + escapeHtml(rcMesCurto(m)) + '</th>').join('') + '</tr></thead><tbody>' +
+    grupos.map(g => { const h = rcHistoricoCarteira(g, mes, 6); return '<tr><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(g) + '<strong>' + escapeHtml(g.nome) + '</strong></td>' + h.map(x => '<td title="' + x.real + ' realizada(s) de ' + x.n + ' condomínio(s) no mês">' + (x.media === null ? '—' : rcFmtNum(x.media, 1) + ' <span style="color:var(--text-faint); font-size:11px;">(' + x.real + ')</span>') + '</td>').join('') + '</tr>'; }).join('') +
+    '</tbody></table></div><p class="rc-nota">Nota média de cada mês; o número entre parênteses é a quantidade de pesquisas realizadas (com nota) naquele mês. Passe o mouse para ver quantas eram esperadas.</p>';
 }
 function rcAtualizarMiniBlocos(){
   Object.keys(RC_MINI).forEach(k => { try{ rcRenderMini(k); }catch(e){ console.warn('Bloco por carteira (' + k + '):', e); } });
@@ -10000,6 +10000,8 @@ let activeSubtab = 'todos';
 document.querySelectorAll('.subtab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     activeSubtab = btn.getAttribute('data-subtab');
+    // "Todos" mostra tudo do mês: solta os filtros rápidos (Críticos, barras dos gráficos) que ficavam ativos e escondiam a lista
+    if (activeSubtab === 'todos'){ activeCrit = null; activeSetorBar = null; activeMotivoBar = null; }
     document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active', b === btn));
     toggleHistoricoView();
     if (activeSubtab === 'historico'){
@@ -10009,6 +10011,34 @@ document.querySelectorAll('.subtab-btn').forEach(btn=>{
     }
   });
 });
+// Lista, em palavras, os filtros que estão escondendo condomínios na aba Pesquisas
+function descricaoFiltrosPesquisas(){
+  const partes = [];
+  if (activeCrit && CRIT_LABELS[activeCrit]) partes.push('Criticidade: ' + CRIT_LABELS[activeCrit].label);
+  const nomesAba = { reclamacoes: 'Reclamações', pendencias: 'Pendências', elogios: 'Elogios' };
+  if (nomesAba[activeSubtab]) partes.push('Aba: ' + nomesAba[activeSubtab]);
+  if (selectedStatuses.length) partes.push('Status: ' + selectedStatuses.join(', '));
+  if (selectedFiliais.length) partes.push('Filial: ' + selectedFiliais.join(', '));
+  if (selectedSetores.length) partes.push('Setor: ' + selectedSetores.join(', '));
+  if (selectedMotivos.length) partes.push('Motivo: ' + selectedMotivos.join(', '));
+  if (selectedNotaFaixas.length || selectedNota2Faixas.length) partes.push('Faixa de nota');
+  if (selectedResolvidos.length) partes.push('Resolução');
+  if (selectedPendencias.length) partes.push('Pendência');
+  if (activeSetorBar) partes.push('Setor do gráfico: ' + activeSetorBar);
+  if (activeMotivoBar) partes.push('Motivo do gráfico: ' + activeMotivoBar);
+  const busca = (document.getElementById('search') || {}).value;
+  if (busca && busca.trim()) partes.push('Busca: "' + busca.trim() + '"');
+  if (typeof carteiraAtiva !== 'undefined' && carteiraAtiva) partes.push('Carteira');
+  return partes;
+}
+function limparTodosFiltrosPesquisas(){
+  activeSubtab = 'todos';
+  document.querySelectorAll('.subtab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-subtab') === 'todos'));
+  toggleHistoricoView();
+  selectedMotivos = [];   // o botão "Limpar" original não limpava o filtro de motivo
+  try{ if (typeof carteiraAtiva !== 'undefined' && carteiraAtiva) definirCarteira(''); }catch(e){}
+  document.getElementById('clearBtn').click();   // limpa busca, filtros e filtros rápidos e redesenha a lista
+}
 function toggleHistoricoView(){
   const isHistorico = activeSubtab === 'historico';
   const isMiniDash = activeSubtab === 'minidash';
@@ -11760,7 +11790,14 @@ function render(){
 
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyMsg');
-  document.getElementById('countLineText').textContent = `${filtered.length} de ${baseFiltered.length} condomínios exibidos`;
+  {
+    const partesFiltro = descricaoFiltrosPesquisas();
+    const elContagem = document.getElementById('countLineText');
+    elContagem.innerHTML = `${filtered.length} de ${baseFiltered.length} condomínios exibidos` + (partesFiltro.length
+      ? ` · <span style="color:#f59e0b;">Filtros ativos: ${escapeHtml(partesFiltro.join(' · '))}</span> <button type="button" class="clearbtn" id="btnLimparFiltrosAtivos" style="padding:3px 10px; margin-left:6px;">✖ Limpar filtros</button>` : '');
+    const btnLimpar = document.getElementById('btnLimparFiltrosAtivos');
+    if (btnLimpar) btnLimpar.onclick = limparTodosFiltrosPesquisas;
+  }
 
   filtered = ordenarListaPesquisas(filtered);
 
@@ -16225,7 +16262,7 @@ const HISTORICO_SEED_PDF_CONSOLIDADO = [{"mes": "Março", "filial": "SECOPI", "c
 async function seedHistoricoIfEmpty(){
   if (!sb) return;
   try{
-    const { data, error } = await sb.from('historico_pesquisas').select('mes,filial,condominio');
+    const { data, error } = await paginar(() => sb.from('historico_pesquisas').select('id,mes,filial,condominio').order('id', { ascending:true }), () => sb.from('historico_pesquisas').select('mes,filial,condominio'));
     if (error) throw error;
     const existentes = new Set((data||[]).map(r => `${r.mes}|||${r.filial}|||${(r.condominio||'').trim().toLowerCase()}`));
 
@@ -16301,7 +16338,7 @@ async function loadHistorico(){
   el.innerHTML = '<p class="empty">Carregando histórico...</p>';
   try{
     await seedHistoricoIfEmpty();
-    const { data, error } = await sb.from('historico_pesquisas').select('*').order('mes', { ascending:true });
+    const { data, error } = await paginar(() => sb.from('historico_pesquisas').select('*').order('mes', { ascending:true }).order('id', { ascending:true }), () => sb.from('historico_pesquisas').select('*').order('mes', { ascending:true }));
     if (error) throw error;
     historicoData = data || [];
     historicoLoaded = true;
@@ -18842,7 +18879,7 @@ async function seedHistoricoFluxoSeVazio(){
   if (!sb) return;
   if (localStorage.getItem('seedHistoricoFluxoAplicado_v1') === '1') return;
   try{
-    const { data, error } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
+    const { data, error } = await paginar(() => sb.from('historico_fluxo').select('id,mes,filial,condominio').order('id', { ascending:true }), () => sb.from('historico_fluxo').select('mes,filial,condominio').limit(1000));
     if (error) throw error;
     const existentes = new Set((data||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     const candidatos = SEED_FLUXO.filter(r => r.atendimentos !== null || r.tma !== null).map(r => ({
@@ -18899,7 +18936,7 @@ async function importarPlanilhaFluxo(){
     }
 
     // Arquiva a mesma leva no Histórico (não duplica se a pasta já existir)
-    const { data: histExistData, error: errHist } = await sb.from('historico_fluxo').select('mes,filial,condominio').limit(5000);
+    const { data: histExistData, error: errHist } = await paginar(() => sb.from('historico_fluxo').select('id,mes,filial,condominio').order('id', { ascending:true }), () => sb.from('historico_fluxo').select('mes,filial,condominio').limit(1000));
     if (errHist) throw errHist;
     const histExist = new Set((histExistData||[]).map(r => `${r.mes}|||${r.filial}|||${normalizeNomeCondo(r.condominio)}`));
     const histNovos = SEED_FLUXO.filter(r => r.condominio && String(r.condominio).trim() && (r.atendimentos !== null || r.tma !== null)).map(r => ({
@@ -18938,7 +18975,7 @@ async function loadFaHistorico(){
   }
   el.innerHTML = '<p class="empty">Carregando histórico...</p>';
   try{
-    const { data, error } = await sb.from('historico_fluxo').select('*').order('mes', { ascending:true }).limit(5000);
+    const { data, error } = await paginar(() => sb.from('historico_fluxo').select('*').order('mes', { ascending:true }).order('id', { ascending:true }), () => sb.from('historico_fluxo').select('*').order('mes', { ascending:true }).limit(1000));
     if (error) throw error;
     faHistData = data || [];
     faHistLoaded = true;
