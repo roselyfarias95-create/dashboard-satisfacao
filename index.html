@@ -1172,6 +1172,12 @@
   .as-acoes{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
   .as-linha-ag{ display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px dashed var(--border); font-size:12.5px; cursor:pointer; }
   .as-acomp{ margin-top:8px; padding:8px 10px; border-radius:8px; background:rgba(167,139,250,.08); font-size:12px; line-height:1.5; }
+  .rg-barra{ height:5px; background:var(--bg-panel); border-radius:3px; margin-top:3px; min-width:46px; overflow:hidden; }
+  .rg-barra > div{ height:100%; }
+  .rg-notas{ font-size:11.5px; color:var(--text-faint); line-height:1.7; margin:8px 0 4px; }
+  .rg-notas strong{ color:var(--text); }
+  .rg-tabela th{ font-size:10.5px; }
+  .rc-rg{ margin-bottom:14px; }
   .rc-oculto{ display:none !important; }
   .rc-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin:6px 0 12px; }
   .rc-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
@@ -1755,7 +1761,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v146 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v150 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -5432,6 +5438,7 @@ function showApp(role, username, allowedTabs){
     loadVE().then(()=>{ if (typeof sincronizarVisitasComPesquisa === 'function') sincronizarVisitasComPesquisa(false); });
   }
   if (typeof loadLembretes === 'function') loadLembretes();
+  try{ carregarEquipeMembros(); }catch(e){}   // os menus de responsável usam o organograma desde o início
 }
 
 function initAuth(){
@@ -7635,6 +7642,13 @@ function respSCDoCondo(c){
   const r = nomeOficialCarteira(String((c && c.responsavel_sc) || '').trim());
   return r ? r : responsavelSCDoNome(c && c.nome);
 }
+// Para MENUS de escolha (mover condomínio, acompanhar, etc.): quem tem carteira + toda a equipe do organograma
+function listaPessoasParaEscolher(){
+  const m = new Map();
+  listaResponsaveisSC().forEach(n => m.set(normTxtCarteira(n), n));
+  nomesDaEquipe().forEach(n => { const o = nomeOficialCarteira(n), k = normTxtCarteira(o); if (!m.has(k)) m.set(k, o); });
+  return [...m.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
 function listaResponsaveisSC(){
   const s = new Map();
   const add = r => { r = nomeOficialCarteira(String(r || '').trim()); if (!respSemDono(r)) s.set(normTxtCarteira(r), r); };
@@ -7761,6 +7775,10 @@ function descricaoCarteiraAtiva(){
 function atualizarAvisoCarteira(){
   const el = garantirAvisoCarteira();
   if (!el) return;
+  // a faixa de pendentes só aparece onde estão os filtros (Dashboard Executivo e Pesquisas), não nas demais abas
+  const btnAtivo = document.querySelector('.tab-btn.active');
+  const abaAtiva = btnAtivo ? btnAtivo.dataset.tab : 'dashboard';
+  if (abaAtiva !== 'dashboard' && abaAtiva !== 'pesquisa'){ el.style.display = 'none'; return; }
   const resps = listaResponsaveisSC();
   if (!resps.length || !selectedMes){ el.style.display = 'none'; return; }
   const doMes = DATA.filter(d => getMes(d) === selectedMes);
@@ -8948,7 +8966,8 @@ function rcDemandas(g, mes){
   const por = nome => doMes.filter(d => normTxtCarteira(d.status) === nome).length;
   const sla = slaDeLista(doMes, d => d.data_abertura, d => d.data_conclusao, slaMeta('demandas'));
   return { peso: meus.length, n: doMes.length, abertas: por('ABERTA'), andamento: por('EM ANDAMENTO'), aguard: por('AGUARDANDO'), concl: por('CONCLUIDA'),
-    abertasAgora: meus.filter(d => normTxtCarteira(d.status) !== 'CONCLUIDA').length, sla };
+    abertasAgora: meus.filter(d => normTxtCarteira(d.status) !== 'CONCLUIDA').length,
+    venc: meus.filter(d => normTxtCarteira(d.status) !== 'CONCLUIDA' && demSlaVencida(d)).length, sla };
 }
 function rcDetDemandas(g, mes){
   const concl = d => normTxtCarteira(d.status) === 'CONCLUIDA';
@@ -8973,15 +8992,10 @@ function rcFechamento(g, mes){ return { peso: g.chave === '__sem__' ? 0 : 1, d: 
 function rcDetFechamento(g, mes){
   const d = rcResultadoFinal(g, mes);
   const v = x => x === null || x === undefined ? '—' : x;
-  return { cols: ['Indicador', 'Valor (0 a 100)', 'Como é calculado'], rows: [
-    ['Satisfação', v(d.satisfacao), 'nota média das pesquisas da carteira × 10'],
-    ['Pesquisas realizadas', v(d.pesquisas), '% de pesquisas realizadas (para quem fiscaliza: nas filiais que fiscaliza)'],
-    ['Renovações', v(d.renovacao), 'renovados ÷ (renovados + em negociação + vencidos)'],
-    ['Adoção digital', v(d.adocao), 'média do % de uso do app e do % de faciais'],
-    ['Incidentes', v(d.incidentes), 'média entre % resolvidos e % com retorno registrado'],
-    ['SLA de tratativa', v(d.sla), '% das tratativas concluídas dentro da meta de SLA'],
-    ['Resultado geral', v(d.geral), 'média das dimensões que têm dados (pesos iguais)']] };
+  return { cols: ['Aba', 'Nota (0 a 100)', 'Como é calculada'],
+    rows: RG_COLS.map(c => [c[1], v(d[c[0]]), c[2]]).concat([['Resultado geral', v(d.geral), 'média das abas que têm dados (pesos iguais, provisório)']]) };
 }
+
 function rcDashboard(g, mes){ return { peso: rcPesquisas(g, mes).total, d: rcResultadoFinal(g, mes), p: rcPesquisas(g, mes), r: rcRenovacao(g) }; }
 const rcNumDim = x => (x === null || x === undefined) ? '—' : x;
 Object.assign(RC_ABAS, {
@@ -9037,9 +9051,9 @@ Object.assign(RC_ABAS, {
     nota: 'Lembretes ligados a um condomínio entram na carteira dele; os sem condomínio ficam em "Sem responsável".' },
   fechamento: { aba: 'fechamentoMensal', painel: 'tabFechamentoMensal', titulo: 'Fechamento do Mês', sla: false, calc: rcFechamento, detalhe: rcDetFechamento, rotuloOriginal: '📅 Fechamento',
     kpi: b => ['resultado geral', rcNumDim(b.d.geral)],
-    graficos: b => [{ t: 'Indicadores do mês (0 a 100)', medidores: [['Satisfação', b.d.satisfacao], ['Pesquisas', b.d.pesquisas], ['Renovações', b.d.renovacao], ['Adoção digital', b.d.adocao], ['Incidentes', b.d.incidentes], ['SLA', b.d.sla], ['Geral', b.d.geral]] }],
-    cols: [['Satisfação', b => rcNumDim(b.d.satisfacao)], ['Pesquisas', b => rcNumDim(b.d.pesquisas)], ['Renovações', b => rcNumDim(b.d.renovacao)], ['Adoção digital', b => rcNumDim(b.d.adocao)], ['Incidentes', b => rcNumDim(b.d.incidentes)], ['SLA', b => rcNumDim(b.d.sla)], ['Resultado geral', b => rcNumDim(b.d.geral)]],
-    nota: 'Fechamento do mês de cada responsável: soma dos indicadores das demais abas, com pesos iguais (provisório até a gestão definir os pesos).' },
+    graficos: b => [{ t: 'Nota de cada aba no mês (0 a 100)', medidores: RG_COLS.map(c => [c[1], b.d[c[0]]]).concat([['Geral', b.d.geral]]) }],
+    get cols(){ return RG_COLS.map(c => [c[1], b => rcNumDim(b.d[c[0]])]).concat([['Resultado geral', b => rcNumDim(b.d.geral)]]); },   // RG_COLS é definida mais abaixo
+    nota: 'Fechamento do mês de cada responsável: a nota de cada aba e a média delas (pesos iguais, provisório até a gestão definir os pesos).' },
 });
 const __rcCarregando = {};
 let __rcEquipePedida = false;
@@ -9047,6 +9061,7 @@ function rcCarregadores(chave){
   const L = [];
   const add = (loaded, fn) => { if (!loaded && typeof fn === 'function') L.push(fn); };
   const todos = ['todos', 'dashboard', 'fechamento'].includes(chave);
+  if (todos){ add(veLoaded, loadVE); add(demLoaded, loadDemandas); add(checklistLoaded, loadChecklistData); add(arrRC.lem().length > 0, loadLembretes); }
   if (chave === 'incidentes' || chave === 'vida' || todos) add(incLoaded, loadIncidentes);
   if (chave === 'fluxo' || chave === 'vida' || todos) add(faLoaded, loadFluxoAtendimento);
   if (chave === 'adocao' || todos) add(adLoaded, loadAdocaoDigital);
@@ -9206,7 +9221,7 @@ function renderRC(chave){
   }).join('');
   const tabela = '<div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th>' + cfg.cols.map(c => '<th>' + escapeHtml(c[0]) + '</th>').join('') + '</tr></thead><tbody>' +
     linhas.map(x => '<tr><td style="text-align:left;"><strong>' + escapeHtml(x.g.nome) + '</strong></td>' + cfg.cols.map(c => '<td>' + escapeHtml(String(c[1](x.b))) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
-  corpo.innerHTML = '<div class="rc-grid">' + cartoes + '</div>' +
+  corpo.innerHTML = ((chave === 'dashboard' || chave === 'fechamento') ? '<div class="rc-rg">' + rankingGeralHtml(mes) + '</div>' : '') + '<div class="rc-grid">' + cartoes + '</div>' +
     '<details class="rc-detalhes"><summary>Ver tabela detalhada</summary>' + tabela + '</details>' +
     '<p class="rc-nota">' + escapeHtml(cfg.nota) + '</p>';
 }
@@ -9377,6 +9392,7 @@ function rcResultadoFinal(g, mes){
   const aceita = g.chave === '__sem__' ? (x => respSemDono(x)) : (x => normTxtCarteira(x) === g.chave);
   const sat = statsCarteiraDoMes(mes, aceita);
   const ren = rcRenovacao(g), ad = rcAdocao(g, mes), inc = rcIncidentes(g, mes), fl = rcFluxo(g, mes);
+  const vi = rcVisitas(g, mes), de = rcDemandas(g, mes), ck = rcChecklist(g), vd = rcVida(g), le = rcLembretes(g);
   const mediaDe = lista => { const v = lista.filter(x => x !== null && x !== undefined); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
   // As pesquisas das filiais são feitas por quem fiscaliza (Josiane e Nicolly): o item "Pesquisas realizadas" mede a fiscalizadora
   // sobre os condomínios das filiais que ela fiscaliza, e não conta contra as responsáveis de filial.
@@ -9388,33 +9404,78 @@ function rcResultadoFinal(g, mes){
     const dasFiliais = itensDoMesDeduplicados(mes).filter(d => filiaisFisc.includes(normTxtCarteira(normalizeFilialCanonica(d.filial || dadosCarteiraDoNome(d.nome).filial || ''))));
     pesquisas = dasFiliais.length ? computeStats(dasFiliais).pct : null;
   }
+  const tma = (fl.dentroMeta + fl.foraMeta) ? Math.round(fl.dentroMeta / (fl.dentroMeta + fl.foraMeta) * 100) : null;
+  const baseDem = de.abertasAgora + de.concl;
   const dims = {
     satisfacao: sat.media !== null ? Math.round(sat.media * 10) : null,
     pesquisas,
     renovacao: ren.taxa,
     adocao: mediaDe([ad.app === null ? null : Math.round(ad.app), ad.facial === null ? null : Math.round(ad.facial)]),
     incidentes: mediaDe([inc.pctRes, inc.pctRet]),
-    sla: mediaDe([inc.sla.pctDentro, fl.sla.pctDentro, ren.sla.pctDentro]),
+    sla: mediaDe([inc.sla.pctDentro, fl.sla.pctDentro, ren.sla.pctDentro, de.sla.pctDentro, vi.sla.pctDentro]),
+    fluxo: mediaDe([fl.pctLanc, tma]),
+    visitas: vi.n ? Math.round(vi.concl / vi.n * 100) : null,
+    demandas: baseDem ? Math.round((baseDem - Math.min(de.venc, baseDem)) / baseDem * 100) : null,
+    checklist: ck.pct,
+    vida: vd.pctBaixo,
+    lembretes: le.total ? Math.round((le.total - le.venc) / le.total * 100) : null,
   };
-  dims.geral = mediaDe(Object.values(dims));
+  dims.pesq = mediaDe([dims.satisfacao, dims.pesquisas]);   // nota da aba Pesquisas = satisfação + pesquisas realizadas
+  dims.geral = mediaDe([dims.pesq, dims.renovacao, dims.checklist, dims.visitas, dims.fluxo, dims.adocao, dims.incidentes, dims.demandas, dims.vida, dims.lembretes, dims.sla]);
   return dims;
 }
+// ----- Ranking geral: uma nota por aba e a média de todas -----
+const RG_COLS = [
+  ['pesq', 'Pesquisas', 'Média entre a satisfação (nota média × 10) e as pesquisas realizadas'],
+  ['renovacao', 'Renovação', 'Renovados ÷ (renovados + em negociação + vencidos)'],
+  ['checklist', 'Check List', '% dos itens do checklist concluídos'],
+  ['visitas', 'Visitas', '% das visitas emergenciais do mês já concluídas'],
+  ['fluxo', 'Fluxo', 'Média entre o % do fluxo lançado no mês e o % de TMA dentro da meta (até 8 s)'],
+  ['adocao', 'Adoção', 'Média do % de uso do app e do % de faciais'],
+  ['incidentes', 'Incidentes', 'Média entre o % resolvidos e o % com retorno registrado'],
+  ['demandas', 'Demandas', '% das demandas (abertas agora + concluídas no mês) que não estouraram o prazo'],
+  ['vida', 'Vida do Cond.', '% dos condomínios em risco baixo'],
+  ['lembretes', 'Lembretes', '% dos lembretes que não estão vencidos'],
+  ['sla', 'SLA', '% das tratativas concluídas dentro da meta de SLA (Incidentes, Fluxo, Renovação, Visitas e Demandas)'],
+];
+let __rgCache = { chave: '', t: 0, dados: null };
+function rankingGeralDados(mes){
+  const chave = [mes, rcAssinaturaDados(), arrRC.lem().length, arrRC.ck().length].join('|');
+  if (__rgCache.chave === chave && Date.now() - __rgCache.t < 90000) return __rgCache.dados;
+  const linhas = gruposResultadoRC().filter(g => g.chave !== '__sem__').map(g => ({ g, d: rcResultadoFinal(g, mes) }));
+  linhas.sort((a, b) => ((b.d.geral === null ? -1 : b.d.geral) - (a.d.geral === null ? -1 : a.d.geral)) || a.g.nome.localeCompare(b.g.nome, 'pt-BR'));
+  let ultimo = null, posAnt = 0;
+  linhas.forEach((l, i) => { l.pos = (i > 0 && l.d.geral === ultimo) ? posAnt : i + 1; posAnt = l.pos; ultimo = l.d.geral; });   // empate divide a posição
+  __rgCache = { chave, t: Date.now(), dados: linhas };
+  return linhas;
+}
+function rankingGeralHtml(mes){
+  const linhas = rankingGeralDados(mes);
+  if (!linhas.length) return '';
+  const cor = v => v === null || v === undefined ? 'var(--text-faint)' : (v >= 80 ? 'var(--ok)' : (v >= 60 ? '#f59e0b' : 'var(--critico)'));
+  const medalha = p => p === 1 ? '🥇' : (p === 2 ? '🥈' : (p === 3 ? '🥉' : '#' + p));
+  const cel = v => '<td style="color:' + cor(v) + ';">' + (v === null || v === undefined ? '—' : v) + '</td>';
+  const forteFraco = d => {
+    const it = RG_COLS.filter(c => d[c[0]] !== null && d[c[0]] !== undefined).map(c => [c[1], d[c[0]]]).sort((x, y) => y[1] - x[1]);
+    return it.length < 2 ? '' : 'Ponto forte: <b>' + escapeHtml(it[0][0]) + ' (' + it[0][1] + ')</b> · Pede atenção: <b>' + escapeHtml(it[it.length - 1][0]) + ' (' + it[it.length - 1][1] + ')</b>';
+  };
+  return '<p class="chart-title" style="margin:6px 0 6px;">🏆 Ranking geral · resultado de todas as abas · ' + escapeHtml(mesLabelBR(mes)) + '</p>' +
+    '<div style="overflow-x:auto;"><table class="rc-tabela rg-tabela"><thead><tr><th>#</th><th style="text-align:left;">Responsável</th>' + RG_COLS.map(c => '<th title="' + escapeHtml(c[2]) + '">' + escapeHtml(c[1]) + '</th>').join('') + '<th>Resultado geral</th></tr></thead><tbody>' +
+    linhas.map(l => '<tr><td style="font-size:15px;">' + medalha(l.pos) + '</td><td style="text-align:left; white-space:nowrap;">' + rcAvatarMini(l.g) + '<strong>' + escapeHtml(l.g.nome) + '</strong></td>' + RG_COLS.map(c => cel(l.d[c[0]])).join('') +
+      '<td><strong style="color:' + cor(l.d.geral) + '; font-size:16px;">' + (l.d.geral === null ? '—' : l.d.geral) + '</strong>' + (l.d.geral === null ? '' : '<div class="rg-barra"><div style="width:' + l.d.geral + '%; background:' + cor(l.d.geral) + ';"></div></div>') + '</td></tr>').join('') +
+    '</tbody></table></div>' +
+    '<div class="rg-notas">' + linhas.filter(l => forteFraco(l.d)).map(l => '<div><strong>' + escapeHtml(l.g.nome) + ':</strong> ' + forteFraco(l.d) + '</div>').join('') + '</div>' +
+    '<p class="rc-nota">Notas de 0 a 100. O resultado geral é a média de todas as abas que têm dados para a responsável (pesos iguais, provisório até a gestão definir os pesos); um traço significa que a aba ainda não tem dado dela. Passe o mouse no título de cada coluna para ver como a nota é calculada. Verde a partir de 80, amarelo de 60 a 79, vermelho abaixo de 60. Empates dividem a posição.</p>' +
+    '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:12px; color:var(--text-faint);">Como cada aba entra na nota</summary><table class="rc-tabela" style="margin-top:6px;"><thead><tr><th style="text-align:left;">Aba</th><th style="text-align:left;">Como a nota é calculada</th></tr></thead><tbody>' +
+    RG_COLS.map(c => '<tr><td style="text-align:left;"><strong>' + escapeHtml(c[1]) + '</strong></td><td style="text-align:left;">' + escapeHtml(c[2]) + '</td></tr>').join('') +
+    '</tbody></table><p class="rc-nota">Em Pesquisas, Josiane Lima e Nicolly Silva são medidas nas filiais que fiscalizam; Paula, Tayane e Juliana não entram no item de pesquisas realizadas, porque quem faz as pesquisas das filiais é a fiscalização. Cadastro, Relatório I.A. e Configurações não geram nota por não medirem o trabalho de uma carteira.</p></details>';
+}
+
 function renderResultadoFinalCarteira(mes){
   const el = document.getElementById('resultadoFinalCarteira');
   if (!el) return;
   rcGarantirDados('todos', () => renderResultadoFinalCarteira(mes));
-  const grupos = gruposResultadoRC().filter(g => g.chave !== '__sem__');
-  if (!grupos.length){ el.innerHTML = ''; return; }
-  const linhas = grupos.map(g => ({ g, d: rcResultadoFinal(g, mes) }))
-    .sort((a, b) => ((b.d.geral === null ? -1 : b.d.geral) - (a.d.geral === null ? -1 : a.d.geral)) || a.g.nome.localeCompare(b.g.nome, 'pt-BR'));
-  const cor = v => v === null ? 'var(--text-faint)' : (v >= 80 ? 'var(--ok)' : (v >= 60 ? '#f59e0b' : 'var(--critico)'));
-  const cel = v => '<td style="color:' + cor(v) + ';">' + (v === null ? '—' : v) + '</td>';
-  el.innerHTML = '<p class="chart-title" style="margin:6px 0 6px;">🎯 Resultado final por responsável · ' + escapeHtml(mesLabelBR(mes)) + '</p>' +
-    '<div style="overflow-x:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Responsável</th><th>Satisfação</th><th>Pesquisas realizadas</th><th>Renovações</th><th>Adoção digital</th><th>Incidentes</th><th>SLA de tratativa</th><th>Resultado geral</th></tr></thead><tbody>' +
-    linhas.map(({ g, d }) => '<tr><td style="text-align:left;"><strong>' + escapeHtml(g.nome) + '</strong></td>' + cel(d.satisfacao) + cel(d.pesquisas) + cel(d.renovacao) + cel(d.adocao) + cel(d.incidentes) + cel(d.sla) +
-      '<td><strong style="color:' + cor(d.geral) + '; font-size:15px;">' + (d.geral === null ? '—' : d.geral) + '</strong></td></tr>').join('') +
-    '</tbody></table></div>' +
-    '<p class="rc-nota">Notas de 0 a 100. Resultado geral = média das dimensões que têm dados (pesos iguais, provisório até a gestão definir os pesos). Satisfação = nota média × 10; Pesquisas = % realizadas nas filiais que a responsável fiscaliza (Josiane e Nicolly; as responsáveis de filial não entram nesse item, porque as pesquisas das filiais são feitas pela fiscalização); Renovações = renovados ÷ (renovados + em negociação + vencidos); Adoção = média do % de app e de faciais; Incidentes = média de (% resolvidos, % com retorno); SLA = % das tratativas concluídas dentro da meta definida em cada aba (Incidentes, Fluxo, Renovação).</p>' +
+  el.innerHTML = rankingGeralHtml(mes) +
     '<details style="margin-top:6px;"><summary style="cursor:pointer; font-size:12px; color:var(--text-faint);">SQL para ativar início e conclusão das tratativas (rodar uma vez no Supabase)</summary><pre style="white-space:pre-wrap; font-size:11px;">' + escapeHtml(SLA_SQL) + '</pre></details>';
 }
 
@@ -9601,7 +9662,7 @@ function assistRecalcular(){
 
 // ----- telas -----
 function assistRespOpcoes(sel, comTodos, valor){
-  const nomes = listaResponsaveisSC().concat(['Sem responsável']);
+  const nomes = (comTodos ? listaResponsaveisSC() : listaPessoasParaEscolher()).concat(['Sem responsável']);
   sel.innerHTML = (comTodos ? '<option value="">Todos os responsáveis</option>' : '<option value="">(definir)</option>') + nomes.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>').join('');
   if (valor !== undefined) sel.value = valor;
 }
@@ -10162,7 +10223,7 @@ function cadastroRowDoNome(nome){
 const SAUDE_ROTULO = { critico: ['Crítico', '#ef4444'], atencao: ['Atenção', '#f59e0b'], ok: ['OK', '#22c55e'], pendente: ['Pendente', '#94a3b8'] };
 function opcoesDestinoCarteira(excluir){
   return '<option value="">Mover para…</option>' +
-    listaResponsaveisSC().filter(r => !excluir || normTxtCarteira(r) !== normTxtCarteira(excluir)).map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('') +
+    listaPessoasParaEscolher().filter(r => !excluir || normTxtCarteira(r) !== normTxtCarteira(excluir)).map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('') +
     (excluir === '__sem__' ? '' : '<option value="__nenhum__">— sem responsável —</option>') +
     '<option value="__novo__">➕ Novo responsável...</option>';
 }
@@ -10283,7 +10344,7 @@ function renderListaCarteiras(){
   const q = normalizeNomeCondo(document.getElementById('carteirasBusca').value);
   const fFilial = document.getElementById('carteirasFiltroFilial').value;
   const fResp = document.getElementById('carteirasFiltroResp').value;
-  const resps = listaResponsaveisSC();
+  const resps = listaPessoasParaEscolher();
   const ativos = CADASTRO_LIVE.filter(c => c.status !== 'Inativo' && c.nome && c.item_id !== undefined);
   const lista = ativos
     .filter(c => !q || normalizeNomeCondo(c.nome).includes(q))
@@ -16573,6 +16634,7 @@ function initTabs(){
       document.getElementById('tabAtividades').style.display = tab === 'atividades' ? 'block' : 'none';
       document.getElementById('tabAssistenteSC').style.display = tab === 'assistenteSC' ? 'block' : 'none';
       document.getElementById('sharedFilterBar').style.display = (tab === 'dashboard' || tab === 'pesquisa') ? '' : 'none';
+      try{ atualizarAvisoCarteira(); }catch(e){}
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
         cadastroLoaded = true;
@@ -19290,7 +19352,7 @@ function abrirTratativaFluxoModal(registro){
   document.getElementById('faTratativaTexto').value = registro.tratativa || '';
   document.getElementById('faTratIni').value = registro.tratativa_inicio ? paraInputDT(registro.tratativa_inicio) : '';
   document.getElementById('faTratFim').value = registro.tratativa_conclusao ? paraInputDT(registro.tratativa_conclusao) : '';
-  document.getElementById('faTratativaResponsavel').value = registro.tratativa_responsavel || 'Maria Rosely (Analista)';
+  definirResponsavelMenu('faTratativaResponsavel', registro.tratativa_responsavel || responsavelPadraoMenu());
   document.getElementById('faTratativaError').style.display = 'none';
   document.getElementById('faTratativaModalOverlay').style.display = 'flex';
 }
@@ -19548,7 +19610,7 @@ function renderFluxoAtendimento(){
       <td style="text-align:center; color:${corPortaViolada(f.porta_violada)};">${f.porta_violada ?? '—'}</td>
       <td style="text-align:center; color:${corTMA(f.tma)};">${f.tma ?? '—'}${f.tma!==null&&f.tma!==undefined?'s':''}</td>
       <td><span class="tag" style="color:${corStatus}; border:1px solid ${corStatus}; background:transparent;">${status}</span></td>
-      <td>${escapeHtml(f.responsavel||'—')}</td>
+      <td>${escapeHtml(responsavelCanonico(f.responsavel)||'—')}</td>
       <td>
         <button type="button" class="renov-action-btn" data-edit-fa="${f.id}">Editar</button>
         <button type="button" class="renov-action-btn" data-tratativa-fa="${f.id}" style="${f.tratativa ? 'border-color:var(--ok); color:var(--ok);' : 'border-color:var(--atencao); color:var(--atencao);'}" title="${f.tratativa ? 'Tratativa já registrada — clique pra ver/editar' : 'Nenhuma tratativa registrada ainda'}">${f.tratativa ? '✅ Tratativa' : '📝 Realizar Tratativa'}</button>
@@ -19583,7 +19645,7 @@ function abrirFluxoAtendimentoModal(f){
   document.getElementById('faPctApp').value = f ? (f.pct_app ?? '') : '';
   document.getElementById('faPortaAberta').value = f ? (f.porta_aberta ?? '') : '';
   document.getElementById('faPortaViolada').value = f ? (f.porta_violada ?? '') : '';
-  document.getElementById('faResponsavel').value = f ? (f.responsavel || 'Maria Rosely (Analista)') : 'Maria Rosely (Analista)';
+  definirResponsavelMenu('faResponsavel', (f && f.responsavel) || responsavelPadraoMenu());
   document.getElementById('faObservacao').value = f ? (f.observacao || '') : '';
   document.getElementById('faDeleteBtn').style.display = f ? '' : 'none';
   document.getElementById('faModalOverlay').style.display = 'flex';
@@ -20082,6 +20144,31 @@ function barraHorizontal(label, valor, valorMax, cor, sufixo){
 // EQUIPE & METAS — normalização de nomes antigos + contagem ao vivo de
 // pesquisas do dia por responsável (Rosely e Josiane).
 // ============================================================================
+// Acha o integrante do organograma a partir de um texto como "Josiane Alves (Assistente)" ou "Nicole"
+function membroDoTextoResponsavel(texto){
+  const t = normTxtCarteira(texto);
+  if (!t) return null;
+  const equipe = equipeMembrosData || [];
+  const exato = equipe.find(m => normTxtCarteira(m.nome) === t);
+  if (exato) return exato;
+  const apelidos = { JOSY: 'JOSIANE', NICOLE: 'NICOLLY', ROSE: 'ROSELY', GEOVANA: 'GEOVANNA' };
+  const primeiro = t.split(' ')[0], chave = apelidos[primeiro] || primeiro;
+  if (chave.length < 3) return null;
+  const achados = equipe.filter(m => normTxtCarteira(m.nome).split(' ').includes(chave));
+  if (achados.length !== 1) return null;   // só reconhece quando não há dúvida de quem é
+  // nome completo com 3 ou mais partes e sobrenome diferente (ex.: "Maria Silva Souza") é outra pessoa, não a do organograma
+  const partes = normTxtCarteira(String(texto).split('(')[0]).split(' ').filter(Boolean);
+  const dela = normTxtCarteira(achados[0].nome).split(' ');
+  if (partes.length >= 3 && !partes.slice(1).some(x => dela.includes(x))) return null;
+  return achados[0];
+}
+// Nome do organograma para um texto qualquer; se não for ninguém da equipe (ex.: "Equipe CS"), devolve o próprio texto
+function responsavelCanonico(texto){
+  if (!texto) return texto;
+  const m = membroDoTextoResponsavel(texto);
+  return m ? m.nome : texto;
+}
+
 function normalizarResponsavelEquipe(nomeRaw){
   const n = String(nomeRaw || '').trim().toLowerCase();
   if (!n) return null;
@@ -20112,14 +20199,65 @@ async function carregarEquipeMembros(){
   }
 }
 
-function sincronizarResponsaveisComEquipe(){
-  if (!equipeMembrosData.length) return;
-  const nomes = equipeMembrosData.map(m => m.nome).filter(Boolean);
+// ----- Responsáveis: todos os menus vêm do organograma (Equipe & Metas) -----
+// Quem entra, sai ou muda de nome no organograma aparece sozinho em todos os campos "Responsável".
+function nomesDaEquipe(){
+  return (equipeMembrosData || []).filter(m => m && m.nome && m.ativo !== false)
+    .slice().sort((a, b) => (a.ordem == null ? 999 : a.ordem) - (b.ordem == null ? 999 : b.ordem)).map(m => m.nome);
+}
+function responsavelPadraoMenu(){
+  const nomes = nomesDaEquipe();
+  let eu = null;
+  try{ if (typeof membroDaCarteira === 'function') eu = membroDaCarteira(currentNomeCompleto || currentUsername || ''); }catch(e){}
+  return (eu && eu.nome) || nomes[0] || 'Maria Rosely';
+}
+// Seleciona um valor num menu de responsável; se for um nome que não está mais no organograma (registro antigo), mantém como opção extra
+function definirResponsavelMenu(id, valor){
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  [...sel.querySelectorAll('option[data-legado]')].forEach(o => o.remove());   // limpa o nome antigo de um registro aberto antes
+  if (valor && ![...sel.options].some(o => o.value === valor)){
+    const canon = responsavelCanonico(valor);   // "Josiane Alves (Assistente)" é a Josiane Lima do organograma: seleciona ela, sem repetir
+    if (canon !== valor && [...sel.options].some(o => o.value === canon)) valor = canon;
+  }
+  if (valor && ![...sel.options].some(o => o.value === valor)){
+    const o = document.createElement('option'); o.value = valor; o.textContent = valor; o.setAttribute('data-legado', '1'); sel.appendChild(o);
+  }
+  sel.value = valor || '';
+}
+function atualizarMenusResponsavel(){
+  const nomes = nomesDaEquipe();
   if (!nomes.length) return;
   PQ_RESPONSAVEIS = [...nomes];
   DEM_RESPONSAVEIS = [...nomes];
   RESPONSAVEL_OPCOES_INC = [...nomes, 'Equipe CS', 'Técnica'];
+  const menus = [
+    { id: 'faResponsavel', extras: ['Equipe CS'] }, { id: 'faTratativaResponsavel', extras: ['Equipe CS'] },
+    { id: 'incResponsavel', extras: ['Equipe CS', 'Técnica'] }, { id: 'demResponsavel' }, { id: 'demLoteResponsavel' },
+    { id: 'pqResponsavel', primeira: ['', 'Selecione...'] }, { id: 'demFilterResponsavel', primeira: ['', 'Responsável: todos'] },
+  ];
+  menus.forEach(m => {
+    const sel = document.getElementById(m.id);
+    if (!sel) return;
+    const atual = sel.value, lista = [...nomes, ...(m.extras || [])];
+    let html = m.primeira ? '<option value="' + m.primeira[0] + '">' + escapeHtml(m.primeira[1]) + '</option>' : '';
+    html += lista.map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('');
+    // se a janela está aberta agora, preserva o que a pessoa já tinha escolhido (mesmo que o nome não esteja mais no organograma)
+    if (sel.offsetParent !== null && atual && !lista.includes(atual) && !(m.primeira && atual === m.primeira[0])) html += '<option value="' + escapeHtml(atual) + '" data-legado="1">' + escapeHtml(atual) + '</option>';
+    sel.innerHTML = html;
+    sel.value = atual || (m.primeira ? m.primeira[0] : (lista[0] || ''));
+  });
 }
+function sincronizarResponsaveisComEquipe(){
+  if (!equipeMembrosData.length) return;
+  window.__equipeUltimaCarga = Date.now();
+  try{ atualizarMenusResponsavel(); }catch(e){ console.warn('Menus de responsável:', e); }
+  try{ if (typeof atualizarSeletoresCarteira === 'function') atualizarSeletoresCarteira(); }catch(e){}
+}
+// volta para a aba depois de um tempo: confere se alguém foi acrescentada ao organograma (por outro usuário, por exemplo)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && sb && typeof currentRole !== 'undefined' && currentRole && Date.now() - (window.__equipeUltimaCarga || 0) > 120000) carregarEquipeMembros();
+});
 
 function renderEquipeOrgChart(){
   try{ renderOrganogramaNovaDivisao(); }catch(e){ console.warn('Organograma da nova divisão falhou; usando o antigo:', e); renderEquipeOrgChartLegado(); }
@@ -20502,14 +20640,16 @@ async function renderMetasHoje(){
     const hoje = new Date().toISOString().slice(0,10);
     const { data, error } = await paginar(() => sb.from('condo_extra').select('item_n,data_pesquisa,responsavel_pesquisa,excluido').order('item_n', { ascending: true }), () => sb.from('condo_extra').select('data_pesquisa,responsavel_pesquisa,excluido'));
     if (error) throw error;
-    const contagem = { 'Maria Rosely (Analista)': 0, 'Josiane Alves (Assistente)': 0 };
+    // pessoas e metas diárias vêm do organograma (campo "meta de pesquisas por dia"); sem metas cadastradas, vale o par antigo
+    const comMeta = (equipeMembrosData || []).filter(m => Number(m.meta_pesquisas_dia) > 0);
+    const metas = comMeta.length ? Object.fromEntries(comMeta.map(m => [m.nome, Number(m.meta_pesquisas_dia)])) : { 'Maria Rosely (Analista)': 10, 'Josiane Alves (Assistente)': 10 };
+    const contagem = Object.fromEntries(Object.keys(metas).map(n => [n, 0]));
     (data || []).forEach(row=>{
       if (row.excluido) return;
       if (!row.data_pesquisa || String(row.data_pesquisa).slice(0,10) !== hoje) return;
-      const nome = normalizarResponsavelEquipe(row.responsavel_pesquisa);
+      const nome = comMeta.length ? (membroDoTextoResponsavel(row.responsavel_pesquisa) || {}).nome : normalizarResponsavelEquipe(row.responsavel_pesquisa);
       if (nome && nome in contagem) contagem[nome]++;
     });
-    const metas = { 'Maria Rosely (Analista)': 10, 'Josiane Alves (Assistente)': 10 };
     box.innerHTML = Object.keys(metas).map(nome=>{
       const feito = contagem[nome];
       const meta = metas[nome];
@@ -21839,7 +21979,9 @@ function renderIncidentes(){
     tbody.innerHTML = filtered.map(i=>{
       const corG = corGravidade(i.gravidade);
       const corS = corStatusIncidente(i.status);
-      const respOpcoes = RESPONSAVEL_OPCOES_INC.map(r=>`<option value="${escapeHtml(r)}" ${i.responsavel===r?'selected':''}>${escapeHtml(r)}</option>`).join('');
+      const respAtualInc = responsavelCanonico(i.responsavel);
+      const respOpcoes = RESPONSAVEL_OPCOES_INC.map(r=>`<option value="${escapeHtml(r)}" ${respAtualInc===r?'selected':''}>${escapeHtml(r)}</option>`).join('') +
+        (respAtualInc && !RESPONSAVEL_OPCOES_INC.includes(respAtualInc) ? `<option value="${escapeHtml(i.responsavel)}" selected>${escapeHtml(i.responsavel)}</option>` : '');
       return `<tr>
         <td class="ck-name">${escapeHtml(i.condominio)}</td>
         <td>${escapeHtml(i.tipo||'—')}</td>
@@ -22218,7 +22360,7 @@ function abrirIncidenteModal(i){
   document.getElementById('incTratIni').value = i && i.tratativa_inicio ? paraInputDT(i.tratativa_inicio) : '';
   document.getElementById('incTratFim').value = i && i.tratativa_conclusao ? paraInputDT(i.tratativa_conclusao) : '';
   document.getElementById('incStatus').value = i ? (i.status || 'Em análise') : 'Em análise';
-  document.getElementById('incResponsavel').value = i ? (i.responsavel || 'Maria Rosely (Analista)') : 'Maria Rosely (Analista)';
+  definirResponsavelMenu('incResponsavel', (i && i.responsavel) || responsavelPadraoMenu());
   document.getElementById('incDeleteBtn').style.display = i ? '' : 'none';
   document.getElementById('incModalOverlay').style.display = 'flex';
 }
@@ -22467,7 +22609,7 @@ const DemFilterStore = {
     return lista.filter(d=>{
       if (f.q && !((d.condominio||'').toLowerCase().includes(f.q) || (d.descricao||'').toLowerCase().includes(f.q))) return false;
       if (f.filial && d.filial !== f.filial) return false;
-      if (f.responsavel && d.responsavel !== f.responsavel) return false;
+      if (f.responsavel && responsavelCanonico(d.responsavel) !== responsavelCanonico(f.responsavel)) return false;
       if (f.status && d.status !== f.status) return false;
       if (f.prioridade && d.prioridade !== f.prioridade) return false;
       if (dataIni || dataFim){
@@ -22518,7 +22660,7 @@ function calcularRanking(demandas){
   const porResp = {};
   DEM_RESPONSAVEIS.forEach(r => { porResp[r] = []; });
   demandas.forEach(d=>{
-    const r = d.responsavel || 'Sem responsável';
+    const r = responsavelCanonico(d.responsavel) || 'Sem responsável';
     if (!porResp[r]) porResp[r] = [];
     porResp[r].push(d);
   });
@@ -22719,7 +22861,7 @@ function demandaCardHTML(d){
       <div class="kanban-card-name">${escapeHtml(d.condominio)}</div>
       <div style="font-size:11px; color:var(--text-faint); margin-top:3px;">${escapeHtml((d.descricao||'').slice(0,70))}${(d.descricao||'').length>70?'…':''}</div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:10.5px; color:var(--text-faint);">
-        <span>${escapeHtml(d.responsavel || 'Sem responsável')}</span>
+        <span>${escapeHtml(responsavelCanonico(d.responsavel) || 'Sem responsável')}</span>
         <span style="color:${vencida ? 'var(--critico)' : 'var(--text-faint)'};">${dias!==null ? dias+'d' : '—'}${vencida ? ' ⚠' : ''}</span>
       </div>
     </div>`;
@@ -22751,7 +22893,7 @@ function filaTableRowHTML(d){
     <td><input type="checkbox" class="dem-row-checkbox" data-dem-checkbox="${d.id}" ${demSelecionadas.has(String(d.id)) ? 'checked' : ''}></td>
     <td class="ck-name">${escapeHtml(d.condominio)}</td>
     <td style="max-width:240px;">${escapeHtml((d.descricao||'').slice(0,80))}${(d.descricao||'').length>80?'…':''}</td>
-    <td>${escapeHtml(d.responsavel||'—')}</td>
+    <td>${escapeHtml(responsavelCanonico(d.responsavel)||'—')}</td>
     <td>${escapeHtml(d.status||'—')}</td>
     <td><span class="tag" style="color:${corPrior}; border:1px solid ${corPrior}; background:transparent;">${escapeHtml(d.prioridade||'—')}</span></td>
     <td>${d.data_abertura ? new Date(d.data_abertura).toLocaleDateString('pt-BR') : '—'}</td>
@@ -22935,7 +23077,7 @@ function abrirDemandaModal(d){
   document.getElementById('demCondominio').value = d ? (d.condominio||'') : '';
   document.getElementById('demFilial').value = d ? (d.filial||'') : '';
   document.getElementById('demTipo').value = d ? (d.tipo||'Outro') : 'Outro';
-  document.getElementById('demResponsavel').value = d ? (d.responsavel||DEM_RESPONSAVEIS[0]) : DEM_RESPONSAVEIS[0];
+  definirResponsavelMenu('demResponsavel', (d && d.responsavel) || responsavelPadraoMenu());
   document.getElementById('demDescricao').value = d ? (d.descricao||'') : '';
   document.getElementById('demStatus').value = d ? (d.status||'Aberta') : 'Aberta';
   document.getElementById('demPrioridade').value = d ? (d.prioridade||'Média') : 'Média';
