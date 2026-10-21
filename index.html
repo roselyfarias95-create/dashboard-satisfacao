@@ -1335,6 +1335,7 @@ Minimum version required to store current data is: `+i+`.
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="equipeMetas" checked> Equipe & Metas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="fechamentoMensal" checked> Fechamento do Mês</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="assistenteSC" checked> Assistente SC</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="newUserTab" value="agendaDia" checked> Agenda do Dia</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Desmarque as abas que esse usuário não deve ver ou acessar. Administradores sempre veem todas as abas.</p>
       <button type="submit" class="login-btn users-add-btn">+ Adicionar</button>
@@ -1376,6 +1377,7 @@ Minimum version required to store current data is: `+i+`.
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="equipeMetas"> Equipe & Metas</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="fechamentoMensal"> Fechamento do Mês</label>
         <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="assistenteSC"> Assistente SC</label>
+        <label style="display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text); font-weight:600;"><input type="checkbox" class="editUserTab" value="agendaDia"> Agenda do Dia</label>
       </div>
       <p style="grid-column:1 / -1; font-size:10.5px; color:var(--text-faint); margin:2px 0 0;">Administradores sempre veem todas as abas, independente da seleção acima.</p>
       <button type="submit" class="login-btn users-add-btn">Salvar alterações</button>
@@ -1763,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v157 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v158 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -3097,7 +3099,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="rc-controles">
         <label>Lembrete de fim do dia às <input type="time" id="asCfgFimDia" class="search" value="17:30"></label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgPopupEntrada"> Mostrar o resumo do dia (popup com pendências e retornos) ao entrar</label>
-        <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgAutoAgenda"> Montar a agenda de hoje sozinho no primeiro acesso do dia (administradores e editores)</label>
+        <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgAutoAgenda"> Montar a agenda de hoje sozinho no primeiro acesso do dia (equipe e administradores)</label>
         <button type="button" class="clearbtn" id="asCfgNotif">🔔 Ativar avisos do navegador</button>
       </div>
       <p class="rc-nota">Os avisos (bom dia, novas prioridades altas, fim do dia) aparecem enquanto o dashboard estiver aberto, de segunda a sexta. Se a Agenda do Dia tiver um horário em "Fechamento do dia", o lembrete usa esse horário. Estas opções ficam salvas neste navegador.</p>
@@ -5412,6 +5414,21 @@ async function seedDefaultUsersIfEmpty(){
   }catch(e){ console.error('Falha ao semear usuários padrão:', e); }
 }
 
+// Quem é da equipe (organograma ou carteira) sempre vê o Assistente SC e a Agenda do Dia, mesmo com a lista de abas restrita
+function souDaEquipe(){
+  if (typeof currentRole !== 'undefined' && currentRole === 'admin') return true;
+  try{ if (typeof meuNomeCarteira === 'function' && meuNomeCarteira()) return true; }catch(e){}
+  try{
+    const login = normTxtCarteira(typeof currentUsername !== 'undefined' ? currentUsername : '');
+    if (login && (equipeMembrosData || []).some(m => m.usuario_login && normTxtCarteira(m.usuario_login) === login)) return true;
+  }catch(e){}
+  try{ if (typeof membroDaCarteira === 'function' && membroDaCarteira(currentNomeCompleto || currentUsername || '')) return true; }catch(e){}
+  return false;
+}
+function garantirAbasDaEquipe(){
+  if (typeof currentRole === 'undefined' || !currentRole || currentRole === 'admin' || !souDaEquipe()) return;
+  ['assistenteSC', 'agendaDia'].forEach(t => { const b = document.querySelector('.tab-btn[data-tab="' + t + '"]'); if (b) b.style.display = ''; });
+}
 function applyTabPermissions(){
   const isAdmin = currentRole === 'admin';
   const allowed = (!isAdmin && currentAllowedTabs && currentAllowedTabs.length) ? currentAllowedTabs : ALL_TABS;
@@ -5422,6 +5439,7 @@ function applyTabPermissions(){
     btn.style.display = ok ? '' : 'none';
     if (ok && !firstAllowedBtn) firstAllowedBtn = btn;
   });
+  try{ garantirAbasDaEquipe(); }catch(e){}
   const activeBtn = document.querySelector('.tab-btn.active');
   if (activeBtn && activeBtn.style.display === 'none' && firstAllowedBtn){
     firstAllowedBtn.click();
@@ -9952,7 +9970,7 @@ const ASSIST_MAX_AGENDA = 6;   // tarefas sugeridas por pessoa (cobranças prime
 let __assistAgProposta = [], __assistAgExistentes = new Set(), __assistTextoFimDia = '', __assistBaseCarregada = false, __assistHoraFim = { dia: '', valor: '' };
 
 function assistCfgLer(){
-  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null, popupEntrada: true, popupOcultoDia: '' };
+  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null, popupEntrada: true, popupOcultoDia: '', agendaAuto: true };
   try{ return Object.assign(base, JSON.parse(localStorage.getItem('assistenteAvisosCfg') || '{}')); }catch(e){ return base; }
 }
 function assistCfgSalvar(c){ try{ localStorage.setItem('assistenteAvisosCfg', JSON.stringify(c)); }catch(e){} }
@@ -10025,7 +10043,7 @@ async function assistRenderAgenda(){
 // Envia para a aba Agenda do Dia (agenda_diaria_tarefas). Sem duplicar o que já está lá.
 async function assistEnviarAgenda(marcadas, silencioso){
   if (!sb){ if (!silencioso) alert('Sem conexão com o servidor.'); return { enviadas: 0 }; }
-  if (!assistPodeEditar()){ if (!silencioso) alert('Só administradores e editores enviam tarefas para a agenda.'); return { enviadas: 0 }; }
+  if (!assistPodeEditar() && !(silencioso && souDaEquipe())){ if (!silencioso) alert('Só administradores e editores enviam tarefas para a agenda.'); return { enviadas: 0 }; }   // a montagem automática vale para toda a equipe
   await assistCarregarAgendaExistente();
   const propostas = marcadas || assistMontarProposta();
   const hoje = agendaHojeISO(), novas = [];
@@ -10170,7 +10188,7 @@ async function assistAvisosTick(){
   if (diaSemana === 0 || diaSemana === 6) return;   // só dias úteis
   const altas = __assistAlertas.filter(a => a.prioridade === 'Alta'), cobr = assistCobrancasVencidas().length;
   let mudou = false;
-  if (cfg.autoAgenda && assistPodeEditar() && cfg.ultimoAgendaAuto !== hoje){
+  if (cfg.agendaAuto !== false && (assistPodeEditar() || souDaEquipe()) && cfg.ultimoAgendaAuto !== hoje){
     cfg.ultimoAgendaAuto = hoje; mudou = true;
     const r = await assistEnviarAgenda(null, true);
     if (r.enviadas) assistToast('📅 <strong>Agenda de hoje montada:</strong> ' + r.enviadas + ' tarefa(s) enviada(s) para a Agenda do Dia.', [{ rotulo: 'Ver agenda', acao: () => { const b = document.querySelector('.tab-btn[data-tab="agendaDia"]'); if (b) b.click(); } }]);
@@ -10279,7 +10297,7 @@ function assistMostrarPopupEntrada(forcar){
 function assistCarregarCfgNaTela(){
   const c = assistCfgLer();
   document.getElementById('asCfgFimDia').value = c.fimDiaHora || '17:30';
-  document.getElementById('asCfgAutoAgenda').checked = !!c.autoAgenda;
+  document.getElementById('asCfgAutoAgenda').checked = c.agendaAuto !== false;
   document.getElementById('asCfgPopupEntrada').checked = c.popupEntrada !== false;
   const btn = document.getElementById('asCfgNotif');
   btn.textContent = (c.notif && 'Notification' in window && Notification.permission === 'granted') ? '🔔 Avisos do navegador ativados' : '🔔 Ativar avisos do navegador';
@@ -10287,7 +10305,7 @@ function assistCarregarCfgNaTela(){
 function assistSalvarCfgDaTela(){
   const c = assistCfgLer();
   c.fimDiaHora = document.getElementById('asCfgFimDia').value || '17:30';
-  c.autoAgenda = document.getElementById('asCfgAutoAgenda').checked;
+  c.agendaAuto = document.getElementById('asCfgAutoAgenda').checked;
   c.popupEntrada = document.getElementById('asCfgPopupEntrada').checked;
   assistCfgSalvar(c);
 }
@@ -20570,6 +20588,7 @@ function sincronizarResponsaveisComEquipe(){
   window.__equipeUltimaCarga = Date.now();
   try{ atualizarMenusResponsavel(); }catch(e){ console.warn('Menus de responsável:', e); }
   try{ if (typeof atualizarSeletoresCarteira === 'function') atualizarSeletoresCarteira(); }catch(e){}
+  try{ garantirAbasDaEquipe(); }catch(e){}
 }
 // volta para a aba depois de um tempo: confere se alguém foi acrescentada ao organograma (por outro usuário, por exemplo)
 document.addEventListener('visibilitychange', () => {
