@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v159 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v161 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2541,7 +2541,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     </div>
 
     <div id="renovViewReducao" style="display:none;">
-      <p class="rc-nota" style="margin:0 0 12px;">Condomínios que pediram para <strong>diminuir a mensalidade</strong>. Entram aqui as negociações marcadas como "quer reduzir" e as que têm nova mensalidade menor que a atual. Preencha o <strong>valor sugerido</strong> e o <strong>prazo de renovação sugerido</strong> em <strong>Editar</strong>, marque as linhas e gere o <strong>relatório para pedir autorização à diretoria</strong>.</p>
+      <p class="rc-nota" style="margin:0 0 12px;">Condomínios que pediram para <strong>diminuir a mensalidade</strong>. Entram aqui as negociações marcadas como "quer reduzir" e as que têm nova mensalidade menor que a atual. O <strong>valor sugerido</strong> e o <strong>prazo de renovação sugerido</strong> são <strong>calculados automaticamente</strong> (regra da Servis: redução de referência de 10%, limite de 20%; prazo conforme o custo dos equipamentos, de 36 a 60 meses) e você pode ajustar em <strong>Editar</strong>. Marque as linhas e gere o <strong>relatório para pedir autorização à diretoria</strong>.</p>
       <div class="stats-strip" id="renovRedKpis" style="margin-bottom:14px;"></div>
       <div class="toolbar" style="margin-bottom:14px;">
         <input type="text" class="search" id="renovRedBusca" placeholder="Buscar por condomínio...">
@@ -2813,7 +2813,8 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Justificativa para a diretoria
           <textarea id="negReducaoJustificativa" rows="2" placeholder="Por que a redução faz sentido (ex.: risco de cancelamento, proposta de concorrente, histórico do condomínio)" style="width:100%; margin-top:4px; box-sizing:border-box;"></textarea>
         </label>
-        <div id="negReducaoInfo" style="grid-column:1 / -1; font-size:12px; min-height:16px;"></div>
+        <div id="negReducaoInfo" style="grid-column:1 / -1; font-size:12px; min-height:16px; line-height:1.5;"></div>
+        <div style="grid-column:1 / -1;"><button type="button" class="clearbtn" id="negSugRecalc" style="font-size:11.5px;">↻ Usar a sugestão automática de novo</button></div>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
           <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📦 Ampliação</label>
         </div>
@@ -2854,6 +2855,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         </div>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="clearbtn" id="negRelatorioBtn" style="border-color:var(--ok); color:var(--ok); margin-right:auto;" title="Gera o relatório com o que está preenchido agora, sem precisar salvar nem finalizar a tratativa">📄 Relatório para a diretoria (PDF)</button>
         <button type="button" class="logout-btn" id="negociacaoCancelBtn">Cancelar</button>
         <button type="button" class="login-btn" id="negociacaoSaveBtn" style="width:auto; margin-top:0; padding:9px 20px;">Salvar Negociação</button>
       </div>
@@ -4660,9 +4662,19 @@ CONDOMINIO Y	480	45"></textarea>
         <label class="pq-label">Renovação: até quantos dias antes do vencimento entra em "Vencendo em Breve"</label>
         <input type="number" id="cfgRenovVencBreve" min="1" style="max-width:140px;">
       </div>
-      <div class="pq-field" style="margin-bottom:0;">
+      <div class="pq-field">
         <label class="pq-label">Comissão: percentual sobre o valor do aumento da mensalidade (aba Comissão, em Renovação)</label>
         <input type="number" id="cfgComissaoPct" min="0" max="100" step="0.5" style="max-width:140px;"> <span style="font-size:12px; color:var(--text-faint);">%</span>
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Redução de mensalidade: sugestão automática (aba Redução de Mensalidade, em Renovação)</label>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--text-faint); align-items:center;">
+          <span>Redução de referência <input type="number" id="cfgRedRef" min="0" max="100" step="0.5" style="width:70px;"> %</span>
+          <span>Redução máxima <input type="number" id="cfgRedMax" min="0" max="100" step="0.5" style="width:70px;"> %</span>
+          <span>Prazo = retorno do custo × <input type="number" id="cfgRedMult" min="1" max="10" step="0.5" style="width:70px;"></span>
+          <span>Prazo mínimo <input type="number" id="cfgRedPMin" min="12" max="120" style="width:70px;"> meses</span>
+          <span>Prazo inicial/máximo <input type="number" id="cfgRedPMax" min="12" max="120" style="width:70px;"> meses</span>
+        </div>
       </div>
       <button type="button" class="login-btn" id="cfgSalvarMetasBtn" style="width:auto; margin-top:14px; padding:9px 20px;">💾 Salvar Metas e Limites</button>
       <p id="cfgMetasAviso" style="font-size:11px; color:var(--text-faint); margin-top:8px;"></p>
@@ -15954,6 +15966,27 @@ function negFilialDe(n){ const c = renovAllCondos.find(x => String(x.item_id) ==
 // ----- Redução de mensalidade: pedidos dos condomínios e relatório para pedir autorização à diretoria -----
 const RED_STATUS = ['Em análise', 'Enviada à diretoria', 'Aprovada', 'Reprovada', 'Contraproposta'];
 function negQuerReducao(n){ const a = Number(n.mensalidade_atual), b = Number(n.mensalidade_nova); return !!n.quer_reducao || (a > 0 && b > 0 && b < a - 0.005); }
+function redParametros(){
+  const v = (x, d) => (typeof x === 'number' && x > 0 ? x : d);
+  return { ref: v(window.__redRef, 10), max: v(window.__redMax, 20), mult: v(window.__redMult, 2), pmin: v(window.__redPMin, 36), pmax: v(window.__redPMax, 60) };
+}
+// Regra da Servis: redução de referência de até 10% (contrato de 36 meses ou mais), limite de 20% negociado caso a caso.
+// Prazo conforme o investimento: retorno do custo × 2, em múltiplos de 12 meses, entre 36 e 60; sem custo informado, a proposta começa em 60 meses.
+function redSugestaoAuto(d){
+  const P = redParametros(), atual = Number(d.atual), pedida = Number(d.pedida), custo = Number(d.custo);
+  if (!(atual > 0)) return null;
+  const pedPct = pedida > 0 && pedida < atual ? (atual - pedida) / atual * 100 : null;
+  const sugFixa = Number(d.sugOverride) > 0 ? Number(d.sugOverride) : null;   // valor que a pessoa já fixou: o prazo é calculado em cima dele
+  const pct = sugFixa ? (atual - sugFixa) / atual * 100 : (pedPct === null ? P.ref : Math.min(pedPct, P.ref));
+  const sug = sugFixa || Math.round(atual * (1 - pct / 100) * 100) / 100;
+  let prazo, base;
+  if (custo > 0){
+    const retorno = custo / sug;
+    prazo = Math.min(P.pmax, Math.max(P.pmin, Math.ceil(retorno * P.mult / 12) * 12));
+    base = 'o custo dos equipamentos se paga em ' + retorno.toFixed(1).replace('.', ',') + ' meses; prazo = retorno × ' + String(P.mult).replace('.', ',');
+  } else { prazo = P.pmax; base = 'sem custo dos equipamentos informado: ponto de partida da proposta'; }
+  return { sug, pct, prazo, base, pedPct, acimaLimite: pedPct !== null && pedPct > P.max, minimo: Math.round(atual * (1 - P.max / 100) * 100) / 100, P };
+}
 function redStatus(n){ return n.reducao_status || 'Em análise'; }
 function redCondo(n){ return renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)) || null; }
 function redMesesEntre(ini, fim){
@@ -15969,30 +16002,67 @@ function redRestante(c){
 }
 function redMetricas(n){
   const c = redCondo(n), num = v => (Number(v) > 0 ? Number(v) : null);
-  const atual = num(n.mensalidade_atual) || (c ? num(c.mensalidade) : null), sug = num(n.mensalidade_sugerida), pedida = num(n.mensalidade_pedida);
-  const un = c ? num(c.qtd_unidades) : null, custo = num(n.valor_custo), prazo = num(n.prazo_sugerido_meses);
+  const atual = num(n.mensalidade_atual) || (c ? num(c.mensalidade) : null), sugSalva = num(n.mensalidade_sugerida), pedida = num(n.mensalidade_pedida);
+  const un = c ? num(c.qtd_unidades) : null, custo = num(n.valor_custo), prazoSalvo = num(n.prazo_sugerido_meses);
   const tempo = num(n.tempo_contrato_meses) || (c ? redMesesEntre(c.contrato_inicio, c.contrato_fim) : null);
+  const auto = redSugestaoAuto({ atual, pedida: pedida || (Number(n.mensalidade_nova) > 0 && Number(n.mensalidade_nova) < atual ? Number(n.mensalidade_nova) : null), custo, sugOverride: sugSalva });
+  const sug = sugSalva || (auto ? auto.sug : null), prazo = prazoSalvo || (auto ? auto.prazo : null);
   const reducao = atual && sug ? atual - sug : null, receita = sug && prazo ? sug * prazo : null;
-  return { atual, sug, pedida, un, custo, prazo, tempo, restante: redRestante(c), fim: c ? c.contrato_fim : null, reducao, pct: reducao !== null ? reducao / atual * 100 : null,
+  return { atual, sug, pedida, un, custo, prazo, tempo, autoSug: !sugSalva && !!auto, autoPrazo: !prazoSalvo && !!auto, auto, restante: redRestante(c), fim: c ? c.contrato_fim : null, reducao, pct: reducao !== null ? reducao / atual * 100 : null,
     porUnAtual: atual && un ? atual / un : null, porUnSug: sug && un ? sug / un : null, retorno: custo && sug ? custo / sug : null, receita, saldo: receita !== null && custo ? receita - custo : null };
 }
 function redTempoTxt(m){
   if (!m.tempo && !m.fim) return '—';
   return (m.tempo ? m.tempo + ' meses' : '—') + (m.fim ? ' · vence em ' + fmtDataBRRenov(String(m.fim).slice(0, 10)) + (m.restante !== null ? (m.restante >= 0 ? ' (restam ' + m.restante + ' meses)' : ' (vencido)') : '') : '');
 }
+function negLerCamposReducao(){
+  const sel = document.getElementById('negCondoSel');
+  return { condo_id: sel ? sel.value : '', mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value), mensalidade_nova: parseMoedaBRRenov(document.getElementById('negMensalidadeNova').value),
+    mensalidade_pedida: parseMoedaBRRenov(document.getElementById('negMensalidadePedida').value), mensalidade_sugerida: parseMoedaBRRenov(document.getElementById('negMensalidadeSugerida').value),
+    prazo_sugerido_meses: document.getElementById('negPrazoSugerido').value, valor_custo: parseMoedaBRRenov(document.getElementById('negValorCusto').value), tempo_contrato_meses: document.getElementById('negTempoContrato').value };
+}
+// Preenche sozinho o valor e o prazo sugeridos, a menos que a pessoa já tenha digitado um valor (forcar = volta ao automático)
+function negAplicarSugestao(forcar){
+  const quer = document.getElementById('negQuerReducao'), cs = document.getElementById('negMensalidadeSugerida'), cp = document.getElementById('negPrazoSugerido'), cpd = document.getElementById('negMensalidadePedida');
+  if (!quer || !quer.checked){ negAtualizarReducaoInfo(); return; }
+  const d = negLerCamposReducao();
+  if (forcar && cpd) cpd.dataset.manual = '';
+  if (cpd && cpd.dataset.manual !== '1' && d.mensalidade_nova > 0 && d.mensalidade_atual > 0 && d.mensalidade_nova < d.mensalidade_atual) cpd.value = formatarMoedaParaInputRenov(d.mensalidade_nova);   // o valor pedido vem da nova mensalidade menor
+  const a = redSugestaoAuto({ atual: d.mensalidade_atual, pedida: parseMoedaBRRenov(cpd.value), custo: d.valor_custo, sugOverride: (!forcar && cs.dataset.manual === '1') ? parseMoedaBRRenov(cs.value) : null });
+  if (a){
+    if (forcar || cs.dataset.manual !== '1'){ cs.value = formatarMoedaParaInputRenov(a.sug); cs.dataset.manual = ''; }
+    if (forcar || cp.dataset.manual !== '1'){ cp.value = String(a.prazo); cp.dataset.manual = ''; }
+  }
+  negAtualizarReducaoInfo();
+}
 function negAtualizarReducaoInfo(){
   const el = document.getElementById('negReducaoInfo');
   if (!el) return;
-  const sel = document.getElementById('negCondoSel');
-  const m = redMetricas({ condo_id: sel ? sel.value : '', mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value), mensalidade_sugerida: parseMoedaBRRenov(document.getElementById('negMensalidadeSugerida').value),
-    prazo_sugerido_meses: document.getElementById('negPrazoSugerido').value, valor_custo: parseMoedaBRRenov(document.getElementById('negValorCusto').value), tempo_contrato_meses: document.getElementById('negTempoContrato').value });
+  const d = negLerCamposReducao(), m = redMetricas(d), a = redSugestaoAuto({ atual: m.atual, pedida: m.pedida || (d.mensalidade_nova > 0 && d.mensalidade_nova < m.atual ? d.mensalidade_nova : null), custo: m.custo, sugOverride: document.getElementById('negMensalidadeSugerida').dataset.manual === '1' ? d.mensalidade_sugerida : null });
   const partes = [];
   if (m.reducao !== null) partes.push('Redução de ' + fmtMoedaRenov(m.reducao) + ' (' + m.pct.toFixed(1).replace('.', ',') + '%) por mês');
   if (m.porUnAtual && m.porUnSug) partes.push('por unidade: ' + fmtMoedaRenov(m.porUnAtual) + ' → ' + fmtMoedaRenov(m.porUnSug));
   if (m.retorno) partes.push('o custo dos equipamentos se paga em ' + m.retorno.toFixed(1).replace('.', ',') + ' meses com o valor sugerido');
-  el.innerHTML = partes.length ? '<span style="color:#f59e0b;">📉 ' + partes.join(' · ') + '.</span>' : '';
+  let h = partes.length ? '<span style="color:#f59e0b;">📉 ' + partes.join(' · ') + '.</span>' : '';
+  if (a && document.getElementById('negQuerReducao').checked){
+    h += '<br><span style="color:#38bdf8;">🤖 Sugestão automática: redução de ' + a.pct.toFixed(1).replace('.', ',') + '% (referência da Servis) → ' + fmtMoedaRenov(a.sug) + ' · prazo de ' + a.prazo + ' meses (' + a.base + ').' +
+      (a.pedPct !== null ? ' O condomínio pede ' + a.pedPct.toFixed(1).replace('.', ',') + '%' + (a.acimaLimite ? ', acima do limite de ' + a.P.max + '%' : '') + '.' : '') + ' Mínimo negociável (−' + a.P.max + '%): ' + fmtMoedaRenov(a.minimo) + '.</span>';
+  }
+  el.innerHTML = h;
 }
-['negMensalidadeAtual', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negValorCusto', 'negTempoContrato'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', negAtualizarReducaoInfo); });
+function negOnInputReducao(ev){
+  const id = ev.target.id, quer = document.getElementById('negQuerReducao');
+  if (ev.isTrusted && ['negMensalidadeSugerida', 'negPrazoSugerido', 'negMensalidadePedida'].includes(id)) ev.target.dataset.manual = '1';   // o que a pessoa digita não é sobrescrito
+  if (['negMensalidadeAtual', 'negMensalidadeNova'].includes(id)){
+    const d = negLerCamposReducao();
+    if (quer && !quer.checked && quer.dataset.manual !== '1' && d.mensalidade_nova > 0 && d.mensalidade_atual > 0 && d.mensalidade_nova < d.mensalidade_atual) quer.checked = true;   // nova menor que a atual: marca "quer reduzir"
+  }
+  if (['negMensalidadeAtual', 'negMensalidadeNova', 'negValorCusto', 'negMensalidadePedida'].includes(id)) negAplicarSugestao(false);
+  else negAtualizarReducaoInfo();
+}
+['negMensalidadeAtual', 'negMensalidadeNova', 'negMensalidadePedida', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negValorCusto', 'negTempoContrato'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', negOnInputReducao); });
+{ const q = document.getElementById('negQuerReducao'); if (q) q.addEventListener('change', ev => { if (ev.isTrusted) q.dataset.manual = '1'; negAplicarSugestao(false); }); }
+{ const b = document.getElementById('negSugRecalc'); if (b) b.addEventListener('click', () => { const q = document.getElementById('negQuerReducao'); if (!q.checked){ q.checked = true; } negAplicarSugestao(true); }); }
 
 window.__redSel = window.__redSel || new Set();
 function redListaFiltrada(){
@@ -16012,16 +16082,17 @@ function renderRenovReducao(){
   kpi.innerHTML = box(todas.length, 'Pedidos de redução', '#f59e0b') + box(conta('Em análise'), 'Em análise') + box(conta('Enviada à diretoria'), 'Enviadas à diretoria', '#38bdf8') + box(conta('Aprovada'), 'Aprovadas', '#22c55e') +
     box(fmtMoedaRenov(perda), 'Redução mensal sugerida', '#f59e0b') + box(fmtMoedaRenov(perda * 12), 'Redução em 12 meses', '#f59e0b');
   const faltam = lista.filter(n => { const m = redMetricas(n); return !m.sug || !m.prazo; }).length;
-  document.getElementById('renovRedAviso').innerHTML = faltam ? '<span style="color:#f59e0b;">⚠️ ' + faltam + ' pedido(s) sem valor sugerido ou sem prazo sugerido: preencha em <strong>Editar</strong> antes de gerar o relatório.</span>' : '';
+  const nAuto = lista.filter(n => { const m = redMetricas(n); return m.autoSug || m.autoPrazo; }).length;
+  document.getElementById('renovRedAviso').innerHTML = (faltam ? '<span style="color:#f59e0b;">⚠️ ' + faltam + ' pedido(s) sem mensalidade atual: preencha em <strong>Editar</strong> para o sistema calcular a sugestão.</span> ' : '') + (nAuto ? '<span style="color:#38bdf8;">' + nAuto + ' pedido(s) usam a <strong>sugestão automática</strong> (etiqueta "auto"). Para fixar outro valor ou prazo, use Editar.</span>' : '');
   const todasMarcadas = lista.length && lista.every(n => window.__redSel.has(String(n.id)));
   document.getElementById('renovRedTodas').checked = !!todasMarcadas;
   corpo.innerHTML = lista.length ? lista.map(n => {
     const m = redMetricas(n), st = redStatus(n), falta = '<span class="neg-chip" style="color:#f59e0b; border-color:#f59e0b;">preencher</span>';
     return '<tr><td><input type="checkbox" data-red-sel="' + n.id + '"' + (window.__redSel.has(String(n.id)) ? ' checked' : '') + '></td><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + fmtMoedaRenov(m.atual) +
-      '</td><td style="white-space:normal; min-width:140px;">' + escapeHtml(redTempoTxt(m)) + '</td><td>' + (m.un || '—') + '</td><td>' + fmtMoedaRenov(m.custo) + '</td><td><strong>' + (m.sug ? fmtMoedaRenov(m.sug) : falta) + '</strong></td><td style="color:#f59e0b;">' +
-      (m.reducao !== null ? fmtMoedaRenov(m.reducao) + '<br><span style="font-size:11px;">' + m.pct.toFixed(1).replace('.', ',') + '%</span>' : '—') + '</td><td>' + (m.prazo ? m.prazo + ' meses' : falta) + '</td><td>' +
+      '</td><td style="white-space:normal; min-width:140px;">' + escapeHtml(redTempoTxt(m)) + '</td><td>' + (m.un || '—') + '</td><td>' + fmtMoedaRenov(m.custo) + '</td><td><strong>' + (m.sug ? fmtMoedaRenov(m.sug) : falta) + '</strong>' + (m.sug && m.autoSug ? '<br><span class="neg-chip" style="color:#38bdf8; border-color:#38bdf8;" title="Sugestão automática pela regra da Servis. Para fixar outro valor, use Editar.">auto</span>' : '') + '</td><td style="color:#f59e0b;">' +
+      (m.reducao !== null ? fmtMoedaRenov(m.reducao) + '<br><span style="font-size:11px;">' + m.pct.toFixed(1).replace('.', ',') + '%</span>' : '—') + '</td><td>' + (m.prazo ? m.prazo + ' meses' + (m.autoPrazo ? '<br><span class="neg-chip" style="color:#38bdf8; border-color:#38bdf8;" title="Sugestão automática pela regra da Servis. Para fixar outro prazo, use Editar.">auto</span>' : '') : falta) + '</td><td>' +
       (pode ? '<select data-red-status="' + n.id + '">' + RED_STATUS.map(o => '<option' + (o === st ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' : escapeHtml(st)) +
-      '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>';
+      '</td><td style="white-space:nowrap;"><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button> ' + (pode ? '<button type="button" class="renov-action-btn" data-rel-red="' + n.id + '" title="Gerar o relatório só deste condomínio">📄</button>' : '') + '</td></tr>';
   }).join('') : '<tr><td colspan="13" class="empty">' + (todas.length ? 'Nenhum pedido neste filtro.' : 'Nenhum condomínio pediu redução ainda. Marque "O condomínio quer REDUZIR a mensalidade" ao editar uma negociação.') + '</td></tr>';
 }
 async function salvarReducaoStatus(id, status){
@@ -16050,8 +16121,8 @@ function redRelatorioHtml(lista){
   const cartoes = ms2.map(({ n, m }, i) => {
     const l = (r, v, d) => '<tr><th>' + r + '</th><td' + (d ? ' class="d"' : '') + '>' + v + '</td></tr>';
     return '<div class="card"><h3>' + (i + 1) + '. ' + escapeHtml(n.condo_nome || '') + ' <span>' + escapeHtml(negFilialDe(n)) + (n.responsavel ? ' · atendimento: ' + escapeHtml(n.responsavel) : '') + '</span></h3><table class="kv">' +
-      l('Mensalidade atual', f(m.atual)) + (m.pedida ? l('Valor pedido pelo condomínio', f(m.pedida)) : '') + l('Valor sugerido', f(m.sug) + (m.reducao !== null ? ' &nbsp;(redução de ' + f(m.reducao) + ' · ' + pc(m.pct) + ' por mês)' : ''), true) +
-      l('Total de unidades', m.un || '—') + (m.porUnAtual ? l('Mensalidade por unidade', f(m.porUnAtual) + ' → ' + (m.porUnSug ? f(m.porUnSug) : '—')) : '') + l('Tempo de contrato', escapeHtml(redTempoTxt(m))) + l('Prazo de renovação sugerido', m.prazo ? m.prazo + ' meses' : '—', true) +
+      l('Mensalidade atual', f(m.atual)) + (m.pedida ? l('Valor pedido pelo condomínio', f(m.pedida)) : '') + l('Valor sugerido', f(m.sug) + (m.reducao !== null ? ' &nbsp;(redução de ' + f(m.reducao) + ' · ' + pc(m.pct) + ' por mês)' : '') + (m.autoSug ? ' <i>(sugestão automática)</i>' : ''), true) +
+      l('Total de unidades', m.un || '—') + (m.porUnAtual ? l('Mensalidade por unidade', f(m.porUnAtual) + ' → ' + (m.porUnSug ? f(m.porUnSug) : '—')) : '') + l('Tempo de contrato', escapeHtml(redTempoTxt(m))) + l('Prazo de renovação sugerido', (m.prazo ? m.prazo + ' meses' : '—') + (m.autoPrazo && m.auto ? ' <i>(sugestão automática: ' + m.auto.base + ')</i>' : ''), true) +
       l('Custo dos equipamentos', f(m.custo)) + (m.retorno ? l('Retorno do custo com o valor sugerido', ms(m.retorno)) : '') + (m.receita !== null ? l('Receita no prazo sugerido', f(m.receita) + ' (valor sugerido × prazo)') : '') +
       (m.saldo !== null ? l('Receita menos custo dos equipamentos', f(m.saldo) + ' <i>(não considera outros custos)</i>') : '') + (n.reducao_justificativa ? l('Justificativa', escapeHtml(n.reducao_justificativa).replace(/\n/g, '<br>')) : '') + '</table></div>';
   }).join('');
@@ -16070,20 +16141,42 @@ function redRelatorioHtml(lista){
     (lista.length > 1 ? '<tr class="tot"><td colspan="2">Total</td><td>' + f(totAtual) + '</td><td>' + f(totSug) + '</td><td>' + f(totRed) + ' por mês (' + f(totRed * 12) + ' em 12 meses)</td><td colspan="4"></td></tr>' : '') + '</tbody></table>' +
     '<h2>Detalhamento por condomínio</h2>' + cartoes + '<h2>Decisão da Diretoria</h2><table class="rel"><thead><tr><th>Condomínio</th><th>Decisão</th><th>Observações</th></tr></thead><tbody>' + decisao + '</tbody></table>' +
     '<div class="ass"><div>Solicitante' + (quem ? ': ' + escapeHtml(quem) : '') + '</div><div>Diretoria &nbsp;·&nbsp; Data: ____/____/______</div></div>' +
-    '<p class="nota">Retorno do custo = custo dos equipamentos ÷ valor sugerido. Receita no prazo = valor sugerido × prazo de renovação sugerido. Não considera outros custos nem reajustes.</p>' +
+    '<p class="nota">Retorno do custo = custo dos equipamentos ÷ valor sugerido. Receita no prazo = valor sugerido × prazo de renovação sugerido. Não considera outros custos nem reajustes.' + (ms2.some(x => x.m.autoSug || x.m.autoPrazo) ? ' Sugestões automáticas: redução de referência de ' + redParametros().ref + '% (limite de ' + redParametros().max + '%, caso a caso); prazo conforme o investimento, entre ' + redParametros().pmin + ' e ' + redParametros().pmax + ' meses (sem custo informado, proposta inicial de ' + redParametros().pmax + ' meses).' : '') + '</p>' +
     '<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script></body></html>';
+}
+function abrirRelatorioReducao(lista, aoMarcarEnviada){
+  const incompletos = lista.filter(n => { const m = redMetricas(n); return !m.sug || !m.prazo; });
+  if (incompletos.length && !confirm(incompletos.length + ' pedido(s) estão sem mensalidade atual, então não há sugestão:\n\n' + incompletos.slice(0, 8).map(n => '• ' + n.condo_nome).join('\n') + '\n\nGerar o relatório mesmo assim?')) return false;
+  const w = window.open('', '_blank');
+  if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return false; }
+  w.document.write(redRelatorioHtml(lista)); w.document.close();
+  const analise = lista.filter(n => n.id && redStatus(n) === 'Em análise' && renovNegociacoes.some(x => String(x.id) === String(n.id)));
+  if (analise.length && confirm('Marcar como "Enviada à diretoria" os ' + analise.length + ' pedido(s) que estavam "Em análise"?')) analise.forEach(n => salvarReducaoStatus(n.id, 'Enviada à diretoria'));
+  if (aoMarcarEnviada) aoMarcarEnviada();
+  return true;
 }
 function gerarRelatorioReducao(){
   if (!negPodeEditar()) return;
   const lista = redListaParaRelatorio();
   if (!lista.length){ alert('Nenhum pedido de redução para o relatório. Marque "O condomínio quer REDUZIR a mensalidade" ao editar uma negociação.'); return; }
-  const incompletos = lista.filter(n => { const m = redMetricas(n); return !m.sug || !m.prazo; });
-  if (incompletos.length && !confirm(incompletos.length + ' pedido(s) estão sem valor sugerido ou sem prazo sugerido:\n\n' + incompletos.slice(0, 8).map(n => '• ' + n.condo_nome).join('\n') + '\n\nGerar o relatório mesmo assim?')) return;
-  const w = window.open('', '_blank');
-  if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return; }
-  w.document.write(redRelatorioHtml(lista)); w.document.close();
-  const analise = lista.filter(n => redStatus(n) === 'Em análise');
-  if (analise.length && confirm('Marcar como "Enviada à diretoria" os ' + analise.length + ' pedido(s) que estavam "Em análise"?')) analise.forEach(n => salvarReducaoStatus(n.id, 'Enviada à diretoria'));
+  abrirRelatorioReducao(lista);
+}
+// Relatório direto do formulário da negociação: usa o que está preenchido agora, sem salvar e sem finalizar a tratativa
+function gerarRelatorioDoFormulario(){
+  if (!negPodeEditar()) return;
+  const sel = document.getElementById('negCondoSel'), d = negLerCamposReducao();
+  const nome = (document.getElementById('negCondoInput').value || '').trim();
+  if (!sel || !sel.value || !nome){ alert('Escolha o condomínio antes de gerar o relatório.'); return; }
+  const n = { id: negociacaoEditingId || null, condo_id: sel.value, condo_nome: nome, responsavel: document.getElementById('negResponsavel').value,
+    mensalidade_atual: d.mensalidade_atual, mensalidade_nova: d.mensalidade_nova, mensalidade_pedida: d.mensalidade_pedida, mensalidade_sugerida: d.mensalidade_sugerida,
+    prazo_sugerido_meses: d.prazo_sugerido_meses, tempo_contrato_meses: d.tempo_contrato_meses, valor_custo: d.valor_custo,
+    reducao_justificativa: document.getElementById('negReducaoJustificativa').value.trim(), reducao_status: document.getElementById('negReducaoStatus').value, quer_reducao: true };
+  if (!redMetricas(n).atual){ alert('Informe a mensalidade atual para o relatório calcular a sugestão.'); return; }
+  abrirRelatorioReducao([n], () => {
+    if (confirm('Marcar este pedido como "Enviada à diretoria" no formulário?\n\n(Depois é só clicar em Salvar Negociação.)')){
+      document.getElementById('negQuerReducao').checked = true; document.getElementById('negReducaoStatus').value = 'Enviada à diretoria';
+    }
+  });
 }
 function redTextoEmail(lista){
   const f = v => fmtMoedaRenov(v), linhas = ['Prezados,', '', 'Solicito autorização para reduzir a mensalidade ' + (lista.length === 1 ? 'do condomínio abaixo' : 'dos condomínios abaixo') + ':', ''];
@@ -16897,7 +16990,7 @@ function setNegCondo(condoId){
   const campoTempo = document.getElementById('negTempoContrato');   // tempo de contrato calculado pelo cadastro (início e fim), se ainda estiver vazio
   if (condo && campoTempo && !campoTempo.value){ const mt = redMesesEntre(condo.contrato_inicio, condo.contrato_fim); if (mt) campoTempo.value = String(mt); }
   if (typeof negAtualizarAumento === 'function') negAtualizarAumento();
-  if (typeof negAtualizarReducaoInfo === 'function') negAtualizarReducaoInfo();
+  if (typeof negAplicarSugestao === 'function') negAplicarSugestao(false);
 }
 (function initNegCondoCombo(){
   const input = document.getElementById('negCondoInput');
@@ -16928,6 +17021,7 @@ function setNegCondo(condoId){
 
 let negociacaoEditingId = null;
 
+function negAjustarBotaoRelatorio(){ const b = document.getElementById('negRelatorioBtn'); if (b) b.style.display = negPodeEditar() ? '' : 'none'; }
 function openNegociacaoModal(condoId){
   negociacaoEditingId = null;
   document.getElementById('negociacaoModalTitle').textContent = 'Nova Negociação de Renovação';
@@ -16950,9 +17044,11 @@ function openNegociacaoModal(condoId){
   document.getElementById('negMensalidadeNova').value = '';
   document.getElementById('negQtdTorres').value = '';
   document.getElementById('negQtdArmarios').value = '';
+  negAjustarBotaoRelatorio();
   document.getElementById('negQuerReducao').checked = false;
   ['negMensalidadePedida', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negTempoContrato', 'negReducaoJustificativa'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('negReducaoStatus').value = 'Em análise';
+  ['negMensalidadePedida', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negQuerReducao'].forEach(id => { document.getElementById(id).dataset.manual = ''; });
   document.getElementById('negCondoDropdown').classList.remove('open');
   if (condoId) setNegCondo(condoId);
   else setNegCondo(null);
@@ -16985,6 +17081,7 @@ function editNegociacao(id){
   document.getElementById('negMensalidadeNova').value = formatarMoedaParaInputRenov(n.mensalidade_nova);
   document.getElementById('negQtdTorres').value = n.qtd_torres ? String(n.qtd_torres) : '';
   document.getElementById('negQtdArmarios').value = n.qtd_armarios ? String(n.qtd_armarios) : '';
+  negAjustarBotaoRelatorio();
   document.getElementById('negQuerReducao').checked = !!n.quer_reducao;
   document.getElementById('negMensalidadePedida').value = formatarMoedaParaInputRenov(n.mensalidade_pedida);
   document.getElementById('negMensalidadeSugerida').value = formatarMoedaParaInputRenov(n.mensalidade_sugerida);
@@ -16992,8 +17089,12 @@ function editNegociacao(id){
   document.getElementById('negTempoContrato').value = n.tempo_contrato_meses ? String(n.tempo_contrato_meses) : '';
   document.getElementById('negReducaoStatus').value = n.reducao_status || 'Em análise';
   document.getElementById('negReducaoJustificativa').value = n.reducao_justificativa || '';
+  document.getElementById('negMensalidadePedida').dataset.manual = n.mensalidade_pedida ? '1' : '';
+  document.getElementById('negMensalidadeSugerida').dataset.manual = n.mensalidade_sugerida ? '1' : '';
+  document.getElementById('negPrazoSugerido').dataset.manual = n.prazo_sugerido_meses ? '1' : '';
+  document.getElementById('negQuerReducao').dataset.manual = '1';
   negAtualizarAumento();
-  negAtualizarReducaoInfo();
+  negAplicarSugestao(false);
   document.getElementById('negCondoDropdown').classList.remove('open');
   renderAnexosBox('negAnexosBox', 'negociacao', negociacaoEditingId);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
@@ -17139,7 +17240,11 @@ function initRenovacaoUI(){
   document.getElementById('renovRedEmail').addEventListener('click', copiarEmailReducao);
   document.getElementById('renovRedCsv').addEventListener('click', exportarReducaoCsv);
   document.getElementById('renovRedTodas').addEventListener('change', (ev) => { redListaFiltrada().forEach(n => { if (ev.target.checked) window.__redSel.add(String(n.id)); else window.__redSel.delete(String(n.id)); }); renderRenovReducao(); });
-  document.getElementById('renovRedBody').addEventListener('click', (ev) => { const b = ev.target.closest('[data-edit-neg]'); if (b) editNegociacao(b.dataset.editNeg); });
+  document.getElementById('renovRedBody').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-edit-neg]'); if (b) editNegociacao(b.dataset.editNeg);
+    const r = ev.target.closest('[data-rel-red]'); if (r){ const n = renovNegociacoes.find(x => String(x.id) === String(r.dataset.relRed)); if (n) abrirRelatorioReducao([n]); }
+  });
+  document.getElementById('negRelatorioBtn').addEventListener('click', gerarRelatorioDoFormulario);
   document.getElementById('renovRedBody').addEventListener('change', (ev) => {
     const c = ev.target.closest('[data-red-sel]'), st = ev.target.closest('[data-red-status]');
     if (c){ if (c.checked) window.__redSel.add(String(c.dataset.redSel)); else window.__redSel.delete(String(c.dataset.redSel)); const todas = redListaFiltrada(); document.getElementById('renovRedTodas').checked = todas.length && todas.every(n => window.__redSel.has(String(n.id))); }
@@ -25820,8 +25925,11 @@ async function loadConfiguracoes(){
       if (c.chave === 'pq_nota_2a_ligacao') PQ_NOTA_2A_LIGACAO = parseFloat(c.valor) || PQ_NOTA_2A_LIGACAO;
       if (c.chave === 'renov_venc_breve_dias') RENOV_VENC_BREVE_DIAS = parseInt(c.valor,10) || RENOV_VENC_BREVE_DIAS;
       if (c.chave === 'comissao_percentual' && !isNaN(parseFloat(c.valor))) window.__comissaoPct = parseFloat(c.valor);
+      const mapaRed = { red_pct_ref: '__redRef', red_pct_max: '__redMax', red_mult_retorno: '__redMult', red_prazo_min: '__redPMin', red_prazo_max: '__redPMax' };
+      if (mapaRed[c.chave] && !isNaN(parseFloat(c.valor))) window[mapaRed[c.chave]] = parseFloat(c.valor);
     });
-    { const campoCom = document.getElementById('cfgComissaoPct'); if (campoCom) campoCom.value = comissaoPct(); }
+    { const campoCom = document.getElementById('cfgComissaoPct'); if (campoCom) campoCom.value = comissaoPct();
+      const P = redParametros(); [['cfgRedRef', P.ref], ['cfgRedMax', P.max], ['cfgRedMult', P.mult], ['cfgRedPMin', P.pmin], ['cfgRedPMax', P.pmax]].forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; }); }
     document.getElementById('cfgPqMetaNota').value = META_NOTA;
     document.getElementById('cfgPqNota2aLigacao').value = PQ_NOTA_2A_LIGACAO;
     document.getElementById('cfgRenovVencBreve').value = RENOV_VENC_BREVE_DIAS;
@@ -25980,6 +26088,11 @@ document.getElementById('cfgSalvarMetasBtn').addEventListener('click', async ()=
     { chave: 'pq_nota_2a_ligacao', valor: document.getElementById('cfgPqNota2aLigacao').value },
     { chave: 'renov_venc_breve_dias', valor: document.getElementById('cfgRenovVencBreve').value },
     { chave: 'comissao_percentual', valor: document.getElementById('cfgComissaoPct').value || '50' },
+    { chave: 'red_pct_ref', valor: document.getElementById('cfgRedRef').value || '10' },
+    { chave: 'red_pct_max', valor: document.getElementById('cfgRedMax').value || '20' },
+    { chave: 'red_mult_retorno', valor: document.getElementById('cfgRedMult').value || '2' },
+    { chave: 'red_prazo_min', valor: document.getElementById('cfgRedPMin').value || '36' },
+    { chave: 'red_prazo_max', valor: document.getElementById('cfgRedPMax').value || '60' },
   ];
   try{
     const { error } = await sb.from('configuracoes_sistema').upsert(
