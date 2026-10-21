@@ -1763,7 +1763,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v156 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v157 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -3096,6 +3096,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     <details id="asConfig" style="margin:10px 0;"><summary style="cursor:pointer; font-size:12.5px; font-weight:600;">⚙ Avisos e agenda automática</summary>
       <div class="rc-controles">
         <label>Lembrete de fim do dia às <input type="time" id="asCfgFimDia" class="search" value="17:30"></label>
+        <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgPopupEntrada"> Mostrar o resumo do dia (popup com pendências e retornos) ao entrar</label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgAutoAgenda"> Montar a agenda de hoje sozinho no primeiro acesso do dia (administradores e editores)</label>
         <button type="button" class="clearbtn" id="asCfgNotif">🔔 Ativar avisos do navegador</button>
       </div>
@@ -9719,6 +9720,7 @@ async function assistCarregarBase(){
   }finally{ __assistCarregandoBase = false; }
   __assistBaseCarregada = true;
   assistRecalcular();
+  try{ assistMostrarPopupEntrada(); }catch(e){ console.warn('Popup de entrada:', e); }
   setTimeout(assistAvisosTick, 300);
 }
 function assistRecalcular(){
@@ -9950,7 +9952,7 @@ const ASSIST_MAX_AGENDA = 6;   // tarefas sugeridas por pessoa (cobranças prime
 let __assistAgProposta = [], __assistAgExistentes = new Set(), __assistTextoFimDia = '', __assistBaseCarregada = false, __assistHoraFim = { dia: '', valor: '' };
 
 function assistCfgLer(){
-  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null };
+  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null, popupEntrada: true, popupOcultoDia: '' };
   try{ return Object.assign(base, JSON.parse(localStorage.getItem('assistenteAvisosCfg') || '{}')); }catch(e){ return base; }
 }
 function assistCfgSalvar(c){ try{ localStorage.setItem('assistenteAvisosCfg', JSON.stringify(c)); }catch(e){} }
@@ -10199,10 +10201,86 @@ async function assistAvisosTick(){
   }
   if (mudou) assistCfgSalvar(cfg);
 }
+// ----- Popup ao entrar: pendências e retornos que a pessoa precisa fazer hoje -----
+function assistDadosPopup(){
+  const eu = (typeof meuNomeCarteira === 'function') ? meuNomeCarteira() : '';
+  const mesma = (a, b) => !!a && !!b && normTxtCarteira(nomeOficialCarteira(a)) === normTxtCarteira(nomeOficialCarteira(b));
+  const cobr = assistCobrancasVencidas().slice().sort((a, b) => assistDiasAte(a.proxima_cobranca) - assistDiasAte(b.proxima_cobranca));
+  const semAcompanhamento = al => { const ac = assistAcompDaChave(al.chave); return !(ac && ac.situacao !== 'Concluído'); };
+  const ordem = lista => lista.slice().sort((a, b) => (a.prioridade === 'Alta' ? 0 : 1) - (b.prioridade === 'Alta' ? 0 : 1));
+  if (!eu){
+    const porPessoa = new Map();
+    const ent = r => { const k = r || 'Sem responsável'; if (!porPessoa.has(k)) porPessoa.set(k, { nome: k, total: 0, altas: 0, cobr: 0 }); return porPessoa.get(k); };
+    __assistAlertas.filter(semAcompanhamento).forEach(a => { const e = ent(a.responsavel); e.total++; if (a.prioridade === 'Alta') e.altas++; });
+    cobr.forEach(a => { ent(a.responsavel).cobr++; });
+    const linhas = [...porPessoa.values()].sort((a, b) => (b.altas + b.cobr) - (a.altas + a.cobr));
+    return { geral: true, eu: '', linhas, totalPend: __assistAlertas.length, altas: __assistAlertas.filter(a => a.prioridade === 'Alta').length, cobrancas: cobr.length, tem: __assistAlertas.length + cobr.length > 0 };
+  }
+  const minhasCobr = cobr.filter(a => mesma(a.responsavel, eu));
+  const minhas = ordem(__assistAlertas.filter(a => mesma(a.responsavel, eu) && semAcompanhamento(a)));
+  const fiscAlertas = ordem(__assistAlertas.filter(a => a.prioridade === 'Alta' && mesma(a.fiscal, eu) && !mesma(a.responsavel, eu) && semAcompanhamento(a)));
+  const fiscCobr = cobr.filter(a => !mesma(a.responsavel, eu) && a.filial && mesma(fiscalizadoraDaFilial(a.filial), eu));
+  return { geral: false, eu, cobrancas: minhasCobr, prioridades: minhas, fiscAlertas, fiscCobr, tem: minhasCobr.length + minhas.length + fiscAlertas.length + fiscCobr.length > 0 };
+}
+function assistSaudacao(){ const h = new Date().getHours(); return h < 12 ? 'Bom dia' : (h < 18 ? 'Boa tarde' : 'Boa noite'); }
+function assistFecharPopupEntrada(naoMostrarHoje){
+  const el = document.getElementById('assistPopupEntrada');
+  if (el) el.remove();
+  if (naoMostrarHoje){ const c = assistCfgLer(); c.popupOcultoDia = assistHoje(); assistCfgSalvar(c); }
+}
+function assistMostrarPopupEntrada(forcar){
+  if (window.__popupEntradaFeito && !forcar) return;
+  window.__popupEntradaFeito = true;
+  const cfg = assistCfgLer(), hoje = assistHoje();
+  if (!forcar && (cfg.popupEntrada === false || cfg.popupOcultoDia === hoje)) return;
+  const d = assistDadosPopup();
+  if (!d.tem) return;   // nada pendente: não incomoda
+  const nome = d.eu ? d.eu.split(' ')[0] : '';
+  const dataTxt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const chip = (n, rot, cor) => '<span style="display:inline-block; padding:3px 10px; border-radius:12px; border:1px solid ' + cor + '; color:' + cor + '; font-size:12px; font-weight:600; margin:0 6px 6px 0;">' + n + ' ' + rot + '</span>';
+  const itemCobr = a => { const c = assistCobrancaStatus(a); return '<li style="margin-bottom:7px;"><strong>' + escapeHtml(a.condominio || '') + '</strong> — ' + escapeHtml(a.titulo || 'acompanhamento') +
+    '<div style="font-size:11.5px; color:var(--text-faint);">' + (c && c.classe === 'atrasada' ? '<span style="color:var(--critico);">Cobrança atrasada há ' + (-c.dias) + ' dia(s)</span>' : '<span style="color:#f59e0b;">Cobrar hoje</span>') + (a.providencia ? ' · ' + escapeHtml(assistCorta(a.providencia, 90)) : '') + (d.geral === false && a.responsavel && !(d.eu && normTxtCarteira(a.responsavel) === normTxtCarteira(d.eu)) ? ' · ' + escapeHtml(a.responsavel) : '') + '</div></li>'; };
+  const itemAlerta = a => '<li style="margin-bottom:7px; display:flex; gap:8px; align-items:flex-start;"><span style="flex:0 0 auto; margin-top:1px;">' + assistTagPrio(a.prioridade) + '</span><span style="flex:1;"><strong>' + escapeHtml(a.titulo) + '</strong> — ' + escapeHtml(a.condominio || '') + (a.responsavel && d.geral !== false ? '' : '') + '</span>' + (a.acao ? '<button type="button" class="clearbtn" data-pop-abrir="' + escapeHtml(a.chave) + '" style="padding:2px 9px; font-size:11px;">Abrir</button>' : '') + '</li>';
+  const lista = (itens, f, max) => '<ul style="margin:6px 0 0 0; padding-left:18px; font-size:13px; line-height:1.45;">' + itens.slice(0, max).map(f).join('') + '</ul>' + (itens.length > max ? '<div style="font-size:11.5px; color:var(--text-faint); margin-top:4px;">… e mais ' + (itens.length - max) + ' no Assistente SC.</div>' : '');
+  const secao = (tit, corpo) => '<div style="margin-top:16px;"><div style="font-weight:700; font-size:13.5px;">' + tit + '</div>' + corpo + '</div>';
+  let corpo = '';
+  if (d.geral){
+    corpo = '<div style="margin-top:6px;">' + chip(d.totalPend, 'prioridades', '#a78bfa') + chip(d.altas, 'de alta', 'var(--critico)') + chip(d.cobrancas, 'cobranças hoje ou atrasadas', '#f59e0b') + '</div>' +
+      secao('👥 Resumo da equipe', '<table class="rc-tabela" style="margin-top:8px; width:100%;"><thead><tr><th style="text-align:left;">Pessoa</th><th>Prioridades</th><th>De alta</th><th>Cobranças</th></tr></thead><tbody>' +
+        d.linhas.slice(0, 12).map(l => '<tr><td style="text-align:left;"><strong>' + escapeHtml(l.nome) + '</strong></td><td>' + l.total + '</td><td style="color:' + (l.altas ? 'var(--critico)' : 'inherit') + ';">' + l.altas + '</td><td style="color:' + (l.cobr ? '#f59e0b' : 'inherit') + ';">' + l.cobr + '</td></tr>').join('') + '</tbody></table>');
+  } else {
+    corpo = '<div style="margin-top:6px;">' + chip(d.cobrancas.length, 'retorno(s) para hoje', '#f59e0b') + chip(d.prioridades.length, 'prioridade(s)', '#a78bfa') + chip(d.prioridades.filter(a => a.prioridade === 'Alta').length, 'de alta', 'var(--critico)') + '</div>';
+    if (d.cobrancas.length) corpo += secao('↩️ Retornos e cobranças de hoje (' + d.cobrancas.length + ')', lista(d.cobrancas, itemCobr, 10));
+    if (d.prioridades.length) corpo += secao('🔔 Prioridades da sua carteira (' + d.prioridades.length + ')', lista(d.prioridades, itemAlerta, 8));
+    if (d.fiscAlertas.length || d.fiscCobr.length) corpo += secao('👁 Nas filiais que você fiscaliza', (d.fiscCobr.length ? lista(d.fiscCobr, itemCobr, 5) : '') + (d.fiscAlertas.length ? lista(d.fiscAlertas, itemAlerta, 5) : ''));
+  }
+  const temAba = !!(document.querySelector('.tab-btn[data-tab="assistenteSC"]') && document.querySelector('.tab-btn[data-tab="assistenteSC"]').offsetParent !== null);
+  let el = document.getElementById('assistPopupEntrada'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'assistPopupEntrada';
+  el.style.cssText = 'position:fixed; inset:0; z-index:9600; background:rgba(3,6,14,.72); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:20px;';
+  el.innerHTML = '<div role="dialog" aria-modal="true" style="background:var(--bg-panel); border:1px solid #a78bfa; border-radius:14px; width:100%; max-width:660px; max-height:88vh; overflow:auto; padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,.6);">' +
+    '<div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;"><div><div style="font-size:19px; font-weight:800;">' + assistSaudacao() + (nome ? ', ' + escapeHtml(nome) : '') + '! 👋</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:2px;">' + (d.geral ? 'Resumo da equipe para hoje' : 'O que você precisa fazer hoje') + ' · ' + escapeHtml(dataTxt) + '</div></div>' +
+    '<button type="button" class="modal-close" id="popFechar" style="position:static;">×</button></div>' + corpo +
+    '<div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">' + (temAba ? '<button type="button" class="login-btn" id="popAbrirAssistente" style="width:auto; padding:9px 18px;">🤖 Abrir o Assistente SC</button><button type="button" class="clearbtn" id="popAbrirAgenda">📅 Agenda de hoje</button>' : '') +
+    '<button type="button" class="clearbtn" id="popOk" style="margin-left:auto;">Entendi</button></div>' +
+    '<label style="display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-faint); margin-top:12px;"><input type="checkbox" id="popNaoHoje"> Não mostrar de novo hoje</label></div>';
+  document.body.appendChild(el);
+  const fechar = () => assistFecharPopupEntrada(document.getElementById('popNaoHoje') && document.getElementById('popNaoHoje').checked);
+  document.getElementById('popFechar').addEventListener('click', fechar);
+  document.getElementById('popOk').addEventListener('click', fechar);
+  el.addEventListener('click', ev => { if (ev.target === el) fechar(); });
+  const irAssistente = view => { const naoHoje = document.getElementById('popNaoHoje') && document.getElementById('popNaoHoje').checked; assistFecharPopupEntrada(naoHoje); assistIrParaAba(view); setTimeout(() => { const sel = document.getElementById(view === 'agenda' ? 'asAgFiltroResp' : 'asFiltroResp'); if (sel && d.eu){ sel.value = d.eu; sel.dispatchEvent(new Event('change')); } }, 160); };
+  const b1 = document.getElementById('popAbrirAssistente'); if (b1) b1.addEventListener('click', () => irAssistente('prioridades'));
+  const b2 = document.getElementById('popAbrirAgenda'); if (b2) b2.addEventListener('click', () => irAssistente('agenda'));
+  el.querySelectorAll('[data-pop-abrir]').forEach(b => b.addEventListener('click', () => { const al = __assistAlertas.find(x => x.chave === b.getAttribute('data-pop-abrir')); assistFecharPopupEntrada(false); assistAbrirAlerta(al); }));
+  // o aviso "Bom dia" não repete o mesmo resumo
+  const c2 = assistCfgLer(); c2.ultimoBomDia = hoje; assistCfgSalvar(c2);
+}
 function assistCarregarCfgNaTela(){
   const c = assistCfgLer();
   document.getElementById('asCfgFimDia').value = c.fimDiaHora || '17:30';
   document.getElementById('asCfgAutoAgenda').checked = !!c.autoAgenda;
+  document.getElementById('asCfgPopupEntrada').checked = c.popupEntrada !== false;
   const btn = document.getElementById('asCfgNotif');
   btn.textContent = (c.notif && 'Notification' in window && Notification.permission === 'granted') ? '🔔 Avisos do navegador ativados' : '🔔 Ativar avisos do navegador';
 }
@@ -10210,6 +10288,7 @@ function assistSalvarCfgDaTela(){
   const c = assistCfgLer();
   c.fimDiaHora = document.getElementById('asCfgFimDia').value || '17:30';
   c.autoAgenda = document.getElementById('asCfgAutoAgenda').checked;
+  c.popupEntrada = document.getElementById('asCfgPopupEntrada').checked;
   assistCfgSalvar(c);
 }
 async function assistAtivarNotificacoes(){
@@ -10239,6 +10318,7 @@ document.getElementById('asFdCopiar').addEventListener('click', assistCopiarFimD
 document.getElementById('asFdImprimir').addEventListener('click', assistImprimirFimDia);
 document.getElementById('asCfgFimDia').addEventListener('change', assistSalvarCfgDaTela);
 document.getElementById('asCfgAutoAgenda').addEventListener('change', assistSalvarCfgDaTela);
+document.getElementById('asCfgPopupEntrada').addEventListener('change', assistSalvarCfgDaTela);
 document.getElementById('asCfgNotif').addEventListener('click', assistAtivarNotificacoes);
 setInterval(assistAvisosTick, 60000);
 document.getElementById('asAcFechar').addEventListener('click', () => { document.getElementById('asAcompModal').style.display = 'none'; });
@@ -10260,7 +10340,7 @@ const __assistTimer = setInterval(() => {
     clearInterval(__assistTimer);
     __assistIniciado = true;
     // espera o dashboard principal terminar de carregar antes de buscar demandas, incidentes e acompanhamentos
-    setTimeout(assistCarregarBase, 9000);
+    setTimeout(assistCarregarBase, 4500);
     setInterval(() => { if (!document.hidden) assistCarregarBase(); }, 10 * 60000);
   }
 }, 1500);
