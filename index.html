@@ -1178,6 +1178,8 @@
   .rg-notas strong{ color:var(--text); }
   .rg-tabela th{ font-size:10.5px; }
   .rc-rg{ margin-bottom:14px; }
+  .neg-chips{ display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+  .neg-chip{ font-size:10.5px; padding:1px 7px; border-radius:10px; border:1px solid; white-space:nowrap; font-weight:600; }
   .rc-oculto{ display:none !important; }
   .rc-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin:6px 0 12px; }
   .rc-card{ background:var(--bg-panel-2); border:1px solid var(--border); border-radius:12px; padding:14px; }
@@ -1761,7 +1763,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v152 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v156 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2174,7 +2176,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <h3 style="margin:0;">🔎 Condomínios duplicados</h3>
         <button type="button" class="modal-close" id="dupModalPqClose">×</button>
       </div>
-      <p style="font-size:12.5px; color:var(--text-faint); margin:4px 0 16px;">Mesmo condomínio aparecendo mais de uma vez no mês selecionado. Revise cada grupo e exclua a(s) linha(s) que não deveriam existir — a que você quer manter, deixe como está.</p>
+      <p style="font-size:12.5px; color:var(--text-faint); margin:4px 0 16px;">Mesmo condomínio aparecendo mais de uma vez no mês selecionado. Revise cada grupo e exclua a(s) linha(s) que não deveriam existir — a que você quer manter, deixe como está. Se forem condomínios diferentes com o mesmo nome (por exemplo, de filiais diferentes), use <strong>Validar</strong>.</p>
       <div id="dupModalPqMes" style="margin-bottom:12px;"></div>
       <div id="dupModalPqBody"></div>
     </div>
@@ -2287,6 +2289,8 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn active" data-renov-subtab="vencidos">⚠️ Vencidos</button>
       <button type="button" class="subtab-btn" data-renov-subtab="vencendobreve">⏰ Vencendo em Breve</button>
       <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="torresarmarios">🗼 Torres e Armários</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="comissao">💰 Comissão</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
       <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
@@ -2491,6 +2495,46 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         </tbody>
       </table>
     </div>
+    </div>
+
+    <div id="renovViewTorresArmarios" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Negociações que incluem <strong>torre</strong> ou <strong>armário</strong>. As quantidades vêm dos campos da negociação; quando só o texto cita torre ou armário, aparece "citada" para você informar a quantidade.</p>
+      <div class="stats-strip" id="renovTAKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="renovTABusca" placeholder="Buscar por condomínio...">
+        <select class="filter-select" id="renovTAFiltro">
+          <option value="andamento">Mostrar: em negociação</option>
+          <option value="fechadas">Mostrar: já fechadas (renovadas)</option>
+          <option value="todas">Mostrar: todas</option>
+        </select>
+      </div>
+      <div id="renovTAFilial" style="margin-bottom:14px;"></div>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Status</th><th>🗼 Torres</th><th>🗄️ Armários</th><th style="text-align:left;">Equipamentos da ampliação</th><th>Data</th><th>Ações</th>
+      </tr></thead><tbody id="renovTABody"></tbody></table></div>
+    </div>
+
+    <div id="renovViewComissao" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Negociações com <strong>aumento de mensalidade</strong> (nova mensalidade maior que a atual). Negociações marcadas como "Não renovado" ou "Cancelado" não entram. A <strong>comissão é calculada sozinha: 50% do valor do aumento</strong> da mensalidade (o percentual fica em Configurações). Em negociação ela aparece como <em>Prevista</em>; ao renovar vira <em>A pagar</em>; ao marcar <em>Paga</em>, o valor fica gravado.</p>
+      <div class="stats-strip" id="renovComKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="renovComBusca" placeholder="Buscar por condomínio...">
+        <select class="filter-select" id="renovComFiltroNeg">
+          <option value="todas">Negociação: todas</option>
+          <option value="andamento">Em negociação</option>
+          <option value="renovadas">Renovadas</option>
+        </select>
+        <select class="filter-select" id="renovComFiltroSit">
+          <option value="">Comissão: todas</option>
+          <option value="Prevista">Prevista</option>
+          <option value="A pagar">A pagar</option>
+          <option value="Paga">Paga</option>
+        </select>
+        <button type="button" class="clearbtn" id="renovComCsv">⬇ Exportar CSV</button>
+      </div>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Data</th><th>Status</th><th>Mensalidade atual</th><th>Nova mensalidade</th><th>Aumento (R$)</th><th>Aumento (%)</th><th id="renovComTh">Comissão (50%)</th><th>Situação</th><th>Ações</th>
+      </tr></thead><tbody id="renovComBody"></tbody></table></div>
     </div>
 
     <div id="renovViewRenovados" style="display:none;">
@@ -2717,8 +2761,24 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
           <input type="text" id="negValorCusto" placeholder="Ex: 4.610,55" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">💰 Mensalidade (se aumentar, a negociação entra na aba Comissão)</label>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Mensalidade atual (R$)
+          <input type="text" id="negMensalidadeAtual" placeholder="Ex: 2.680,00" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova mensalidade (R$)
+          <input type="text" id="negMensalidadeNova" placeholder="Ex: 2.950,00" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <div id="negAumentoInfo" style="grid-column:1 / -1; font-size:12px; min-height:16px;"></div>
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
           <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📦 Ampliação</label>
         </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🗼 Torres (quantidade)
+          <input type="number" min="0" id="negQtdTorres" placeholder="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🗄️ Armários (quantidade)
+          <input type="number" min="0" id="negQtdArmarios" placeholder="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Equipamentos da Ampliação
           <textarea id="negAmpliacaoMaterial" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Ex: 3 câmeras IP, 1 controlador de acesso, cabeamento..."></textarea>
         </label>
@@ -4551,9 +4611,13 @@ CONDOMINIO Y	480	45"></textarea>
         <label class="pq-label">Nota abaixo da qual gera 2ª ligação/pesquisa de recuperação</label>
         <input type="number" id="cfgPqNota2aLigacao" min="0" max="10" step="0.1" style="max-width:140px;">
       </div>
-      <div class="pq-field" style="margin-bottom:0;">
+      <div class="pq-field">
         <label class="pq-label">Renovação: até quantos dias antes do vencimento entra em "Vencendo em Breve"</label>
         <input type="number" id="cfgRenovVencBreve" min="1" style="max-width:140px;">
+      </div>
+      <div class="pq-field" style="margin-bottom:0;">
+        <label class="pq-label">Comissão: percentual sobre o valor do aumento da mensalidade (aba Comissão, em Renovação)</label>
+        <input type="number" id="cfgComissaoPct" min="0" max="100" step="0.5" style="max-width:140px;"> <span style="font-size:12px; color:var(--text-faint);">%</span>
       </div>
       <button type="button" class="login-btn" id="cfgSalvarMetasBtn" style="width:auto; margin-top:14px; padding:9px 20px;">💾 Salvar Metas e Limites</button>
       <p id="cfgMetasAviso" style="font-size:11px; color:var(--text-faint); margin-top:8px;"></p>
@@ -5439,6 +5503,8 @@ function showApp(role, username, allowedTabs){
   }
   if (typeof loadLembretes === 'function') loadLembretes();
   try{ carregarEquipeMembros(); }catch(e){}   // os menus de responsável usam o organograma desde o início
+  try{ carregarNomesValidados(); }catch(e){}   // nomes iguais já validados como condomínios diferentes
+  try{ aplicarAcessoComissao(); }catch(e){}   // a aba Comissão é só do administrador
 }
 
 function initAuth(){
@@ -7939,7 +8005,7 @@ function itensDoMesDeduplicados(mes){
   const mapa = new Map();
   const temNota = x => x.nota && x.nota !== '—';
   dadosCombinadosDoMes(mes).forEach(d => {
-    const k = normalizeNomeCondo(d.nome);
+    const k = dupChave(d);
     const atual = mapa.get(k);
     if (!atual || (!temNota(atual) && temNota(d))) mapa.set(k, d);
   });
@@ -15692,6 +15758,135 @@ function negBadge(status){
   return `<span class="neg-badge ${cls}">${label}</span>`;
 }
 
+// ----- Negociações: torres, armários e aumento de mensalidade (abas "Torres e Armários" e "Comissão") -----
+const NEG_SQL = "ALTER TABLE negociacoes_contrato\n  ADD COLUMN IF NOT EXISTS qtd_torres integer,\n  ADD COLUMN IF NOT EXISTS qtd_armarios integer,\n  ADD COLUMN IF NOT EXISTS mensalidade_atual numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_nova numeric,\n  ADD COLUMN IF NOT EXISTS comissao_valor numeric,\n  ADD COLUMN IF NOT EXISTS comissao_situacao text;";
+function negFaltamColunas(e){ return /qtd_torres|qtd_armarios|mensalidade_|comissao_|column/i.test((e && (e.message || e.details)) || ''); }
+function negAvisarSql(){
+  if (window.__negSqlAvisado) return;
+  window.__negSqlAvisado = true;
+  alert('A negociação foi salva, mas o banco ainda não tem as colunas de torres, armários, mensalidade e comissão: esses dados ficam só nesta tela até você rodar o SQL abaixo no Supabase (SQL Editor) e recarregar.\n\n' + NEG_SQL);
+}
+function negTextoLivre(n){ return [n.ampliacao_material, n.tratativa, n.obs].filter(Boolean).join(' '); }
+function negTorres(n){ const q = Math.max(0, parseInt(n.qtd_torres, 10) || 0), t = /\btorres?\b/i.test(negTextoLivre(n)); return { qtd: q, citado: t && !q, tem: q > 0 || t }; }
+function negArmarios(n){ const q = Math.max(0, parseInt(n.qtd_armarios, 10) || 0), t = /arm[aá]rios?/i.test(negTextoLivre(n)); return { qtd: q, citado: t && !q, tem: q > 0 || t }; }
+function negAumento(n){
+  const a = Number(n.mensalidade_atual), b = Number(n.mensalidade_nova);
+  if (!(a > 0) || !(b > 0)) return null;
+  return { valor: b - a, pct: (b - a) / a * 100 };
+}
+function negTemAumento(n){ const x = negAumento(n); return !!x && x.valor > 0.005; }
+function negContaParaComissao(n){ return negTemAumento(n) && !['Não renovado', 'Cancelado'].includes(n.status); }
+function negPct(v){ return (v >= 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + '%'; }
+function negEhAdmin(){ return typeof currentRole !== 'undefined' && currentRole === 'admin'; }
+// A aba Comissão (e qualquer valor de comissão) é só do administrador
+function aplicarAcessoComissao(){
+  const adm = negEhAdmin();
+  const b = document.querySelector('[data-renov-subtab="comissao"]');
+  if (b) b.style.display = adm ? '' : 'none';
+  const v = document.getElementById('renovViewComissao');
+  if (v && !adm) v.style.display = 'none';
+  if (!adm && b && b.classList.contains('active')){ const vi = document.querySelector('[data-renov-subtab="negociacao"]'); if (vi) vi.click(); }
+}
+function negPodeEditar(){ return typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'editor'); }
+function negChip(txt, cor, dica){ return '<span class="neg-chip" style="color:' + cor + '; border-color:' + cor + ';"' + (dica ? ' title="' + escapeHtml(dica) + '"' : '') + '>' + txt + '</span>'; }
+function negSinalizadores(n){
+  const t = negTorres(n), a = negArmarios(n), au = negAumento(n);
+  let h = '';
+  if (t.qtd) h += negChip('🗼 Torre ×' + t.qtd, '#38bdf8'); else if (t.citado) h += negChip('🗼 Torre (citada)', '#94a3b8', 'Citada no texto da negociação: informe a quantidade ao editar.');
+  if (a.qtd) h += negChip('🗄️ Armário ×' + a.qtd, '#a78bfa'); else if (a.citado) h += negChip('🗄️ Armário (citado)', '#94a3b8', 'Citado no texto da negociação: informe a quantidade ao editar.');
+  if (negEhAdmin() && au && au.valor > 0.005) h += negChip('💰 ' + fmtMoedaRenov(au.valor).replace('R$ ', '+R$ ') + ' (' + negPct(au.pct) + ') · comissão ' + fmtMoedaRenov(comissaoCalculada(n)), '#22c55e', 'Aumento de mensalidade: aparece na aba Comissão. Comissão = ' + comissaoPct() + '% do aumento.');
+  return h ? '<div class="neg-chips">' + h + '</div>' : '';
+}
+function negAtualizarAumento(){
+  const el = document.getElementById('negAumentoInfo');
+  if (!el) return;
+  const x = negAumento({ mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value), mensalidade_nova: parseMoedaBRRenov(document.getElementById('negMensalidadeNova').value) });
+  if (!x){ el.innerHTML = ''; return; }
+  if (!negEhAdmin()){ el.innerHTML = ''; return; }
+  el.innerHTML = x.valor > 0.005 ? '<span style="color:#22c55e;">▲ Aumento de ' + fmtMoedaRenov(x.valor) + ' (' + negPct(x.pct) + ') por mês: esta negociação entra na aba Comissão (comissão de ' + fmtMoedaRenov(Math.round(x.valor * comissaoPct()) / 100) + ').</span>'
+    : (x.valor < -0.005 ? '<span style="color:#f59e0b;">▼ Redução de ' + fmtMoedaRenov(-x.valor) + ' (' + negPct(x.pct) + ') por mês.</span>' : '<span style="color:var(--text-faint);">Mensalidade sem alteração.</span>');
+}
+['negMensalidadeAtual', 'negMensalidadeNova'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', negAtualizarAumento); });
+
+function negFilialDe(n){ const c = renovAllCondos.find(x => String(x.item_id) === String(n.condo_id)); return c ? (c.filial || '—') : '—'; }
+function renderRenovTorresArmarios(){
+  const kpi = document.getElementById('renovTAKpis'), corpo = document.getElementById('renovTABody');
+  if (!kpi || !corpo) return;
+  const modo = document.getElementById('renovTAFiltro').value || 'andamento';
+  const busca = normalizeNomeCondo(document.getElementById('renovTABusca').value || '');
+  const todas = renovNegociacoes.filter(n => negTorres(n).tem || negArmarios(n).tem);
+  const em = todas.filter(negociacaoEmAndamento), fechadas = todas.filter(n => ehStatusRenovado(n.status));
+  const soma = (l, f) => l.reduce((s, n) => s + f(n).qtd, 0), com = (l, f) => l.filter(n => f(n).qtd > 0).length;
+  const semQtd = em.filter(n => negTorres(n).citado || negArmarios(n).citado).length;
+  const box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  kpi.innerHTML = box(soma(em, negTorres), 'Torres em negociação (' + com(em, negTorres) + ' negociação(ões))', '#38bdf8') + box(soma(em, negArmarios), 'Armários em negociação (' + com(em, negArmarios) + ' negociação(ões))', '#a78bfa') +
+    box(soma(fechadas, negTorres), 'Torres já fechadas (renovadas)') + box(soma(fechadas, negArmarios), 'Armários já fechados (renovados)') + box(semQtd, 'Citam torre/armário sem quantidade', semQtd ? '#f59e0b' : '');
+  const filiais = {};
+  em.forEach(n => { const f = negFilialDe(n); filiais[f] = filiais[f] || { t: 0, a: 0, n: 0 }; filiais[f].t += negTorres(n).qtd; filiais[f].a += negArmarios(n).qtd; filiais[f].n++; });
+  const fk = Object.keys(filiais).sort();
+  document.getElementById('renovTAFilial').innerHTML = fk.length ? '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Em negociação, por filial</th><th>Negociações</th><th>🗼 Torres</th><th>🗄️ Armários</th></tr></thead><tbody>' +
+    fk.map(f => '<tr><td style="text-align:left;"><strong>' + escapeHtml(f) + '</strong></td><td>' + filiais[f].n + '</td><td>' + filiais[f].t + '</td><td>' + filiais[f].a + '</td></tr>').join('') + '</tbody></table>' : '';
+  let lista = modo === 'andamento' ? em : (modo === 'fechadas' ? fechadas : todas);
+  if (busca) lista = lista.filter(n => normalizeNomeCondo(n.condo_nome).includes(busca));
+  corpo.innerHTML = lista.length ? lista.map(n => {
+    const t = negTorres(n), a = negArmarios(n);
+    const cel = x => x.qtd ? '<strong>' + x.qtd + '</strong>' : (x.citado ? '<span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Citado no texto: informe a quantidade ao editar.">citada</span>' : '—');
+    return '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + negBadge(n.status) + '</td><td>' + cel(t) + '</td><td>' + cel(a) +
+      '</td><td style="text-align:left; max-width:260px; white-space:normal;">' + escapeHtml(n.ampliacao_material || '—') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>';
+  }).join('') : '<tr><td colspan="9" class="empty">' + (todas.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação inclui torre ou armário ainda. Informe as quantidades ao editar uma negociação.') + '</td></tr>';
+}
+function renderRenovComissao(){
+  const kpi = document.getElementById('renovComKpis'), corpo = document.getElementById('renovComBody');
+  if (!kpi || !corpo) return;
+  if (!negEhAdmin()){ kpi.innerHTML = ''; corpo.innerHTML = ''; return; }   // só o administrador vê a comissão
+  const th = document.getElementById('renovComTh'); if (th) th.textContent = 'Comissão (' + String(comissaoPct()).replace('.', ',') + '%)';
+  const modo = document.getElementById('renovComFiltroNeg').value || 'todas', sit = document.getElementById('renovComFiltroSit').value || '';
+  const busca = normalizeNomeCondo(document.getElementById('renovComBusca').value || '');
+  const base = renovNegociacoes.filter(negContaParaComissao);
+  let lista = base.filter(n => modo === 'todas' || (modo === 'andamento' ? negociacaoEmAndamento(n) : ehStatusRenovado(n.status)));
+  if (sit) lista = lista.filter(n => comSituacao(n) === sit);
+  if (busca) lista = lista.filter(n => normalizeNomeCondo(n.condo_nome).includes(busca));
+  const soma = (l, f) => l.reduce((s, n) => s + (f(n) || 0), 0);
+  const aumento = n => negAumento(n).valor;
+  const box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  kpi.innerHTML = box(lista.length, 'Negociações com aumento', '#22c55e') + box(fmtMoedaRenov(soma(lista, aumento)), 'Aumento mensal total') +
+    box(fmtMoedaRenov(soma(lista.filter(n => comSituacao(n) === 'Prevista'), comValor)), 'Comissão prevista (em negociação)', '#94a3b8') +
+    box(fmtMoedaRenov(soma(lista.filter(n => comSituacao(n) === 'A pagar'), comValor)), 'A pagar (renovadas)', '#f59e0b') +
+    box(fmtMoedaRenov(soma(lista.filter(n => comSituacao(n) === 'Paga'), comValor)), 'Paga', '#22c55e') +
+    box(fmtMoedaRenov(soma(lista, comValor)), 'Comissão total');
+  const pode = negEhAdmin();
+  corpo.innerHTML = lista.length ? lista.map(n => {
+    const x = negAumento(n), s0 = comSituacao(n);
+    return '<tr data-neg="' + n.id + '"><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td>' + negBadge(n.status) + '</td><td>' + fmtMoedaRenov(n.mensalidade_atual) + '</td><td>' + fmtMoedaRenov(n.mensalidade_nova) +
+      '</td><td style="color:#22c55e;"><strong>' + fmtMoedaRenov(x.valor) + '</strong></td><td style="color:#22c55e;">' + negPct(x.pct) + '</td><td><strong>' + fmtMoedaRenov(comValor(n)) + '</strong></td><td>' +
+      (pode ? '<select data-com-sit="' + n.id + '">' + ['Prevista', 'A pagar', 'Paga'].map(o => '<option' + (o === s0 ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' : escapeHtml(s0)) +
+      '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>';
+  }).join('') : '<tr><td colspan="12" class="empty">' + (base.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação com aumento de mensalidade ainda. Informe a mensalidade atual e a nova ao editar uma negociação.') + '</td></tr>';
+}
+// Comissão = percentual (padrão 50%) do valor do aumento mensal. Em "Paga", o valor fica gravado e não muda mais.
+function comissaoPct(){ return (typeof window.__comissaoPct === 'number' && window.__comissaoPct >= 0) ? window.__comissaoPct : 50; }
+function comissaoCalculada(n){ const x = negAumento(n); return x && x.valor > 0 ? Math.round(x.valor * comissaoPct()) / 100 : 0; }
+function comSituacao(n){ return ['A pagar', 'Paga'].includes(n.comissao_situacao) ? n.comissao_situacao : (ehStatusRenovado(n.status) ? 'A pagar' : 'Prevista'); }
+function comValor(n){ return (comSituacao(n) === 'Paga' && n.comissao_valor != null && n.comissao_valor !== '') ? Number(n.comissao_valor) : comissaoCalculada(n); }
+async function salvarComissaoNeg(id, situacao){
+  if (!negEhAdmin()) return;
+  const n = renovNegociacoes.find(x => String(x.id) === String(id));
+  if (!n) return;
+  const campos = situacao === 'Prevista' ? { comissao_situacao: null, comissao_valor: null } : { comissao_situacao: situacao, comissao_valor: comissaoCalculada(n) };
+  Object.assign(n, campos);
+  renderRenovComissao();
+  if (sb){
+    try{ const { error } = await sb.from('negociacoes_contrato').update(campos).eq('id', id); if (error) throw error; }
+    catch(e){ console.warn('Comissão:', e); negAvisarSql(); }
+  }
+}
+function exportarComissaoCsv(){
+  if (!negEhAdmin()) return;
+  const linhas = [['Condomínio', 'Filial', 'Responsável', 'Data', 'Status', 'Mensalidade atual', 'Nova mensalidade', 'Aumento (R$)', 'Aumento (%)', 'Comissão (' + comissaoPct() + '%)', 'Situação da comissão']];
+  renovNegociacoes.filter(negContaParaComissao).forEach(n => { const x = negAumento(n); linhas.push([n.condo_nome, negFilialDe(n), n.responsavel || '', n.data_negociacao || '', n.status || '', n.mensalidade_atual, n.mensalidade_nova, x.valor.toFixed(2), x.pct.toFixed(1), comValor(n).toFixed(2), comSituacao(n)]); });
+  const csv = '\ufeff' + linhas.map(l => l.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'comissao_negociacoes.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
 function renderRenovNegociacoes(){
   const body = document.getElementById('renovNegociacoesBody');
   const filtered = getFilteredRenovNegociacoes();
@@ -15713,6 +15908,9 @@ function renderRenovNegociacoes(){
       <div class="stat-box"><div class="snum">${porFilial['Maranhão']}</div><div class="slbl">Maranhão</div></div>
       <div class="stat-box"><div class="snum">${porFilial['Amazonas']}</div><div class="slbl">Amazonas</div></div>
       <div class="stat-box"><div class="snum">${porFilial['SECOPI']}</div><div class="slbl">SECOPI</div></div>
+      <div class="stat-box"><div class="snum" style="color:#38bdf8;">${emAndamento.reduce((s, n) => s + negTorres(n).qtd, 0)}</div><div class="slbl">🗼 Torres em negociação</div></div>
+      <div class="stat-box"><div class="snum" style="color:#a78bfa;">${emAndamento.reduce((s, n) => s + negArmarios(n).qtd, 0)}</div><div class="slbl">🗄️ Armários em negociação</div></div>
+      ${negEhAdmin() ? `<div class="stat-box"><div class="snum" style="color:#22c55e;">${emAndamento.filter(negTemAumento).length}</div><div class="slbl">💰 Com aumento de mensalidade</div></div>` : ''}
     `;
   }
 
@@ -15724,7 +15922,7 @@ function renderRenovNegociacoes(){
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     return `
     <tr>
-      <td class="ck-name">${n.condo_nome || ''}</td>
+      <td class="ck-name">${n.condo_nome || ''}${negSinalizadores(n)}</td>
       <td>${escapeHtml((condo && condo.filial) || '—')}</td>
       <td>${fmtDataBRRenov(n.data_negociacao)}</td>
       <td>${n.responsavel || ''}</td>
@@ -15753,6 +15951,10 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
+    document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
+    document.getElementById('renovViewComissao').style.display = alvo === 'comissao' ? 'block' : 'none';
+    if (alvo === 'torresarmarios') renderRenovTorresArmarios();
+    if (alvo === 'comissao') renderRenovComissao();
     if (alvo === 'negociacao') renderRenovNegociacoes();
     if (alvo === 'vencendobreve') renderRenovVencendoBreve();
     if (alvo === 'renovados') renderRenovRenovados();
@@ -16381,6 +16583,9 @@ function setNegCondo(condoId){
   document.getElementById('negCondoSel').value = condo ? condo.item_id : '';
   document.getElementById('negCondoInput').value = condo ? condo.nome : '';
   document.getElementById('negFilial').value = condo ? (condo.filial || '') : '';
+  const campoAtual = document.getElementById('negMensalidadeAtual');   // traz a mensalidade do cadastro, se ainda estiver vazia
+  if (condo && campoAtual && !campoAtual.value && condo.mensalidade) campoAtual.value = formatarMoedaParaInputRenov(condo.mensalidade);
+  if (typeof negAtualizarAumento === 'function') negAtualizarAumento();
 }
 (function initNegCondoCombo(){
   const input = document.getElementById('negCondoInput');
@@ -16429,6 +16634,10 @@ function openNegociacaoModal(condoId){
   document.getElementById('negAmpliacaoPedido').value = '';
   document.getElementById('negAmpliacaoOS').value = '';
   document.getElementById('negAmpliacaoRequisicao').value = '';
+  document.getElementById('negMensalidadeAtual').value = '';
+  document.getElementById('negMensalidadeNova').value = '';
+  document.getElementById('negQtdTorres').value = '';
+  document.getElementById('negQtdArmarios').value = '';
   document.getElementById('negCondoDropdown').classList.remove('open');
   if (condoId) setNegCondo(condoId);
   else setNegCondo(null);
@@ -16457,6 +16666,11 @@ function editNegociacao(id){
   document.getElementById('negAmpliacaoPedido').value = n.ampliacao_pedido || '';
   document.getElementById('negAmpliacaoOS').value = n.ampliacao_os || '';
   document.getElementById('negAmpliacaoRequisicao').value = n.ampliacao_requisicao || '';
+  document.getElementById('negMensalidadeAtual').value = formatarMoedaParaInputRenov(n.mensalidade_atual);
+  document.getElementById('negMensalidadeNova').value = formatarMoedaParaInputRenov(n.mensalidade_nova);
+  document.getElementById('negQtdTorres').value = n.qtd_torres ? String(n.qtd_torres) : '';
+  document.getElementById('negQtdArmarios').value = n.qtd_armarios ? String(n.qtd_armarios) : '';
+  negAtualizarAumento();
   document.getElementById('negCondoDropdown').classList.remove('open');
   renderAnexosBox('negAnexosBox', 'negociacao', negociacaoEditingId);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
@@ -16508,12 +16722,17 @@ async function salvarNegociacao(){
     ampliacao_pedido: document.getElementById('negAmpliacaoPedido').value.trim() || null,
     ampliacao_os: document.getElementById('negAmpliacaoOS').value.trim() || null,
     ampliacao_requisicao: document.getElementById('negAmpliacaoRequisicao').value.trim() || null,
+    qtd_torres: parseInt(document.getElementById('negQtdTorres').value, 10) || null,
+    qtd_armarios: parseInt(document.getElementById('negQtdArmarios').value, 10) || null,
+    mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value),
+    mensalidade_nova: parseMoedaBRRenov(document.getElementById('negMensalidadeNova').value),
     updated_at: new Date().toISOString()
   };
 
   const fimNeg = document.getElementById('negConclusao').value || null;
   const anteriorNeg = negociacaoEditingId ? renovNegociacoes.find(n => String(n.id) === String(negociacaoEditingId)) : null;
   if (fimNeg || (anteriorNeg && anteriorNeg.tratativa_conclusao)) registro.tratativa_conclusao = fimNeg;
+  if (anteriorNeg){ registro.comissao_valor = anteriorNeg.comissao_valor; registro.comissao_situacao = anteriorNeg.comissao_situacao; }   // a comissão é preenchida na aba Comissão: não se perde ao editar
   if (negociacaoEditingId){
     const idx = renovNegociacoes.findIndex(n => String(n.id) === String(negociacaoEditingId));
     if (idx > -1) renovNegociacoes[idx] = registro; else renovNegociacoes.unshift(registro);
@@ -16527,7 +16746,15 @@ async function salvarNegociacao(){
   if (sb){
     try{
       const { error } = await sb.from('negociacoes_contrato').upsert(registro);
-      if (error){ console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error); }
+      if (error){
+        console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error);
+        if (negFaltamColunas(error)){   // o banco ainda não tem as colunas novas: salva o resto e avisa
+          const base = Object.assign({}, registro);
+          ['qtd_torres', 'qtd_armarios', 'mensalidade_atual', 'mensalidade_nova', 'comissao_valor', 'comissao_situacao'].forEach(k => delete base[k]);
+          const r2 = await sb.from('negociacoes_contrato').upsert(base);
+          if (!r2.error) negAvisarSql();
+        }
+      }
     }catch(e){ console.warn('Falha ao salvar negociação:', e); }
   }
 
@@ -16573,6 +16800,14 @@ function initRenovacaoUI(){
   document.getElementById('renovBreveBody').addEventListener('click', (ev) => {
     const t = ev.target.closest('[data-registrar]');
     if (t) openNegociacaoModal(t.dataset.registrar);
+  });
+  ['renovTABusca', 'renovTAFiltro'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovTorresArmarios); el.addEventListener('change', renderRenovTorresArmarios); } });
+  ['renovComBusca', 'renovComFiltroNeg', 'renovComFiltroSit'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovComissao); el.addEventListener('change', renderRenovComissao); } });
+  document.getElementById('renovComCsv').addEventListener('click', exportarComissaoCsv);
+  ['renovTABody', 'renovComBody'].forEach(id => document.getElementById(id).addEventListener('click', (ev) => { const b = ev.target.closest('[data-edit-neg]'); if (b) editNegociacao(b.dataset.editNeg); }));
+  document.getElementById('renovComBody').addEventListener('change', (ev) => {
+    const sl = ev.target.closest('[data-com-sit]');
+    if (sl) salvarComissaoNeg(sl.dataset.comSit, sl.value);
   });
   document.getElementById('renovNegociacoesBody').addEventListener('click', (ev) => {
     const editBtn = ev.target.closest('[data-edit-neg]');
@@ -25242,7 +25477,9 @@ async function loadConfiguracoes(){
       if (c.chave === 'pq_meta_nota') META_NOTA = parseFloat(c.valor) || META_NOTA;
       if (c.chave === 'pq_nota_2a_ligacao') PQ_NOTA_2A_LIGACAO = parseFloat(c.valor) || PQ_NOTA_2A_LIGACAO;
       if (c.chave === 'renov_venc_breve_dias') RENOV_VENC_BREVE_DIAS = parseInt(c.valor,10) || RENOV_VENC_BREVE_DIAS;
+      if (c.chave === 'comissao_percentual' && !isNaN(parseFloat(c.valor))) window.__comissaoPct = parseFloat(c.valor);
     });
+    { const campoCom = document.getElementById('cfgComissaoPct'); if (campoCom) campoCom.value = comissaoPct(); }
     document.getElementById('cfgPqMetaNota').value = META_NOTA;
     document.getElementById('cfgPqNota2aLigacao').value = PQ_NOTA_2A_LIGACAO;
     document.getElementById('cfgRenovVencBreve').value = RENOV_VENC_BREVE_DIAS;
@@ -25400,6 +25637,7 @@ document.getElementById('cfgSalvarMetasBtn').addEventListener('click', async ()=
     { chave: 'pq_meta_nota', valor: document.getElementById('cfgPqMetaNota').value },
     { chave: 'pq_nota_2a_ligacao', valor: document.getElementById('cfgPqNota2aLigacao').value },
     { chave: 'renov_venc_breve_dias', valor: document.getElementById('cfgRenovVencBreve').value },
+    { chave: 'comissao_percentual', valor: document.getElementById('cfgComissaoPct').value || '50' },
   ];
   try{
     const { error } = await sb.from('configuracoes_sistema').upsert(
@@ -27075,6 +27313,44 @@ document.getElementById('btnExcluirRodadaPq').addEventListener('click', excluirR
 
 // ===== Encontrar e excluir duplicados na aba Pesquisas =====
 // ----- Pesquisas repetidas: resumo por mês, limpeza que junta as informações das cópias e aviso automático -----
+// ----- Nomes iguais que são condomínios diferentes: o usuário valida e eles deixam de contar como repetidos -----
+function dupFilialChave(f){ return normTxtCarteira(normalizeFilialCanonica(f || '')); }
+function dupChave(item){
+  const k = normalizeNomeCondo(item.nome), v = window.__nomesValidados;
+  return (v && v.has(k)) ? k + '|' + dupFilialChave(item.filial) : k;   // nome validado: condomínios de filiais diferentes são separados
+}
+function dupPodeValidar(){ return typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'editor'); }
+function dupSalvarLocal(){ try{ localStorage.setItem('pqNomesValidados', JSON.stringify([...(window.__nomesValidados || [])])); }catch(e){} }
+async function carregarNomesValidados(){
+  let set = new Set(), ids = new Map(), doBanco = false;
+  try{ JSON.parse(localStorage.getItem('pqNomesValidados') || '[]').forEach(k => set.add(k)); }catch(e){}
+  if (typeof sb !== 'undefined' && sb){
+    try{
+      const { data, error } = await sb.from('listas_sistema').select('id,valor').eq('categoria', 'pq_nomes_validados').eq('ativo', true);
+      if (!error && data){ set = new Set(); data.forEach(r => { set.add(r.valor); ids.set(r.valor, r.id); }); doBanco = true; }
+    }catch(e){ console.warn('Nomes validados:', e); }
+  }
+  window.__nomesValidados = set; window.__nomesValidadosIds = ids; dupSalvarLocal();
+  __rcVersao++; __dupAvisoChave = '';
+  try{ atualizarAvisoDuplicados(); }catch(e){}
+  return doBanco;
+}
+async function validarNomeDistinto(chave){
+  if (!window.__nomesValidados) window.__nomesValidados = new Set();
+  window.__nomesValidados.add(chave); dupSalvarLocal();
+  let salvou = false;
+  if (typeof sb !== 'undefined' && sb){
+    try{ const { error } = await sb.from('listas_sistema').insert({ categoria: 'pq_nomes_validados', valor: chave, ordem: window.__nomesValidados.size }); salvou = !error; if (error) console.warn(error); }catch(e){ console.warn(e); }
+  }
+  if (salvou) await carregarNomesValidados();
+  else { __rcVersao++; __dupAvisoChave = ''; alert('Validado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão mostrar como repetido.'); }
+}
+async function desfazerNomeValidado(chave){
+  const id = (window.__nomesValidadosIds || new Map()).get(chave);
+  if (typeof sb !== 'undefined' && sb && id){ try{ await sb.from('listas_sistema').update({ ativo: false }).eq('id', id); }catch(e){ console.warn(e); } }
+  if (window.__nomesValidados) window.__nomesValidados.delete(chave);
+  dupSalvarLocal(); __rcVersao++; __dupAvisoChave = '';
+}
 function dupVazio(v){ return v === undefined || v === null || String(v).trim() === '' || v === '—' || v === 'Não se aplica'; }
 function dupPontuar(it){
   const temNota = !dupVazio(it.nota);
@@ -27085,7 +27361,7 @@ function dupResumoPorMes(){
   DATA.forEach(d => {
     const m = getMes(d);
     if (!porMes.has(m)) porMes.set(m, new Map());
-    const k = normalizeNomeCondo(d.nome), mp = porMes.get(m);
+    const k = dupChave(d), mp = porMes.get(m);
     mp.set(k, (mp.get(k) || 0) + 1);
   });
   return [...porMes.entries()].map(([mes, mp]) => {
@@ -27144,7 +27420,7 @@ function renderDupModalPq(){
   const doMes = DATA.filter(d => getMes(d) === selectedMes);
   const grupos = new Map();
   doMes.forEach(item => {
-    const chave = normalizeNomeCondo(item.nome);
+    const chave = dupChave(item);
     if (!grupos.has(chave)) grupos.set(chave, []);
     grupos.get(chave).push(item);
   });
@@ -27152,10 +27428,31 @@ function renderDupModalPq(){
   const body = document.getElementById('dupModalPqBody');
   const outrosMeses = dupResumoPorMes().filter(x => x.mes !== selectedMes);
   const blocoMeses = outrosMeses.length ? '<div style="font-size:12px; color:var(--text-faint); margin-bottom:12px;">Outros meses com repetição: ' + outrosMeses.map(x => '<button type="button" class="clearbtn" data-dup-mes="' + escapeHtml(x.mes) + '" style="margin:2px;">' + escapeHtml(mesLabelBR(x.mes)) + ' · ' + x.extras + ' a mais</button>').join('') + '</div>' : '';
+  const validados = [...(window.__nomesValidados || [])].map(k => {
+    const ex = DATA.find(d => normalizeNomeCondo(d.nome) === k);
+    return { k, nome: ex ? ex.nome : k };
+  });
+  const blocoValidados = validados.length ? '<details style="margin-top:14px; font-size:12.5px;"><summary style="cursor:pointer; color:var(--text-faint);">Nomes validados como condomínios diferentes (' + validados.length + ')</summary>' +
+    validados.map(v => '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0;"><span>' + escapeHtml(v.nome) + ' <span style="color:var(--text-faint);">— contados separadamente por filial</span></span>' + (dupPodeValidar() ? '<button type="button" class="clearbtn" data-dup-desfazer="' + escapeHtml(v.k) + '">Desfazer validação</button>' : '') + '</div>').join('') + '</details>' : '';
+  const ligarValidacao = () => {
+    body.querySelectorAll('[data-dup-validar]').forEach(b => b.addEventListener('click', async () => {
+      const k = b.getAttribute('data-dup-validar'), nome = b.getAttribute('data-dup-nome');
+      if (!confirm('Validar que "' + nome + '" são condomínios DIFERENTES (por exemplo, de filiais diferentes)?\n\nEles deixam de aparecer como repetidos e passam a ser contados separadamente em todo o dashboard. Só cópias na mesma filial continuam aparecendo como repetidas.')) return;
+      b.disabled = true;
+      await validarNomeDistinto(k);
+      try{ render(); }catch(e){}
+      renderDupModalPq();
+    }));
+    body.querySelectorAll('[data-dup-desfazer]').forEach(b => b.addEventListener('click', async () => {
+      await desfazerNomeValidado(b.getAttribute('data-dup-desfazer'));
+      try{ render(); }catch(e){}
+      renderDupModalPq();
+    }));
+  };
   const irParaMes = () => body.querySelectorAll('[data-dup-mes]').forEach(b => b.addEventListener('click', () => { const sel = document.getElementById('mesSelector'); if (sel){ sel.value = b.getAttribute('data-dup-mes'); sel.dispatchEvent(new Event('change')); } setTimeout(renderDupModalPq, 50); }));
   if (!duplicados.length){
-    body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>` + blocoMeses;
-    irParaMes();
+    body.innerHTML = `<p class="empty">Nenhum condomínio duplicado encontrado em ${mesLabelBR(selectedMes)}. 🎉</p>` + blocoMeses + blocoValidados;
+    irParaMes(); ligarValidacao();
     return;
   }
   const totalExtras = duplicados.reduce((acc, g) => acc + g.length - 1, 0);
@@ -27166,7 +27463,12 @@ function renderDupModalPq(){
     </div>`;
   body.innerHTML = cabecalho + blocoMeses + duplicados.map((grupo, gi) => `
     <div style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:12px;">
-      <p style="font-weight:600; margin:0 0 8px;">${escapeHtml(grupo[0].nome)} <span style="color:var(--text-faint); font-weight:400;">— ${grupo.length} registros</span></p>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 8px;">
+        <p style="font-weight:600; margin:0;">${escapeHtml(grupo[0].nome)} <span style="color:var(--text-faint); font-weight:400;">— ${grupo.length} registros</span></p>
+        ${new Set(grupo.map(i => dupFilialChave(i.filial))).size > 1
+          ? (dupPodeValidar() ? `<button type="button" class="clearbtn" data-dup-validar="${escapeHtml(normalizeNomeCondo(grupo[0].nome))}" data-dup-nome="${escapeHtml(grupo[0].nome)}" style="border-color:var(--ok); color:var(--ok);">✔ Validar: são condomínios diferentes</button>` : '')
+          : '<span style="font-size:11.5px; color:var(--text-faint);">mesma filial: provavelmente é cópia</span>'}
+      </div>
       ${grupo.map((item) => `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 10px; background:var(--bg-panel-2); border-radius:6px; margin-bottom:6px;">
           <div style="font-size:12.5px;">
@@ -27177,11 +27479,17 @@ function renderDupModalPq(){
       `).join('')}
     </div>
   `).join('');
+  body.insertAdjacentHTML('beforeend', blocoValidados);
+  ligarValidacao();
   irParaMes();
   document.getElementById('btnLimparDupAuto').addEventListener('click', async ()=>{
-    const plano = dupPlanoLimpeza(duplicados);
+    // grupos com filiais diferentes podem ser condomínios diferentes com o mesmo nome: a limpeza automática não mexe neles
+    const seguros = duplicados.filter(g => new Set(g.map(i => dupFilialChave(i.filial))).size <= 1);
+    const deixados = duplicados.length - seguros.length;
+    if (!seguros.length){ alert('Todos os grupos têm filiais diferentes e podem ser condomínios diferentes com o mesmo nome. Use "Validar" quando forem diferentes, ou "Excluir esta" quando for cópia.'); return; }
+    const plano = dupPlanoLimpeza(seguros);
     const remover = plano.remover;
-    if (!confirm(`Vou manter 1 linha de cada condomínio repetido em ${mesLabelBR(selectedMes)} e EXCLUIR ${remover.length} linha(s).\n\nAntes de excluir, as informações que só existem nas cópias vão para a linha que fica: ${plano.mesclar.length} condomínio(s) recebem dados das outras cópias (${plano.notasRecuperadas} nota(s) recuperada(s)).${plano.conflitos ? '\n' + plano.conflitos + ' condomínio(s) têm notas diferentes nas cópias: fica a da linha com mais dados.' : ''}\n\nRecomendo fazer o Backup do Sistema (HTML) antes. Não dá pra desfazer. Continuar?`)) return;
+    if (!confirm(`${deixados ? deixados + ' condomínio(s) com filiais diferentes ficam DE FORA (valide ou exclua um a um).\n\n' : ''}Vou manter 1 linha de cada condomínio repetido em ${mesLabelBR(selectedMes)} e EXCLUIR ${remover.length} linha(s).\n\nAntes de excluir, as informações que só existem nas cópias vão para a linha que fica: ${plano.mesclar.length} condomínio(s) recebem dados das outras cópias (${plano.notasRecuperadas} nota(s) recuperada(s)).${plano.conflitos ? '\n' + plano.conflitos + ' condomínio(s) têm notas diferentes nas cópias: fica a da linha com mais dados.' : ''}\n\nRecomendo fazer o Backup do Sistema (HTML) antes. Não dá pra desfazer. Continuar?`)) return;
     const b = document.getElementById('btnLimparDupAuto');
     b.disabled = true;
     try{
