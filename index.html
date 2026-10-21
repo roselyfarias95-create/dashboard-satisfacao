@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v158 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v159 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2293,6 +2293,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
       <button type="button" class="subtab-btn" data-renov-subtab="torresarmarios">🗼 Torres e Armários</button>
       <button type="button" class="subtab-btn" data-renov-subtab="comissao">💰 Comissão</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="reducao">📉 Redução de Mensalidade</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
       <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
@@ -2539,6 +2540,25 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       </tr></thead><tbody id="renovComBody"></tbody></table></div>
     </div>
 
+    <div id="renovViewReducao" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Condomínios que pediram para <strong>diminuir a mensalidade</strong>. Entram aqui as negociações marcadas como "quer reduzir" e as que têm nova mensalidade menor que a atual. Preencha o <strong>valor sugerido</strong> e o <strong>prazo de renovação sugerido</strong> em <strong>Editar</strong>, marque as linhas e gere o <strong>relatório para pedir autorização à diretoria</strong>.</p>
+      <div class="stats-strip" id="renovRedKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="renovRedBusca" placeholder="Buscar por condomínio...">
+        <select class="filter-select" id="renovRedStatus">
+          <option value="">Status: todos</option>
+          <option>Em análise</option><option>Enviada à diretoria</option><option>Aprovada</option><option>Reprovada</option><option>Contraproposta</option>
+        </select>
+        <button type="button" class="clearbtn" id="renovRedRelatorio" style="border-color:var(--ok); color:var(--ok);">📄 Gerar relatório para a diretoria</button>
+        <button type="button" class="clearbtn" id="renovRedEmail">✉️ Copiar texto para e-mail</button>
+        <button type="button" class="clearbtn" id="renovRedCsv">⬇ Exportar CSV</button>
+      </div>
+      <p class="rc-nota" id="renovRedAviso" style="margin:0 0 8px;"></p>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th><input type="checkbox" id="renovRedTodas" title="Marcar todas"></th><th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Mensalidade atual</th><th>Tempo de contrato</th><th>Unidades</th><th>Custo dos equipamentos</th><th>Valor sugerido</th><th>Redução</th><th>Prazo sugerido</th><th>Status</th><th>Ações</th>
+      </tr></thead><tbody id="renovRedBody"></tbody></table></div>
+    </div>
+
     <div id="renovViewRenovados" style="display:none;">
       <div class="stats-strip" id="renovRenovadosKpis" style="margin-bottom:14px;"></div>
       <div class="toolbar" style="margin-bottom:14px;">
@@ -2759,7 +2779,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Nova Data de Vencimento
           <input type="date" id="negNovaData" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
-        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor do Custo (R$)
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor do custo dos equipamentos (R$)
           <input type="text" id="negValorCusto" placeholder="Ex: 4.610,55" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
@@ -2772,6 +2792,28 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
           <input type="text" id="negMensalidadeNova" placeholder="Ex: 2.950,00" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <div id="negAumentoInfo" style="grid-column:1 / -1; font-size:12px; min-height:16px;"></div>
+        <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
+          <label style="font-size:11.5px; color:var(--text); font-weight:700; display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="negQuerReducao"> 📉 O condomínio quer REDUZIR a mensalidade (a negociação vai para a aba Redução de Mensalidade)</label>
+        </div>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor pedido pelo condomínio (R$)
+          <input type="text" id="negMensalidadePedida" placeholder="Ex: 2.200,00" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Valor sugerido por nós (R$)
+          <input type="text" id="negMensalidadeSugerida" placeholder="Ex: 2.400,00" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Prazo de renovação sugerido (meses)
+          <input type="number" min="1" id="negPrazoSugerido" placeholder="Ex: 24" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Tempo de contrato (meses)
+          <input type="number" min="1" id="negTempoContrato" placeholder="vem do cadastro" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">Status do pedido de redução
+          <select id="negReducaoStatus" style="width:100%; margin-top:4px; box-sizing:border-box;"><option>Em análise</option><option>Enviada à diretoria</option><option>Aprovada</option><option>Reprovada</option><option>Contraproposta</option></select>
+        </label>
+        <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Justificativa para a diretoria
+          <textarea id="negReducaoJustificativa" rows="2" placeholder="Por que a redução faz sentido (ex.: risco de cancelamento, proposta de concorrente, histórico do condomínio)" style="width:100%; margin-top:4px; box-sizing:border-box;"></textarea>
+        </label>
+        <div id="negReducaoInfo" style="grid-column:1 / -1; font-size:12px; min-height:16px;"></div>
         <div style="grid-column:1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px;">
           <label style="font-size:11px; color:var(--text-faint); font-weight:600; display:block; margin-bottom:8px;">📦 Ampliação</label>
         </div>
@@ -15857,12 +15899,13 @@ function negBadge(status){
 }
 
 // ----- Negociações: torres, armários e aumento de mensalidade (abas "Torres e Armários" e "Comissão") -----
-const NEG_SQL = "ALTER TABLE negociacoes_contrato\n  ADD COLUMN IF NOT EXISTS qtd_torres integer,\n  ADD COLUMN IF NOT EXISTS qtd_armarios integer,\n  ADD COLUMN IF NOT EXISTS mensalidade_atual numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_nova numeric,\n  ADD COLUMN IF NOT EXISTS comissao_valor numeric,\n  ADD COLUMN IF NOT EXISTS comissao_situacao text;";
-function negFaltamColunas(e){ return /qtd_torres|qtd_armarios|mensalidade_|comissao_|column/i.test((e && (e.message || e.details)) || ''); }
+const NEG_COLUNAS_NOVAS = ['qtd_torres', 'qtd_armarios', 'mensalidade_atual', 'mensalidade_nova', 'comissao_valor', 'comissao_situacao', 'quer_reducao', 'mensalidade_pedida', 'mensalidade_sugerida', 'prazo_sugerido_meses', 'tempo_contrato_meses', 'reducao_justificativa', 'reducao_status'];
+const NEG_SQL = "ALTER TABLE negociacoes_contrato\n  ADD COLUMN IF NOT EXISTS qtd_torres integer,\n  ADD COLUMN IF NOT EXISTS qtd_armarios integer,\n  ADD COLUMN IF NOT EXISTS mensalidade_atual numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_nova numeric,\n  ADD COLUMN IF NOT EXISTS comissao_valor numeric,\n  ADD COLUMN IF NOT EXISTS comissao_situacao text,\n  ADD COLUMN IF NOT EXISTS quer_reducao boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS mensalidade_pedida numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_sugerida numeric,\n  ADD COLUMN IF NOT EXISTS prazo_sugerido_meses integer,\n  ADD COLUMN IF NOT EXISTS tempo_contrato_meses integer,\n  ADD COLUMN IF NOT EXISTS reducao_justificativa text,\n  ADD COLUMN IF NOT EXISTS reducao_status text;";
+function negFaltamColunas(e){ return /qtd_torres|qtd_armarios|mensalidade_|comissao_|quer_reducao|prazo_sugerido|tempo_contrato|reducao_|column/i.test((e && (e.message || e.details)) || ''); }
 function negAvisarSql(){
   if (window.__negSqlAvisado) return;
   window.__negSqlAvisado = true;
-  alert('A negociação foi salva, mas o banco ainda não tem as colunas de torres, armários, mensalidade e comissão: esses dados ficam só nesta tela até você rodar o SQL abaixo no Supabase (SQL Editor) e recarregar.\n\n' + NEG_SQL);
+  alert('A negociação foi salva, mas o banco ainda não tem as colunas de torres, armários, mensalidade, comissão e redução: esses dados ficam só nesta tela até você rodar o SQL abaixo no Supabase (SQL Editor) e recarregar.\n\n' + NEG_SQL);
 }
 function negTextoLivre(n){ return [n.ampliacao_material, n.tratativa, n.obs].filter(Boolean).join(' '); }
 function negTorres(n){ const q = Math.max(0, parseInt(n.qtd_torres, 10) || 0), t = /\btorres?\b/i.test(negTextoLivre(n)); return { qtd: q, citado: t && !q, tem: q > 0 || t }; }
@@ -15892,6 +15935,7 @@ function negSinalizadores(n){
   let h = '';
   if (t.qtd) h += negChip('🗼 Torre ×' + t.qtd, '#38bdf8'); else if (t.citado) h += negChip('🗼 Torre (citada)', '#94a3b8', 'Citada no texto da negociação: informe a quantidade ao editar.');
   if (a.qtd) h += negChip('🗄️ Armário ×' + a.qtd, '#a78bfa'); else if (a.citado) h += negChip('🗄️ Armário (citado)', '#94a3b8', 'Citado no texto da negociação: informe a quantidade ao editar.');
+  if (negQuerReducao(n)) h += negChip('📉 Redução', '#f59e0b', 'O condomínio quer reduzir a mensalidade: aparece na aba Redução de Mensalidade.');
   if (negEhAdmin() && au && au.valor > 0.005) h += negChip('💰 ' + fmtMoedaRenov(au.valor).replace('R$ ', '+R$ ') + ' (' + negPct(au.pct) + ') · comissão ' + fmtMoedaRenov(comissaoCalculada(n)), '#22c55e', 'Aumento de mensalidade: aparece na aba Comissão. Comissão = ' + comissaoPct() + '% do aumento.');
   return h ? '<div class="neg-chips">' + h + '</div>' : '';
 }
@@ -15907,6 +15951,171 @@ function negAtualizarAumento(){
 ['negMensalidadeAtual', 'negMensalidadeNova'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', negAtualizarAumento); });
 
 function negFilialDe(n){ const c = renovAllCondos.find(x => String(x.item_id) === String(n.condo_id)); return c ? (c.filial || '—') : '—'; }
+// ----- Redução de mensalidade: pedidos dos condomínios e relatório para pedir autorização à diretoria -----
+const RED_STATUS = ['Em análise', 'Enviada à diretoria', 'Aprovada', 'Reprovada', 'Contraproposta'];
+function negQuerReducao(n){ const a = Number(n.mensalidade_atual), b = Number(n.mensalidade_nova); return !!n.quer_reducao || (a > 0 && b > 0 && b < a - 0.005); }
+function redStatus(n){ return n.reducao_status || 'Em análise'; }
+function redCondo(n){ return renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)) || null; }
+function redMesesEntre(ini, fim){
+  if (!ini || !fim) return null;
+  const a = new Date(String(ini).slice(0, 10) + 'T00:00:00'), b = new Date(String(fim).slice(0, 10) + 'T00:00:00');
+  if (isNaN(a) || isNaN(b) || b <= a) return null;
+  return Math.max(1, Math.round((b - a) / 86400000 / 30.4375));
+}
+function redRestante(c){
+  if (!c || !c.contrato_fim) return null;
+  const b = new Date(String(c.contrato_fim).slice(0, 10) + 'T00:00:00'), h = new Date(); h.setHours(0, 0, 0, 0);
+  return Math.round((b - h) / 86400000 / 30.4375);
+}
+function redMetricas(n){
+  const c = redCondo(n), num = v => (Number(v) > 0 ? Number(v) : null);
+  const atual = num(n.mensalidade_atual) || (c ? num(c.mensalidade) : null), sug = num(n.mensalidade_sugerida), pedida = num(n.mensalidade_pedida);
+  const un = c ? num(c.qtd_unidades) : null, custo = num(n.valor_custo), prazo = num(n.prazo_sugerido_meses);
+  const tempo = num(n.tempo_contrato_meses) || (c ? redMesesEntre(c.contrato_inicio, c.contrato_fim) : null);
+  const reducao = atual && sug ? atual - sug : null, receita = sug && prazo ? sug * prazo : null;
+  return { atual, sug, pedida, un, custo, prazo, tempo, restante: redRestante(c), fim: c ? c.contrato_fim : null, reducao, pct: reducao !== null ? reducao / atual * 100 : null,
+    porUnAtual: atual && un ? atual / un : null, porUnSug: sug && un ? sug / un : null, retorno: custo && sug ? custo / sug : null, receita, saldo: receita !== null && custo ? receita - custo : null };
+}
+function redTempoTxt(m){
+  if (!m.tempo && !m.fim) return '—';
+  return (m.tempo ? m.tempo + ' meses' : '—') + (m.fim ? ' · vence em ' + fmtDataBRRenov(String(m.fim).slice(0, 10)) + (m.restante !== null ? (m.restante >= 0 ? ' (restam ' + m.restante + ' meses)' : ' (vencido)') : '') : '');
+}
+function negAtualizarReducaoInfo(){
+  const el = document.getElementById('negReducaoInfo');
+  if (!el) return;
+  const sel = document.getElementById('negCondoSel');
+  const m = redMetricas({ condo_id: sel ? sel.value : '', mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value), mensalidade_sugerida: parseMoedaBRRenov(document.getElementById('negMensalidadeSugerida').value),
+    prazo_sugerido_meses: document.getElementById('negPrazoSugerido').value, valor_custo: parseMoedaBRRenov(document.getElementById('negValorCusto').value), tempo_contrato_meses: document.getElementById('negTempoContrato').value });
+  const partes = [];
+  if (m.reducao !== null) partes.push('Redução de ' + fmtMoedaRenov(m.reducao) + ' (' + m.pct.toFixed(1).replace('.', ',') + '%) por mês');
+  if (m.porUnAtual && m.porUnSug) partes.push('por unidade: ' + fmtMoedaRenov(m.porUnAtual) + ' → ' + fmtMoedaRenov(m.porUnSug));
+  if (m.retorno) partes.push('o custo dos equipamentos se paga em ' + m.retorno.toFixed(1).replace('.', ',') + ' meses com o valor sugerido');
+  el.innerHTML = partes.length ? '<span style="color:#f59e0b;">📉 ' + partes.join(' · ') + '.</span>' : '';
+}
+['negMensalidadeAtual', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negValorCusto', 'negTempoContrato'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', negAtualizarReducaoInfo); });
+
+window.__redSel = window.__redSel || new Set();
+function redListaFiltrada(){
+  const busca = normalizeNomeCondo(document.getElementById('renovRedBusca').value || ''), st = document.getElementById('renovRedStatus').value || '';
+  return renovNegociacoes.filter(n => negQuerReducao(n) && n.status !== 'Cancelado').filter(n => !st || redStatus(n) === st).filter(n => !busca || normalizeNomeCondo(n.condo_nome).includes(busca))
+    .sort((a, b) => String(b.data_negociacao || '').localeCompare(String(a.data_negociacao || '')));
+}
+function renderRenovReducao(){
+  const corpo = document.getElementById('renovRedBody'), kpi = document.getElementById('renovRedKpis');
+  if (!corpo || !kpi) return;
+  const lista = redListaFiltrada(), todas = renovNegociacoes.filter(n => negQuerReducao(n) && n.status !== 'Cancelado');
+  const pode = negPodeEditar();
+  ['renovRedRelatorio', 'renovRedEmail', 'renovRedCsv'].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = pode ? '' : 'none'; });
+  const conta = st => todas.filter(n => redStatus(n) === st).length;
+  const comSug = todas.map(redMetricas).filter(m => m.reducao !== null), perda = comSug.reduce((t, m) => t + m.reducao, 0);
+  const box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  kpi.innerHTML = box(todas.length, 'Pedidos de redução', '#f59e0b') + box(conta('Em análise'), 'Em análise') + box(conta('Enviada à diretoria'), 'Enviadas à diretoria', '#38bdf8') + box(conta('Aprovada'), 'Aprovadas', '#22c55e') +
+    box(fmtMoedaRenov(perda), 'Redução mensal sugerida', '#f59e0b') + box(fmtMoedaRenov(perda * 12), 'Redução em 12 meses', '#f59e0b');
+  const faltam = lista.filter(n => { const m = redMetricas(n); return !m.sug || !m.prazo; }).length;
+  document.getElementById('renovRedAviso').innerHTML = faltam ? '<span style="color:#f59e0b;">⚠️ ' + faltam + ' pedido(s) sem valor sugerido ou sem prazo sugerido: preencha em <strong>Editar</strong> antes de gerar o relatório.</span>' : '';
+  const todasMarcadas = lista.length && lista.every(n => window.__redSel.has(String(n.id)));
+  document.getElementById('renovRedTodas').checked = !!todasMarcadas;
+  corpo.innerHTML = lista.length ? lista.map(n => {
+    const m = redMetricas(n), st = redStatus(n), falta = '<span class="neg-chip" style="color:#f59e0b; border-color:#f59e0b;">preencher</span>';
+    return '<tr><td><input type="checkbox" data-red-sel="' + n.id + '"' + (window.__redSel.has(String(n.id)) ? ' checked' : '') + '></td><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + fmtMoedaRenov(m.atual) +
+      '</td><td style="white-space:normal; min-width:140px;">' + escapeHtml(redTempoTxt(m)) + '</td><td>' + (m.un || '—') + '</td><td>' + fmtMoedaRenov(m.custo) + '</td><td><strong>' + (m.sug ? fmtMoedaRenov(m.sug) : falta) + '</strong></td><td style="color:#f59e0b;">' +
+      (m.reducao !== null ? fmtMoedaRenov(m.reducao) + '<br><span style="font-size:11px;">' + m.pct.toFixed(1).replace('.', ',') + '%</span>' : '—') + '</td><td>' + (m.prazo ? m.prazo + ' meses' : falta) + '</td><td>' +
+      (pode ? '<select data-red-status="' + n.id + '">' + RED_STATUS.map(o => '<option' + (o === st ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' : escapeHtml(st)) +
+      '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>';
+  }).join('') : '<tr><td colspan="13" class="empty">' + (todas.length ? 'Nenhum pedido neste filtro.' : 'Nenhum condomínio pediu redução ainda. Marque "O condomínio quer REDUZIR a mensalidade" ao editar uma negociação.') + '</td></tr>';
+}
+async function salvarReducaoStatus(id, status){
+  if (!negPodeEditar()) return;
+  const n = renovNegociacoes.find(x => String(x.id) === String(id));
+  if (!n) return;
+  n.reducao_status = status;
+  renderRenovReducao();
+  if (sb){
+    try{ const { error } = await sb.from('negociacoes_contrato').update({ reducao_status: status }).eq('id', id); if (error) throw error; }
+    catch(e){ console.warn('Status da redução:', e); negAvisarSql(); }
+  }
+}
+function redListaParaRelatorio(){
+  const base = redListaFiltrada(), escolhidas = base.filter(n => window.__redSel.has(String(n.id)));
+  return escolhidas.length ? escolhidas : base;
+}
+function redRelatorioHtml(lista){
+  const timb = lista.length && lista.every(n => String(negFilialDe(n)).toUpperCase() === 'SECOPI') ? 'secopi' : 'servis';
+  const logo = timb === 'secopi' ? TIMBRADO_TOPO_SECOPI : TIMBRADO_TOPO_SERVIS;
+  const f = v => fmtMoedaRenov(v), pc = v => (v === null ? '—' : v.toFixed(1).replace('.', ',') + '%'), ms = v => (v === null || v === undefined ? '—' : v.toFixed(1).replace('.', ',') + ' meses');
+  const ms2 = lista.map(n => ({ n, m: redMetricas(n) }));
+  const totAtual = ms2.reduce((t, x) => t + (x.m.atual || 0), 0), totSug = ms2.reduce((t, x) => t + (x.m.sug || 0), 0), totRed = ms2.reduce((t, x) => t + (x.m.reducao || 0), 0);
+  const emitido = new Date().toLocaleString('pt-BR'), quem = assistUsuario();
+  const resumo = ms2.map(({ n, m }) => '<tr><td>' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + f(m.atual) + '</td><td><b>' + f(m.sug) + '</b></td><td>' + f(m.reducao) + ' (' + pc(m.pct) + ')</td><td>' + (m.un || '—') + '</td><td>' + (m.tempo ? m.tempo + ' meses' : '—') + '</td><td>' + f(m.custo) + '</td><td><b>' + (m.prazo ? m.prazo + ' meses' : '—') + '</b></td></tr>').join('');
+  const cartoes = ms2.map(({ n, m }, i) => {
+    const l = (r, v, d) => '<tr><th>' + r + '</th><td' + (d ? ' class="d"' : '') + '>' + v + '</td></tr>';
+    return '<div class="card"><h3>' + (i + 1) + '. ' + escapeHtml(n.condo_nome || '') + ' <span>' + escapeHtml(negFilialDe(n)) + (n.responsavel ? ' · atendimento: ' + escapeHtml(n.responsavel) : '') + '</span></h3><table class="kv">' +
+      l('Mensalidade atual', f(m.atual)) + (m.pedida ? l('Valor pedido pelo condomínio', f(m.pedida)) : '') + l('Valor sugerido', f(m.sug) + (m.reducao !== null ? ' &nbsp;(redução de ' + f(m.reducao) + ' · ' + pc(m.pct) + ' por mês)' : ''), true) +
+      l('Total de unidades', m.un || '—') + (m.porUnAtual ? l('Mensalidade por unidade', f(m.porUnAtual) + ' → ' + (m.porUnSug ? f(m.porUnSug) : '—')) : '') + l('Tempo de contrato', escapeHtml(redTempoTxt(m))) + l('Prazo de renovação sugerido', m.prazo ? m.prazo + ' meses' : '—', true) +
+      l('Custo dos equipamentos', f(m.custo)) + (m.retorno ? l('Retorno do custo com o valor sugerido', ms(m.retorno)) : '') + (m.receita !== null ? l('Receita no prazo sugerido', f(m.receita) + ' (valor sugerido × prazo)') : '') +
+      (m.saldo !== null ? l('Receita menos custo dos equipamentos', f(m.saldo) + ' <i>(não considera outros custos)</i>') : '') + (n.reducao_justificativa ? l('Justificativa', escapeHtml(n.reducao_justificativa).replace(/\n/g, '<br>')) : '') + '</table></div>';
+  }).join('');
+  const decisao = ms2.map(({ n }) => '<tr><td>' + escapeHtml(n.condo_nome || '') + '</td><td>( ) Aprovado &nbsp; ( ) Reprovado &nbsp; ( ) Contraproposta: R$ ________</td><td style="width:32%;">&nbsp;</td></tr>').join('');
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Solicitação de redução de mensalidade</title><style>' +
+    '@page{ size: A4; margin: 14mm; } *{ box-sizing:border-box; } body{ font-family:Arial,Helvetica,sans-serif; color:#1a2333; font-size:11px; } .topo-logo{ width:210px; display:block; margin-bottom:12px; }' +
+    'h1{ font-size:17px; margin:0 0 2px; color:#222f59; } .sub{ font-size:11px; color:#6b7280; margin:0 0 12px; } .intro{ margin:0 0 12px; line-height:1.5; font-size:11.5px; }' +
+    'table.rel{ width:100%; border-collapse:collapse; font-size:9.5px; margin-bottom:14px; } table.rel th{ background:#222f59; color:#fff; text-align:left; padding:5px 6px; font-size:8.5px; text-transform:uppercase; } table.rel td{ padding:5px 6px; border-bottom:1px solid #e5e7eb; vertical-align:top; } table.rel tr.tot td{ background:#f1f3f8; font-weight:700; }' +
+    '.card{ border:1px solid #d6d9e0; border-radius:8px; padding:9px 12px; margin-bottom:10px; page-break-inside:avoid; } .card h3{ font-size:12.5px; margin:0 0 6px; color:#222f59; } .card h3 span{ font-size:10px; font-weight:400; color:#6b7280; }' +
+    'table.kv{ width:100%; border-collapse:collapse; font-size:10.5px; } table.kv th{ text-align:left; width:36%; padding:3px 6px; color:#6b7280; font-weight:600; vertical-align:top; } table.kv td{ padding:3px 6px; } table.kv td.d{ font-weight:700; color:#222f59; background:#eef2ff; }' +
+    'h2{ font-size:13px; color:#222f59; margin:16px 0 6px; } .ass{ display:flex; gap:40px; margin-top:34px; } .ass div{ flex:1; border-top:1px solid #1a2333; padding-top:4px; font-size:10px; text-align:center; } .nota{ font-size:9.5px; color:#6b7280; margin-top:10px; }' +
+    'thead{ display:table-header-group; } tr{ page-break-inside:avoid; }</style></head><body>' +
+    '<img class="topo-logo" src="' + logo + '"><h1>Solicitação de autorização: redução de mensalidade</h1><p class="sub">Sucesso do Cliente · Servis Eletrônica &nbsp;·&nbsp; Emitido em ' + emitido + (quem ? ' por ' + escapeHtml(quem) : '') + '</p>' +
+    '<p class="intro">À Diretoria,<br>Solicito autorização para reduzir a mensalidade ' + (lista.length === 1 ? 'do condomínio abaixo' : 'dos ' + lista.length + ' condomínios abaixo') + ', conforme os dados e as sugestões de valor e de prazo de renovação apresentados.</p>' +
+    '<table class="rel"><thead><tr><th>Condomínio</th><th>Filial</th><th>Mensalidade atual</th><th>Valor sugerido</th><th>Redução</th><th>Unidades</th><th>Tempo de contrato</th><th>Custo dos equipamentos</th><th>Prazo sugerido</th></tr></thead><tbody>' + resumo +
+    (lista.length > 1 ? '<tr class="tot"><td colspan="2">Total</td><td>' + f(totAtual) + '</td><td>' + f(totSug) + '</td><td>' + f(totRed) + ' por mês (' + f(totRed * 12) + ' em 12 meses)</td><td colspan="4"></td></tr>' : '') + '</tbody></table>' +
+    '<h2>Detalhamento por condomínio</h2>' + cartoes + '<h2>Decisão da Diretoria</h2><table class="rel"><thead><tr><th>Condomínio</th><th>Decisão</th><th>Observações</th></tr></thead><tbody>' + decisao + '</tbody></table>' +
+    '<div class="ass"><div>Solicitante' + (quem ? ': ' + escapeHtml(quem) : '') + '</div><div>Diretoria &nbsp;·&nbsp; Data: ____/____/______</div></div>' +
+    '<p class="nota">Retorno do custo = custo dos equipamentos ÷ valor sugerido. Receita no prazo = valor sugerido × prazo de renovação sugerido. Não considera outros custos nem reajustes.</p>' +
+    '<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script></body></html>';
+}
+function gerarRelatorioReducao(){
+  if (!negPodeEditar()) return;
+  const lista = redListaParaRelatorio();
+  if (!lista.length){ alert('Nenhum pedido de redução para o relatório. Marque "O condomínio quer REDUZIR a mensalidade" ao editar uma negociação.'); return; }
+  const incompletos = lista.filter(n => { const m = redMetricas(n); return !m.sug || !m.prazo; });
+  if (incompletos.length && !confirm(incompletos.length + ' pedido(s) estão sem valor sugerido ou sem prazo sugerido:\n\n' + incompletos.slice(0, 8).map(n => '• ' + n.condo_nome).join('\n') + '\n\nGerar o relatório mesmo assim?')) return;
+  const w = window.open('', '_blank');
+  if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return; }
+  w.document.write(redRelatorioHtml(lista)); w.document.close();
+  const analise = lista.filter(n => redStatus(n) === 'Em análise');
+  if (analise.length && confirm('Marcar como "Enviada à diretoria" os ' + analise.length + ' pedido(s) que estavam "Em análise"?')) analise.forEach(n => salvarReducaoStatus(n.id, 'Enviada à diretoria'));
+}
+function redTextoEmail(lista){
+  const f = v => fmtMoedaRenov(v), linhas = ['Prezados,', '', 'Solicito autorização para reduzir a mensalidade ' + (lista.length === 1 ? 'do condomínio abaixo' : 'dos condomínios abaixo') + ':', ''];
+  lista.forEach((n, i) => {
+    const m = redMetricas(n);
+    linhas.push((i + 1) + '. ' + n.condo_nome + ' (' + negFilialDe(n) + ')');
+    linhas.push('   Mensalidade atual: ' + f(m.atual) + (m.pedida ? ' · pedido do condomínio: ' + f(m.pedida) : ''));
+    linhas.push('   Valor sugerido: ' + f(m.sug) + (m.reducao !== null ? ' (redução de ' + f(m.reducao) + ', ' + m.pct.toFixed(1).replace('.', ',') + '%)' : ''));
+    linhas.push('   Prazo de renovação sugerido: ' + (m.prazo ? m.prazo + ' meses' : '—'));
+    linhas.push('   Total de unidades: ' + (m.un || '—') + ' · Tempo de contrato: ' + redTempoTxt(m));
+    linhas.push('   Custo dos equipamentos: ' + f(m.custo) + (m.retorno ? ' (se paga em ' + m.retorno.toFixed(1).replace('.', ',') + ' meses com o valor sugerido)' : ''));
+    if (n.reducao_justificativa) linhas.push('   Justificativa: ' + n.reducao_justificativa);
+    linhas.push('');
+  });
+  linhas.push('Fico no aguardo da autorização.', '', assistUsuario());
+  return linhas.join('\n');
+}
+async function copiarEmailReducao(){
+  if (!negPodeEditar()) return;
+  const lista = redListaParaRelatorio();
+  if (!lista.length){ alert('Nenhum pedido de redução para copiar.'); return; }
+  const t = redTextoEmail(lista);
+  try{ await navigator.clipboard.writeText(t); alert('Texto copiado. É só colar no e-mail para a diretoria.'); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); alert('Texto copiado.'); }catch(err){ alert('Não consegui copiar automaticamente.'); } ta.remove(); }
+}
+function exportarReducaoCsv(){
+  if (!negPodeEditar()) return;
+  const linhas = [['Condomínio', 'Filial', 'Responsável', 'Mensalidade atual', 'Valor pedido', 'Valor sugerido', 'Redução (R$)', 'Redução (%)', 'Unidades', 'Tempo de contrato (meses)', 'Vencimento do contrato', 'Custo dos equipamentos', 'Prazo sugerido (meses)', 'Status', 'Justificativa']];
+  redListaFiltrada().forEach(n => { const m = redMetricas(n); linhas.push([n.condo_nome, negFilialDe(n), n.responsavel || '', m.atual, m.pedida, m.sug, m.reducao === null ? '' : m.reducao.toFixed(2), m.pct === null ? '' : m.pct.toFixed(1), m.un, m.tempo, m.fim || '', m.custo, m.prazo, redStatus(n), n.reducao_justificativa || '']); });
+  const csv = '\ufeff' + linhas.map(l => l.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'reducao_mensalidade.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
 function renderRenovTorresArmarios(){
   const kpi = document.getElementById('renovTAKpis'), corpo = document.getElementById('renovTABody');
   if (!kpi || !corpo) return;
@@ -16051,6 +16260,8 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
     document.getElementById('renovViewComissao').style.display = alvo === 'comissao' ? 'block' : 'none';
+    document.getElementById('renovViewReducao').style.display = alvo === 'reducao' ? 'block' : 'none';
+    if (alvo === 'reducao') renderRenovReducao();
     if (alvo === 'torresarmarios') renderRenovTorresArmarios();
     if (alvo === 'comissao') renderRenovComissao();
     if (alvo === 'negociacao') renderRenovNegociacoes();
@@ -16683,7 +16894,10 @@ function setNegCondo(condoId){
   document.getElementById('negFilial').value = condo ? (condo.filial || '') : '';
   const campoAtual = document.getElementById('negMensalidadeAtual');   // traz a mensalidade do cadastro, se ainda estiver vazia
   if (condo && campoAtual && !campoAtual.value && condo.mensalidade) campoAtual.value = formatarMoedaParaInputRenov(condo.mensalidade);
+  const campoTempo = document.getElementById('negTempoContrato');   // tempo de contrato calculado pelo cadastro (início e fim), se ainda estiver vazio
+  if (condo && campoTempo && !campoTempo.value){ const mt = redMesesEntre(condo.contrato_inicio, condo.contrato_fim); if (mt) campoTempo.value = String(mt); }
   if (typeof negAtualizarAumento === 'function') negAtualizarAumento();
+  if (typeof negAtualizarReducaoInfo === 'function') negAtualizarReducaoInfo();
 }
 (function initNegCondoCombo(){
   const input = document.getElementById('negCondoInput');
@@ -16736,6 +16950,9 @@ function openNegociacaoModal(condoId){
   document.getElementById('negMensalidadeNova').value = '';
   document.getElementById('negQtdTorres').value = '';
   document.getElementById('negQtdArmarios').value = '';
+  document.getElementById('negQuerReducao').checked = false;
+  ['negMensalidadePedida', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negTempoContrato', 'negReducaoJustificativa'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('negReducaoStatus').value = 'Em análise';
   document.getElementById('negCondoDropdown').classList.remove('open');
   if (condoId) setNegCondo(condoId);
   else setNegCondo(null);
@@ -16768,7 +16985,15 @@ function editNegociacao(id){
   document.getElementById('negMensalidadeNova').value = formatarMoedaParaInputRenov(n.mensalidade_nova);
   document.getElementById('negQtdTorres').value = n.qtd_torres ? String(n.qtd_torres) : '';
   document.getElementById('negQtdArmarios').value = n.qtd_armarios ? String(n.qtd_armarios) : '';
+  document.getElementById('negQuerReducao').checked = !!n.quer_reducao;
+  document.getElementById('negMensalidadePedida').value = formatarMoedaParaInputRenov(n.mensalidade_pedida);
+  document.getElementById('negMensalidadeSugerida').value = formatarMoedaParaInputRenov(n.mensalidade_sugerida);
+  document.getElementById('negPrazoSugerido').value = n.prazo_sugerido_meses ? String(n.prazo_sugerido_meses) : '';
+  document.getElementById('negTempoContrato').value = n.tempo_contrato_meses ? String(n.tempo_contrato_meses) : '';
+  document.getElementById('negReducaoStatus').value = n.reducao_status || 'Em análise';
+  document.getElementById('negReducaoJustificativa').value = n.reducao_justificativa || '';
   negAtualizarAumento();
+  negAtualizarReducaoInfo();
   document.getElementById('negCondoDropdown').classList.remove('open');
   renderAnexosBox('negAnexosBox', 'negociacao', negociacaoEditingId);
   document.getElementById('negociacaoModalOverlay').style.display = 'flex';
@@ -16824,6 +17049,13 @@ async function salvarNegociacao(){
     qtd_armarios: parseInt(document.getElementById('negQtdArmarios').value, 10) || null,
     mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value),
     mensalidade_nova: parseMoedaBRRenov(document.getElementById('negMensalidadeNova').value),
+    quer_reducao: document.getElementById('negQuerReducao').checked,
+    mensalidade_pedida: parseMoedaBRRenov(document.getElementById('negMensalidadePedida').value),
+    mensalidade_sugerida: parseMoedaBRRenov(document.getElementById('negMensalidadeSugerida').value),
+    prazo_sugerido_meses: parseInt(document.getElementById('negPrazoSugerido').value, 10) || null,
+    tempo_contrato_meses: parseInt(document.getElementById('negTempoContrato').value, 10) || null,
+    reducao_justificativa: document.getElementById('negReducaoJustificativa').value.trim() || null,
+    reducao_status: document.getElementById('negReducaoStatus').value || null,
     updated_at: new Date().toISOString()
   };
 
@@ -16848,7 +17080,7 @@ async function salvarNegociacao(){
         console.warn('Falha ao salvar negociação (crie a tabela negociacoes_contrato no Supabase):', error.message || error);
         if (negFaltamColunas(error)){   // o banco ainda não tem as colunas novas: salva o resto e avisa
           const base = Object.assign({}, registro);
-          ['qtd_torres', 'qtd_armarios', 'mensalidade_atual', 'mensalidade_nova', 'comissao_valor', 'comissao_situacao'].forEach(k => delete base[k]);
+          NEG_COLUNAS_NOVAS.forEach(k => delete base[k]);
           const r2 = await sb.from('negociacoes_contrato').upsert(base);
           if (!r2.error) negAvisarSql();
         }
@@ -16902,6 +17134,17 @@ function initRenovacaoUI(){
   ['renovTABusca', 'renovTAFiltro'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovTorresArmarios); el.addEventListener('change', renderRenovTorresArmarios); } });
   ['renovComBusca', 'renovComFiltroNeg', 'renovComFiltroSit'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovComissao); el.addEventListener('change', renderRenovComissao); } });
   document.getElementById('renovComCsv').addEventListener('click', exportarComissaoCsv);
+  ['renovRedBusca', 'renovRedStatus'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovReducao); el.addEventListener('change', renderRenovReducao); } });
+  document.getElementById('renovRedRelatorio').addEventListener('click', gerarRelatorioReducao);
+  document.getElementById('renovRedEmail').addEventListener('click', copiarEmailReducao);
+  document.getElementById('renovRedCsv').addEventListener('click', exportarReducaoCsv);
+  document.getElementById('renovRedTodas').addEventListener('change', (ev) => { redListaFiltrada().forEach(n => { if (ev.target.checked) window.__redSel.add(String(n.id)); else window.__redSel.delete(String(n.id)); }); renderRenovReducao(); });
+  document.getElementById('renovRedBody').addEventListener('click', (ev) => { const b = ev.target.closest('[data-edit-neg]'); if (b) editNegociacao(b.dataset.editNeg); });
+  document.getElementById('renovRedBody').addEventListener('change', (ev) => {
+    const c = ev.target.closest('[data-red-sel]'), st = ev.target.closest('[data-red-status]');
+    if (c){ if (c.checked) window.__redSel.add(String(c.dataset.redSel)); else window.__redSel.delete(String(c.dataset.redSel)); const todas = redListaFiltrada(); document.getElementById('renovRedTodas').checked = todas.length && todas.every(n => window.__redSel.has(String(n.id))); }
+    if (st) salvarReducaoStatus(st.dataset.redStatus, st.value);
+  });
   ['renovTABody', 'renovComBody'].forEach(id => document.getElementById(id).addEventListener('click', (ev) => { const b = ev.target.closest('[data-edit-neg]'); if (b) editNegociacao(b.dataset.editNeg); }));
   document.getElementById('renovComBody').addEventListener('change', (ev) => {
     const sl = ev.target.closest('[data-com-sit]');
