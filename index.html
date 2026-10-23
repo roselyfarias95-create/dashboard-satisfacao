@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v161 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v162 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2501,14 +2501,14 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     </div>
 
     <div id="renovViewTorresArmarios" style="display:none;">
-      <p class="rc-nota" style="margin:0 0 12px;">Negociações que incluem <strong>torre</strong> ou <strong>armário</strong>. As quantidades vêm dos campos da negociação; quando só o texto cita torre ou armário, aparece "citada" para você informar a quantidade.</p>
+      <p class="rc-nota" style="margin:0 0 12px;">Visão geral das <strong>torres</strong> e dos <strong>armários</strong>: o que está <strong>em negociação</strong> e o que já foi <strong>renovado</strong>. A quantidade vem dos campos da negociação; nas negociações antigas, o sistema lê do texto de "Equipamentos da Ampliação" (por exemplo "2 torres", "três armários") e marca como <em>texto</em>. Se só citar, sem número, aparece "citada" para você informar a quantidade em Editar.</p>
       <div class="stats-strip" id="renovTAKpis" style="margin-bottom:14px;"></div>
       <div class="toolbar" style="margin-bottom:14px;">
         <input type="text" class="search" id="renovTABusca" placeholder="Buscar por condomínio...">
         <select class="filter-select" id="renovTAFiltro">
-          <option value="andamento">Mostrar: em negociação</option>
-          <option value="fechadas">Mostrar: já fechadas (renovadas)</option>
-          <option value="todas">Mostrar: todas</option>
+          <option value="todas">Mostrar: visão geral (negociação + renovadas)</option>
+          <option value="andamento">Mostrar: só em negociação</option>
+          <option value="fechadas">Mostrar: só já renovadas</option>
         </select>
       </div>
       <div id="renovTAFilial" style="margin-bottom:14px;"></div>
@@ -15920,8 +15920,26 @@ function negAvisarSql(){
   alert('A negociação foi salva, mas o banco ainda não tem as colunas de torres, armários, mensalidade, comissão e redução: esses dados ficam só nesta tela até você rodar o SQL abaixo no Supabase (SQL Editor) e recarregar.\n\n' + NEG_SQL);
 }
 function negTextoLivre(n){ return [n.ampliacao_material, n.tratativa, n.obs].filter(Boolean).join(' '); }
-function negTorres(n){ const q = Math.max(0, parseInt(n.qtd_torres, 10) || 0), t = /\btorres?\b/i.test(negTextoLivre(n)); return { qtd: q, citado: t && !q, tem: q > 0 || t }; }
-function negArmarios(n){ const q = Math.max(0, parseInt(n.qtd_armarios, 10) || 0), t = /arm[aá]rios?/i.test(negTextoLivre(n)); return { qtd: q, citado: t && !q, tem: q > 0 || t }; }
+const NEG_NUM_PALAVRAS = { um: 1, uma: 1, dois: 2, duas: 2, 'três': 3, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8 };
+// Lê "2 torres", "03 armários", "três armários". Só considera o número ANTES da palavra ("Torre 2" costuma ser o bloco do prédio, não a quantidade).
+function negQtdDoTexto(texto, termo){
+  const t = String(texto || '').toLowerCase();
+  let total = 0, m;
+  const reNum = new RegExp('(\\d{1,3})\\s*(?:x|un\\.?|unid\\.?|unidades?)?\\s*(?:de\\s+)?(?:' + termo + ')', 'g');
+  while ((m = reNum.exec(t))) total += parseInt(m[1], 10);
+  const rePal = new RegExp('\\b(' + Object.keys(NEG_NUM_PALAVRAS).join('|') + ')\\s+(?:' + termo + ')', 'g');
+  while ((m = rePal.exec(t))) total += NEG_NUM_PALAVRAS[m[1]];
+  return total;
+}
+function negContaItem(n, campo, termo, regexCita){
+  const salvo = Math.max(0, parseInt(n[campo], 10) || 0), texto = negTextoLivre(n), cita = regexCita.test(texto);
+  if (salvo > 0) return { qtd: salvo, doTexto: false, citado: false, tem: true };
+  const lido = cita ? negQtdDoTexto(texto, termo) : 0;
+  if (lido > 0) return { qtd: lido, doTexto: true, citado: false, tem: true };
+  return { qtd: 0, doTexto: false, citado: cita, tem: cita };
+}
+function negTorres(n){ return negContaItem(n, 'qtd_torres', 'torres?', /\btorres?\b/i); }
+function negArmarios(n){ return negContaItem(n, 'qtd_armarios', 'arm[aá]rios?', /arm[aá]rios?/i); }
 function negAumento(n){
   const a = Number(n.mensalidade_atual), b = Number(n.mensalidade_nova);
   if (!(a > 0) || !(b > 0)) return null;
@@ -15945,8 +15963,8 @@ function negChip(txt, cor, dica){ return '<span class="neg-chip" style="color:' 
 function negSinalizadores(n){
   const t = negTorres(n), a = negArmarios(n), au = negAumento(n);
   let h = '';
-  if (t.qtd) h += negChip('🗼 Torre ×' + t.qtd, '#38bdf8'); else if (t.citado) h += negChip('🗼 Torre (citada)', '#94a3b8', 'Citada no texto da negociação: informe a quantidade ao editar.');
-  if (a.qtd) h += negChip('🗄️ Armário ×' + a.qtd, '#a78bfa'); else if (a.citado) h += negChip('🗄️ Armário (citado)', '#94a3b8', 'Citado no texto da negociação: informe a quantidade ao editar.');
+  if (t.qtd) h += negChip('🗼 Torre ×' + t.qtd + (t.doTexto ? ' (texto)' : ''), '#38bdf8', t.doTexto ? 'Quantidade lida do texto da negociação. Para fixar, informe em Editar.' : ''); else if (t.citado) h += negChip('🗼 Torre (citada)', '#94a3b8', 'Citada no texto da negociação: informe a quantidade ao editar.');
+  if (a.qtd) h += negChip('🗄️ Armário ×' + a.qtd + (a.doTexto ? ' (texto)' : ''), '#a78bfa', a.doTexto ? 'Quantidade lida do texto da negociação. Para fixar, informe em Editar.' : ''); else if (a.citado) h += negChip('🗄️ Armário (citado)', '#94a3b8', 'Citado no texto da negociação: informe a quantidade ao editar.');
   if (negQuerReducao(n)) h += negChip('📉 Redução', '#f59e0b', 'O condomínio quer reduzir a mensalidade: aparece na aba Redução de Mensalidade.');
   if (negEhAdmin() && au && au.valor > 0.005) h += negChip('💰 ' + fmtMoedaRenov(au.valor).replace('R$ ', '+R$ ') + ' (' + negPct(au.pct) + ') · comissão ' + fmtMoedaRenov(comissaoCalculada(n)), '#22c55e', 'Aumento de mensalidade: aparece na aba Comissão. Comissão = ' + comissaoPct() + '% do aumento.');
   return h ? '<div class="neg-chips">' + h + '</div>' : '';
@@ -16212,28 +16230,32 @@ function exportarReducaoCsv(){
 function renderRenovTorresArmarios(){
   const kpi = document.getElementById('renovTAKpis'), corpo = document.getElementById('renovTABody');
   if (!kpi || !corpo) return;
-  const modo = document.getElementById('renovTAFiltro').value || 'andamento';
+  const modo = document.getElementById('renovTAFiltro').value || 'todas';
   const busca = normalizeNomeCondo(document.getElementById('renovTABusca').value || '');
-  const todas = renovNegociacoes.filter(n => negTorres(n).tem || negArmarios(n).tem);
-  const em = todas.filter(negociacaoEmAndamento), fechadas = todas.filter(n => ehStatusRenovado(n.status));
+  // visão geral: o que está em negociação + o que já foi renovado (canceladas e "não renovado" ficam de fora)
+  const todas = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehStatusRenovado(n.status)) && (negTorres(n).tem || negArmarios(n).tem));
+  const em = todas.filter(negociacaoEmAndamento), ren = todas.filter(n => ehStatusRenovado(n.status));
   const soma = (l, f) => l.reduce((s, n) => s + f(n).qtd, 0), com = (l, f) => l.filter(n => f(n).qtd > 0).length;
-  const semQtd = em.filter(n => negTorres(n).citado || negArmarios(n).citado).length;
-  const box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
-  kpi.innerHTML = box(soma(em, negTorres), 'Torres em negociação (' + com(em, negTorres) + ' negociação(ões))', '#38bdf8') + box(soma(em, negArmarios), 'Armários em negociação (' + com(em, negArmarios) + ' negociação(ões))', '#a78bfa') +
-    box(soma(fechadas, negTorres), 'Torres já fechadas (renovadas)') + box(soma(fechadas, negArmarios), 'Armários já fechados (renovados)') + box(semQtd, 'Citam torre/armário sem quantidade', semQtd ? '#f59e0b' : '');
+  const doTexto = todas.filter(n => negTorres(n).doTexto || negArmarios(n).doTexto).length, semQtd = todas.filter(n => negTorres(n).citado || negArmarios(n).citado).length;
+  const box = (num, lbl, cor, extra) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  const noCadastro = renovAllCondos.filter(c => c.possui_armario === true || String(c.possui_armario).toLowerCase() === 'sim').length;
+  kpi.innerHTML = box(soma(todas, negTorres), 'Torres no total (' + soma(em, negTorres) + ' em negociação + ' + soma(ren, negTorres) + ' renovadas)', '#38bdf8') + box(soma(todas, negArmarios), 'Armários no total (' + soma(em, negArmarios) + ' em negociação + ' + soma(ren, negArmarios) + ' renovados)', '#a78bfa') +
+    box(soma(em, negTorres) + ' / ' + soma(em, negArmarios), 'Torres / armários em negociação') + box(soma(ren, negTorres) + ' / ' + soma(ren, negArmarios), 'Torres / armários já renovados') +
+    box(com(todas, negTorres) + ' / ' + com(todas, negArmarios), 'Condomínios com torre / com armário') + box(noCadastro, 'Condomínios com armário no cadastro') +
+    (doTexto || semQtd ? box(doTexto + ' / ' + semQtd, 'Lidos do texto / citam sem quantidade', semQtd ? '#f59e0b' : '') : '');
   const filiais = {};
-  em.forEach(n => { const f = negFilialDe(n); filiais[f] = filiais[f] || { t: 0, a: 0, n: 0 }; filiais[f].t += negTorres(n).qtd; filiais[f].a += negArmarios(n).qtd; filiais[f].n++; });
-  const fk = Object.keys(filiais).sort();
-  document.getElementById('renovTAFilial').innerHTML = fk.length ? '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Em negociação, por filial</th><th>Negociações</th><th>🗼 Torres</th><th>🗄️ Armários</th></tr></thead><tbody>' +
-    fk.map(f => '<tr><td style="text-align:left;"><strong>' + escapeHtml(f) + '</strong></td><td>' + filiais[f].n + '</td><td>' + filiais[f].t + '</td><td>' + filiais[f].a + '</td></tr>').join('') + '</tbody></table>' : '';
-  let lista = modo === 'andamento' ? em : (modo === 'fechadas' ? fechadas : todas);
+  todas.forEach(n => { const f = negFilialDe(n); const x = filiais[f] = filiais[f] || { et: 0, ea: 0, rt: 0, ra: 0, n: 0 }; const t = negTorres(n).qtd, a = negArmarios(n).qtd; if (negociacaoEmAndamento(n)){ x.et += t; x.ea += a; } else { x.rt += t; x.ra += a; } x.n++; });
+  const fk = Object.keys(filiais).sort(), tot = fk.reduce((t, f) => ({ et: t.et + filiais[f].et, ea: t.ea + filiais[f].ea, rt: t.rt + filiais[f].rt, ra: t.ra + filiais[f].ra, n: t.n + filiais[f].n }), { et: 0, ea: 0, rt: 0, ra: 0, n: 0 });
+  document.getElementById('renovTAFilial').innerHTML = fk.length ? '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Por filial</th><th>Negociações</th><th>🗼 Em negociação</th><th>🗄️ Em negociação</th><th>🗼 Renovadas</th><th>🗄️ Renovadas</th><th>🗼 Total</th><th>🗄️ Total</th></tr></thead><tbody>' +
+    fk.map(f => { const x = filiais[f]; return '<tr><td style="text-align:left;"><strong>' + escapeHtml(f) + '</strong></td><td>' + x.n + '</td><td>' + x.et + '</td><td>' + x.ea + '</td><td>' + x.rt + '</td><td>' + x.ra + '</td><td><strong>' + (x.et + x.rt) + '</strong></td><td><strong>' + (x.ea + x.ra) + '</strong></td></tr>'; }).join('') +
+    '<tr><td style="text-align:left;"><strong>Total</strong></td><td><strong>' + tot.n + '</strong></td><td><strong>' + tot.et + '</strong></td><td><strong>' + tot.ea + '</strong></td><td><strong>' + tot.rt + '</strong></td><td><strong>' + tot.ra + '</strong></td><td><strong>' + (tot.et + tot.rt) + '</strong></td><td><strong>' + (tot.ea + tot.ra) + '</strong></td></tr></tbody></table>' : '';
+  let lista = modo === 'andamento' ? em : (modo === 'fechadas' ? ren : todas);
   if (busca) lista = lista.filter(n => normalizeNomeCondo(n.condo_nome).includes(busca));
-  corpo.innerHTML = lista.length ? lista.map(n => {
-    const t = negTorres(n), a = negArmarios(n);
-    const cel = x => x.qtd ? '<strong>' + x.qtd + '</strong>' : (x.citado ? '<span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Citado no texto: informe a quantidade ao editar.">citada</span>' : '—');
-    return '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + negBadge(n.status) + '</td><td>' + cel(t) + '</td><td>' + cel(a) +
-      '</td><td style="text-align:left; max-width:260px; white-space:normal;">' + escapeHtml(n.ampliacao_material || '—') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>';
-  }).join('') : '<tr><td colspan="9" class="empty">' + (todas.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação inclui torre ou armário ainda. Informe as quantidades ao editar uma negociação.') + '</td></tr>';
+  lista = lista.slice().sort((a, b) => (negociacaoEmAndamento(b) - negociacaoEmAndamento(a)) || String(b.data_negociacao || '').localeCompare(String(a.data_negociacao || '')));
+  const cel = x => x.qtd ? '<strong>' + x.qtd + '</strong>' + (x.doTexto ? ' <span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Quantidade lida do texto da negociação. Para fixar, informe em Editar.">texto</span>' : '') : (x.citado ? '<span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Citado no texto sem número: informe a quantidade ao editar.">citada</span>' : '—');
+  corpo.innerHTML = lista.length ? lista.map(n => '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + negBadge(n.status) + '</td><td>' + cel(negTorres(n)) + '</td><td>' + cel(negArmarios(n)) +
+      '</td><td style="text-align:left; max-width:260px; white-space:normal;">' + escapeHtml(n.ampliacao_material || '—') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>').join('')
+    : '<tr><td colspan="9" class="empty">' + (todas.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação inclui torre ou armário ainda. Informe as quantidades ao editar uma negociação.') + '</td></tr>';
 }
 function renderRenovComissao(){
   const kpi = document.getElementById('renovComKpis'), corpo = document.getElementById('renovComBody');
