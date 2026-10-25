@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v165 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v166 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -28229,10 +28229,13 @@ function fqrAbrirCartazes(){
 }
 function fqrCartazHtml(c, qrPng){
   const logo = String(c.filial || '').toUpperCase() === 'SECOPI' ? TIMBRADO_TOPO_SECOPI : TIMBRADO_TOPO_SERVIS, nome = formularioQrSelecionado.nome;
-  const publico = /s[ií]ndico/i.test(nome) ? 'Pesquisa de satisfação para o(a) síndico(a)' : (/morador/i.test(nome) ? 'Pesquisa de satisfação para moradores' : nome);
-  return '<section class="pag"><img class="topo-logo" src="' + logo + '"><div class="miolo"><h1>Sua opinião é muito importante!</h1><p class="pub">' + escapeHtml(publico) + '</p><p class="cond">' + escapeHtml(c.nome) + '</p>' +
+  const cadastral = /cadastr/i.test(nome);
+  const publico = cadastral ? 'Ficha de atualização cadastral dos moradores' : (/s[ií]ndico/i.test(nome) ? 'Pesquisa de satisfação para o(a) síndico(a)' : (/morador/i.test(nome) ? 'Pesquisa de satisfação para moradores' : nome));
+  const titulo = cadastral ? 'Atualize o seu cadastro!' : 'Sua opinião é muito importante!';
+  const passos = cadastral ? '<li>Abra a câmera do celular e aponte para o QR Code.</li><li>Informe o número da sua casa ou apartamento.</li><li>Preencha os dados e tire uma foto do rosto de cada morador da unidade.</li>' : '<li>Abra a câmera do celular e aponte para o QR Code.</li><li>Informe o número da sua casa ou apartamento.</li><li>Dê as suas notas: leva cerca de 2 minutos.</li>';
+  return '<section class="pag"><img class="topo-logo" src="' + logo + '"><div class="miolo"><h1>' + titulo + '</h1><p class="pub">' + escapeHtml(publico) + '</p><p class="cond">' + escapeHtml(c.nome) + '</p>' +
     '<div class="qr"><img src="' + qrPng + '"></div><p class="apont">Aponte a câmera do celular para o QR Code</p>' +
-    '<ol><li>Abra a câmera do celular e aponte para o QR Code.</li><li>Informe o número da sua casa ou apartamento.</li><li>Dê as suas notas: leva cerca de 2 minutos.</li></ol></div>' +
+    '<ol>' + passos + '</ol></div>' +
     '<div class="rod">Servis Eletrônica · Portaria Remota<br>Obrigado por participar!</div></section>';
 }
 function fqrDocumentoCartazes(paginas){
