@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v164 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v165 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4978,11 +4978,17 @@ CONDOMINIO Y	480	45"></textarea>
       <div class="chart-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
           <p class="chart-title" style="margin:0;">📊 Respostas Recebidas</p>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <label id="fqrAgruparWrap" style="display:none; font-size:12.5px; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="fqrAgrupar" checked> Separar por condomínio</label>
+            <input type="text" class="search" id="fqrFiltroCond" list="fqrFiltroCondLista" placeholder="Condomínio (digite para buscar)" style="display:none;" autocomplete="off">
+            <datalist id="fqrFiltroCondLista"></datalist>
+            <select class="filter-select" id="fqrFiltroFilial" style="display:none;"><option value="">Filial: todas</option></select>
             <input type="text" class="search" id="fqrBuscaResposta" placeholder="Buscar em qualquer coluna...">
+            <button type="button" class="clearbtn" id="fqrRecolher" style="display:none;">Recolher todos</button>
             <button type="button" class="clearbtn" id="btnExportarRespostasCsv">📊 Exportar CSV</button>
           </div>
         </div>
+        <p id="fqrResumoResp" style="font-size:12.5px; color:var(--text-faint); margin:0 0 10px;"></p>
         <div class="checklist-table-wrap">
           <table class="checklist-table" id="fqrRespostasTable">
             <thead id="fqrRespostasHead"></thead>
@@ -28270,25 +28276,26 @@ document.getElementById('btnBaixarQrCode').addEventListener('click', ()=>{
   document.body.removeChild(a);
 });
 
+let fqrColCond = null, fqrColFilial = null, fqrColNota = null; const fqrGruposRecolhidos = new Set();
 async function carregarRespostasFormulario(formulario){
   const thead = document.getElementById('fqrRespostasHead');
   const tbody = document.getElementById('fqrRespostasBody');
   tbody.innerHTML = '<tr><td class="empty">Carregando respostas...</td></tr>';
   thead.innerHTML = '';
+  document.getElementById('fqrResumoResp').textContent = '';
   try{
-    const { data, error } = await sb.from(formulario.tabela_destino).select('*').limit(500);
-    if (error) throw error;
-    fqrRespostasAtuais = data || [];
-
-    // Tenta ordenar por uma coluna de data, se existir uma com nome parecido
+    // lê todas as respostas (sem o corte de 500 linhas), da mais nova para a mais antiga quando a tabela tem data
+    const r = await paginar(() => sb.from(formulario.tabela_destino).select('*').order('criado_em', { ascending: false }), () => sb.from(formulario.tabela_destino).select('*'));
+    if (r.error) throw r.error;
+    fqrRespostasAtuais = r.data || [];
     if (fqrRespostasAtuais.length){
       const colunas = Object.keys(fqrRespostasAtuais[0]);
       const colData = colunas.find(c => /data|created_at|criado/i.test(c));
-      if (colData){
-        fqrRespostasAtuais.sort((a,b) => new Date(b[colData]||0) - new Date(a[colData]||0));
-      }
+      if (colData) fqrRespostasAtuais.sort((a, b) => new Date(b[colData] || 0) - new Date(a[colData] || 0));
     }
-    renderRespostasFormulario(fqrRespostasAtuais);
+    fqrGruposRecolhidos.clear();
+    fqrPrepararControles();
+    fqrAtualizarRespostas();
   }catch(e){
     tbody.innerHTML = `<tr><td class="empty">Não consegui ler a tabela "${escapeHtml(formulario.tabela_destino)}" — confira se ela já existe no Supabase. (${escapeHtml(e.message)})</td></tr>`;
   }
@@ -28301,49 +28308,94 @@ function fqrEhColunaImagem(nomeColuna, valor){
   return nomeParece && valorParece;
 }
 
-function renderRespostasFormulario(linhas){
-  const thead = document.getElementById('fqrRespostasHead');
-  const tbody = document.getElementById('fqrRespostasBody');
-  if (!linhas.length){
-    thead.innerHTML = '';
-    tbody.innerHTML = '<tr><td class="empty">Nenhuma resposta recebida ainda.</td></tr>';
-    return;
+// Se a tabela tem a coluna do condomínio, liga a separação por condomínio e os filtros
+function fqrPrepararControles(){
+  const cols = fqrRespostasAtuais.length ? Object.keys(fqrRespostasAtuais[0]) : [];
+  fqrColCond = cols.find(c => /^(condominio|nome_condominio)$/i.test(c)) || null;
+  fqrColFilial = cols.find(c => /^filial$/i.test(c)) || null;
+  fqrColNota = cols.find(c => /^nota_geral$/i.test(c)) || null;
+  const tem = !!fqrColCond;
+  document.getElementById('fqrAgruparWrap').style.display = tem ? 'flex' : 'none';
+  document.getElementById('fqrFiltroCond').style.display = tem ? '' : 'none';
+  document.getElementById('fqrFiltroFilial').style.display = tem && fqrColFilial ? '' : 'none';
+  document.getElementById('fqrFiltroCond').value = '';
+  document.getElementById('fqrAgrupar').checked = true;
+  if (tem){
+    document.getElementById('fqrFiltroCondLista').innerHTML = [...new Set(fqrRespostasAtuais.map(l => String(l[fqrColCond] || '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(n => '<option value="' + escapeHtml(n) + '"></option>').join('');
+    const filiais = fqrColFilial ? [...new Set(fqrRespostasAtuais.map(l => l[fqrColFilial]).filter(Boolean))].sort() : [];
+    document.getElementById('fqrFiltroFilial').innerHTML = '<option value="">Filial: todas</option>' + filiais.map(f => '<option>' + escapeHtml(f) + '</option>').join('');
   }
-  const colunas = Object.keys(linhas[0]).filter(c => c !== 'id');
-  thead.innerHTML = `<tr>${colunas.map(c=>`<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
-  tbody.innerHTML = linhas.map(linha => `<tr>${colunas.map(c => {
-    const valor = linha[c];
-    if (fqrEhColunaImagem(c, valor)){
-      return `<td><img src="${escapeHtml(valor)}" data-fqr-ver-imagem="${escapeHtml(valor)}" style="width:44px; height:44px; object-fit:cover; border-radius:6px; cursor:pointer;"></td>`;
-    }
-    const texto = valor === null || valor === undefined ? '—' : String(valor);
-    return `<td title="${escapeHtml(texto)}">${escapeHtml(texto.length > 80 ? texto.slice(0,80)+'…' : texto)}</td>`;
-  }).join('')}</tr>`).join('');
-
-  tbody.querySelectorAll('[data-fqr-ver-imagem]').forEach(img=>{
-    img.addEventListener('click', ()=>{
+}
+function fqrRespostasFiltradas(){
+  const q = (document.getElementById('fqrBuscaResposta').value || '').trim().toLowerCase();
+  const cond = (document.getElementById('fqrFiltroCond').value || '').trim().toLowerCase(), fil = document.getElementById('fqrFiltroFilial').value;
+  return fqrRespostasAtuais.filter(l => (!q || Object.values(l).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))) &&
+    (!cond || (fqrColCond && String(l[fqrColCond] || '').toLowerCase().includes(cond))) && (!fil || (fqrColFilial && String(l[fqrColFilial] || '') === fil)));
+}
+function fqrCelula(c, valor){
+  if (fqrEhColunaImagem(c, valor)) return `<td><img src="${escapeHtml(valor)}" data-fqr-ver-imagem="${escapeHtml(valor)}" style="width:44px; height:44px; object-fit:cover; border-radius:6px; cursor:pointer;"></td>`;
+  let texto = valor === null || valor === undefined ? '—' : String(valor);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(texto)){ const d = new Date(texto); if (!isNaN(d)) texto = d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }   // data legível
+  return `<td title="${escapeHtml(texto)}">${escapeHtml(texto.length > 80 ? texto.slice(0, 80) + '…' : texto)}</td>`;
+}
+function fqrAtualizarRespostas(){
+  const thead = document.getElementById('fqrRespostasHead'), tbody = document.getElementById('fqrRespostasBody');
+  const linhas = fqrRespostasFiltradas();
+  const agrupar = !!fqrColCond && document.getElementById('fqrAgrupar').checked;
+  document.getElementById('fqrRecolher').style.display = agrupar ? '' : 'none';
+  if (!fqrRespostasAtuais.length){ thead.innerHTML = ''; tbody.innerHTML = '<tr><td class="empty">Nenhuma resposta recebida ainda.</td></tr>'; document.getElementById('fqrResumoResp').textContent = ''; return; }
+  if (!linhas.length){ thead.innerHTML = ''; tbody.innerHTML = '<tr><td class="empty">Nenhuma resposta neste filtro.</td></tr>'; document.getElementById('fqrResumoResp').textContent = ''; return; }
+  const todas = Object.keys(fqrRespostasAtuais[0]).filter(c => c !== 'id');
+  const colunas = agrupar ? todas.filter(c => c !== fqrColCond && c !== fqrColFilial && !/^condominio_id$/i.test(c)) : todas;
+  thead.innerHTML = `<tr>${colunas.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
+  const mediaDe = l => { const v = l.map(x => x[fqrColNota]).filter(n => n !== null && n !== undefined && n !== '').map(Number).filter(n => !isNaN(n)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const corNota = n => n === null ? 'var(--text-faint)' : (n >= 9 ? 'var(--ok)' : (n >= 7 ? '#f59e0b' : 'var(--critico)'));
+  const fmt = n => n === null ? '—' : n.toFixed(1).replace('.', ',');
+  const grupos = new Map();
+  if (agrupar) linhas.forEach(l => { const k = String(l[fqrColCond] || '(sem condomínio)') + '|' + String(fqrColFilial ? l[fqrColFilial] || '' : ''); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(l); });
+  const mg = fqrColNota ? mediaDe(linhas) : null;
+  document.getElementById('fqrResumoResp').innerHTML = linhas.length + ' resposta(s)' + (agrupar ? ' em ' + grupos.size + ' condomínio(s)' : '') + (mg !== null ? ' · nota geral média <strong style="color:' + corNota(mg) + ';">' + fmt(mg) + '</strong>' : '') + (linhas.length !== fqrRespostasAtuais.length ? ' (de ' + fqrRespostasAtuais.length + ' no total)' : '');
+  if (!agrupar){
+    tbody.innerHTML = linhas.map(l => `<tr>${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
+  } else {
+    const ord = [...grupos.entries()].sort((a, b) => (fqrColFilial ? String(a[1][0][fqrColFilial] || '').localeCompare(String(b[1][0][fqrColFilial] || ''), 'pt-BR') : 0) || String(a[1][0][fqrColCond]).localeCompare(String(b[1][0][fqrColCond]), 'pt-BR'));
+    tbody.innerHTML = ord.map(([k, ls]) => {
+      const m = fqrColNota ? mediaDe(ls) : null, rec = fqrGruposRecolhidos.has(k), filial = fqrColFilial ? (ls[0][fqrColFilial] || '') : '';
+      return `<tr class="fqr-grupo" data-fqr-grupo="${escapeHtml(k)}" style="cursor:pointer; background:var(--bg-panel);"><td colspan="${colunas.length}" style="padding:9px 10px; border-top:2px solid var(--accent); text-align:left;"><span class="fqr-seta">${rec ? '▸' : '▾'}</span> <strong>${escapeHtml(String(ls[0][fqrColCond] || '(sem condomínio)'))}</strong>` +
+        (filial ? ` <span style="color:var(--text-faint); font-size:12px;">· ${escapeHtml(filial)}</span>` : '') + ` <span style="color:var(--text-faint); font-size:12px;">· ${ls.length} resposta(s)</span>` + (m !== null ? ` <span style="font-size:12px; color:${corNota(m)}; font-weight:700;">· nota geral média ${fmt(m)}</span>` : '') + `</td></tr>` +
+        ls.map(l => `<tr data-fqr-filho="${escapeHtml(k)}"${rec ? ' style="display:none;"' : ''}>${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
+    }).join('');
+    tbody.querySelectorAll('tr.fqr-grupo').forEach(tr => tr.addEventListener('click', () => {
+      const k = tr.getAttribute('data-fqr-grupo'), fechar = !fqrGruposRecolhidos.has(k);
+      if (fechar) fqrGruposRecolhidos.add(k); else fqrGruposRecolhidos.delete(k);
+      tr.querySelector('.fqr-seta').textContent = fechar ? '▸' : '▾';
+      tbody.querySelectorAll('tr[data-fqr-filho]').forEach(f => { if (f.getAttribute('data-fqr-filho') === k) f.style.display = fechar ? 'none' : ''; });
+    }));
+  }
+  tbody.querySelectorAll('[data-fqr-ver-imagem]').forEach(img => {
+    img.addEventListener('click', () => {
       document.getElementById('fqrImagemAmpliada').src = img.getAttribute('data-fqr-ver-imagem');
       document.getElementById('fqrImagemModalOverlay').style.display = 'flex';
     });
   });
 }
+function renderRespostasFormulario(linhas){ fqrRespostasAtuais = linhas; fqrPrepararControles(); fqrAtualizarRespostas(); }
 
 document.getElementById('fqrImagemModalClose').addEventListener('click', ()=>{ document.getElementById('fqrImagemModalOverlay').style.display = 'none'; });
-
-document.getElementById('fqrBuscaResposta').addEventListener('input', (ev)=>{
-  const q = ev.target.value.trim().toLowerCase();
-  if (!q){ renderRespostasFormulario(fqrRespostasAtuais); return; }
-  const filtradas = fqrRespostasAtuais.filter(linha => Object.values(linha).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q)));
-  renderRespostasFormulario(filtradas);
+['fqrBuscaResposta', 'fqrFiltroCond'].forEach(id => document.getElementById(id).addEventListener('input', fqrAtualizarRespostas));
+['fqrFiltroFilial', 'fqrAgrupar'].forEach(id => document.getElementById(id).addEventListener('change', fqrAtualizarRespostas));
+document.getElementById('fqrRecolher').addEventListener('click', () => {
+  const grupos = [...document.querySelectorAll('#fqrRespostasBody tr.fqr-grupo')];
+  const todosFechados = grupos.length && grupos.every(g => fqrGruposRecolhidos.has(g.getAttribute('data-fqr-grupo')));
+  grupos.forEach(g => { const k = g.getAttribute('data-fqr-grupo'); if (todosFechados) fqrGruposRecolhidos.delete(k); else fqrGruposRecolhidos.add(k); });
+  document.getElementById('fqrRecolher').textContent = todosFechados ? 'Recolher todos' : 'Expandir todos';
+  fqrAtualizarRespostas();
 });
 
 document.getElementById('btnExportarRespostasCsv').addEventListener('click', ()=>{
-  const linhasVisiveis = [...document.querySelectorAll('#fqrRespostasBody tr')];
-  if (!linhasVisiveis.length || !fqrRespostasAtuais.length){ alert('Nenhuma resposta pra exportar.'); return; }
+  const linhasTexto = fqrRespostasFiltradas();
+  if (!linhasTexto.length || !fqrRespostasAtuais.length){ alert('Nenhuma resposta pra exportar.'); return; }
   const colunas = Object.keys(fqrRespostasAtuais[0]).filter(c => c !== 'id');
-  const linhasTexto = document.getElementById('fqrBuscaResposta').value.trim()
-    ? fqrRespostasAtuais.filter(linha => Object.values(linha).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(document.getElementById('fqrBuscaResposta').value.trim().toLowerCase())))
-    : fqrRespostasAtuais;
   const csvLinhas = [colunas.join(';')].concat(
     linhasTexto.map(linha => colunas.map(c => `"${String(linha[c]??'').replace(/"/g,'""')}"`).join(';'))
   );
@@ -28351,7 +28403,7 @@ document.getElementById('btnExportarRespostasCsv').addEventListener('click', ()=
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `respostas_${(formularioQrSelecionado?.nome||'formulario').replace(/\s+/g,'_')}.csv`;
+  a.download = `respostas_${(formularioQrSelecionado?.nome||'formulario').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\-]+/g,'_')}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
