@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v162 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v164 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4953,13 +4953,17 @@ CONDOMINIO Y	480	45"></textarea>
       <div class="charts-grid charts-grid-2" style="margin-bottom:16px;">
         <div class="chart-panel" style="text-align:center;">
           <p class="chart-title" style="text-align:left;">📱 QR Code — <span id="fqrNomeSelecionado"></span></p>
-          <input type="text" id="fqrRotulo" placeholder="Rótulo opcional (ex: nome do condomínio)" style="width:100%; box-sizing:border-box; margin-bottom:14px;">
+          <input type="text" id="fqrRotulo" list="fqrCondominiosLista" placeholder="Condomínio (digite para buscar): o QR já abre com ele preenchido" style="width:100%; box-sizing:border-box; margin-bottom:6px;" autocomplete="off">
+          <datalist id="fqrCondominiosLista"></datalist>
+          <p id="fqrUrlCondo" style="font-size:11px; color:var(--text-faint); word-break:break-all; margin:0 0 10px; text-align:left; line-height:1.4;"></p>
           <div style="background:#fff; display:inline-block; padding:16px; border-radius:10px;">
             <canvas id="fqrCanvas"></canvas>
           </div>
           <p id="fqrRotuloExibido" style="font-weight:600; margin:10px 0 0; color:var(--text);"></p>
           <div style="margin-top:12px;">
             <button type="button" class="clearbtn" id="btnBaixarQrCode">⬇️ Baixar PNG</button>
+            <button type="button" class="clearbtn" id="btnCartazesCondominio" style="border-color:var(--ok); color:var(--ok);">🏢 Cartazes por condomínio</button>
+            <button type="button" class="clearbtn" id="btnLinksCondominio">🔗 Links por condomínio</button>
           </div>
         </div>
         <div class="chart-panel">
@@ -28100,10 +28104,139 @@ async function selecionarFormularioQr(formulario){
   document.getElementById('fqrTotalRespostas').textContent = formulario._totalRespostas === null ? 'tabela não encontrada' : formulario._totalRespostas;
   document.getElementById('fqrRotulo').value = '';
   document.getElementById('fqrRotuloExibido').textContent = '';
+  document.getElementById('fqrCondominiosLista').innerHTML = fqrCondominiosAtivos().map(c => '<option value="' + escapeHtml(c.nome) + '">' + escapeHtml(c.filial || '') + '</option>').join('');
 
-  gerarQrCodeCanvas(formulario.url);
+  fqrAtualizarQr();
   await carregarRespostasFormulario(formulario);
   document.getElementById('formularioQrDetalhe').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ----- QR por condomínio: o link do formulário recebe o condomínio (?c=nome&i=id) e o formulário já abre preenchido -----
+function fqrCondominiosAtivos(){
+  return (typeof CADASTRO_LIVE !== 'undefined' ? CADASTRO_LIVE : []).filter(c => c && c.nome && c.status !== 'Inativo').slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+function fqrUrlDoCondominio(base, condo){
+  if (!condo) return base;
+  return base + (base.indexOf('?') >= 0 ? '&' : '?') + 'c=' + encodeURIComponent(condo.nome) + (condo.filial ? '&f=' + encodeURIComponent(condo.filial) : '') + (condo.item_id !== undefined && condo.item_id !== null ? '&i=' + encodeURIComponent(condo.item_id) : '');
+}
+function fqrCondoDoTexto(txt){
+  const t = String(txt || '').trim().toUpperCase();
+  if (!t) return null;
+  const lista = fqrCondominiosAtivos();
+  return lista.find(c => c.nome.toUpperCase() === t) || null;
+}
+function fqrAtualizarQr(){
+  if (!formularioQrSelecionado) return;
+  const rot = document.getElementById('fqrRotulo').value, condo = fqrCondoDoTexto(rot);
+  const url = fqrUrlDoCondominio(formularioQrSelecionado.url, condo);
+  gerarQrCodeCanvas(url);
+  document.getElementById('fqrUrlCondo').textContent = condo ? 'Link deste QR: ' + url : (rot.trim() ? 'Esse nome não está no Cadastro: o QR abre o formulário sem condomínio e o morador digita o nome.' : 'QR do link geral (sem condomínio preenchido).');
+}
+// ----- Links por condomínio: o mesmo link do formulário, já com o nome (e a filial) do condomínio, para copiar e mandar por WhatsApp -----
+function fqrAbrirLinks(){
+  if (!formularioQrSelecionado) return;
+  const condos = fqrCondominiosAtivos();
+  if (!condos.length){ alert('Nenhum condomínio ativo no Cadastro.'); return; }
+  const filiais = [...new Set(condos.map(c => c.filial).filter(Boolean))].sort();
+  let el = document.getElementById('fqrLinksModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'fqrLinksModal';
+  el.style.cssText = 'position:fixed; inset:0; z-index:9600; background:rgba(3,6,14,.72); display:flex; align-items:center; justify-content:center; padding:20px;';
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:760px; max-height:90vh; display:flex; flex-direction:column; padding:20px 22px;">' +
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;"><div><div style="font-size:17px; font-weight:800;">🔗 Links por condomínio</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:2px;">' + escapeHtml(formularioQrSelecionado.nome) + ' · cada link já abre com o nome do condomínio</div></div><button type="button" class="modal-close" id="fqrLinksClose" style="position:static;">×</button></div>' +
+    '<div style="display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 8px;"><input type="text" class="search" id="fqrLinksBusca" placeholder="Buscar condomínio..." style="flex:1; min-width:180px;"><select class="filter-select" id="fqrLinksFilial"><option value="">Filial: todas</option>' + filiais.map(f => '<option>' + escapeHtml(f) + '</option>').join('') + '</select>' +
+    '<button type="button" class="clearbtn" id="fqrLinksCsv">⬇ Exportar CSV</button></div>' +
+    '<p id="fqrLinksContagem" style="font-size:12px; color:var(--text-faint); margin:0 0 6px;"></p>' +
+    '<div id="fqrLinksLista" style="overflow:auto; border:1px solid var(--line); border-radius:8px; padding:4px 10px;"></div></div>';
+  document.body.appendChild(el);
+  const visiveis = () => { const b = normalizeNomeCondo(document.getElementById('fqrLinksBusca').value || ''), f = document.getElementById('fqrLinksFilial').value; return condos.filter(c => (!f || c.filial === f) && (!b || normalizeNomeCondo(c.nome).includes(b))); };
+  const pintar = () => {
+    const v = visiveis();
+    document.getElementById('fqrLinksContagem').textContent = v.length + ' condomínio(s)';
+    document.getElementById('fqrLinksLista').innerHTML = v.map(c => { const url = fqrUrlDoCondominio(formularioQrSelecionado.url, c);
+      return '<div style="display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid var(--line);"><div style="flex:0 0 38%; font-size:12.5px;"><strong>' + escapeHtml(c.nome) + '</strong><div style="color:var(--text-faint); font-size:11px;">' + escapeHtml(c.filial || '') + '</div></div><input type="text" readonly value="' + escapeHtml(url) + '" style="flex:1; font-size:11px; min-width:0;" onfocus="this.select()"><button type="button" class="clearbtn" data-fqr-copiar="' + escapeHtml(url) + '" style="white-space:nowrap;">📋 Copiar</button></div>'; }).join('') || '<p class="empty">Nenhum condomínio neste filtro.</p>';
+  };
+  pintar();
+  document.getElementById('fqrLinksClose').addEventListener('click', () => el.remove());
+  document.getElementById('fqrLinksBusca').addEventListener('input', pintar); document.getElementById('fqrLinksFilial').addEventListener('change', pintar);
+  document.getElementById('fqrLinksLista').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-fqr-copiar]'); if (!b) return;
+    const url = b.getAttribute('data-fqr-copiar');
+    try{ await navigator.clipboard.writeText(url); }catch(e){ const i = b.parentElement.querySelector('input'); i.select(); try{ document.execCommand('copy'); }catch(x){} }
+    const antes = b.textContent; b.textContent = '✔ Copiado'; setTimeout(() => { b.textContent = antes; }, 1400);
+  });
+  document.getElementById('fqrLinksCsv').addEventListener('click', () => {
+    const linhas = [['Filial', 'Condomínio', 'Link']].concat(visiveis().map(c => [c.filial || '', c.nome, fqrUrlDoCondominio(formularioQrSelecionado.url, c)]));
+    const csv = '\ufeff' + linhas.map(l => l.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(';')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'links_' + formularioQrSelecionado.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\-]+/g, '_') + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+}
+function fqrAbrirCartazes(){
+  if (!formularioQrSelecionado) return;
+  if (typeof QRCode === 'undefined'){ alert('A biblioteca de QR Code não carregou.'); return; }
+  const condos = fqrCondominiosAtivos();
+  if (!condos.length){ alert('Nenhum condomínio ativo no Cadastro para gerar os cartazes.'); return; }
+  const filiais = [...new Set(condos.map(c => c.filial).filter(Boolean))].sort();
+  let el = document.getElementById('fqrCartazesModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'fqrCartazesModal';
+  el.style.cssText = 'position:fixed; inset:0; z-index:9600; background:rgba(3,6,14,.72); display:flex; align-items:center; justify-content:center; padding:20px;';
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:620px; max-height:90vh; display:flex; flex-direction:column; padding:20px 22px;">' +
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;"><div><div style="font-size:17px; font-weight:800;">🏢 Cartazes por condomínio</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:2px;">' + escapeHtml(formularioQrSelecionado.nome) + ' · um cartaz por condomínio, com o QR já abrindo com o nome dele</div></div><button type="button" class="modal-close" id="fqrCartClose" style="position:static;">×</button></div>' +
+    '<div style="display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 8px;"><input type="text" class="search" id="fqrCartBusca" placeholder="Buscar condomínio..." style="flex:1; min-width:180px;"><select class="filter-select" id="fqrCartFilial"><option value="">Filial: todas</option>' + filiais.map(f => '<option>' + escapeHtml(f) + '</option>').join('') + '</select></div>' +
+    '<label style="font-size:12.5px; display:flex; gap:7px; align-items:center; margin-bottom:6px;"><input type="checkbox" id="fqrCartTodos"> Marcar todos os que aparecem na lista <span id="fqrCartContagem" style="margin-left:auto; color:var(--text-faint);"></span></label>' +
+    '<div id="fqrCartLista" style="overflow:auto; border:1px solid var(--line); border-radius:8px; padding:6px 10px; min-height:120px; max-height:42vh;"></div>' +
+    '<p id="fqrCartProgresso" style="font-size:12px; color:var(--text-faint); min-height:16px; margin:8px 0 0;"></p>' +
+    '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;"><button type="button" class="clearbtn" id="fqrCartCancelar">Fechar</button><button type="button" class="login-btn" id="fqrCartGerar" style="width:auto; margin-top:0; padding:9px 18px;">🖨️ Gerar cartazes (imprimir / PDF)</button></div></div>';
+  document.body.appendChild(el);
+  const sel = new Set();
+  const visiveis = () => { const b = normalizeNomeCondo(document.getElementById('fqrCartBusca').value || ''), f = document.getElementById('fqrCartFilial').value; return condos.filter(c => (!f || c.filial === f) && (!b || normalizeNomeCondo(c.nome).includes(b))); };
+  const pintar = () => {
+    const v = visiveis();
+    document.getElementById('fqrCartLista').innerHTML = v.map(c => '<label style="display:flex; gap:8px; align-items:center; font-size:13px; padding:3px 0;"><input type="checkbox" data-fqr-cond="' + c.item_id + '"' + (sel.has(String(c.item_id)) ? ' checked' : '') + '> ' + escapeHtml(c.nome) + ' <span style="color:var(--text-faint); font-size:11.5px;">' + escapeHtml(c.filial || '') + '</span></label>').join('') || '<p class="empty">Nenhum condomínio neste filtro.</p>';
+    document.getElementById('fqrCartContagem').textContent = sel.size + ' selecionado(s)';
+    document.getElementById('fqrCartTodos').checked = v.length > 0 && v.every(c => sel.has(String(c.item_id)));
+  };
+  pintar();
+  const fechar = () => el.remove();
+  document.getElementById('fqrCartClose').addEventListener('click', fechar); document.getElementById('fqrCartCancelar').addEventListener('click', fechar);
+  document.getElementById('fqrCartBusca').addEventListener('input', pintar); document.getElementById('fqrCartFilial').addEventListener('change', pintar);
+  document.getElementById('fqrCartTodos').addEventListener('change', ev => { visiveis().forEach(c => { if (ev.target.checked) sel.add(String(c.item_id)); else sel.delete(String(c.item_id)); }); pintar(); });
+  document.getElementById('fqrCartLista').addEventListener('change', ev => { const c = ev.target.closest('[data-fqr-cond]'); if (!c) return; if (c.checked) sel.add(c.dataset.fqrCond); else sel.delete(c.dataset.fqrCond); document.getElementById('fqrCartContagem').textContent = sel.size + ' selecionado(s)'; });
+  document.getElementById('fqrCartGerar').addEventListener('click', async () => {
+    const escolhidos = condos.filter(c => sel.has(String(c.item_id)));
+    if (!escolhidos.length){ alert('Marque pelo menos um condomínio.'); return; }
+    const w = window.open('', '_blank');
+    if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return; }
+    const botao = document.getElementById('fqrCartGerar'); botao.disabled = true;
+    try{
+      const paginas = [];
+      for (let i = 0; i < escolhidos.length; i++){
+        document.getElementById('fqrCartProgresso').textContent = 'Gerando o QR de ' + (i + 1) + ' de ' + escolhidos.length + '...';
+        const c = escolhidos[i];
+        const png = await QRCode.toDataURL(fqrUrlDoCondominio(formularioQrSelecionado.url, c), { width: 640, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#222F59', light: '#ffffff' } });
+        paginas.push(fqrCartazHtml(c, png));
+      }
+      w.document.write(fqrDocumentoCartazes(paginas)); w.document.close();
+      document.getElementById('fqrCartProgresso').textContent = escolhidos.length + ' cartaz(es) gerado(s). Na janela de impressão, escolha "Salvar como PDF" ou imprima direto.';
+    }catch(e){ console.error(e); alert('Erro ao gerar os cartazes: ' + e.message); try{ w.close(); }catch(x){} }
+    botao.disabled = false;
+  });
+}
+function fqrCartazHtml(c, qrPng){
+  const logo = String(c.filial || '').toUpperCase() === 'SECOPI' ? TIMBRADO_TOPO_SECOPI : TIMBRADO_TOPO_SERVIS, nome = formularioQrSelecionado.nome;
+  const publico = /s[ií]ndico/i.test(nome) ? 'Pesquisa de satisfação para o(a) síndico(a)' : (/morador/i.test(nome) ? 'Pesquisa de satisfação para moradores' : nome);
+  return '<section class="pag"><img class="topo-logo" src="' + logo + '"><div class="miolo"><h1>Sua opinião é muito importante!</h1><p class="pub">' + escapeHtml(publico) + '</p><p class="cond">' + escapeHtml(c.nome) + '</p>' +
+    '<div class="qr"><img src="' + qrPng + '"></div><p class="apont">Aponte a câmera do celular para o QR Code</p>' +
+    '<ol><li>Abra a câmera do celular e aponte para o QR Code.</li><li>Informe o número da sua casa ou apartamento.</li><li>Dê as suas notas: leva cerca de 2 minutos.</li></ol></div>' +
+    '<div class="rod">Servis Eletrônica · Portaria Remota<br>Obrigado por participar!</div></section>';
+}
+function fqrDocumentoCartazes(paginas){
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cartazes</title><style>@page{ size:A4; margin:0; } *{ box-sizing:border-box; } body{ margin:0; font-family:Arial,Helvetica,sans-serif; color:#1a2333; }' +
+    '.pag{ width:210mm; height:297mm; padding:14mm 16mm; page-break-after:always; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; overflow:hidden; } .pag:last-child{ page-break-after:auto; }' +
+    '.topo-logo{ width:200px; align-self:flex-start; } .miolo{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; }' +
+    'h1{ font-size:40px; color:#222F59; margin:0 0 6px; } .pub{ font-size:19px; color:#667085; margin:0 0 18px; } .cond{ font-size:27px; font-weight:800; color:#E07B2C; margin:0 0 22px; max-width:170mm; }' +
+    '.qr{ border:4px solid #E07B2C; border-radius:18px; padding:14px; background:#fff; } .qr img{ width:92mm; height:92mm; display:block; } .apont{ font-size:21px; font-weight:700; color:#222F59; margin:16px 0 8px; }' +
+    'ol{ text-align:left; font-size:16px; line-height:1.7; color:#374151; margin:6px 0 0; padding-left:20px; } .rod{ font-size:13px; color:#667085; line-height:1.5; border-top:3px solid #E07B2C; padding-top:8px; width:100%; }' +
+    '</style></head><body>' + paginas.join('') + '<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 500); };<\/script></body></html>';
 }
 
 function gerarQrCodeCanvas(url){
@@ -28119,7 +28252,10 @@ function gerarQrCodeCanvas(url){
 
 document.getElementById('fqrRotulo').addEventListener('input', (ev)=>{
   document.getElementById('fqrRotuloExibido').textContent = ev.target.value.trim();
+  fqrAtualizarQr();
 });
+document.getElementById('btnCartazesCondominio').addEventListener('click', fqrAbrirCartazes);
+document.getElementById('btnLinksCondominio').addEventListener('click', fqrAbrirLinks);
 
 document.getElementById('btnBaixarQrCode').addEventListener('click', ()=>{
   if (!formularioQrSelecionado) return;
