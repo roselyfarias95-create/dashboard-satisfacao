@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v174 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v175 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -7660,6 +7660,7 @@ async function carregarCadastroLive(){
     if (error) throw error;
     CADASTRO_LIVE = data || [];
     cadastroLiveCarregado = true;
+    __nomesDistintosCadastro = null; try{ __rcVersao++; __dupAvisoChave = ''; atualizarAvisoDuplicados(); }catch(e){}
     try{ invalidarMapaCarteira(); atualizarSeletoresCarteira(); atualizarAvisoCarteira(); }catch(e){}
   }catch(e){
     console.warn('Falha ao carregar cadastro_condominios ao vivo (usando dados congelados como respaldo):', e);
@@ -27834,9 +27835,24 @@ document.getElementById('btnExcluirRodadaPq').addEventListener('click', excluirR
 // ----- Pesquisas repetidas: resumo por mês, limpeza que junta as informações das cópias e aviso automático -----
 // ----- Nomes iguais que são condomínios diferentes: o usuário valida e eles deixam de contar como repetidos -----
 function dupFilialChave(f){ return normTxtCarteira(normalizeFilialCanonica(f || '')); }
+// O Cadastro é a referência: se ele já tem o mesmo nome em filiais diferentes (por exemplo COND. CANAA em SECOPI e no Ceará),
+// são condomínios diferentes de verdade e não precisam ser validados um a um.
+let __nomesDistintosCadastro = null;
+function nomesDistintosPeloCadastro(){
+  if (__nomesDistintosCadastro) return __nomesDistintosCadastro;
+  const fonte = (typeof CADASTRO_LIVE !== 'undefined' && CADASTRO_LIVE.length) ? CADASTRO_LIVE : (typeof fqrCondominiosDoSeedEmbutido === 'function' ? fqrCondominiosDoSeedEmbutido() : []);
+  const porNome = new Map();
+  fonte.forEach(c => {
+    if (!c || !c.nome || c.status === 'Inativo' || c.status === 'Cancelado') return;
+    const k = normalizeNomeCondo(c.nome); if (!porNome.has(k)) porNome.set(k, new Set()); porNome.get(k).add(dupFilialChave(c.filial));
+  });
+  const out = new Set(); porNome.forEach((filiais, k) => { if (filiais.size > 1) out.add(k); });
+  if (fonte.length) __nomesDistintosCadastro = out;
+  return out;
+}
 function dupChave(item){
   const k = normalizeNomeCondo(item.nome), v = window.__nomesValidados;
-  return (v && v.has(k)) ? k + '|' + dupFilialChave(item.filial) : k;   // nome validado: condomínios de filiais diferentes são separados
+  return ((v && v.has(k)) || nomesDistintosPeloCadastro().has(k)) ? k + '|' + dupFilialChave(item.filial) : k;   // nome validado (ou distinto no Cadastro): condomínios de filiais diferentes são separados
 }
 function dupPodeValidar(){ return typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'editor'); }
 function dupSalvarLocal(){ try{ localStorage.setItem('pqNomesValidados', JSON.stringify([...(window.__nomesValidados || [])])); }catch(e){} }
@@ -27885,6 +27901,14 @@ async function validarNomeDistinto(chave){
       try{ const { error } = await sb.from('listas_sistema').insert({ categoria: NV_CHAVE, valor: chave, ordem: window.__nomesValidados.size }); salvou = !error; if (error){ console.warn(error); motivo = motivo || error.message; } }catch(e){ console.warn(e); }
     }
   } else motivo = 'sem conexão com o servidor';
+  if (salvou) await carregarNomesValidados();
+  else { __rcVersao++; __dupAvisoChave = ''; alert('Validado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão mostrar como repetido.' + (motivo ? '\n\nMotivo: ' + motivo : '')); }
+}
+async function validarNomesDistintos(chaves){
+  if (!window.__nomesValidados) window.__nomesValidados = new Set();
+  chaves.forEach(k => window.__nomesValidados.add(k)); dupSalvarLocal();
+  let salvou = false, motivo = '';
+  if (typeof sb !== 'undefined' && sb){ const r = await dupGravarNoServidor(); salvou = r.ok; motivo = r.erro || ''; } else motivo = 'sem conexão com o servidor';
   if (salvou) await carregarNomesValidados();
   else { __rcVersao++; __dupAvisoChave = ''; alert('Validado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão mostrar como repetido.' + (motivo ? '\n\nMotivo: ' + motivo : '')); }
 }
@@ -27956,7 +27980,7 @@ function atualizarAvisoDuplicados(){
   if (chave !== __dupAvisoChave){
     __dupAvisoChave = chave;
     const r = dupResumoPorMes().find(x => x.mes === selectedMes);
-    el.innerHTML = r ? '⚠️ <strong>' + escapeHtml(mesLabelBR(selectedMes)) + '</strong> tem <strong>' + r.linhas + ' linhas para ' + r.condominios + ' condomínios</strong>: ' + r.extras + ' estão repetidas e distorcem as notas, os pendentes e o ranking. <button type="button" class="clearbtn" data-dup-abrir="1" style="border-color:#f59e0b; color:#f59e0b;">🔎 Ver e resolver repetidas</button>' : '';
+    el.innerHTML = r ? '⚠️ <strong>' + escapeHtml(mesLabelBR(selectedMes)) + '</strong> tem <strong>' + r.linhas + ' linhas para ' + r.condominios + ' condomínios</strong>: ' + r.extras + (r.extras === 1 ? ' está repetida e distorce' : ' estão repetidas e distorcem') + ' as notas, os pendentes e o ranking. <button type="button" class="clearbtn" data-dup-abrir="1" style="border-color:#f59e0b; color:#f59e0b;">🔎 Ver e resolver repetidas</button>' : '';
     el.dataset.tem = r ? '1' : '';
   }
   el.style.display = el.dataset.tem ? 'block' : 'none';
@@ -28002,9 +28026,11 @@ function renderDupModalPq(){
     return;
   }
   const totalExtras = duplicados.reduce((acc, g) => acc + g.length - 1, 0);
+  const elegiveis = duplicados.filter(g => new Set(g.map(i => dupFilialChave(i.filial))).size > 1);   // mesmo nome em filiais diferentes
   const cabecalho = `
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; padding:10px 12px; border:1px solid var(--border); border-radius:8px;">
       <div style="font-size:13px;"><strong>${duplicados.length}</strong> condomínio(s) repetido(s) — <strong>${totalExtras}</strong> linha(s) a mais.</div>
+      ${(elegiveis.length >= 2 && dupPodeValidar()) ? `<button type="button" class="clearbtn" id="btnValidarTodosDup" style="border-color:var(--ok); color:var(--ok);">✔ Validar todos os de filiais diferentes (${elegiveis.length})</button>` : ''}
       <button type="button" class="clearbtn" id="btnLimparDupAuto" style="border-color:var(--critico); color:var(--critico);">🧹 Limpar automaticamente (manter a melhor de cada)</button>
     </div>`;
   body.innerHTML = cabecalho + blocoMeses + duplicados.map((grupo, gi) => `
@@ -28028,6 +28054,14 @@ function renderDupModalPq(){
   body.insertAdjacentHTML('beforeend', blocoValidados);
   ligarValidacao();
   irParaMes();
+  const btnTodos = document.getElementById('btnValidarTodosDup');
+  if (btnTodos) btnTodos.addEventListener('click', async () => {
+    if (!confirm('Validar que os ' + elegiveis.length + ' nomes abaixo, que aparecem em filiais diferentes, são condomínios DIFERENTES?\n\n' + elegiveis.map(g => '• ' + g[0].nome).join('\n') + '\n\nEles deixam de aparecer como repetidos e passam a ser contados separadamente. Cópias na mesma filial continuam aparecendo.')) return;
+    btnTodos.disabled = true;
+    await validarNomesDistintos(elegiveis.map(g => normalizeNomeCondo(g[0].nome)));
+    try{ render(); }catch(e){}
+    renderDupModalPq();
+  });
   document.getElementById('btnLimparDupAuto').addEventListener('click', async ()=>{
     // grupos com filiais diferentes podem ser condomínios diferentes com o mesmo nome: a limpeza automática não mexe neles
     const seguros = duplicados.filter(g => new Set(g.map(i => dupFilialChave(i.filial))).size <= 1);
