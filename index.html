@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v167 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v168 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4953,8 +4953,11 @@ CONDOMINIO Y	480	45"></textarea>
       <div class="charts-grid charts-grid-2" style="margin-bottom:16px;">
         <div class="chart-panel" style="text-align:center;">
           <p class="chart-title" style="text-align:left;">📱 QR Code — <span id="fqrNomeSelecionado"></span></p>
-          <input type="text" id="fqrRotulo" list="fqrCondominiosLista" placeholder="Condomínio (digite para buscar): o QR já abre com ele preenchido" style="width:100%; box-sizing:border-box; margin-bottom:6px;" autocomplete="off">
-          <datalist id="fqrCondominiosLista"></datalist>
+          <div style="position:relative; margin-bottom:6px;">
+            <input type="text" id="fqrRotulo" placeholder="Condomínio (digite para buscar): o QR já abre com ele preenchido" style="width:100%; box-sizing:border-box;" autocomplete="off">
+            <div id="fqrSugestoes" style="display:none; position:absolute; z-index:60; left:0; right:0; top:100%; max-height:270px; overflow:auto; background:var(--bg-panel); border:1px solid var(--accent); border-radius:8px; text-align:left; box-shadow:0 8px 24px rgba(0,0,0,.45);"></div>
+          </div>
+          <p id="fqrStatusLista" style="font-size:11px; color:var(--text-faint); margin:0 0 4px; text-align:left;"></p>
           <p id="fqrUrlCondo" style="font-size:11px; color:var(--text-faint); word-break:break-all; margin:0 0 10px; text-align:left; line-height:1.4;"></p>
           <div style="background:#fff; display:inline-block; padding:16px; border-radius:10px;">
             <canvas id="fqrCanvas"></canvas>
@@ -28111,7 +28114,8 @@ async function selecionarFormularioQr(formulario){
   document.getElementById('fqrTotalRespostas').textContent = formulario._totalRespostas === null ? 'tabela não encontrada' : formulario._totalRespostas;
   document.getElementById('fqrRotulo').value = '';
   document.getElementById('fqrRotuloExibido').textContent = '';
-  document.getElementById('fqrCondominiosLista').innerHTML = fqrCondominiosAtivos().map(c => '<option value="' + escapeHtml(c.nome) + '">' + escapeHtml(c.filial || '') + '</option>').join('');
+  fqrCondoEscolhido = null; fqrFecharSugestoes(); fqrAtualizarStatusLista();
+  fqrGarantirCondominios().then(fqrAtualizarStatusLista);
 
   fqrAtualizarQr();
   await carregarRespostasFormulario(formulario);
@@ -28119,8 +28123,47 @@ async function selecionarFormularioQr(formulario){
 }
 
 // ----- QR por condomínio: o link do formulário recebe o condomínio (?c=nome&i=id) e o formulário já abre preenchido -----
+// Cadastro embutido no dashboard (reserva, caso o banco não responda)
+function fqrCondominiosDoSeedEmbutido(){
+  try{
+    const m = /<script id="seedData" type="application\/json">([\s\S]*?)<\/script>/.exec(CADASTRO_HTML);
+    if (!m) return [];
+    return JSON.parse(m[1]).filter(d => d && d.nome && d.status === 'Ativo').map(d => ({ nome: d.nome, filial: d.filial, status: d.status }));
+  }catch(e){ return []; }
+}
+async function fqrGarantirCondominios(forcar){
+  if (forcar || typeof CADASTRO_LIVE === 'undefined' || !CADASTRO_LIVE.length){ try{ cadastroLiveCarregado = false; await carregarCadastroLive(); }catch(e){ console.warn('Lista de condomínios:', e); } }
+}
 function fqrCondominiosAtivos(){
-  return (typeof CADASTRO_LIVE !== 'undefined' ? CADASTRO_LIVE : []).filter(c => c && c.nome && c.status !== 'Inativo').slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  let base = typeof CADASTRO_LIVE !== 'undefined' ? CADASTRO_LIVE : [];
+  if (!base.length && typeof renovAllCondos !== 'undefined' && renovAllCondos.length) base = renovAllCondos;
+  if (!base.length) base = fqrCondominiosDoSeedEmbutido();
+  return base.filter(c => c && c.nome && c.status !== 'Inativo' && c.status !== 'Cancelado').slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+function fqrSemAcento(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+function fqrAtualizarStatusLista(){
+  const n = fqrCondominiosAtivos().length, el = document.getElementById('fqrStatusLista'); if (!el) return;
+  el.innerHTML = n ? n + ' condomínios na lista. Digite parte do nome (por exemplo "par") e escolha.' : '<span style="color:#f59e0b;">Não consegui carregar os condomínios do Cadastro.</span> <a href="#" id="fqrRecarregarLista" style="color:var(--accent);">Tentar de novo</a>';
+  const r = document.getElementById('fqrRecarregarLista'); if (r) r.addEventListener('click', async ev => { ev.preventDefault(); el.textContent = 'Carregando...'; await fqrGarantirCondominios(true); fqrAtualizarStatusLista(); });
+}
+let fqrCondoEscolhido = null, fqrSugIdx = -1;
+function fqrFecharSugestoes(){ const b = document.getElementById('fqrSugestoes'); if (b) b.style.display = 'none'; fqrSugIdx = -1; }
+async function fqrMostrarSugestoes(){
+  const box = document.getElementById('fqrSugestoes'), inp = document.getElementById('fqrRotulo');
+  if (!fqrCondominiosAtivos().length){ await fqrGarantirCondominios(); fqrAtualizarStatusLista(); }
+  const q = fqrSemAcento(inp.value).trim(), qs = q.replace(/[^a-z0-9]/g, '');
+  const todos = fqrCondominiosAtivos(), achados = todos.filter(c => { const n = fqrSemAcento(c.nome); return !q || n.includes(q) || (qs && n.replace(/[^a-z0-9]/g, '').includes(qs)); });
+  if (!achados.length){ box.innerHTML = '<div style="padding:10px 12px; font-size:12.5px; color:var(--text-faint);">' + (todos.length ? 'Nenhum condomínio com esse nome. O QR abre o formulário sem condomínio.' : 'A lista de condomínios está vazia.') + '</div>'; box.style.display = 'block'; return; }
+  box.innerHTML = achados.slice(0, 12).map((c, i) => '<div class="fqr-sug" data-i="' + i + '" style="padding:8px 12px; cursor:pointer; font-size:13px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:10px;"><span>' + escapeHtml(c.nome) + '</span><span style="color:var(--text-faint); font-size:11.5px; white-space:nowrap;">' + escapeHtml(c.filial || '') + '</span></div>').join('') +
+    (achados.length > 12 ? '<div style="padding:7px 12px; font-size:11.5px; color:var(--text-faint);">+ ' + (achados.length - 12) + ' condomínios. Digite mais letras para filtrar.</div>' : '');
+  box.style.display = 'block'; fqrSugIdx = -1;
+  box._achados = achados.slice(0, 12);
+  box.querySelectorAll('.fqr-sug').forEach(el => el.addEventListener('mousedown', ev => { ev.preventDefault(); fqrEscolherCondominio(box._achados[Number(el.dataset.i)]); }));
+}
+function fqrEscolherCondominio(c){
+  if (!c) return;
+  fqrCondoEscolhido = c; document.getElementById('fqrRotulo').value = c.nome; document.getElementById('fqrRotuloExibido').textContent = c.nome;
+  fqrFecharSugestoes(); fqrAtualizarQr();
 }
 function fqrUrlDoCondominio(base, condo){
   if (!condo) return base;
@@ -28129,8 +28172,8 @@ function fqrUrlDoCondominio(base, condo){
 function fqrCondoDoTexto(txt){
   const t = String(txt || '').trim().toUpperCase();
   if (!t) return null;
-  const lista = fqrCondominiosAtivos();
-  return lista.find(c => c.nome.toUpperCase() === t) || null;
+  if (fqrCondoEscolhido && fqrCondoEscolhido.nome.toUpperCase() === t) return fqrCondoEscolhido;   // o escolhido na lista (resolve nomes repetidos em filiais diferentes)
+  return fqrCondominiosAtivos().find(c => c.nome.toUpperCase() === t) || null;
 }
 function fqrAtualizarQr(){
   if (!formularioQrSelecionado) return;
@@ -28141,8 +28184,9 @@ function fqrAtualizarQr(){
   document.getElementById('fqrUrlCondo').textContent = condo ? 'Link deste QR: ' + url : (rot.trim() ? 'Esse nome não está no Cadastro: o QR abre o formulário sem condomínio e o morador digita o nome.' : 'QR do link geral (sem condomínio preenchido).');
 }
 // ----- Links por condomínio: o mesmo link do formulário, já com o nome (e a filial) do condomínio, para copiar e mandar por WhatsApp -----
-function fqrAbrirLinks(){
+async function fqrAbrirLinks(){
   if (!formularioQrSelecionado) return;
+  await fqrGarantirCondominios();
   const condos = fqrCondominiosAtivos();
   if (!condos.length){ alert('Nenhum condomínio ativo no Cadastro.'); return; }
   const filiais = [...new Set(condos.map(c => c.filial).filter(Boolean))].sort();
@@ -28178,9 +28222,10 @@ function fqrAbrirLinks(){
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'links_' + formularioQrSelecionado.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\-]+/g, '_') + '.csv'; document.body.appendChild(a); a.click(); a.remove();
   });
 }
-function fqrAbrirCartazes(){
+async function fqrAbrirCartazes(){
   if (!formularioQrSelecionado) return;
   if (typeof QRCode === 'undefined'){ alert('A biblioteca de QR Code não carregou.'); return; }
+  await fqrGarantirCondominios();
   const condos = fqrCondominiosAtivos();
   if (!condos.length){ alert('Nenhum condomínio ativo no Cadastro para gerar os cartazes.'); return; }
   const filiais = [...new Set(condos.map(c => c.filial).filter(Boolean))].sort();
@@ -28305,7 +28350,17 @@ function gerarQrCodeCanvas(url){
 
 document.getElementById('fqrRotulo').addEventListener('input', (ev)=>{
   document.getElementById('fqrRotuloExibido').textContent = ev.target.value.trim();
-  fqrAtualizarQr();
+  if (fqrCondoEscolhido && fqrCondoEscolhido.nome !== ev.target.value.trim()) fqrCondoEscolhido = null;
+  fqrAtualizarQr(); fqrMostrarSugestoes();
+});
+document.getElementById('fqrRotulo').addEventListener('focus', () => { fqrMostrarSugestoes(); });
+document.getElementById('fqrRotulo').addEventListener('blur', () => { setTimeout(fqrFecharSugestoes, 160); });
+document.getElementById('fqrRotulo').addEventListener('keydown', (ev) => {
+  const box = document.getElementById('fqrSugestoes'), itens = [...box.querySelectorAll('.fqr-sug')];
+  if (ev.key === 'Escape'){ fqrFecharSugestoes(); return; }
+  if (!itens.length || box.style.display === 'none') return;
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp'){ ev.preventDefault(); fqrSugIdx = (fqrSugIdx + (ev.key === 'ArrowDown' ? 1 : -1) + itens.length) % itens.length; itens.forEach((e, i) => { e.style.background = i === fqrSugIdx ? 'var(--accent-soft, rgba(56,189,248,.18))' : ''; }); itens[fqrSugIdx].scrollIntoView({ block: 'nearest' }); }
+  if (ev.key === 'Enter'){ ev.preventDefault(); fqrEscolherCondominio(box._achados[fqrSugIdx >= 0 ? fqrSugIdx : 0]); }
 });
 document.getElementById('btnCartazesCondominio').addEventListener('click', fqrAbrirCartazes);
 document.getElementById('btnLinksCondominio').addEventListener('click', fqrAbrirLinks);
