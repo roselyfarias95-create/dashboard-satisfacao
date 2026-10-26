@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v175 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v176 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4944,7 +4944,7 @@ CONDOMINIO Y	480	45"></textarea>
       </div>
       <div class="checklist-table-wrap">
         <table class="checklist-table">
-          <thead><tr><th class="ck-name">Nome</th><th>Tabela de Destino</th><th style="text-align:center;">Respostas</th><th>Criado em</th><th></th></tr></thead>
+          <thead><tr><th class="ck-name">Nome</th><th>Tabela de Destino</th><th style="text-align:center;">Respostas</th><th style="text-align:center;">A tratar</th><th>Criado em</th><th></th></tr></thead>
           <tbody id="formulariosQrLista"><tr><td class="empty">Carregando...</td></tr></tbody>
         </table>
       </div>
@@ -4988,12 +4988,14 @@ CONDOMINIO Y	480	45"></textarea>
             <input type="text" class="search" id="fqrFiltroCond" list="fqrFiltroCondLista" placeholder="Condomínio (digite para buscar)" style="display:none;" autocomplete="off">
             <datalist id="fqrFiltroCondLista"></datalist>
             <select class="filter-select" id="fqrFiltroFilial" style="display:none;"><option value="">Filial: todas</option></select>
+            <select class="filter-select" id="fqrFiltroTrat" title="Filtrar pela situação da tratativa"><option value="">Tratativa: todas</option><option value="A tratar">A tratar</option><option value="Em tratativa">Em tratativa</option><option value="Finalizada">Finalizadas</option></select>
             <input type="text" class="search" id="fqrBuscaResposta" placeholder="Buscar em qualquer coluna...">
             <button type="button" class="clearbtn" id="fqrRecolher" style="display:none;">Recolher todos</button>
             <button type="button" class="clearbtn" id="btnExportarRespostasCsv">📊 Exportar CSV</button>
           </div>
         </div>
         <p id="fqrResumoResp" style="font-size:12.5px; color:var(--text-faint); margin:0 0 10px;"></p>
+        <div id="fqrTratAviso" style="display:none;"></div>
         <div class="checklist-table-wrap">
           <table class="checklist-table" id="fqrRespostasTable">
             <thead id="fqrRespostasHead"></thead>
@@ -28162,6 +28164,10 @@ async function loadFormulariosQr(){
       }catch(e){
         f._totalRespostas = null; // tabela pode não existir ainda
       }
+      try{   // quantas já foram finalizadas (o resto ainda está para tratar)
+        const r = await sb.from('formularios_qr_tratativas').select('*', { count: 'exact', head: true }).eq('tabela', f.tabela_destino).eq('status', 'Finalizada');
+        f._finalizadas = r.error ? null : (r.count ?? 0);
+      }catch(e){ f._finalizadas = null; }
     }));
   }catch(e){
     console.warn('Falha ao carregar formularios_qr (a tabela pode não existir ainda no Supabase):', e);
@@ -28181,6 +28187,7 @@ function renderFormulariosQrLista(){
       <td class="ck-name">${escapeHtml(f.nome)}</td>
       <td style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${escapeHtml(f.tabela_destino)}</td>
       <td style="text-align:center;">${f._totalRespostas === null ? '<span style="color:var(--critico);">tabela não encontrada</span>' : f._totalRespostas}</td>
+      <td style="text-align:center;">${(f._totalRespostas === null || f._finalizadas === null || f._finalizadas === undefined) ? '—' : (Math.max(0, f._totalRespostas - f._finalizadas) ? '<span class="neg-chip" style="color:#f59e0b; border-color:#f59e0b; font-weight:700;">' + Math.max(0, f._totalRespostas - f._finalizadas) + '</span>' : '<span style="color:var(--ok);">✔ 0</span>')}</td>
       <td>${f.criado_em ? new Date(f.criado_em).toLocaleDateString('pt-BR') : '—'}</td>
       <td style="text-align:center;">▸</td>
     </tr>
@@ -28523,6 +28530,7 @@ async function carregarRespostasFormulario(formulario){
       if (colData) fqrRespostasAtuais.sort((a, b) => new Date(b[colData] || 0) - new Date(a[colData] || 0));
     }
     fqrGruposRecolhidos.clear();
+    await fqrCarregarTratativas(formulario.tabela_destino);
     fqrPrepararControles();
     fqrAtualizarRespostas();
   }catch(e){
@@ -28548,6 +28556,7 @@ function fqrPrepararControles(){
   document.getElementById('fqrFiltroCond').style.display = tem ? '' : 'none';
   document.getElementById('fqrFiltroFilial').style.display = tem && fqrColFilial ? '' : 'none';
   document.getElementById('fqrFiltroCond').value = '';
+  document.getElementById('fqrFiltroTrat').value = '';
   document.getElementById('fqrAgrupar').checked = true;
   if (tem){
     document.getElementById('fqrFiltroCondLista').innerHTML = [...new Set(fqrRespostasAtuais.map(l => String(l[fqrColCond] || '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(n => '<option value="' + escapeHtml(n) + '"></option>').join('');
@@ -28557,9 +28566,100 @@ function fqrPrepararControles(){
 }
 function fqrRespostasFiltradas(){
   const q = (document.getElementById('fqrBuscaResposta').value || '').trim().toLowerCase();
-  const cond = (document.getElementById('fqrFiltroCond').value || '').trim().toLowerCase(), fil = document.getElementById('fqrFiltroFilial').value;
-  return fqrRespostasAtuais.filter(l => (!q || Object.values(l).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))) &&
+  const cond = (document.getElementById('fqrFiltroCond').value || '').trim().toLowerCase(), fil = document.getElementById('fqrFiltroFilial').value, trat = document.getElementById('fqrFiltroTrat').value;
+  return fqrRespostasAtuais.filter(l => (!trat || fqrStatusTrat(l) === trat) && (!q || Object.values(l).some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q))) &&
     (!cond || (fqrColCond && String(l[fqrColCond] || '').toLowerCase().includes(cond))) && (!fil || (fqrColFilial && String(l[fqrColFilial] || '') === fil)));
+}
+// ----- Tratativa das respostas recebidas por QR: toda resposta nasce "A tratar" e só sai disso quando a tratativa é finalizada -----
+const FQR_TRAT_SQL = "create table if not exists formularios_qr_tratativas (\n  id uuid primary key default gen_random_uuid(),\n  tabela text not null,\n  registro_id text not null,\n  status text not null default 'Em tratativa' check (status in ('Em tratativa', 'Finalizada')),\n  responsavel text,\n  observacao text,\n  historico jsonb not null default '[]'::jsonb,\n  iniciada_em timestamptz,\n  concluida_em timestamptz,\n  atualizado_em timestamptz not null default now(),\n  unique (tabela, registro_id)\n);\nalter table formularios_qr_tratativas enable row level security;\ndrop policy if exists \"fqr_trat_todos\" on formularios_qr_tratativas;\ncreate policy \"fqr_trat_todos\" on formularios_qr_tratativas for all to anon, authenticated using (true) with check (true);";
+let fqrTratativas = new Map(), fqrTratDisponivel = true;
+async function fqrCarregarTratativas(tabela){
+  fqrTratativas = new Map(); fqrTratDisponivel = true;
+  try{
+    const r = await paginar(() => sb.from('formularios_qr_tratativas').select('*').eq('tabela', tabela).order('atualizado_em', { ascending: false }));
+    if (r.error) throw r.error;
+    (r.data || []).forEach(t => fqrTratativas.set(String(t.registro_id), t));
+  }catch(e){ fqrTratDisponivel = false; console.warn('Tratativas (a tabela pode não existir ainda):', e); }
+  const av = document.getElementById('fqrTratAviso'); if (!av) return;
+  if (fqrTratDisponivel){ av.style.display = 'none'; av.innerHTML = ''; return; }
+  av.style.display = 'block'; av.style.cssText = 'display:block; background:rgba(245,158,11,.10); border:1px solid #f59e0b; border-radius:8px; padding:10px 12px; margin:0 0 12px; font-size:12.5px;';
+  av.innerHTML = '⚠️ Para registrar tratativas das respostas, rode o SQL abaixo uma vez no Supabase (SQL Editor). <button type="button" class="clearbtn" id="fqrTratCopiarSql" style="margin-left:6px;">📋 Copiar SQL</button><pre style="white-space:pre-wrap; font-size:11px; margin:8px 0 0; color:var(--text-faint);">' + escapeHtml(FQR_TRAT_SQL) + '</pre>';
+  document.getElementById('fqrTratCopiarSql').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(FQR_TRAT_SQL); alert('SQL copiado.'); }catch(e){ alert('Selecione o texto abaixo e copie.'); } });
+}
+function fqrStatusTrat(l){ const t = fqrTratativas.get(String(l.id)); return t ? t.status : 'A tratar'; }
+function fqrCelulaTrat(l){
+  if (!fqrTratDisponivel || l.id === undefined || l.id === null) return '<td style="color:var(--text-faint);">—</td>';
+  const t = fqrTratativas.get(String(l.id)), pode = negPodeEditar();
+  const bt = (rot, cor) => '<button type="button" class="clearbtn" data-trat="' + escapeHtml(String(l.id)) + '" style="border-color:' + cor + '; color:' + cor + '; font-size:11.5px; padding:4px 8px; white-space:nowrap; margin-top:4px;">' + rot + '</button>';
+  const chip = (txt, cor) => '<span class="neg-chip" style="color:' + cor + '; border-color:' + cor + ';">' + txt + '</span>';
+  if (!t) return '<td style="white-space:nowrap;">' + chip('A tratar', '#f59e0b') + (pode ? '<br>' + bt('🛠 Realizar tratativa', '#f59e0b') : '') + '</td>';
+  if (t.status === 'Finalizada'){ const d = t.concluida_em ? new Date(t.concluida_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : ''; return '<td style="white-space:nowrap;">' + chip('✔ Finalizada ' + d, 'var(--ok)') + '<br>' + bt('Ver tratativa', 'var(--text-faint)') + '</td>'; }
+  return '<td style="white-space:nowrap;">' + chip('Em tratativa' + (t.responsavel ? ' · ' + escapeHtml(String(t.responsavel).split(' ')[0]) : ''), '#38bdf8') + '<br>' + bt(pode ? 'Continuar tratativa' : 'Ver tratativa', '#38bdf8') + '</td>';
+}
+function fqrResumoTrat(linhas){
+  if (!fqrTratDisponivel) return '';
+  const c = { 'A tratar': 0, 'Em tratativa': 0, 'Finalizada': 0 }; linhas.forEach(l => { c[fqrStatusTrat(l)]++; });
+  return ' · <strong style="color:' + (c['A tratar'] ? '#f59e0b' : 'var(--ok)') + ';">' + c['A tratar'] + ' a tratar</strong> · ' + c['Em tratativa'] + ' em tratativa · ' + c['Finalizada'] + ' finalizada(s)';
+}
+function fqrResumoTratGrupo(ls){
+  if (!fqrTratDisponivel) return '';
+  const n = ls.filter(l => fqrStatusTrat(l) === 'A tratar').length;
+  return n ? ' <span style="font-size:12px; color:#f59e0b; font-weight:700;">· ' + n + ' a tratar</span>' : ' <span style="font-size:12px; color:var(--ok);">· ✔ tratadas</span>';
+}
+async function fqrSalvarTratativa(linha, status, texto, responsavel){
+  const reg = String(linha.id), tab = formularioQrSelecionado.tabela_destino, agora = new Date().toISOString(), antigo = fqrTratativas.get(reg);
+  const hist = (antigo && Array.isArray(antigo.historico)) ? antigo.historico.slice() : [];
+  hist.push({ em: agora, por: assistUsuario(), status, responsavel: responsavel || null, texto: texto || '' });
+  const dados = { tabela: tab, registro_id: reg, status, responsavel: responsavel || null, observacao: texto || null, historico: hist, iniciada_em: (antigo && antigo.iniciada_em) || agora, concluida_em: status === 'Finalizada' ? agora : null, atualizado_em: agora };
+  const { data, error } = await sb.from('formularios_qr_tratativas').upsert(dados, { onConflict: 'tabela,registro_id' }).select();
+  if (error) throw error;
+  fqrTratativas.set(reg, Object.assign({}, dados, (data && data[0]) || {}));
+  formularioQrSelecionado._finalizadas = [...fqrTratativas.values()].filter(t => t.status === 'Finalizada').length;
+  try{ renderFormulariosQrLista(); }catch(e){}
+}
+function fqrAbrirTratativa(linha){
+  const reg = String(linha.id), rec = fqrTratativas.get(reg) || null, pode = negPodeEditar(), finalizada = !!(rec && rec.status === 'Finalizada');
+  const pular = new Set(['id', 'envio_id', 'notas_setores']), rotulo = k => k.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  const campos = Object.keys(linha).filter(k => !pular.has(k) && linha[k] !== null && linha[k] !== '').map(k => {
+    const v = linha[k]; let h;
+    if (fqrEhColunaImagem(k, v)) h = '<img src="' + escapeHtml(v) + '" style="width:72px; height:72px; object-fit:cover; border-radius:8px;">';
+    else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(v))) h = escapeHtml(new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }));
+    else h = escapeHtml(String(v));
+    return '<div style="display:flex; gap:10px; padding:5px 0; border-bottom:1px solid var(--line);"><div style="flex:0 0 130px; color:var(--text-faint); font-size:11.5px;">' + escapeHtml(rotulo(k)) + '</div><div style="font-size:13px; word-break:break-word; min-width:0;">' + h + '</div></div>';
+  }).join('');
+  const hist = rec && Array.isArray(rec.historico) ? rec.historico.slice().reverse() : [];
+  const histHtml = hist.length ? hist.map(h => '<div style="padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;"><strong>' + escapeHtml(new Date(h.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })) + '</strong> · ' + escapeHtml(h.por || '') + ' · <em>' + escapeHtml(h.status || '') + '</em>' + (h.responsavel ? ' · resp.: ' + escapeHtml(h.responsavel) : '') + '<div style="margin-top:2px; white-space:pre-wrap;">' + escapeHtml(h.texto || '') + '</div></div>').join('') : '<p style="margin:6px 0; color:var(--text-faint); font-size:12.5px;">Ainda sem registros.</p>';
+  const pessoas = listaPessoasParaEscolher(), atual = (rec && rec.responsavel) || (typeof meuNomeCarteira === 'function' && meuNomeCarteira()) || '';
+  const opcoes = '<option value="">— escolha —</option>' + [...new Set([atual, ...pessoas].filter(Boolean))].map(n => '<option' + (n === atual ? ' selected' : '') + '>' + escapeHtml(n) + '</option>').join('');
+  let el = document.getElementById('fqrTratModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'fqrTratModal'; el.style.cssText = 'position:fixed; inset:0; z-index:9650; background:rgba(3,6,14,.74); display:flex; align-items:center; justify-content:center; padding:18px;';
+  const quem = [linha[fqrColCond], linha[fqrColFilial], linha.unidade ? 'unidade ' + linha.unidade : ''].filter(Boolean).join(' · ');
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:900px; max-height:92vh; overflow:auto; padding:20px 22px;">' +
+    '<div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;"><div><div style="font-size:17px; font-weight:800;">🛠 Tratativa' + (finalizada ? ' <span style="color:var(--ok);">· finalizada</span>' : '') + '</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:2px;">' + escapeHtml(formularioQrSelecionado.nome) + (quem ? ' · ' + escapeHtml(quem) : '') + '</div></div><button type="button" class="modal-close" id="fqrTratFechar" style="position:static;">×</button></div>' +
+    '<div style="display:flex; gap:18px; flex-wrap:wrap; margin-top:14px;">' +
+      '<div style="flex:1 1 320px; min-width:0;"><div style="font-weight:700; font-size:13px; margin-bottom:4px;">O que foi respondido</div>' + campos + '</div>' +
+      '<div style="flex:1 1 320px; min-width:0;"><div style="font-weight:700; font-size:13px; margin-bottom:6px;">Tratativa</div>' +
+        '<label style="display:block; font-size:12px; color:var(--text-faint); font-weight:600; margin-bottom:8px;">Responsável<select id="fqrTratResp" style="width:100%; margin-top:4px;" ' + (pode && !finalizada ? '' : 'disabled') + '>' + opcoes + '</select></label>' +
+        '<label style="display:block; font-size:12px; color:var(--text-faint); font-weight:600;">O que foi feito / combinado<textarea id="fqrTratTexto" rows="6" style="width:100%; margin-top:4px; box-sizing:border-box;" placeholder="Ex.: liguei para o síndico, ajustei o cadastro, retornei ao morador..." ' + (pode && !finalizada ? '' : 'readonly') + '>' + escapeHtml((rec && rec.observacao) || '') + '</textarea></label>' +
+        '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">' +
+          (pode ? (finalizada ? '<button type="button" class="clearbtn" id="fqrTratReabrir">↩ Reabrir tratativa</button>' : '<button type="button" class="clearbtn" id="fqrTratSalvar">💾 Salvar (continua em tratativa)</button><button type="button" class="login-btn" id="fqrTratFinalizar" style="width:auto; margin-top:0; padding:9px 16px;">✔ Finalizar tratativa</button>') : '<span style="font-size:12px; color:var(--text-faint);">Seu perfil só consulta as tratativas.</span>') +
+        '</div>' +
+        '<div style="font-weight:700; font-size:13px; margin:16px 0 2px;">Histórico</div>' + histHtml +
+      '</div></div></div>';
+  document.body.appendChild(el);
+  document.getElementById('fqrTratFechar').addEventListener('click', () => el.remove());
+  const gravar = async (status) => {
+    const texto = document.getElementById('fqrTratTexto').value.trim(), resp = document.getElementById('fqrTratResp').value;
+    if (status === 'Finalizada' && !texto){ alert('Descreva o que foi feito na tratativa antes de finalizar.'); document.getElementById('fqrTratTexto').focus(); return; }
+    if (status === 'Em tratativa' && !texto && !resp && !rec){ alert('Escolha o responsável ou escreva o que está sendo tratado para registrar a tratativa.'); return; }
+    el.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    try{ await fqrSalvarTratativa(linha, status, texto, resp); el.remove(); fqrAtualizarRespostas(); }
+    catch(e){ el.querySelectorAll('button').forEach(b => { b.disabled = false; }); alert('Não consegui salvar a tratativa: ' + (e.message || e) + (/relation|does not exist|formularios_qr_tratativas|schema cache/i.test(String(e.message)) ? '\n\nRode o SQL das tratativas no Supabase (ele aparece acima da tabela de respostas).' : '')); }
+  };
+  const bS = document.getElementById('fqrTratSalvar'), bF = document.getElementById('fqrTratFinalizar'), bR = document.getElementById('fqrTratReabrir');
+  if (bS) bS.addEventListener('click', () => gravar('Em tratativa'));
+  if (bF) bF.addEventListener('click', () => gravar('Finalizada'));
+  if (bR) bR.addEventListener('click', () => { if (confirm('Reabrir esta tratativa?')) { el.remove(); fqrSalvarTratativa(linha, 'Em tratativa', (rec && rec.observacao) || '', (rec && rec.responsavel) || '').then(() => fqrAtualizarRespostas()).catch(e => alert('Não consegui reabrir: ' + (e.message || e))); } });
 }
 function fqrCelula(c, valor){
   if (fqrEhColunaImagem(c, valor)) return `<td><img src="${escapeHtml(valor)}" data-fqr-ver-imagem="${escapeHtml(valor)}" style="width:44px; height:44px; object-fit:cover; border-radius:6px; cursor:pointer;"></td>`;
@@ -28576,23 +28676,23 @@ function fqrAtualizarRespostas(){
   if (!linhas.length){ thead.innerHTML = ''; tbody.innerHTML = '<tr><td class="empty">Nenhuma resposta neste filtro.</td></tr>'; document.getElementById('fqrResumoResp').textContent = ''; return; }
   const todas = Object.keys(fqrRespostasAtuais[0]).filter(c => c !== 'id');
   const colunas = agrupar ? todas.filter(c => c !== fqrColCond && c !== fqrColFilial && !/^condominio_id$/i.test(c)) : todas;
-  thead.innerHTML = `<tr>${colunas.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr><th style="min-width:150px;">Tratativa</th>${colunas.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
   const mediaDe = l => { const v = l.map(x => x[fqrColNota]).filter(n => n !== null && n !== undefined && n !== '').map(Number).filter(n => !isNaN(n)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const corNota = n => n === null ? 'var(--text-faint)' : (n >= 9 ? 'var(--ok)' : (n >= 7 ? '#f59e0b' : 'var(--critico)'));
   const fmt = n => n === null ? '—' : n.toFixed(1).replace('.', ',');
   const grupos = new Map();
   if (agrupar) linhas.forEach(l => { const k = String(l[fqrColCond] || '(sem condomínio)') + '|' + String(fqrColFilial ? l[fqrColFilial] || '' : ''); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(l); });
   const mg = fqrColNota ? mediaDe(linhas) : null;
-  document.getElementById('fqrResumoResp').innerHTML = linhas.length + ' resposta(s)' + (agrupar ? ' em ' + grupos.size + ' condomínio(s)' : '') + (mg !== null ? ' · nota geral média <strong style="color:' + corNota(mg) + ';">' + fmt(mg) + '</strong>' : '') + (linhas.length !== fqrRespostasAtuais.length ? ' (de ' + fqrRespostasAtuais.length + ' no total)' : '');
+  document.getElementById('fqrResumoResp').innerHTML = linhas.length + ' resposta(s)' + (agrupar ? ' em ' + grupos.size + ' condomínio(s)' : '') + (mg !== null ? ' · nota geral média <strong style="color:' + corNota(mg) + ';">' + fmt(mg) + '</strong>' : '') + (linhas.length !== fqrRespostasAtuais.length ? ' (de ' + fqrRespostasAtuais.length + ' no total)' : '') + fqrResumoTrat(linhas);
   if (!agrupar){
-    tbody.innerHTML = linhas.map(l => `<tr>${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
+    tbody.innerHTML = linhas.map(l => `<tr>${fqrCelulaTrat(l)}${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
   } else {
     const ord = [...grupos.entries()].sort((a, b) => (fqrColFilial ? String(a[1][0][fqrColFilial] || '').localeCompare(String(b[1][0][fqrColFilial] || ''), 'pt-BR') : 0) || String(a[1][0][fqrColCond]).localeCompare(String(b[1][0][fqrColCond]), 'pt-BR'));
     tbody.innerHTML = ord.map(([k, ls]) => {
       const m = fqrColNota ? mediaDe(ls) : null, rec = fqrGruposRecolhidos.has(k), filial = fqrColFilial ? (ls[0][fqrColFilial] || '') : '';
-      return `<tr class="fqr-grupo" data-fqr-grupo="${escapeHtml(k)}" style="cursor:pointer; background:var(--bg-panel);"><td colspan="${colunas.length}" style="padding:9px 10px; border-top:2px solid var(--accent); text-align:left;"><span class="fqr-seta">${rec ? '▸' : '▾'}</span> <strong>${escapeHtml(String(ls[0][fqrColCond] || '(sem condomínio)'))}</strong>` +
-        (filial ? ` <span style="color:var(--text-faint); font-size:12px;">· ${escapeHtml(filial)}</span>` : '') + ` <span style="color:var(--text-faint); font-size:12px;">· ${ls.length} resposta(s)</span>` + (m !== null ? ` <span style="font-size:12px; color:${corNota(m)}; font-weight:700;">· nota geral média ${fmt(m)}</span>` : '') + `</td></tr>` +
-        ls.map(l => `<tr data-fqr-filho="${escapeHtml(k)}"${rec ? ' style="display:none;"' : ''}>${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
+      return `<tr class="fqr-grupo" data-fqr-grupo="${escapeHtml(k)}" style="cursor:pointer; background:var(--bg-panel);"><td colspan="${colunas.length + 1}" style="padding:9px 10px; border-top:2px solid var(--accent); text-align:left;"><span class="fqr-seta">${rec ? '▸' : '▾'}</span> <strong>${escapeHtml(String(ls[0][fqrColCond] || '(sem condomínio)'))}</strong>` +
+        (filial ? ` <span style="color:var(--text-faint); font-size:12px;">· ${escapeHtml(filial)}</span>` : '') + ` <span style="color:var(--text-faint); font-size:12px;">· ${ls.length} resposta(s)</span>` + (m !== null ? ` <span style="font-size:12px; color:${corNota(m)}; font-weight:700;">· nota geral média ${fmt(m)}</span>` : '') + fqrResumoTratGrupo(ls) + `</td></tr>` +
+        ls.map(l => `<tr data-fqr-filho="${escapeHtml(k)}"${rec ? ' style="display:none;"' : ''}>${fqrCelulaTrat(l)}${colunas.map(c => fqrCelula(c, l[c])).join('')}</tr>`).join('');
     }).join('');
     tbody.querySelectorAll('tr.fqr-grupo').forEach(tr => tr.addEventListener('click', () => {
       const k = tr.getAttribute('data-fqr-grupo'), fechar = !fqrGruposRecolhidos.has(k);
@@ -28601,6 +28701,7 @@ function fqrAtualizarRespostas(){
       tbody.querySelectorAll('tr[data-fqr-filho]').forEach(f => { if (f.getAttribute('data-fqr-filho') === k) f.style.display = fechar ? 'none' : ''; });
     }));
   }
+  tbody.querySelectorAll('[data-trat]').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); const l = fqrRespostasAtuais.find(x => String(x.id) === b.getAttribute('data-trat')); if (l) fqrAbrirTratativa(l); }));
   tbody.querySelectorAll('[data-fqr-ver-imagem]').forEach(img => {
     img.addEventListener('click', () => {
       document.getElementById('fqrImagemAmpliada').src = img.getAttribute('data-fqr-ver-imagem');
@@ -28612,7 +28713,7 @@ function renderRespostasFormulario(linhas){ fqrRespostasAtuais = linhas; fqrPrep
 
 document.getElementById('fqrImagemModalClose').addEventListener('click', ()=>{ document.getElementById('fqrImagemModalOverlay').style.display = 'none'; });
 ['fqrBuscaResposta', 'fqrFiltroCond'].forEach(id => document.getElementById(id).addEventListener('input', fqrAtualizarRespostas));
-['fqrFiltroFilial', 'fqrAgrupar'].forEach(id => document.getElementById(id).addEventListener('change', fqrAtualizarRespostas));
+['fqrFiltroFilial', 'fqrAgrupar', 'fqrFiltroTrat'].forEach(id => document.getElementById(id).addEventListener('change', fqrAtualizarRespostas));
 document.getElementById('fqrRecolher').addEventListener('click', () => {
   const grupos = [...document.querySelectorAll('#fqrRespostasBody tr.fqr-grupo')];
   const todosFechados = grupos.length && grupos.every(g => fqrGruposRecolhidos.has(g.getAttribute('data-fqr-grupo')));
