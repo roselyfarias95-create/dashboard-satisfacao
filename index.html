@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v172 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v174 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -3144,6 +3144,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <label>Lembrete de fim do dia às <input type="time" id="asCfgFimDia" class="search" value="17:30"></label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgPopupEntrada"> Mostrar o resumo do dia (popup com pendências e retornos) ao entrar</label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asCfgAutoAgenda"> Montar a agenda de hoje sozinho no primeiro acesso do dia (equipe e administradores)</label>
+        <label style="display:flex; align-items:center; gap:6px;" title="Quando alguém conclui uma tarefa do assistente (🤖), ela não volta para a agenda nesse prazo, mesmo que o alerta continue. Depois do prazo, volta se ainda estiver pendente. Use 0 para voltar todo dia.">Não repetir tarefa 🤖 concluída nos últimos <input type="number" id="asCfgSilencio" min="0" max="60" class="search" style="width:70px;"> dias</label>
         <button type="button" class="clearbtn" id="asCfgNotif">🔔 Ativar avisos do navegador</button>
       </div>
       <p class="rc-nota">Os avisos (bom dia, novas prioridades altas, fim do dia) aparecem enquanto o dashboard estiver aberto, de segunda a sexta. Se a Agenda do Dia tiver um horário em "Fechamento do dia", o lembrete usa esse horário. Estas opções ficam salvas neste navegador.</p>
@@ -10038,7 +10039,7 @@ const ASSIST_MAX_AGENDA = 6;   // tarefas sugeridas por pessoa (cobranças prime
 let __assistAgProposta = [], __assistAgExistentes = new Set(), __assistTextoFimDia = '', __assistBaseCarregada = false, __assistHoraFim = { dia: '', valor: '' };
 
 function assistCfgLer(){
-  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null, popupEntrada: true, popupOcultoDia: '', agendaAuto: true };
+  const base = { fimDiaHora: '17:30', autoAgenda: false, notif: false, ultimoBomDia: '', ultimoFimDia: '', ultimoAgendaAuto: '', altasVistas: null, popupEntrada: true, popupOcultoDia: '', agendaAuto: true, silencioDias: 7 };
   try{ return Object.assign(base, JSON.parse(localStorage.getItem('assistenteAvisosCfg') || '{}')); }catch(e){ return base; }
 }
 function assistCfgSalvar(c){ try{ localStorage.setItem('assistenteAvisosCfg', JSON.stringify(c)); }catch(e){} }
@@ -10079,12 +10080,19 @@ function assistMontarProposta(){
   });
   return saida;
 }
+let __assistAgConcluidas = new Map();   // tarefas do assistente concluídas há pouco: não voltam para a agenda durante o prazo
+function assistSilencioDias(){ const n = parseInt(assistCfgLer().silencioDias, 10); return isNaN(n) ? 7 : Math.max(0, Math.min(60, n)); }
 async function assistCarregarAgendaExistente(){
-  __assistAgExistentes = new Set();
+  __assistAgExistentes = new Set(); __assistAgConcluidas = new Map();
   if (!sb) return;
   try{
-    const { data } = await sb.from('agenda_diaria_tarefas').select('responsavel,titulo').eq('data', agendaHojeISO());
-    (data || []).forEach(t => __assistAgExistentes.add(assistChaveAgenda(t.responsavel, t.titulo)));
+    const hoje = agendaHojeISO(), dias = assistSilencioDias(), desde = dias > 0 ? assistSomaDias(hoje, -dias) : hoje;
+    const { data } = await sb.from('agenda_diaria_tarefas').select('responsavel,titulo,data,concluida').gte('data', desde).lte('data', hoje);
+    (data || []).forEach(t => {
+      const k = assistChaveAgenda(t.responsavel, t.titulo);
+      if (assistDiaLocal(t.data) === hoje) __assistAgExistentes.add(k);
+      else if (t.concluida && dias > 0 && String(t.titulo || '').startsWith('🤖')) __assistAgConcluidas.set(k, assistDiaLocal(t.data));
+    });
   }catch(e){ console.warn('Agenda do dia (leitura):', e); }
 }
 async function assistRenderAgenda(){
@@ -10096,10 +10104,11 @@ async function assistRenderAgenda(){
     const semDono = g.resp === 'Sem responsável';
     const nomeAg = semDono ? '' : assistNomeNaAgenda(g.resp);
     const linhas = g.itens.map((it, ii) => {
-      const ja = !semDono && __assistAgExistentes.has(assistChaveAgenda(nomeAg, it.titulo));
+      const chaveAg = assistChaveAgenda(nomeAg, it.titulo), jaConc = !semDono && !__assistAgExistentes.has(chaveAg) ? __assistAgConcluidas.get(chaveAg) : null;
+      const ja = (!semDono && __assistAgExistentes.has(chaveAg)) || !!jaConc;
       if (!ja && !semDono) novas++;
       return '<label class="as-linha-ag"><input type="checkbox" data-ag="' + gi + ':' + ii + '" ' + (ja || semDono ? 'disabled' : 'checked') + '> ' + assistTagPrio(it.prio === 'alta' ? 'Alta' : 'Média') +
-        '<span style="flex:1;">' + escapeHtml(it.titulo) + ' <span style="color:var(--text-faint);">(' + escapeHtml(it.origem) + ')</span></span>' + (ja ? '<span class="as-tag as-tag-cob">já está na agenda</span>' : '') + '</label>';
+        '<span style="flex:1;">' + escapeHtml(it.titulo) + ' <span style="color:var(--text-faint);">(' + escapeHtml(it.origem) + ')</span></span>' + (jaConc ? '<span class="as-tag as-tag-cob" title="Concluída há pouco: volta depois do prazo, se ainda estiver pendente.">concluída em ' + jaConc.slice(8, 10) + '/' + jaConc.slice(5, 7) + '</span>' : (ja ? '<span class="as-tag as-tag-cob">já está na agenda</span>' : '')) + '</label>';
     }).join('');
     return '<div class="as-card as-media"><div class="as-tit">' + escapeHtml(g.resp) + ' <span style="font-weight:400; color:var(--text-faint);">· ' + g.itens.length + (g.total > g.itens.length ? ' de ' + g.total + ' (limite de ' + ASSIST_MAX_AGENDA + ' por dia)' : '') + ' tarefa(s)</span></div>' +
       (semDono ? '<div class="as-sub" style="color:#f59e0b;">Sem responsável: atribua em Pesquisas &gt; Carteiras para essas tarefas entrarem na agenda de alguém.</div>' : '') + linhas + '</div>';
@@ -10114,24 +10123,25 @@ async function assistEnviarAgenda(marcadas, silencioso){
   if (!assistPodeEditar() && !(silencioso && souDaEquipe())){ if (!silencioso) alert('Só administradores e editores enviam tarefas para a agenda.'); return { enviadas: 0 }; }   // a montagem automática vale para toda a equipe
   await assistCarregarAgendaExistente();
   const propostas = marcadas || assistMontarProposta();
-  const hoje = agendaHojeISO(), novas = [];
+  const hoje = agendaHojeISO(), novas = []; let puladas = 0;
   propostas.forEach(g => {
     if (g.resp === 'Sem responsável') return;
     const nomeAg = assistNomeNaAgenda(g.resp);
     g.itens.forEach(it => {
       const k = assistChaveAgenda(nomeAg, it.titulo);
       if (__assistAgExistentes.has(k)) return;
+      if (__assistAgConcluidas.has(k)){ puladas++; return; }   // concluída há pouco: não volta ainda
       __assistAgExistentes.add(k);
       novas.push({ data: hoje, responsavel: nomeAg, titulo: it.titulo, prioridade: it.prio, ordem: 100 + novas.length });
     });
   });
-  if (!novas.length){ if (!silencioso) alert('Nenhuma tarefa nova: o que foi sugerido já está na Agenda do Dia.'); return { enviadas: 0 }; }
+  if (!novas.length){ if (!silencioso) alert('Nenhuma tarefa nova: o que foi sugerido já está na Agenda do Dia' + (puladas ? ' ou foi concluído nos últimos ' + assistSilencioDias() + ' dias (' + puladas + ').' : '.')); return { enviadas: 0, puladas }; }
   try{
     const { error } = await sb.from('agenda_diaria_tarefas').insert(novas);
     if (error) throw error;
     try{ if (typeof loadAgendaDoDia === 'function') loadAgendaDoDia(); }catch(e){}
     if (!silencioso) alert(novas.length + ' tarefa(s) enviada(s) para a Agenda do Dia de hoje.');
-    return { enviadas: novas.length };
+    return { enviadas: novas.length, puladas };
   }catch(e){
     console.error('Enviar para a agenda:', e);
     if (!silencioso) alert('Não consegui enviar para a Agenda do Dia: ' + (e && e.message ? e.message : e));
@@ -10366,6 +10376,7 @@ function assistCarregarCfgNaTela(){
   const c = assistCfgLer();
   document.getElementById('asCfgFimDia').value = c.fimDiaHora || '17:30';
   document.getElementById('asCfgAutoAgenda').checked = c.agendaAuto !== false;
+  document.getElementById('asCfgSilencio').value = assistSilencioDias();
   document.getElementById('asCfgPopupEntrada').checked = c.popupEntrada !== false;
   const btn = document.getElementById('asCfgNotif');
   btn.textContent = (c.notif && 'Notification' in window && Notification.permission === 'granted') ? '🔔 Avisos do navegador ativados' : '🔔 Ativar avisos do navegador';
@@ -10374,6 +10385,7 @@ function assistSalvarCfgDaTela(){
   const c = assistCfgLer();
   c.fimDiaHora = document.getElementById('asCfgFimDia').value || '17:30';
   c.agendaAuto = document.getElementById('asCfgAutoAgenda').checked;
+  { const n = parseInt(document.getElementById('asCfgSilencio').value, 10); c.silencioDias = isNaN(n) ? 7 : Math.max(0, Math.min(60, n)); }
   c.popupEntrada = document.getElementById('asCfgPopupEntrada').checked;
   assistCfgSalvar(c);
 }
@@ -26306,6 +26318,7 @@ async function loadAgendaDoDia(){
 
   await agendaTransferirPendentesDeOntem(hoje);
   await agendaInserirTarefasFixasDeHoje(hoje);
+  try{ await carregarTarefasFixas(); }catch(e){}
 
   try{
     const [{ data: tarefas }, { data: contexto }, { data: conferencia }] = await Promise.all([
@@ -26333,6 +26346,7 @@ async function loadAgendaDoDia(){
   renderAgendaConferencia();
 }
 
+function agendaChaveTarefa(t){ return String(t.responsavel || '').trim().toLowerCase() + '|' + String(t.titulo || '').trim().toLowerCase(); }
 async function agendaTransferirPendentesDeOntem(hoje){
   try{
     const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('pendentes_transferidas').eq('data', hoje).maybeSingle();
@@ -26342,7 +26356,10 @@ async function agendaTransferirPendentesDeOntem(hoje){
     d.setDate(d.getDate() - 1);
     const ontem = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-    const { data: pendentesOntem } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', ontem).eq('concluida', false);
+    const { data: pendentesOntem0 } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', ontem).eq('concluida', false);
+    const { data: jaHoje } = await sb.from('agenda_diaria_tarefas').select('responsavel,titulo').eq('data', hoje);
+    const vistas = new Set((jaHoje || []).map(t => agendaChaveTarefa(t)));
+    const pendentesOntem = (pendentesOntem0 || []).filter(t => { const k = agendaChaveTarefa(t); if (vistas.has(k)) return false; vistas.add(k); return true; });   // não repete o que já existe hoje (nem copias iguais entre si)
 
     if (pendentesOntem && pendentesOntem.length){
       const novas = pendentesOntem.map(t => ({
@@ -26368,7 +26385,10 @@ async function agendaInserirTarefasFixasDeHoje(hoje){
     const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('tarefas_fixas_inseridas').eq('data', hoje).maybeSingle();
     if (contextoHoje && contextoHoje.tarefas_fixas_inseridas) return; // já rodou hoje, não duplica
 
-    const { data: fixas } = await sb.from('agenda_tarefas_fixas').select('*').eq('ativo', true).order('ordem', { ascending:true });
+    const { data: fixas0 } = await sb.from('agenda_tarefas_fixas').select('*').eq('ativo', true).order('ordem', { ascending:true });
+    const { data: jaHoje } = await sb.from('agenda_diaria_tarefas').select('responsavel,titulo').eq('data', hoje);
+    const vistas = new Set((jaHoje || []).map(t => agendaChaveTarefa(t)));
+    const fixas = (fixas0 || []).filter(f => { const k = agendaChaveTarefa(f); if (vistas.has(k)) return false; vistas.add(k); return true; });
     if (fixas && fixas.length){
       const novas = fixas.map(f => ({
         data: hoje, responsavel: f.responsavel, titulo: f.titulo, prioridade: f.prioridade,
@@ -26452,6 +26472,8 @@ document.getElementById('agendaFixaAddBtn').addEventListener('click', async ()=>
   }
 });
 
+const agendaEhFixa = t => (agendaTarefasFixasData || []).some(f => agendaChaveTarefa(f) === agendaChaveTarefa(t));
+const AGENDA_SELO_FIXA = '<span class="agenda-badge" style="background:rgba(56,189,248,0.16); color:#38bdf8;" title="Tarefa fixa: volta todos os dias de propósito. Para parar de repetir, desative em Tarefas fixas.">🔁 fixa</span> ';
 function renderAgendaLanes(){
   const el = document.getElementById('agendaLanes');
   if (!el) return;
@@ -26479,7 +26501,7 @@ function renderAgendaLanes(){
             return `
             <div class="agenda-task ${t.concluida?'done':''}" style="flex-direction:column; align-items:stretch; gap:4px;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <span class="txt" style="flex:1;">${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+                <span class="txt" style="flex:1;">${agendaEhFixa(t) ? AGENDA_SELO_FIXA : ''}${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
                 <button type="button" data-agenda-editar="${t.id}" title="Editar tarefa" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px;">✏️</button>
                 <button type="button" class="agenda-del" data-agenda-promover="${t.id}" title="Virar Demanda formal" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px;">📋→</button>
                 <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
@@ -26494,7 +26516,7 @@ function renderAgendaLanes(){
           return `
           <label class="agenda-task ${t.concluida?'done':''}">
             <input type="checkbox" data-agenda-check="${t.id}" ${t.concluida?'checked':''}>
-            <span class="txt">${t.veio_atrasada?'<span class="agenda-badge" style="background:rgba(139,148,167,0.18); color:var(--text-faint);">⏰ atrasada</span> ':''}${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
+            <span class="txt">${t.veio_atrasada?'<span class="agenda-badge" style="background:rgba(139,148,167,0.18); color:var(--text-faint);">⏰ atrasada</span> ':''}${agendaEhFixa(t) ? AGENDA_SELO_FIXA : ''}${escapeHtml(t.titulo)} ${t.prioridade==='alta'?'<span class="agenda-badge">alta</span>':'<span class="agenda-badge media">média</span>'}</span>
             <button type="button" data-agenda-editar="${t.id}" title="Editar tarefa" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px; flex-shrink:0;">✏️</button>
             <button type="button" data-agenda-promover="${t.id}" title="Virar Demanda formal" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:12px; flex-shrink:0;">📋→</button>
             <button type="button" class="agenda-del" data-agenda-del="${t.id}" title="Excluir tarefa">✕</button>
@@ -26512,14 +26534,15 @@ function renderAgendaLanes(){
     cb.addEventListener('change', async ()=>{
       const id = cb.getAttribute('data-agenda-check');
       try{
-        const { error } = await sb.from('agenda_diaria_tarefas').update({ concluida: cb.checked }).eq('id', id);
+        const { data, error } = await sb.from('agenda_diaria_tarefas').update({ concluida: cb.checked }).eq('id', id).select('id');
         if (error) throw error;
+        if (!data || !data.length) throw new Error('o servidor não gravou (nenhuma linha foi atualizada). Atualize a página e tente de novo.');
         const t = agendaTarefasData.find(x=>String(x.id)===id);
         if (t) t.concluida = cb.checked;
         renderAgendaLanes();
         renderAgendaKpis();
         agendaAtualizarCarimbo();
-      }catch(e){ alert('Erro ao salvar: ' + e.message); }
+      }catch(e){ alert('Erro ao salvar: ' + e.message); cb.checked = !cb.checked; }
     });
   });
   el.querySelectorAll('[data-agenda-meta-atual]').forEach(input=>{
@@ -26576,14 +26599,19 @@ function renderAgendaLanes(){
       if (!confirm(`Marcar todas as tarefas de ${resp} como concluídas?`)) return;
       try{
         const tarefasDaPessoa = agendaTarefasData.filter(t=>t.responsavel===resp);
-        await Promise.all(tarefasDaPessoa.map(t => {
+        const resultados = await Promise.all(tarefasDaPessoa.map(async t => {
           const payload = t.meta_total ? { concluida: true, meta_atual: t.meta_total } : { concluida: true };
-          return sb.from('agenda_diaria_tarefas').update(payload).eq('id', t.id);
+          try{
+            const { data, error } = await sb.from('agenda_diaria_tarefas').update(payload).eq('id', t.id).select('id');
+            return !error && data && data.length > 0;     // só vale se o servidor confirmou que gravou
+          }catch(e){ return false; }
         }));
-        tarefasDaPessoa.forEach(t=>{ t.concluida = true; if (t.meta_total) t.meta_atual = t.meta_total; });
+        let falhas = 0;
+        tarefasDaPessoa.forEach((t, i) => { if (resultados[i]){ t.concluida = true; if (t.meta_total) t.meta_atual = t.meta_total; } else falhas++; });
         renderAgendaLanes();
         renderAgendaKpis();
         agendaAtualizarCarimbo();
+        if (falhas) alert(falhas + ' tarefa(s) NÃO foram gravadas como concluídas (o servidor não confirmou) e continuam pendentes na tela. Clique em "Marcar tudo" de novo ou marque uma a uma. Se repetir, avise o administrador.');
       }catch(e){ alert('Erro ao salvar: ' + e.message); }
     });
   });
@@ -27812,14 +27840,35 @@ function dupChave(item){
 }
 function dupPodeValidar(){ return typeof currentRole !== 'undefined' && (currentRole === 'admin' || currentRole === 'editor'); }
 function dupSalvarLocal(){ try{ localStorage.setItem('pqNomesValidados', JSON.stringify([...(window.__nomesValidados || [])])); }catch(e){} }
+// Os nomes validados ficam guardados no servidor em configuracoes_sistema (a mesma tabela das metas, que sempre aceita gravar)
+// e, por reserva, em listas_sistema. Leitura: junta as duas. Se nenhuma responder, usa o que está neste navegador.
+const NV_CHAVE = 'pq_nomes_validados';
+async function dupGravarNoServidor(){
+  const lista = [...(window.__nomesValidados || [])];
+  try{
+    const { error } = await sb.from('configuracoes_sistema').upsert({ chave: NV_CHAVE, valor: JSON.stringify(lista), atualizado_em: new Date().toISOString() }, { onConflict: 'chave' });
+    if (!error) return { ok: true };
+    console.warn('Nomes validados (configuracoes_sistema):', error); return { ok: false, erro: error.message || String(error) };
+  }catch(e){ console.warn(e); return { ok: false, erro: e.message || String(e) }; }
+}
 async function carregarNomesValidados(){
-  let set = new Set(), ids = new Map(), doBanco = false;
-  try{ JSON.parse(localStorage.getItem('pqNomesValidados') || '[]').forEach(k => set.add(k)); }catch(e){}
+  let servidor = new Set(), ids = new Map(), doBanco = false;
+  const locais = new Set(); try{ JSON.parse(localStorage.getItem('pqNomesValidados') || '[]').forEach(k => locais.add(k)); }catch(e){}
   if (typeof sb !== 'undefined' && sb){
     try{
-      const { data, error } = await sb.from('listas_sistema').select('id,valor').eq('categoria', 'pq_nomes_validados').eq('ativo', true);
-      if (!error && data){ set = new Set(); data.forEach(r => { set.add(r.valor); ids.set(r.valor, r.id); }); doBanco = true; }
+      const r1 = await sb.from('configuracoes_sistema').select('valor').eq('chave', NV_CHAVE);
+      if (!r1.error && r1.data){ doBanco = true; (r1.data[0] ? (() => { try{ return JSON.parse(r1.data[0].valor || '[]'); }catch(e){ return []; } })() : []).forEach(k => servidor.add(k)); }
     }catch(e){ console.warn('Nomes validados:', e); }
+    try{
+      const r2 = await sb.from('listas_sistema').select('id,valor').eq('categoria', NV_CHAVE).eq('ativo', true);
+      if (!r2.error && r2.data){ doBanco = true; r2.data.forEach(r => { servidor.add(r.valor); ids.set(r.valor, r.id); }); }
+    }catch(e){ console.warn('Nomes validados:', e); }
+  }
+  let set = doBanco ? servidor : locais;
+  // validações que só existiam neste navegador (de quando o servidor não aceitava) passam para o servidor
+  if (doBanco){
+    const faltando = [...locais].filter(k => !servidor.has(k));
+    if (faltando.length && dupPodeValidar()){ faltando.forEach(k => set.add(k)); window.__nomesValidados = set; await dupGravarNoServidor(); }
   }
   window.__nomesValidados = set; window.__nomesValidadosIds = ids; dupSalvarLocal();
   __rcVersao++; __dupAvisoChave = '';
@@ -27829,17 +27878,23 @@ async function carregarNomesValidados(){
 async function validarNomeDistinto(chave){
   if (!window.__nomesValidados) window.__nomesValidados = new Set();
   window.__nomesValidados.add(chave); dupSalvarLocal();
-  let salvou = false;
+  let salvou = false, motivo = '';
   if (typeof sb !== 'undefined' && sb){
-    try{ const { error } = await sb.from('listas_sistema').insert({ categoria: 'pq_nomes_validados', valor: chave, ordem: window.__nomesValidados.size }); salvou = !error; if (error) console.warn(error); }catch(e){ console.warn(e); }
-  }
+    const r = await dupGravarNoServidor(); salvou = r.ok; motivo = r.erro || '';
+    if (!salvou){   // reserva: a tabela de listas
+      try{ const { error } = await sb.from('listas_sistema').insert({ categoria: NV_CHAVE, valor: chave, ordem: window.__nomesValidados.size }); salvou = !error; if (error){ console.warn(error); motivo = motivo || error.message; } }catch(e){ console.warn(e); }
+    }
+  } else motivo = 'sem conexão com o servidor';
   if (salvou) await carregarNomesValidados();
-  else { __rcVersao++; __dupAvisoChave = ''; alert('Validado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão mostrar como repetido.'); }
+  else { __rcVersao++; __dupAvisoChave = ''; alert('Validado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão mostrar como repetido.' + (motivo ? '\n\nMotivo: ' + motivo : '')); }
 }
 async function desfazerNomeValidado(chave){
   const id = (window.__nomesValidadosIds || new Map()).get(chave);
-  if (typeof sb !== 'undefined' && sb && id){ try{ await sb.from('listas_sistema').update({ ativo: false }).eq('id', id); }catch(e){ console.warn(e); } }
   if (window.__nomesValidados) window.__nomesValidados.delete(chave);
+  if (typeof sb !== 'undefined' && sb){
+    if (id){ try{ await sb.from('listas_sistema').update({ ativo: false }).eq('id', id); }catch(e){ console.warn(e); } }
+    await dupGravarNoServidor();
+  }
   dupSalvarLocal(); __rcVersao++; __dupAvisoChave = '';
 }
 function dupVazio(v){ return v === undefined || v === null || String(v).trim() === '' || v === '—' || v === 'Não se aplica'; }
