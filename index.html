@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v177 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v178 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2294,6 +2294,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn" data-renov-subtab="torresarmarios">🗼 Torres e Armários</button>
       <button type="button" class="subtab-btn" data-renov-subtab="comissao">💰 Comissão</button>
       <button type="button" class="subtab-btn" data-renov-subtab="reducao">📉 Redução de Mensalidade</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="pendentediretoria" id="btnSubPendDiretoria">🖊️ Pendente Diretoria</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
       <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
@@ -2559,6 +2560,21 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       </tr></thead><tbody id="renovRedBody"></tbody></table></div>
     </div>
 
+    <div id="renovViewPendDiretoria" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Contratos <strong>renovados com o condomínio</strong> que aguardam a <strong>assinatura da diretoria</strong>. Entram aqui quando a negociação é marcada como <em>"Renovado - Pendente Assinatura da diretoria"</em>. Quando a diretoria assinar, use <strong>✔ Diretoria assinou</strong>: a negociação passa para <strong>Renovados</strong>.</p>
+      <div class="stats-strip" id="renovPdKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:14px;">
+        <input type="text" class="search" id="renovPdBusca" placeholder="Buscar por condomínio...">
+        <select class="filter-select" id="renovPdFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="renovPdResp"><option value="">Responsável: todos</option></select>
+        <button type="button" class="clearbtn" id="renovPdCsv">⬇ Exportar CSV</button>
+      </div>
+      <p class="rc-nota" id="renovPdContagem" style="margin:0 0 8px;"></p>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Negociação</th><th>Aguardando a diretoria</th><th>Tempo renovado</th><th>Nova data de vencimento</th><th>Observação</th><th>Ações</th>
+      </tr></thead><tbody id="renovPdBody"></tbody></table></div>
+    </div>
+
     <div id="renovViewRenovados" style="display:none;">
       <div class="stats-strip" id="renovRenovadosKpis" style="margin-bottom:14px;"></div>
       <div class="toolbar" style="margin-bottom:14px;">
@@ -2756,6 +2772,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
             <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
             <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
             <option value="Ampliação concluída">Ampliação concluída</option>
+            <option value="Renovado - Pendente Assinatura da diretoria">Renovado - Pendente Assinatura da diretoria</option>
             <option value="Renovado">Renovado</option>
             <option value="Renovado - Aguardando Cronograma Técnico">Renovado - Aguardando Cronograma Técnico</option>
             <option value="Renovado - Obra Iniciada">Renovado - Obra Iniciada</option>
@@ -15584,7 +15601,9 @@ function populateRenovFiltros(){
   fillSelect('renovBreveFilterResponsavel', uniq(renovAllCondos.map(c => c.responsavel)));
 }
 
-const NEG_STATUS_FINALIZADOS = ['Renovado', 'Renovado - Aguardando Cronograma Técnico', 'Renovado - Obra Iniciada', 'Renovado - Obra Finalizada', 'Não renovado', 'Cancelado'];
+const NEG_STATUS_PDIR = 'Renovado - Pendente Assinatura da diretoria';
+function ehPendenteDiretoria(status){ return status === NEG_STATUS_PDIR; }   // renovado com o condomínio, esperando a assinatura da diretoria
+const NEG_STATUS_FINALIZADOS = [NEG_STATUS_PDIR, 'Renovado', 'Renovado - Aguardando Cronograma Técnico', 'Renovado - Obra Iniciada', 'Renovado - Obra Finalizada', 'Não renovado', 'Cancelado'];
 function ehStatusRenovado(status){
   return !!status && status.indexOf('Renovado') === 0;
 }
@@ -15596,7 +15615,7 @@ function getFilteredRenovVencidos(){
   const fFilial = document.getElementById('renovFilterFilial').value;
   const fResp = document.getElementById('renovFilterResponsavel').value;
   const q = (document.getElementById('renovVencidosSearch').value || '').trim().toLowerCase();
-  const condosComNegociacao = new Set(renovNegociacoes.filter(negociacaoEmAndamento).map(n => String(n.condo_id)));
+  const condosComNegociacao = new Set(renovNegociacoes.filter(n => negociacaoEmAndamento(n) || ehPendenteDiretoria(n.status)).map(n => String(n.condo_id)));
   return renovVencidos.filter(c=>{
     if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
     if (fFilial && normalizeFilialCanonica(c.filial) !== fFilial) return false;
@@ -15612,7 +15631,7 @@ function getFilteredRenovBreve(){
   const fResp = document.getElementById('renovBreveFilterResponsavel').value;
   const fFaixa = document.getElementById('renovBreveFilterFaixa').value;
   const q = (document.getElementById('renovBreveSearch').value || '').trim().toLowerCase();
-  const condosComNegociacao = new Set(renovNegociacoes.filter(negociacaoEmAndamento).map(n => String(n.condo_id)));
+  const condosComNegociacao = new Set(renovNegociacoes.filter(n => negociacaoEmAndamento(n) || ehPendenteDiretoria(n.status)).map(n => String(n.condo_id)));
   return renovVencendoBreve.filter(c=>{
     if (condosComNegociacao.has(String(c.item_id))) return false; // já tem negociação em andamento — aparece só na aba "Em Negociação"
     if (fFilial && normalizeFilialCanonica(c.filial) !== fFilial) return false;
@@ -15928,6 +15947,7 @@ function negBadge(status){
     "Aguardando faturar o boleto": ["aguardando-boleto","Aguardando faturar o boleto"],
     "Aguardando cronograma da ampliação": ["aguardando-ampliacao","Aguardando cronograma da ampliação"],
     "Ampliação concluída": ["ampliacao-concluida","Ampliação concluída"],
+    "Renovado - Pendente Assinatura da diretoria": ["pendente-assinatura","Renovado - Pend. assinatura diretoria"],
     "Renovado": ["renovado","Renovado"],
     "Renovado - Aguardando Cronograma Técnico": ["renovado","Renovado - Aguardando Cronograma"],
     "Renovado - Obra Iniciada": ["renovado","Renovado - Obra Iniciada"],
@@ -16317,7 +16337,7 @@ function renderRenovComissao(){
 // Comissão = percentual (padrão 50%) do valor do aumento mensal. Em "Paga", o valor fica gravado e não muda mais.
 function comissaoPct(){ return (typeof window.__comissaoPct === 'number' && window.__comissaoPct >= 0) ? window.__comissaoPct : 50; }
 function comissaoCalculada(n){ const x = negAumento(n); return x && x.valor > 0 ? Math.round(x.valor * comissaoPct()) / 100 : 0; }
-function comSituacao(n){ return ['A pagar', 'Paga'].includes(n.comissao_situacao) ? n.comissao_situacao : (ehStatusRenovado(n.status) ? 'A pagar' : 'Prevista'); }
+function comSituacao(n){ return ['A pagar', 'Paga'].includes(n.comissao_situacao) ? n.comissao_situacao : (ehStatusRenovado(n.status) && !ehPendenteDiretoria(n.status) ? 'A pagar' : 'Prevista'); }
 function comValor(n){ return (comSituacao(n) === 'Paga' && n.comissao_valor != null && n.comissao_valor !== '') ? Number(n.comissao_valor) : comissaoCalculada(n); }
 async function salvarComissaoNeg(id, situacao){
   if (!negEhAdmin()) return;
@@ -16339,6 +16359,7 @@ function exportarComissaoCsv(){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'comissao_negociacoes.csv'; document.body.appendChild(a); a.click(); a.remove();
 }
 function renderRenovNegociacoes(){
+  try{ atualizarContadorPendDiretoria(); }catch(e){}
   const body = document.getElementById('renovNegociacoesBody');
   const filtered = getFilteredRenovNegociacoes();
   const countEl = document.getElementById('renovNegociacoesCount');
@@ -16391,6 +16412,62 @@ function renderRenovNegociacoes(){
   }).join('');
 }
 
+// ---------- Sub-aba "Pendente Diretoria": renovados com o condomínio, esperando a assinatura da diretoria ----------
+function renovPdLista(){ return renovNegociacoes.filter(n => ehPendenteDiretoria(n.status)); }
+function renovPdDias(n){
+  const d = new Date(n.updated_at || n.data_negociacao || Date.now());
+  return isNaN(d) ? null : Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+function atualizarContadorPendDiretoria(){
+  const b = document.getElementById('btnSubPendDiretoria'); if (!b) return;
+  const n = renovPdLista().length;
+  b.textContent = '🖊️ Pendente Diretoria' + (n ? ' (' + n + ')' : '');
+}
+function renovPdFiltrada(){
+  const q = (document.getElementById('renovPdBusca').value || '').trim().toLowerCase(), fF = document.getElementById('renovPdFilial').value, fR = document.getElementById('renovPdResp').value;
+  return renovPdLista().filter(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)), filial = condo ? normalizeFilialCanonica(condo.filial) : null;
+    if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
+    if (!(condo ? passaCarteiraCondo(condo) : passaCarteiraItem(n.condo_nome || '', ''))) return false;
+    if (fF && filial !== fF) return false;
+    if (fR && n.responsavel !== fR) return false;
+    return true;
+  }).sort((a, b) => (renovPdDias(b) || 0) - (renovPdDias(a) || 0));   // quem espera há mais tempo aparece primeiro
+}
+function renderRenovPendDiretoria(){
+  atualizarContadorPendDiretoria();
+  const todos = renovPdLista(), lista = renovPdFiltrada(), body = document.getElementById('renovPdBody');
+  fillSelect('renovPdFilial', Array.from(new Set(renovAllCondos.map(c => normalizeFilialCanonica(c.filial)).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('renovPdResp', Array.from(new Set(todos.map(n => n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  const porFilial = { 'Ceará': 0, 'Maranhão': 0, 'Amazonas': 0, 'SECOPI': 0 };
+  todos.forEach(n => { const c = renovAllCondos.find(x => String(x.item_id) === String(n.condo_id)), f = c ? normalizeFilialCanonica(c.filial) : null; if (f && f in porFilial) porFilial[f]++; });
+  const maisAntigo = todos.reduce((m, n) => Math.max(m, renovPdDias(n) || 0), 0);
+  document.getElementById('renovPdKpis').innerHTML = '<div class="stat-box"><div class="snum" style="color:#f59e0b;">' + todos.length + '</div><div class="slbl">Aguardando a diretoria</div></div>' +
+    Object.keys(porFilial).map(f => '<div class="stat-box"><div class="snum">' + porFilial[f] + '</div><div class="slbl">' + f + '</div></div>').join('') +
+    '<div class="stat-box"><div class="snum" style="color:' + (maisAntigo > 15 ? 'var(--critico)' : (maisAntigo > 7 ? '#f59e0b' : 'var(--ok)')) + ';">' + maisAntigo + ' dia(s)</div><div class="slbl">Espera mais antiga</div></div>';
+  document.getElementById('renovPdContagem').textContent = lista.length + ' de ' + todos.length + ' contrato(s) aguardando a assinatura da diretoria';
+  if (!lista.length){ body.innerHTML = '<tr><td colspan="9" class="empty">' + (todos.length ? 'Nenhum contrato encontrado com esses filtros.' : 'Nenhum contrato aguardando a diretoria. Marque uma negociação como "Renovado - Pendente Assinatura da diretoria" para ela aparecer aqui.') + '</td></tr>'; return; }
+  body.innerHTML = lista.map(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)), dias = renovPdDias(n), cor = dias > 15 ? 'var(--critico)' : (dias > 7 ? '#f59e0b' : 'var(--text-faint)');
+    return '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml((condo && condo.filial) || '—') + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) +
+      '</td><td style="color:' + cor + '; font-weight:700;">' + (dias === null ? '—' : dias + ' dia(s)') + '</td><td>' + (n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '—') + '</td><td>' + (n.nova_data ? fmtDataBRRenov(n.nova_data) : '—') +
+      '</td><td style="text-align:left; max-width:220px; white-space:normal;">' + escapeHtml(n.obs || '') + '</td><td style="white-space:nowrap;"><button type="button" class="renov-action-btn" data-pd-assinou="' + n.id + '" style="border-color:var(--ok); color:var(--ok);" title="Abre a negociação já com o status Renovado: confira a data e salve. O contrato passa para Renovados e o Fim do Contrato do Cadastro é atualizado.">✔ Diretoria assinou</button> <button type="button" class="renov-action-btn" data-pd-editar="' + n.id + '">Editar</button></td></tr>';
+  }).join('');
+}
+function exportarPendDiretoriaCsv(){
+  const linhas = [['Condomínio', 'Filial', 'Responsável', 'Data da negociação', 'Dias aguardando a diretoria', 'Tempo renovado (meses)', 'Nova data de vencimento', 'Observação']];
+  renovPdFiltrada().forEach(n => { const c = renovAllCondos.find(x => String(x.item_id) === String(n.condo_id)); linhas.push([n.condo_nome || '', (c && c.filial) || '', n.responsavel || '', n.data_negociacao || '', renovPdDias(n) ?? '', n.tempo_renovado_meses || '', n.nova_data || '', n.obs || '']); });
+  const csv = '\ufeff' + linhas.map(l => l.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'pendente_diretoria.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+['renovPdBusca', 'renovPdFilial', 'renovPdResp'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovPendDiretoria); el.addEventListener('change', renderRenovPendDiretoria); });
+document.getElementById('renovPdCsv').addEventListener('click', exportarPendDiretoriaCsv);
+document.getElementById('renovPdBody').addEventListener('click', ev => {
+  const e = ev.target.closest('[data-pd-editar]'), a = ev.target.closest('[data-pd-assinou]');
+  if (e) editNegociacao(e.getAttribute('data-pd-editar'));
+  if (a){ editNegociacao(a.getAttribute('data-pd-assinou')); document.getElementById('negStatus').value = 'Renovado'; }
+});
+
 // ---------- Sub-abas da Renovação: Vencidos/Negociações | Renovados | Cronograma Técnico ----------
 document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -16400,6 +16477,8 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.getElementById('renovViewVencendoBreve').style.display = alvo === 'vencendobreve' ? 'block' : 'none';
     document.getElementById('renovViewNegociacao').style.display = alvo === 'negociacao' ? 'block' : 'none';
     document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
+    document.getElementById('renovViewPendDiretoria').style.display = alvo === 'pendentediretoria' ? 'block' : 'none';
+    if (alvo === 'pendentediretoria') renderRenovPendDiretoria();
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
@@ -16624,7 +16703,7 @@ function getFilteredRenovRenovados(){
   const fStatus = document.getElementById('renovRenovadosFilterStatus').value;
   const fTempo = document.getElementById('renovRenovadosFilterTempoRenovado').value;
   return renovNegociacoes.filter(n=>{
-    if (!ehStatusRenovado(n.status)) return false;
+    if (!ehStatusRenovado(n.status) || ehPendenteDiretoria(n.status)) return false;   // os que aguardam a diretoria ficam na própria sub-aba
     const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
     const filial = condo ? normalizeFilialCanonica(condo.filial) : null;
     if (q && !(n.condo_nome || '').toLowerCase().includes(q)) return false;
@@ -16639,15 +16718,16 @@ function getFilteredRenovRenovados(){
 
 function renderRenovRenovados(){
   const body = document.getElementById('renovRenovadosBody');
-  const totalRenovados = renovNegociacoes.filter(n => ehStatusRenovado(n.status)).length;
+  const totalRenovados = renovNegociacoes.filter(n => ehStatusRenovado(n.status) && !ehPendenteDiretoria(n.status)).length;
+  try{ atualizarContadorPendDiretoria(); }catch(e){}
   const renovados = getFilteredRenovRenovados();
   fillSelect('renovRenovadosFilterFilial', Array.from(new Set(renovAllCondos.map(c=>normalizeFilialCanonica(c.filial)).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
-  fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>ehStatusRenovado(n.status)).map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+  fillSelect('renovRenovadosFilterResponsavel', Array.from(new Set(renovNegociacoes.filter(n=>ehStatusRenovado(n.status) && !ehPendenteDiretoria(n.status)).map(n=>n.responsavel).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR')));
   document.getElementById('renovRenovadosCount').textContent = `${renovados.length} de ${totalRenovados} contrato(s) renovado(s)`;
 
   const kpisEl = document.getElementById('renovRenovadosKpis');
   if (kpisEl){
-    const renovadosTodos = renovNegociacoes.filter(n => ehStatusRenovado(n.status));
+    const renovadosTodos = renovNegociacoes.filter(n => ehStatusRenovado(n.status) && !ehPendenteDiretoria(n.status));
     const porFilial = { 'Ceará':0, 'Maranhão':0, 'Amazonas':0, 'SECOPI':0 };
     renovadosTodos.forEach(n => {
       const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
@@ -17243,7 +17323,7 @@ async function salvarNegociacao(){
   // Se a negociação foi concluída como "Renovado" e há uma nova data de
   // vencimento, atualiza automaticamente o Fim do Contrato no Cadastro de
   // Condomínios (tabela cadastro_condominios) para esse condomínio.
-  if (ehStatusRenovado(status) && novaData && sb){
+  if (ehStatusRenovado(status) && !ehPendenteDiretoria(status) && novaData && sb){   // com a assinatura da diretoria pendente, o Cadastro ainda não muda
     try{
       const { error } = await sb.from('cadastro_condominios').update({ contrato_fim: novaData }).eq('item_id', condo.item_id);
       if (error) throw error;
