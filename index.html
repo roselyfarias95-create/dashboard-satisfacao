@@ -1765,7 +1765,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v176 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v177 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -19592,6 +19592,71 @@ async function loadLembretes(){
   }catch(e){ console.error('Falha ao carregar lembretes (a tabela pode não existir ainda):', e); }
 }
 
+// ----- Lembrete <-> Demanda: todo lembrete novo gera uma demanda para quem o criou, e concluir (ou reabrir) em uma aba vale para a outra -----
+const LEMB_DEM_SQL = "alter table demandas add column if not exists lembrete_id text;\ncreate index if not exists demandas_lembrete_idx on demandas (lembrete_id);";
+function lembDemResponsavel(){
+  const nome = String((typeof assistUsuario === 'function' && assistUsuario()) || '').trim();
+  const lista = (typeof DEM_RESPONSAVEIS !== 'undefined' ? DEM_RESPONSAVEIS : []), pri = normTxtCarteira(nome).split(' ')[0];
+  return (pri && lista.find(r => normTxtCarteira(r).split(' ')[0] === pri)) || nome || null;
+}
+function lembFilial(cond){
+  if (!cond) return null;
+  const d = (typeof DATA !== 'undefined' ? DATA : []).find(x => normalizeNomeCondo(x.nome) === normalizeNomeCondo(cond));
+  return d ? normalizeFilialCanonica(d.filial) : null;
+}
+function lembSla(l){
+  if (!l.data_vencimento) return null;
+  return Math.max(0, Math.round((new Date(l.data_vencimento + 'T00:00:00') - new Date(hojeISO() + 'T00:00:00')) / 86400000));
+}
+const lembDescricao = l => '🔔 Lembrete: ' + l.titulo + (l.observacao ? ' — ' + l.observacao : '');
+async function lembCriarDemanda(l){
+  const agora = new Date().toISOString(), concl = l.status === 'Concluído';
+  const base = { condominio: (l.condominio || 'SEM CONDOMÍNIO').toUpperCase(), filial: lembFilial(l.condominio), tipo: 'Outro', responsavel: lembDemResponsavel(), descricao: lembDescricao(l), status: concl ? 'Concluída' : 'Aberta', prioridade: lembreteVencido(l) ? 'Alta' : 'Média', data_abertura: agora, data_conclusao: concl ? agora : null, sla_dias: lembSla(l), updated_at: agora };
+  try{ base.risco_contribuinte = demandaRiscoContribuinte(Object.assign({}, base, { id: null })); }catch(e){}
+  let r = await sb.from('demandas').insert(Object.assign({}, base, { lembrete_id: String(l.id) }));
+  if (r.error && /lembrete_id/i.test(r.error.message || '')){
+    r = await sb.from('demandas').insert(base);   // sem a coluna de ligação: cria a demanda mesmo assim e avisa
+    if (!r.error) alert('A demanda foi criada, mas ainda NÃO fica ligada ao lembrete (concluir em uma aba não conclui na outra).\n\nRode este SQL uma vez no Supabase (SQL Editor):\n\n' + LEMB_DEM_SQL);
+  }
+  if (r.error) throw r.error;
+  try{ await loadDemandas(); }catch(e){}
+}
+// lembrete -> demandas ligadas a ele
+async function lembSincronizarDemandas(l){
+  const { data, error } = await sb.from('demandas').select('id,status,descricao,condominio').eq('lembrete_id', String(l.id));
+  if (error){ if (/lembrete_id/i.test(error.message || '')) console.warn('Sem a coluna lembrete_id: rode o SQL do lembrete.'); return; }
+  const agora = new Date().toISOString(), concl = l.status === 'Concluído'; let mudou = false;
+  for (const d of (data || [])){
+    const patch = {};
+    if (concl && d.status !== 'Concluída'){ patch.status = 'Concluída'; patch.data_conclusao = agora; }
+    if (!concl && d.status === 'Concluída'){ patch.status = 'Aberta'; patch.data_conclusao = null; }
+    if (!concl){
+      const desc = lembDescricao(l), cond = (l.condominio || 'SEM CONDOMÍNIO').toUpperCase();
+      if (desc !== d.descricao) patch.descricao = desc;
+      if (cond !== d.condominio){ patch.condominio = cond; patch.filial = lembFilial(l.condominio); }
+      patch.sla_dias = lembSla(l);
+    }
+    if (Object.keys(patch).length){ patch.updated_at = agora; const r = await sb.from('demandas').update(patch).eq('id', d.id); if (!r.error) mudou = true; }
+  }
+  if (mudou){ try{ await loadDemandas(); }catch(e){} }
+}
+// demanda -> lembrete ligado a ela
+async function demSincronizarLembrete(lembreteId, statusDemanda){
+  if (!lembreteId || !sb) return;
+  const novo = statusDemanda === 'Concluída' ? 'Concluído' : 'Pendente';
+  try{
+    const { data, error } = await sb.from('lembretes').update({ status: novo }).eq('id', lembreteId).select('id');
+    if (error) throw error;
+    if (data && data.length){ const l = lembretesData.find(x => String(x.id) === String(lembreteId)); if (l) l.status = novo; await loadLembretes(); }
+  }catch(e){ console.warn('Demanda → lembrete:', e); }
+}
+async function lembAlterarStatus(id, novo){
+  const { error } = await sb.from('lembretes').update({ status: novo }).eq('id', id);
+  if (error) throw error;
+  const l = lembretesData.find(x => String(x.id) === String(id)); if (l) l.status = novo;
+  await lembSincronizarDemandas(Object.assign({}, l || {}, { id, status: novo }));
+  await loadLembretes(); renderLembretes();
+}
 function lembreteVencido(l){
   return l.status !== 'Concluído' && l.data_vencimento && l.data_vencimento < hojeISO();
 }
@@ -19651,8 +19716,14 @@ function renderLembretes(){
         ${l.condominio ? escapeHtml(l.condominio) + ' · ' : ''}${l.data_vencimento ? 'Vence em ' + formatDateBR(l.data_vencimento) : 'Sem data'}
       </p>
       ${l.observacao ? `<p style="font-size:11.5px; color:var(--text-dim); margin:6px 0 0;">${escapeHtml(l.observacao)}</p>` : ''}
+      <div style="margin-top:8px;"><button type="button" class="clearbtn" data-lemb-status="${l.id}" data-novo="${l.status === 'Concluído' ? 'Pendente' : 'Concluído'}" style="font-size:11.5px; padding:4px 10px; ${l.status === 'Concluído' ? '' : 'border-color:var(--ok); color:var(--ok);'}">${l.status === 'Concluído' ? '↩ Reabrir' : '✔ Concluir'}</button></div>
     </div>`;
   }).join('');
+  el.querySelectorAll('[data-lemb-status]').forEach(b => b.addEventListener('click', async ev => {
+    ev.stopPropagation(); b.disabled = true;
+    try{ await lembAlterarStatus(b.getAttribute('data-lemb-status'), b.getAttribute('data-novo')); }
+    catch(e){ b.disabled = false; alert('Erro ao atualizar o lembrete: ' + (e.message || e)); }
+  }));
 
   el.querySelectorAll('[data-editar-lembrete]').forEach(card=>{
     card.onclick = ()=> abrirLembreteModal(lembretesData.find(l => String(l.id) === card.getAttribute('data-editar-lembrete')));
@@ -19701,12 +19772,23 @@ document.getElementById('lembreteSaveBtn').addEventListener('click', async ()=>{
   };
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
   try{
-    const { error } = id
-      ? await sb.from('lembretes').update(payload).eq('id', id)
-      : await sb.from('lembretes').insert(payload);
-    if (error) throw error;
+    let idFinal = id;
+    if (id){ const { error } = await sb.from('lembretes').update(payload).eq('id', id); if (error) throw error; }
+    else {
+      const { data, error } = await sb.from('lembretes').insert(payload).select('id'); if (error) throw error;
+      idFinal = data && data[0] ? data[0].id : null;
+      if (idFinal === null || idFinal === undefined){   // se o servidor não devolveu o id, procura o lembrete recém-criado
+        const r = await sb.from('lembretes').select('id').eq('titulo', titulo).order('id', { ascending: false }).limit(1); idFinal = r.data && r.data[0] ? r.data[0].id : null;
+      }
+    }
     document.getElementById('lembreteModalOverlay').style.display = 'none';
     logActivity(id ? 'editou' : 'criou', 'lembrete', titulo, payload.condominio || null);
+    try{
+      if (idFinal !== null && idFinal !== undefined){
+        if (id) await lembSincronizarDemandas(Object.assign({}, payload, { id: idFinal }));
+        else await lembCriarDemanda(Object.assign({}, payload, { id: idFinal }));
+      }
+    }catch(e2){ console.warn('Lembrete ↔ demanda:', e2); alert('O lembrete foi salvo, mas não consegui criar ou atualizar a demanda ligada a ele: ' + (e2.message || e2)); }
     loadLembretes().then(renderLembretes);
   }catch(e){
     errEl.textContent = 'Erro ao salvar lembrete: ' + e.message;
@@ -23872,7 +23954,9 @@ document.getElementById('demSaveBtn').addEventListener('click', async ()=>{
     if (error) throw error;
     document.getElementById('demModalOverlay').style.display = 'none';
     logActivity(demEditingItem ? 'editou' : 'criou', 'demanda', condominio, descricao.slice(0,80));
+    const lembLigado = demEditingItem && demEditingItem.lembrete_id;
     await loadDemandas();
+    if (lembLigado) await demSincronizarLembrete(lembLigado, statusNovo);
   }catch(e){
     errEl.textContent = 'Erro ao salvar: ' + e.message + (e.message && e.message.includes('demandas') ? ' — a tabela "demandas" pode não existir ainda no Supabase.' : '');
     errEl.style.display = 'block';
@@ -23930,6 +24014,7 @@ document.getElementById('btnConcluirSelecionadasDemandas').addEventListener('cli
     if (error) throw error;
     demSelecionadas.clear();
     await loadDemandas();
+    for (const d of aResolver){ if (d.lembrete_id) await demSincronizarLembrete(d.lembrete_id, 'Concluída'); }
     logActivity('concluiu', 'demanda', null, `${aResolver.length} demanda(s) marcada(s) como Concluída em massa: ${aResolver.slice(0,10).map(d=>d.condominio).join(', ')}${aResolver.length>10?` e mais ${aResolver.length-10}`:''}`);
     alert(`${aResolver.length} demanda(s) marcada(s) como Concluída.`);
   }catch(e){
