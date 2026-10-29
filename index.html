@@ -1172,6 +1172,8 @@
   .as-acoes{ margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
   .as-linha-ag{ display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px dashed var(--border); font-size:12.5px; cursor:pointer; }
   .as-acomp{ margin-top:8px; padding:8px 10px; border-radius:8px; background:rgba(167,139,250,.08); font-size:12px; line-height:1.5; }
+.as-acomp.as-acomp-ok{ background:rgba(245,158,11,.12); border-left:3px solid var(--atencao, #f59e0b); } .as-acomp.as-acomp-ok strong:first-child{ color:var(--atencao, #f59e0b); }
+.as-card.as-concluida{ border-left-color:var(--atencao, #f59e0b) !important; } .as-tag-ok{ background:rgba(245,158,11,.18); color:var(--atencao, #f59e0b); font-weight:700; }
   .rg-barra{ height:5px; background:var(--bg-panel); border-radius:3px; margin-top:3px; min-width:46px; overflow:hidden; }
   .rg-barra > div{ height:100%; }
   .rg-notas{ font-size:11.5px; color:var(--text-faint); line-height:1.7; margin:8px 0 4px; }
@@ -1765,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v178 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v180 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -9846,10 +9848,11 @@ function assistRespOpcoes(sel, comTodos, valor){
 function assistTagPrio(p){ const c = p === 'Alta' ? 'alta' : (p === 'Média' ? 'media' : 'baixa'); return '<span class="as-tag as-tag-' + c + '">' + escapeHtml(p || '—') + '</span>'; }
 function assistBlocoAcomp(a){
   if (!a) return '';
-  const c = assistCobrancaStatus(a);
-  return '<div class="as-acomp"><strong>Acompanhamento:</strong> ' + escapeHtml(a.situacao) + (a.responsavel ? ' · ' + escapeHtml(a.responsavel) : '') +
+  const c = assistCobrancaStatus(a), ok = a.situacao === 'Concluído';
+  const dtOk = ok && a.concluido_em ? ' em ' + String(a.concluido_em).slice(8, 10) + '/' + String(a.concluido_em).slice(5, 7) : '';
+  return '<div class="as-acomp' + (ok ? ' as-acomp-ok' : '') + '"><strong>' + (ok ? '✔ Acompanhamento concluído' + dtOk : 'Acompanhamento:') + '</strong> ' + (ok ? '' : escapeHtml(a.situacao)) + (a.responsavel ? (ok ? '· ' : ' · ') + escapeHtml(a.responsavel) : '') +
     (c ? ' · <span class="as-tag as-tag-cob" style="' + (c.dias <= 0 ? 'background:rgba(239,68,68,.18); color:var(--critico);' : '') + '">' + escapeHtml(c.txt) + '</span>' : '') +
-    (a.providencia ? '<br>Providência: ' + escapeHtml(rcCortar(a.providencia, 160)) : '') + '</div>';
+    (a.providencia ? '<br>Providência: ' + escapeHtml(rcCortar(a.providencia, 160)) : '') + (ok ? '<br><span style="color:var(--atencao, #f59e0b);">⚠ O alerta continua ativo, por isso o condomínio segue na lista.</span>' : '') + '</div>';
 }
 function assistRenderPrioridades(){
   const resp = document.getElementById('asFiltroResp').value, tipo = document.getElementById('asFiltroTipo').value, ocultar = document.getElementById('asOcultarAcomp').checked;
@@ -9864,13 +9867,13 @@ function assistRenderPrioridades(){
     : '';
   document.getElementById('asLista').innerHTML = (lista.length ? '<p class="chart-title" style="margin:14px 0 8px;">🔔 Prioridades (' + lista.length + ')</p>' : '') +
     (lista.length ? lista.map((a, i) => {
-      const reg = assistAcompDaChave(a.chave);
-      return '<div class="as-card as-' + (a.prioridade === 'Alta' ? 'alta' : (a.prioridade === 'Média' ? 'media' : 'baixa')) + '"><div class="as-topo"><div style="min-width:0; flex:1;">' +
-        '<div>' + assistTagPrio(a.prioridade) + '<span class="as-tag" style="background:var(--bg-panel); color:var(--text-faint);">' + escapeHtml(assistGrupoRotulo[a.grupo] || '') + '</span></div>' +
+      const reg = assistAcompDaChave(a.chave), conc = !!(reg && reg.situacao === 'Concluído');
+      return '<div class="as-card as-' + (a.prioridade === 'Alta' ? 'alta' : (a.prioridade === 'Média' ? 'media' : 'baixa')) + (conc ? ' as-concluida' : '') + '"><div class="as-topo"><div style="min-width:0; flex:1;">' +
+        '<div>' + assistTagPrio(a.prioridade) + '<span class="as-tag" style="background:var(--bg-panel); color:var(--text-faint);">' + escapeHtml(assistGrupoRotulo[a.grupo] || '') + '</span>' + (conc ? '<span class="as-tag as-tag-ok">✔ Concluído</span>' : '') + '</div>' +
         '<div class="as-tit" style="margin-top:6px;">' + escapeHtml(a.titulo) + '</div>' +
         '<div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>' + escapeHtml(a.detalhe || '') + '<br><span style="color:#a78bfa;">' + escapeHtml(a.orientacao) + '</span></div>' +
         assistBlocoAcomp(reg) + '</div><div class="as-acoes"><button type="button" class="clearbtn" data-as-abrir="' + i + '">Abrir</button>' +
-        (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="border-color:var(--ok); color:var(--ok);">' + (reg ? 'Atualizar acompanhamento' : 'Acompanhar') + '</button>' : '') + '</div></div></div>';
+        (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button>' : '') + '</div></div></div>';
     }).join('') : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>');
 }
 function assistCartaoAcomp(a){
