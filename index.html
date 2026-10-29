@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v180 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v183 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4726,7 +4726,7 @@ CONDOMINIO Y	480	45"></textarea>
 
     <div class="chart-panel">
       <p class="chart-title">🔖 Status de Negociação <span style="text-transform:none; letter-spacing:0; font-weight:400;">(Renovação de Contratos)</span></p>
-      <p style="font-size:11px; color:var(--text-faint); margin:-4px 0 10px;">Clica no texto pra renomear, no ✕ pra excluir. <b style="color:var(--atencao);">Atenção:</b> o sistema usa o texto salvo de cada negociação (não a lista) pra saber se ela terminou — qualquer status que comece com "Renovado" conta como renovado, e "Não renovado"/"Cancelado" contam como finalizados. Se você renomear esses três, negociações <i>novas</i> com esse status deixam de ser reconhecidas como finalizadas.</p>
+      <p style="font-size:11px; color:var(--text-faint); margin:-4px 0 10px;">Clica no texto pra renomear, no ✕ pra excluir. <b style="color:var(--atencao);">Atenção:</b> o sistema usa o texto salvo de cada negociação (não a lista) pra saber se ela terminou — qualquer status que comece com "Renovado" conta como renovado, e "Não renovado"/"Cancelado" contam como finalizados. "Síndico Rescindiu/Reincidiu o Contrato" também encerra a negociação e deixa o condomínio Inativo no Cadastro. Se você renomear esses, negociações <i>novas</i> com esse status deixam de ser reconhecidas como finalizadas.</p>
       <div id="cfgStatusLista" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
       <div style="display:flex; gap:8px;">
         <input type="text" id="cfgNovoStatus" placeholder="Nome do novo status..." style="flex:1; max-width:280px;">
@@ -9752,24 +9752,30 @@ function assistGerarAlertas(){
       detalhe: mesLabelBR(ultima.m) + (dois.length > 1 ? ' · média dos últimos meses ' + media2.toFixed(1).replace('.', ',') : ''),
       condominio: a.nome, filial: a.filial, acao: { tipo: 'pesquisa', n: ultima.item.n }, peso: 10 - ultima.nota });
   });
-  out.sort((x, y) => (assistPrioOrdem[x.prioridade] - assistPrioOrdem[y.prioridade]) || ((y.peso || 0) - (x.peso || 0)) || String(x.condominio).localeCompare(String(y.condominio), 'pt-BR'));
-  return out;
+  const vistos = new Set(), unicos = out.filter(a => { if (vistos.has(a.chave)) return false; vistos.add(a.chave); return true; });   // nunca dois alertas com a mesma chave
+  unicos.sort((x, y) => (assistPrioOrdem[x.prioridade] - assistPrioOrdem[y.prioridade]) || ((y.peso || 0) - (x.peso || 0)) || String(x.condominio).localeCompare(String(y.condominio), 'pt-BR'));
+  return unicos;
 }
 
 // ----- memória de acompanhamento (Supabase; se a tabela ainda não existe, guarda neste navegador) -----
 function assistLerLocal(){ try{ return JSON.parse(localStorage.getItem('assistenteAcompLocal') || '[]'); }catch(e){ return []; } }
 function assistGravarLocal(){ try{ localStorage.setItem('assistenteAcompLocal', JSON.stringify(__assistAcomp)); }catch(e){} }
 function assistAcompDaChave(chave){ return __assistAcomp.find(a => a.chave === chave) || null; }
+function assistAcompUnicos(lista){
+  const mapa = new Map(), dt = x => String(x.atualizado_em || x.criado_em || '');
+  (lista || []).forEach(r => { const k = r.chave || ('id:' + r.id), ant = mapa.get(k); if (!ant || dt(r) > dt(ant) || (dt(r) === dt(ant) && Number(r.id) > Number(ant.id))) mapa.set(k, r); });
+  return [...mapa.values()];
+}
 async function assistCarregarAcomp(){
-  if (!sb){ __assistModo = 'local'; __assistAcomp = assistLerLocal(); return; }
+  if (!sb){ __assistModo = 'local'; __assistAcomp = assistAcompUnicos(assistLerLocal()); return; }
   const { data, error } = await paginar(() => sb.from('assistente_acompanhamentos').select('*').order('id', { ascending: true }), () => sb.from('assistente_acompanhamentos').select('*'));
   if (error){
     console.warn('Acompanhamentos do Assistente SC (modo local):', error);
-    __assistModo = 'local'; __assistAcomp = assistLerLocal();
+    __assistModo = 'local'; __assistAcomp = assistAcompUnicos(assistLerLocal());
     return;
   }
   __assistModo = 'supabase';
-  __assistAcomp = (data || []).map(r => Object.assign({}, r, { historico: Array.isArray(r.historico) ? r.historico : [] }));
+  __assistAcomp = assistAcompUnicos((data || []).map(r => Object.assign({}, r, { historico: Array.isArray(r.historico) ? r.historico : [] })));
 }
 async function assistSalvarRegistro(reg){
   reg.atualizado_em = new Date().toISOString();
@@ -9856,16 +9862,19 @@ function assistBlocoAcomp(a){
 }
 function assistRenderPrioridades(){
   const resp = document.getElementById('asFiltroResp').value, tipo = document.getElementById('asFiltroTipo').value, ocultar = document.getElementById('asOcultarAcomp').checked;
-  const lista = __assistAlertas.filter(a => (!resp || a.responsavel === resp) && (!tipo || a.grupo === tipo) && (!ocultar || !assistAcompDaChave(a.chave)));
+  const venc = assistCobrancasVencidas().filter(a => !resp || a.responsavel === resp);
+  const chavesCob = new Set(venc.map(a => a.chave));   // alertas com cobrança de hoje ou atrasada já aparecem na seção de cobranças
+  const candidatas = __assistAlertas.filter(a => (!resp || a.responsavel === resp) && (!tipo || a.grupo === tipo) && (!ocultar || !assistAcompDaChave(a.chave)));
+  const lista = candidatas.filter(a => !chavesCob.has(a.chave)), repetidas = candidatas.length - lista.length;
   __assistListaAtual = lista;
   const cont = f => __assistAlertas.filter(f).length;
   const chip = (num, lbl, cor) => '<div class="stat-box"><div class="snum" style="color:' + cor + ';">' + num + '</div><div class="slbl">' + lbl + '</div></div>';
   document.getElementById('asResumo').innerHTML = chip(__assistAlertas.length, 'Prioridades hoje', 'var(--accent)') + chip(cont(a => a.prioridade === 'Alta'), 'Alta prioridade', 'var(--critico)') + chip(cont(a => a.grupo === 'os'), 'O.S. e demandas', '#f59e0b') + chip(cont(a => a.grupo === 'pend'), 'Pendências', '#f59e0b') + chip(cont(a => a.grupo === 'nota'), 'Avaliações baixas', '#f59e0b') + chip(assistCobrancasVencidas().length, 'Cobranças de hoje/atrasadas', '#a78bfa');
-  const venc = assistCobrancasVencidas().filter(a => !resp || a.responsavel === resp);
   document.getElementById('asCobrancas').innerHTML = venc.length
     ? '<p class="chart-title" style="margin:14px 0 8px;">⏰ Cobranças de hoje e atrasadas (' + venc.length + ')</p>' + venc.map(a => assistCartaoAcomp(a)).join('')
     : '';
   document.getElementById('asLista').innerHTML = (lista.length ? '<p class="chart-title" style="margin:14px 0 8px;">🔔 Prioridades (' + lista.length + ')</p>' : '') +
+    (repetidas ? '<p class="rc-nota" style="margin:6px 0 10px;">ℹ️ ' + repetidas + ' prioridade(s) com cobrança de hoje ou atrasada estão na seção acima e não se repetem aqui.</p>' : '') +
     (lista.length ? lista.map((a, i) => {
       const reg = assistAcompDaChave(a.chave), conc = !!(reg && reg.situacao === 'Concluído');
       return '<div class="as-card as-' + (a.prioridade === 'Alta' ? 'alta' : (a.prioridade === 'Média' ? 'media' : 'baixa')) + (conc ? ' as-concluida' : '') + '"><div class="as-topo"><div style="min-width:0; flex:1;">' +
@@ -9874,7 +9883,7 @@ function assistRenderPrioridades(){
         '<div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>' + escapeHtml(a.detalhe || '') + '<br><span style="color:#a78bfa;">' + escapeHtml(a.orientacao) + '</span></div>' +
         assistBlocoAcomp(reg) + '</div><div class="as-acoes"><button type="button" class="clearbtn" data-as-abrir="' + i + '">Abrir</button>' +
         (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button>' : '') + '</div></div></div>';
-    }).join('') : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>');
+    }).join('') : (repetidas ? '' : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>'));
 }
 function assistCartaoAcomp(a){
   const c = assistCobrancaStatus(a);
@@ -15605,13 +15614,18 @@ function populateRenovFiltros(){
 }
 
 const NEG_STATUS_PDIR = 'Renovado - Pendente Assinatura da diretoria';
-function ehPendenteDiretoria(status){ return status === NEG_STATUS_PDIR; }   // renovado com o condomínio, esperando a assinatura da diretoria
+function ehPendenteDiretoria(status){ return status === NEG_STATUS_PDIR; }
+// Síndico rescindiu o contrato: encerra a negociação (conta como não renovado) e o condomínio vira Inativo no Cadastro.
+// Aceita as duas grafias ("Reincidiu", como está na lista das Configurações, e "Rescindiu").
+const NEG_RESCISAO_TXT = 'Síndico rescindiu o contrato (negociação de renovação)';
+function ehRescisao(status){ const t = normTxtCarteira(status || ''); return t === normTxtCarteira('Síndico Reincidiu o Contrato') || t === normTxtCarteira('Síndico Rescindiu o Contrato'); }
+function ehNaoRenovado(status){ return status === 'Não renovado' || status === 'Cancelado' || ehRescisao(status); }   // renovado com o condomínio, esperando a assinatura da diretoria
 const NEG_STATUS_FINALIZADOS = [NEG_STATUS_PDIR, 'Renovado', 'Renovado - Aguardando Cronograma Técnico', 'Renovado - Obra Iniciada', 'Renovado - Obra Finalizada', 'Não renovado', 'Cancelado'];
 function ehStatusRenovado(status){
   return !!status && status.indexOf('Renovado') === 0;
 }
 function negociacaoEmAndamento(n){
-  return !NEG_STATUS_FINALIZADOS.includes(n.status);
+  return !NEG_STATUS_FINALIZADOS.includes(n.status) && !ehRescisao(n.status);
 }
 
 function getFilteredRenovVencidos(){
@@ -15956,6 +15970,8 @@ function negBadge(status){
     "Renovado - Obra Iniciada": ["renovado","Renovado - Obra Iniciada"],
     "Renovado - Obra Finalizada": ["renovado","Renovado - Obra Finalizada"],
     "Não renovado": ["nao-renovado","Não renovado"],
+    "Síndico Reincidiu o Contrato": ["nao-renovado","Síndico rescindiu o contrato"],
+    "Síndico Rescindiu o Contrato": ["nao-renovado","Síndico rescindiu o contrato"],
     "Cancelado": ["cancelado","Cancelado"]
   };
   const [cls,label] = map[status] || ["cancelado", status || "—"];
@@ -15998,7 +16014,7 @@ function negAumento(n){
   return { valor: b - a, pct: (b - a) / a * 100 };
 }
 function negTemAumento(n){ const x = negAumento(n); return !!x && x.valor > 0.005; }
-function negContaParaComissao(n){ return negTemAumento(n) && !['Não renovado', 'Cancelado'].includes(n.status); }
+function negContaParaComissao(n){ return negTemAumento(n) && !ehNaoRenovado(n.status); }
 function negPct(v){ return (v >= 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + '%'; }
 function negEhAdmin(){ return typeof currentRole !== 'undefined' && currentRole === 'admin'; }
 // A aba Comissão (e qualquer valor de comissão) é só do administrador
@@ -16558,7 +16574,7 @@ function renderRenovMiniDash(){
   const vencidos = vencidosF.length;
   const emNegociacao = negociacoesF.filter(negociacaoEmAndamento).length;
   const renovados = negociacoesF.filter(n=>ehStatusRenovado(n.status)).length;
-  const naoRenovados = negociacoesF.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
+  const naoRenovados = negociacoesF.filter(n=>ehNaoRenovado(n.status)).length;
 
   document.getElementById('renovMiniDashStats').innerHTML = `
     <div class="stat-box"><div class="snum" style="color:var(--critico);">${vencidos}</div><div class="slbl">Vencidos sem negociação</div></div>
@@ -16641,7 +16657,7 @@ function renderRenovComparativo(vencidosF, negociacoesF){
     });
     const emNegociacaoCount = negsDaFilial.filter(negociacaoEmAndamento).length;
     const renovadosCount = negsDaFilial.filter(n=>ehStatusRenovado(n.status)).length;
-    const naoRenovadosCount = negsDaFilial.filter(n=>n.status==='Não renovado' || n.status==='Cancelado').length;
+    const naoRenovadosCount = negsDaFilial.filter(n=>ehNaoRenovado(n.status)).length;
     const totalFinalizadas = renovadosCount + naoRenovadosCount;
     const taxa = totalFinalizadas ? (renovadosCount/totalFinalizadas*100) : 0;
     return { filial, vencidosCount, emNegociacaoCount, renovadosCount, taxa };
@@ -17163,7 +17179,8 @@ function openNegociacaoModal(condoId){
   document.getElementById('negociacaoError').style.display = 'none';
   document.getElementById('negResponsavel').value = '';
   document.getElementById('negData').value = new Date().toISOString().slice(0,10);
-  document.getElementById('negStatus').value = 'Em negociação';
+  negGarantirOpcoesStatus();
+  document.getElementById('negStatus').value = 'Em negociação'; negAtualizarAvisoStatus();
   document.getElementById('negTempoRenovado').value = '';
   document.getElementById('negNovaData').value = '';
   document.getElementById('negValorCusto').value = '';
@@ -17200,7 +17217,8 @@ function editNegociacao(id){
   setNegCondo(n.condo_id);
   document.getElementById('negResponsavel').value = n.responsavel || '';
   document.getElementById('negData').value = n.data_negociacao || '';
-  document.getElementById('negStatus').value = n.status || 'Em negociação';
+  negGarantirOpcoesStatus(n.status);
+  document.getElementById('negStatus').value = n.status || 'Em negociação'; negAtualizarAvisoStatus();
   document.getElementById('negTempoRenovado').value = n.tempo_renovado_meses ? String(n.tempo_renovado_meses) : '';
   document.getElementById('negNovaData').value = n.nova_data || '';
   document.getElementById('negValorCusto').value = formatarMoedaParaInputRenov(n.valor_custo);
@@ -17321,6 +17339,7 @@ async function salvarNegociacao(){
         }
       }
     }catch(e){ console.warn('Falha ao salvar negociação:', e); }
+    await negAtualizarCadastroDepoisDeSalvar(condo, status, anteriorNeg);
   }
 
   // Se a negociação foi concluída como "Renovado" e há uma nova data de
@@ -17338,6 +17357,27 @@ async function salvarNegociacao(){
   }
 }
 
+async function negAtualizarCadastroDepoisDeSalvar(condo, status, anterior){
+  const refrescar = async () => { try{ __mapaRowsCadastro = null; }catch(e){} try{ await carregarCadastroLive(); }catch(e){} try{ await carregarStatusCondominios(); }catch(e){} try{ await loadRenovacaoData(); }catch(e){} };
+  if (ehRescisao(status)){
+    if (condo.status === 'Inativo') return;   // já está inativo no Cadastro
+    const campos = { status: 'Inativo', data_cancelamento: new Date().toISOString().slice(0, 10), motivo_cancelamento: NEG_RESCISAO_TXT };
+    try{
+      const { error } = await sb.from('cadastro_condominios').update(campos).eq('item_id', condo.item_id);
+      if (error) throw error;
+      Object.assign(condo, campos); await refrescar();
+      alert('✔ O síndico rescindiu o contrato: ' + condo.nome + ' foi marcado como INATIVO no Cadastro de Condomínios (cancelado em ' + fmtDataBRRenov(campos.data_cancelamento) + '). A negociação foi encerrada como não renovada.');
+    }catch(e){ alert('A negociação foi salva, mas não consegui marcar o condomínio como Inativo no Cadastro: ' + (e.message || e) + '\n\nMarque manualmente na aba Cadastro de Condomínios.'); }
+  } else if (anterior && ehRescisao(anterior.status) && condo.status === 'Inativo' && String(condo.motivo_cancelamento || '') === NEG_RESCISAO_TXT){
+    if (!confirm('Esta negociação deixou de ser "rescisão". Reativar ' + condo.nome + ' no Cadastro (Ativo), apagando a data e o motivo do cancelamento?')) return;
+    try{
+      const campos = { status: 'Ativo', data_cancelamento: null, motivo_cancelamento: null };
+      const { error } = await sb.from('cadastro_condominios').update(campos).eq('item_id', condo.item_id);
+      if (error) throw error;
+      Object.assign(condo, campos); await refrescar();
+    }catch(e){ alert('Não consegui reativar o condomínio no Cadastro: ' + (e.message || e)); }
+  }
+}
 async function excluirNegociacao(id){
   renovNegociacoes = renovNegociacoes.filter(n => n.id !== id);
   renderRenovNegociacoes();
@@ -26177,12 +26217,33 @@ async function loadConfiguracoes(){
   }
 }
 
+// A lista de status das Configurações substitui a do formulário. Estas opções o sistema sempre precisa ter, e o status atual
+// da negociação aberta nunca pode sumir (senão ele seria trocado sem querer ao salvar).
+function negGarantirOpcoesStatus(extra){
+  const sel = document.getElementById('negStatus'); if (!sel) return;
+  const tem = v => [...sel.options].some(o => o.value === v);
+  const criar = v => { const o = document.createElement('option'); o.value = v; o.textContent = v; return o; };
+  if (!tem(NEG_STATUS_PDIR)){ const ref = [...sel.options].find(o => o.value === 'Renovado'); sel.insertBefore(criar(NEG_STATUS_PDIR), ref || null); }
+  if (![...sel.options].some(o => ehRescisao(o.value))){ const ref = [...sel.options].find(o => o.value === 'Não renovado'); sel.insertBefore(criar('Síndico Rescindiu o Contrato'), ref || null); }
+  if (extra && !tem(extra)) sel.appendChild(criar(extra));
+}
+function negAtualizarAvisoStatus(){
+  const sel = document.getElementById('negStatus'); if (!sel) return;
+  let av = document.getElementById('negStatusAviso');
+  if (!av){ av = document.createElement('div'); av.id = 'negStatusAviso'; av.style.cssText = 'grid-column:1 / -1; font-size:11.5px; line-height:1.45; border-radius:8px; padding:8px 10px; display:none;'; (sel.closest('label') || sel).insertAdjacentElement('afterend', av); }
+  const v = sel.value;
+  if (ehRescisao(v)){ av.style.display = 'block'; av.style.background = 'rgba(239,68,68,.10)'; av.style.color = 'var(--critico)'; av.textContent = '⚠ Ao salvar, a negociação é encerrada (conta como não renovada) e o condomínio fica INATIVO (cancelado) no Cadastro, com a data de hoje e o motivo "Síndico rescindiu o contrato".'; }
+  else if (ehPendenteDiretoria(v)){ av.style.display = 'block'; av.style.background = 'rgba(245,158,11,.10)'; av.style.color = '#f59e0b'; av.textContent = 'ℹ Ao salvar, o contrato vai para a sub-aba Pendente Diretoria. O Cadastro só é atualizado depois da assinatura.'; }
+  else av.style.display = 'none';
+}
+document.getElementById('negStatus').addEventListener('change', negAtualizarAvisoStatus);
 function aplicarStatusListaCompleta(){
   const sel = document.getElementById('negStatus');
   if (!sel || !listaStatusExtrasCarregada.length) return; // sem dados salvos ainda, mantém as opções fixas do HTML
   const valorAtual = sel.value;
   sel.innerHTML = listaStatusExtrasCarregada.map(item => `<option value="${escapeHtml(item.valor)}">${escapeHtml(item.valor)}</option>`).join('');
   if ([...sel.options].some(o => o.value === valorAtual)) sel.value = valorAtual;
+  negGarantirOpcoesStatus();
 }
 
 function renderCfgSetoresLista(){
