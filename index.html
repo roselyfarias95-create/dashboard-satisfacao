@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v187 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v189 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -23356,10 +23356,27 @@ document.getElementById('btnNovoIncidente').addEventListener('click', ()=>{
 });
 document.getElementById('incModalClose').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
 document.getElementById('incCancelBtn').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
+// Incidente novo: além da tarefa, abre uma demanda para a pessoa responsável (aba Demandas). O número do incidente vai no texto ("incid. #42").
+async function incCriarDemanda(inc, nomeResp){
+  const marca = (inc.id !== null && inc.id !== undefined) ? ' · incid. #' + inc.id : '';
+  if (marca){ const ja = await sb.from('demandas').select('id').like('descricao', '%' + marca.trim()); if (ja.data && ja.data.length) return false; }   // já existe
+  const lista = (typeof DEM_RESPONSAVEIS !== 'undefined' ? DEM_RESPONSAVEIS : []), pri = normTxtCarteira(nomeResp).split(' ')[0];
+  const responsavel = (pri && lista.find(r => normTxtCarteira(r).split(' ')[0] === pri)) || nomeResp, agora = new Date().toISOString();
+  const d = { condominio: inc.condominio, filial: inc.filial || lembFilial(inc.condominio), tipo: inc.setor === 'Técnica' ? 'Técnica' : 'Outro', responsavel,
+    descricao: '🚨 Incidente ' + (inc.gravidade || '') + ' (' + (inc.tipo || 'Incidente') + '): ' + inc.descricao + marca, status: 'Aberta',
+    prioridade: ['Alta', 'Média', 'Baixa'].includes(inc.gravidade) ? inc.gravidade : 'Média', data_abertura: agora, data_conclusao: null, updated_at: agora };
+  try{ d.risco_contribuinte = demandaRiscoContribuinte(Object.assign({}, d, { id: null })); }catch(e){}
+  const { error } = await sb.from('demandas').insert(d);
+  if (error) throw error;
+  try{ await loadDemandas(); }catch(e){}
+  return true;
+}
 // Incidente novo (e ainda não resolvido) vira tarefa na Agenda do Dia da pessoa responsável.
 // A tarefa leva o número do incidente no texto ("incid. #42"), e o assistente não cria outra para o mesmo incidente.
 async function incCriarTarefaNaAgenda(inc){
-  const m = membroDaCarteira(inc.responsavel), nomeAg = m ? m.nome : assistNomeNaAgenda(assistUsuario());   // responsável que não é pessoa (Equipe CS, Técnica): fica com quem registrou
+  const limpo = String(inc.responsavel || '').replace(/\s*\(.*?\)\s*/g, ' ').trim();   // "Nicole (Aprendiz Manhã)" → "Nicole"
+  const m = membroDaCarteira(limpo) || membroDaCarteira(inc.responsavel), nomeAg = m ? m.nome : assistNomeNaAgenda(assistUsuario());   // responsável que não é pessoa (Equipe CS, Técnica): fica com quem registrou
+  const semPessoa = !m && normTxtCarteira(limpo).split(' ')[0] !== normTxtCarteira(assistUsuario()).split(' ')[0];
   const hoje = agendaHojeISO(), tag = (inc.id !== null && inc.id !== undefined) ? ' · incid. #' + inc.id : '';
   const base = '🚨 Incidente ' + (inc.gravidade || '') + ': ' + (inc.tipo || 'Incidente') + ' — ' + inc.condominio;
   const titulo = (base.length > 150 - tag.length ? base.slice(0, 150 - tag.length - 1) + '…' : base) + tag;
@@ -23367,8 +23384,12 @@ async function incCriarTarefaNaAgenda(inc){
   if (ja.data && ja.data.length) return;
   const { error } = await sb.from('agenda_diaria_tarefas').insert({ data: hoje, responsavel: nomeAg, titulo, prioridade: inc.gravidade === 'Alta' ? 'alta' : 'media', ordem: 5 });
   if (error) throw error;
+  let demOk = false, demErro = '';
+  try{ demOk = await incCriarDemanda(inc, nomeAg); }catch(e){ demErro = e.message || String(e); console.warn('Incidente → demanda:', e); }
   try{ const aba = document.getElementById('tabAgendaDia'); if (aba && aba.style.display !== 'none') loadAgendaDoDia(); }catch(e){}
-  try{ assistToast('📅 <strong>Tarefa criada na Agenda do Dia</strong> de <strong>' + escapeHtml(nomeAg) + '</strong>:<br>' + escapeHtml(titulo.replace('🚨 ', '')), [{ rotulo: 'Ver agenda', acao: () => { const b = document.querySelector('.tab-btn[data-tab="agendaDia"]'); if (b) b.click(); } }]); }catch(e){}
+  try{ assistToast('📅 <strong>Tarefa na Agenda do Dia' + (demOk ? ' e demanda' : '') + ' criada' + (demOk ? 's' : '') + '</strong> para <strong>' + escapeHtml(nomeAg) + '</strong>:<br>' + escapeHtml(titulo.replace('🚨 ', '')), [{ rotulo: 'Ver agenda', acao: () => { const b = document.querySelector('.tab-btn[data-tab="agendaDia"]'); if (b) b.click(); } }]); }catch(e){}
+  if (demErro) alert('A tarefa foi criada na Agenda do Dia, mas não consegui criar a demanda: ' + demErro);
+  if (semPessoa) alert('Atenção: "' + (inc.responsavel || 'sem responsável') + '" não é uma pessoa da equipe na Agenda do Dia, então a tarefa ficou com você (' + nomeAg + '). Se era para outra pessoa, escolha o nome dela como responsável do incidente.');
 }
 document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('incError');
@@ -26641,7 +26662,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v187';
+const APP_BUILD = 'v189';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
