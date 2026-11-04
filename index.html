@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v184 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v185 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4779,6 +4779,7 @@ CONDOMINIO Y	480	45"></textarea>
       </div>
     </div>
 
+    <div id="agendaAvisoIndevidas" style="display:none; background:rgba(245,158,11,.10); border:1px solid #f59e0b; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:12.5px; line-height:1.5;"></div>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <span id="agendaAtualizadoEm" style="font-size:11.5px; color:var(--text-faint); align-self:center; margin-right:10px;"></span>
       <button type="button" class="clearbtn" id="btnAgendaAtualizar" title="Busca de novo o que a equipe marcou como feito">↻ Atualizar</button>
@@ -10097,6 +10098,25 @@ function assistConcluidoRecente(ac){
   if (!dia) return true;   // sem data registrada: foi marcado como concluído, então segue como tratado
   return -assistDiasAte(dia) <= dias;
 }
+function assistTitulosJaTratados(){
+  const set = new Set();
+  __assistAlertas.forEach(al => {
+    const ac = assistAcompDaChave(al.chave);
+    if (!(ac && ac.situacao === 'Concluído' && assistConcluidoRecente(ac))) return;
+    set.add(assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150));
+    if (al.fiscal && al.responsavel) set.add(assistCorta('🤖 Cobrar ' + al.responsavel + ': ' + al.titulo + ' — ' + al.condominio, 150));
+  });
+  return set;
+}
+// Tarefas automáticas (🤖) de hoje, ainda abertas, que já foram tratadas: o acompanhamento foi concluído ou a mesma tarefa foi concluída há pouco.
+async function assistTarefasIndevidasHoje(){
+  await assistCarregarAgendaExistente();
+  const tratados = assistTitulosJaTratados();
+  return (typeof agendaTarefasData !== 'undefined' ? agendaTarefasData : []).filter(t => {
+    const tit = String(t.titulo || '').trim();
+    return !t.concluida && !t.meta_total && tit.startsWith('🤖') && (tratados.has(tit) || __assistAgConcluidasTitulo.has(tit));
+  });
+}
 function assistMontarProposta(){
   const porResp = new Map();
   const add = (resp, item) => { const k = resp || 'Sem responsável'; if (!porResp.has(k)) porResp.set(k, []); porResp.get(k).push(item); };
@@ -10123,10 +10143,10 @@ function assistMontarProposta(){
   });
   return saida;
 }
-let __assistAgConcluidas = new Map();   // tarefas do assistente concluídas há pouco: não voltam para a agenda durante o prazo
+let __assistAgConcluidas = new Map(), __assistAgConcluidasTitulo = new Map();   // tarefas do assistente concluídas há pouco: não voltam para a agenda durante o prazo
 function assistSilencioDias(){ const n = parseInt(assistCfgLer().silencioDias, 10); return isNaN(n) ? 7 : Math.max(0, Math.min(60, n)); }
 async function assistCarregarAgendaExistente(){
-  __assistAgExistentes = new Set(); __assistAgConcluidas = new Map();
+  __assistAgExistentes = new Set(); __assistAgConcluidas = new Map(); __assistAgConcluidasTitulo = new Map();
   if (!sb) return;
   try{
     const hoje = agendaHojeISO(), dias = assistSilencioDias(), desde = dias > 0 ? assistSomaDias(hoje, -dias) : hoje;
@@ -10134,7 +10154,7 @@ async function assistCarregarAgendaExistente(){
     (data || []).forEach(t => {
       const k = assistChaveAgenda(t.responsavel, t.titulo);
       if (assistDiaLocal(t.data) === hoje) __assistAgExistentes.add(k);
-      else if (t.concluida && dias > 0 && String(t.titulo || '').startsWith('🤖')) __assistAgConcluidas.set(k, assistDiaLocal(t.data));
+      else if (t.concluida && dias > 0 && String(t.titulo || '').startsWith('🤖')){ __assistAgConcluidas.set(k, assistDiaLocal(t.data)); __assistAgConcluidasTitulo.set(String(t.titulo).trim(), assistDiaLocal(t.data)); }
     });
   }catch(e){ console.warn('Agenda do dia (leitura):', e); }
 }
@@ -10147,7 +10167,7 @@ async function assistRenderAgenda(){
     const semDono = g.resp === 'Sem responsável';
     const nomeAg = semDono ? '' : assistNomeNaAgenda(g.resp);
     const linhas = g.itens.map((it, ii) => {
-      const chaveAg = assistChaveAgenda(nomeAg, it.titulo), jaConc = !semDono && !__assistAgExistentes.has(chaveAg) ? __assistAgConcluidas.get(chaveAg) : null;
+      const chaveAg = assistChaveAgenda(nomeAg, it.titulo), jaConc = !semDono && !__assistAgExistentes.has(chaveAg) ? (__assistAgConcluidas.get(chaveAg) || __assistAgConcluidasTitulo.get(String(it.titulo).trim())) : null;
       const ja = (!semDono && __assistAgExistentes.has(chaveAg)) || !!jaConc;
       if (!ja && !semDono) novas++;
       return '<label class="as-linha-ag"><input type="checkbox" data-ag="' + gi + ':' + ii + '" ' + (ja || semDono ? 'disabled' : 'checked') + '> ' + assistTagPrio(it.prio === 'alta' ? 'Alta' : 'Média') +
@@ -10162,6 +10182,7 @@ async function assistRenderAgenda(){
 }
 // Envia para a aba Agenda do Dia (agenda_diaria_tarefas). Sem duplicar o que já está lá.
 async function assistEnviarAgenda(marcadas, silencioso){
+  if (silencioso && window.__versaoDesatualizada) return { enviadas: 0 };   // janela com versão antiga: não monta a agenda sozinha
   if (!sb){ if (!silencioso) alert('Sem conexão com o servidor.'); return { enviadas: 0 }; }
   if (!assistPodeEditar() && !(silencioso && souDaEquipe())){ if (!silencioso) alert('Só administradores e editores enviam tarefas para a agenda.'); return { enviadas: 0 }; }   // a montagem automática vale para toda a equipe
   await assistCarregarAgendaExistente();
@@ -10173,7 +10194,7 @@ async function assistEnviarAgenda(marcadas, silencioso){
     g.itens.forEach(it => {
       const k = assistChaveAgenda(nomeAg, it.titulo);
       if (__assistAgExistentes.has(k)) return;
-      if (__assistAgConcluidas.has(k)){ puladas++; return; }   // concluída há pouco: não volta ainda
+      if (__assistAgConcluidas.has(k) || __assistAgConcluidasTitulo.has(String(it.titulo).trim())){ puladas++; return; }   // concluída há pouco (por qualquer pessoa): não volta ainda
       __assistAgExistentes.add(k);
       novas.push({ data: hoje, responsavel: nomeAg, titulo: it.titulo, prioridade: it.prio, ordem: 100 + novas.length });
     });
@@ -26588,9 +26609,54 @@ async function loadAgendaDoDia(){
   renderAgendaKpis();
   renderAgendaConferencia();
   agendaMarcarAtualizado();
+  agendaVerificarIndevidas(true);
+}
+let __agendaIndevUltima = 0;
+async function agendaVerificarIndevidas(forcar){
+  const box = document.getElementById('agendaAvisoIndevidas'); if (!box) return;
+  if (typeof assistTarefasIndevidasHoje !== 'function' || typeof __assistBaseCarregada === 'undefined' || !__assistBaseCarregada || !(assistPodeEditar() || souDaEquipe())){ box.style.display = 'none'; return; }
+  if (!forcar && Date.now() - __agendaIndevUltima < 120000) return;
+  __agendaIndevUltima = Date.now();
+  let lista = []; try{ lista = await assistTarefasIndevidasHoje(); }catch(e){ console.warn('Tarefas já tratadas:', e); }
+  if (!lista.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '⚠ <strong>' + lista.length + ' tarefa(s) automática(s) de hoje já foram tratadas</strong> (o acompanhamento foi concluído, ou a mesma tarefa foi concluída nos últimos ' + assistSilencioDias() + ' dias). Elas não deveriam estar aqui. ' +
+    '<button type="button" class="clearbtn" id="btnRemoverIndevidas" style="margin-left:6px; border-color:#f59e0b; color:#f59e0b;">🧹 Remover da agenda</button>' +
+    '<div style="margin-top:6px; color:var(--text-faint);">' + lista.map(t => escapeHtml((t.responsavel || '') + ': ' + String(t.titulo || '').replace('🤖 ', ''))).join('<br>') + '</div>';
+  document.getElementById('btnRemoverIndevidas').addEventListener('click', async ev => {
+    if (!confirm('Remover ' + lista.length + ' tarefa(s) automática(s) que já foram tratadas? Só as que estão em aberto e começam com 🤖. Nada que foi concluído é apagado.')) return;
+    ev.currentTarget.disabled = true;
+    try{
+      const { data, error } = await sb.from('agenda_diaria_tarefas').delete().in('id', lista.map(t => t.id)).select('id');
+      if (error) throw error;
+      if (!data || !data.length) throw new Error('o servidor não removeu nenhuma linha.');
+      await loadAgendaDoDia();
+    }catch(e){ alert('Não consegui remover: ' + (e.message || e)); ev.currentTarget.disabled = false; }
+  });
 }
 
 // A agenda é compartilhada: quando outra pessoa marca uma tarefa como feita, quem está com a aba aberta passa a ver na hora certa.
+// Janelas abertas há dias continuam com a versão antiga do dashboard e podem recriar tarefas já concluídas.
+// Aqui o dashboard confere se há versão nova publicada (pela data do arquivo no servidor) e avisa.
+window.__versaoDesatualizada = false;
+const __versaoLM = (() => { try{ const t = new Date(document.lastModified).getTime(); return isNaN(t) ? 0 : t; }catch(e){ return 0; } })();
+async function verificarVersaoPublicada(){
+  if (window.__versaoDesatualizada || !/^https?:$/.test(location.protocol) || !__versaoLM) return;
+  try{
+    const r = await fetch(location.pathname + '?vc=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+    const lm = r.headers.get('last-modified'), remoto = lm ? new Date(lm).getTime() : 0;
+    if (remoto && remoto - __versaoLM > 5000){
+      window.__versaoDesatualizada = true;
+      const b = document.createElement('div'); b.id = 'avisoVersaoNova';
+      b.style.cssText = 'position:fixed; left:50%; top:10px; transform:translateX(-50%); z-index:99999; background:#f59e0b; color:#1a1305; border-radius:10px; padding:10px 16px; font-size:13px; font-weight:700; box-shadow:0 6px 24px rgba(0,0,0,.45); display:flex; gap:12px; align-items:center; max-width:92vw;';
+      b.innerHTML = '🔄 Há uma versão nova do dashboard. Atualize para evitar erros (a montagem automática da agenda fica pausada nesta janela). <button type="button" style="border:none; background:#1a1305; color:#fff; border-radius:8px; padding:6px 12px; font-weight:700; cursor:pointer;">Atualizar agora</button>';
+      b.querySelector('button').addEventListener('click', () => { location.replace(location.pathname + '?v=' + Date.now()); });
+      document.body.appendChild(b);
+    }
+  }catch(e){}
+}
+setTimeout(verificarVersaoPublicada, 20000); setInterval(verificarVersaoPublicada, 10 * 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) verificarVersaoPublicada(); });
 function agendaMarcarAtualizado(){
   const el = document.getElementById('agendaAtualizadoEm'), a = new Date(); if (!el) return;
   el.textContent = 'atualizado às ' + String(a.getHours()).padStart(2, '0') + ':' + String(a.getMinutes()).padStart(2, '0') + ':' + String(a.getSeconds()).padStart(2, '0');
@@ -26608,6 +26674,7 @@ async function agendaRecarregarSilencioso(forcar){
     const sig = l => JSON.stringify((l || []).map(t => [t.id, !!t.concluida, t.titulo, t.responsavel, t.meta_atual, t.ordem]));
     if (forcar || sig(data) !== sig(agendaTarefasData)){ agendaTarefasData = data; renderAgendaLanes(); renderAgendaKpis(); }
     agendaMarcarAtualizado();
+    agendaVerificarIndevidas(!!forcar);
   }catch(e){}
 }
 setInterval(() => { if (!document.hidden && typeof currentRole !== 'undefined' && currentRole) agendaRecarregarSilencioso(false); }, 45000);
@@ -26616,6 +26683,7 @@ document.getElementById('btnAgendaAtualizar').addEventListener('click', async ev
 
 function agendaChaveTarefa(t){ return String(t.responsavel || '').trim().toLowerCase() + '|' + String(t.titulo || '').trim().toLowerCase(); }
 async function agendaTransferirPendentesDeOntem(hoje){
+  if (window.__versaoDesatualizada) return;
   try{
     const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('pendentes_transferidas').eq('data', hoje).maybeSingle();
     if (contextoHoje && contextoHoje.pendentes_transferidas) return; // já rodou hoje, não duplica
@@ -26649,6 +26717,7 @@ async function agendaTransferirPendentesDeOntem(hoje){
 let agendaTarefasFixasData = [];
 
 async function agendaInserirTarefasFixasDeHoje(hoje){
+  if (window.__versaoDesatualizada) return;
   try{
     const { data: contextoHoje } = await sb.from('agenda_diaria_contexto').select('tarefas_fixas_inseridas').eq('data', hoje).maybeSingle();
     if (contextoHoje && contextoHoje.tarefas_fixas_inseridas) return; // já rodou hoje, não duplica
