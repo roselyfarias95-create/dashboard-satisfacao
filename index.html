@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v185 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v186 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4782,6 +4782,7 @@ CONDOMINIO Y	480	45"></textarea>
     <div id="agendaAvisoIndevidas" style="display:none; background:rgba(245,158,11,.10); border:1px solid #f59e0b; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:12.5px; line-height:1.5;"></div>
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <span id="agendaAtualizadoEm" style="font-size:11.5px; color:var(--text-faint); align-self:center; margin-right:10px;"></span>
+      <button type="button" class="clearbtn" id="btnAgendaDiagnostico" title="Mostra, para cada tarefa automática aberta, o histórico dos últimos 14 dias e por que ela está aqui">🔎 Por que voltaram?</button>
       <button type="button" class="clearbtn" id="btnAgendaAtualizar" title="Busca de novo o que a equipe marcou como feito">↻ Atualizar</button>
       <button type="button" class="clearbtn" id="btnNovaRaiaAgenda">+ Nova pessoa</button>
       <button type="button" class="clearbtn" id="btnGerenciarTarefasFixas">⚙️ Tarefas Fixas</button>
@@ -26611,6 +26612,43 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
+const APP_BUILD = 'v186';
+// Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
+async function agendaDiagnostico(){
+  const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
+  let r = await sb.from('agenda_diaria_tarefas').select('id,data,responsavel,titulo,concluida,created_at').gte('data', desde).lte('data', hoje);
+  if (r.error) r = await sb.from('agenda_diaria_tarefas').select('id,data,responsavel,titulo,concluida').gte('data', desde).lte('data', hoje);
+  if (r.error){ alert('Não consegui ler o histórico da agenda: ' + r.error.message); return; }
+  const hist = r.data || [], dm = d => String(d).slice(8, 10) + '/' + String(d).slice(5, 7);
+  const alertasPorTitulo = new Map();
+  __assistAlertas.forEach(al => { alertasPorTitulo.set(assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150), al); if (al.fiscal && al.responsavel) alertasPorTitulo.set(assistCorta('🤖 Cobrar ' + al.responsavel + ': ' + al.titulo + ' — ' + al.condominio, 150), al); });
+  const acompPorCobranca = new Map(); __assistAcomp.forEach(a => acompPorCobranca.set(assistCorta('🤖 Cobrar: ' + (a.titulo || 'acompanhamento') + ' — ' + (a.condominio || ''), 150), a));
+  const abertas = agendaTarefasData.filter(t => !t.concluida && !t.meta_total && String(t.titulo || '').startsWith('🤖'));
+  const linhas = abertas.map(t => {
+    const tit = String(t.titulo).trim(), outros = hist.filter(h => String(h.titulo || '').trim() === tit && String(h.data).slice(0, 10) !== hoje).sort((a, b) => String(b.data).localeCompare(String(a.data)));
+    const hojeLinhas = hist.filter(h => String(h.titulo || '').trim() === tit && String(h.data).slice(0, 10) === hoje);
+    const dias14 = outros.map(h => dm(h.data) + (h.concluida ? ' ✔' : ' ○')).join(' · ') || 'só hoje';
+    const concl = outros.find(h => h.concluida && -assistDiasAte(assistDiaLocal(h.data)) <= dias);
+    const al = alertasPorTitulo.get(tit), ac = al ? assistAcompDaChave(al.chave) : acompPorCobranca.get(tit);
+    let acTxt = 'sem acompanhamento';
+    if (ac) acTxt = ac.situacao === 'Concluído' ? 'concluído em ' + dm(assistDiaLocal(ac.concluido_em || ac.atualizado_em) || hoje) : ac.situacao + (ac.proxima_cobranca ? ' (cobrança em ' + dm(ac.proxima_cobranca) + ')' : '');
+    let veredito;
+    if (concl) veredito = 'Já foi concluída em ' + dm(concl.data) + ' e voltou hoje. Só acontece se uma janela com versão antiga a criou ou se o prazo de silêncio estiver em 0.';
+    else if (ac && ac.situacao === 'Concluído' && assistConcluidoRecente(ac)) veredito = 'O acompanhamento foi concluído há pouco: pode remover (botão da faixa amarela).';
+    else if (outros.length) veredito = 'Aparece desde ' + dm(outros[outros.length - 1].data) + ' e nunca foi marcada como concluída na agenda.';
+    else veredito = 'Tarefa nova de hoje: o alerta continua ativo e não há conclusão recente.';
+    const criada = hojeLinhas[0] && hojeLinhas[0].created_at ? new Date(hojeLinhas[0].created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    return '<tr><td style="padding:6px 8px;">' + escapeHtml(t.responsavel || '') + '</td><td style="padding:6px 8px;">' + escapeHtml(tit.replace('🤖 ', '')) + (criada ? '<div style="color:var(--text-faint);">criada hoje às ' + criada + '</div>' : '') + '</td><td style="padding:6px 8px; white-space:nowrap;">' + escapeHtml(dias14) + '</td><td style="padding:6px 8px;">' + escapeHtml(acTxt) + '</td><td style="padding:6px 8px;">' + escapeHtml(veredito) + '</td></tr>';
+  }).join('');
+  let el = document.getElementById('agendaDiagModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'agendaDiagModal'; el.style.cssText = 'position:fixed; inset:0; z-index:9700; background:rgba(3,6,14,.78); display:flex; align-items:center; justify-content:center; padding:18px;';
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:1100px; max-height:90vh; overflow:auto; padding:18px 20px;">' +
+    '<div style="display:flex; justify-content:space-between; gap:10px;"><div><div style="font-size:17px; font-weight:800;">🔎 Por que essas tarefas voltaram?</div><div style="font-size:12px; color:var(--text-faint); margin-top:2px;">Versão desta janela: <strong>' + APP_BUILD + '</strong> · prazo de silêncio: <strong>' + dias + ' dia(s)</strong> · ✔ concluída · ○ aberta (últimos 14 dias)</div></div><button type="button" class="modal-close" id="agendaDiagFechar" style="position:static;">×</button></div>' +
+    (linhas ? '<div style="overflow:auto; margin-top:12px;"><table style="width:100%; border-collapse:collapse; font-size:12px;"><thead><tr style="text-align:left; color:var(--text-faint);"><th style="padding:6px 8px;">Pessoa</th><th style="padding:6px 8px;">Tarefa</th><th style="padding:6px 8px;">Dias em que apareceu</th><th style="padding:6px 8px;">Acompanhamento</th><th style="padding:6px 8px;">Situação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' : '<p style="margin-top:14px;">Nenhuma tarefa automática (🤖) em aberto hoje. ✅</p>') + '</div>';
+  document.body.appendChild(el);
+  document.getElementById('agendaDiagFechar').addEventListener('click', () => el.remove());
+}
+document.getElementById('btnAgendaDiagnostico').addEventListener('click', async ev => { const b = ev.currentTarget; b.disabled = true; try{ await agendaDiagnostico(); }catch(e){ alert('Erro no diagnóstico: ' + (e.message || e)); } b.disabled = false; });
 let __agendaIndevUltima = 0;
 async function agendaVerificarIndevidas(forcar){
   const box = document.getElementById('agendaAvisoIndevidas'); if (!box) return;
