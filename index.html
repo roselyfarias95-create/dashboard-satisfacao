@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v186 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v187 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -10130,6 +10130,7 @@ function assistMontarProposta(){
     const ac = assistAcompDaChave(al.chave);
     if (ac && ac.situacao !== 'Concluído') return;   // já está acompanhado: aparece quando chegar a data da cobrança
     if (ac && assistConcluidoRecente(ac)) return;     // acompanhamento concluído há pouco: já foi tratado, não vira tarefa de novo
+    if (al.grupo === 'inc' && __assistAgIncidentes.has(String(al.chave).replace('inc:', ''))) return;   // esse incidente já virou tarefa quando foi registrado
     add(al.responsavel, { ordem: al.prioridade === 'Alta' ? 1 : 2, prio: al.prioridade === 'Alta' ? 'alta' : 'media', origem: assistGrupoRotulo[al.grupo], condominio: al.condominio,
       titulo: assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150) });
     if (al.prioridade === 'Alta' && al.fiscal && al.responsavel !== 'Sem responsável' && normTxtCarteira(al.fiscal) !== normTxtCarteira(al.responsavel)){
@@ -10144,10 +10145,10 @@ function assistMontarProposta(){
   });
   return saida;
 }
-let __assistAgConcluidas = new Map(), __assistAgConcluidasTitulo = new Map();   // tarefas do assistente concluídas há pouco: não voltam para a agenda durante o prazo
+let __assistAgConcluidas = new Map(), __assistAgConcluidasTitulo = new Map(), __assistAgIncidentes = new Set();   // tarefas do assistente concluídas há pouco: não voltam para a agenda durante o prazo
 function assistSilencioDias(){ const n = parseInt(assistCfgLer().silencioDias, 10); return isNaN(n) ? 7 : Math.max(0, Math.min(60, n)); }
 async function assistCarregarAgendaExistente(){
-  __assistAgExistentes = new Set(); __assistAgConcluidas = new Map(); __assistAgConcluidasTitulo = new Map();
+  __assistAgExistentes = new Set(); __assistAgConcluidas = new Map(); __assistAgConcluidasTitulo = new Map(); __assistAgIncidentes = new Set();
   if (!sb) return;
   try{
     const hoje = agendaHojeISO(), dias = assistSilencioDias(), desde = dias > 0 ? assistSomaDias(hoje, -dias) : hoje;
@@ -10158,6 +10159,11 @@ async function assistCarregarAgendaExistente(){
       else if (t.concluida && dias > 0 && String(t.titulo || '').startsWith('🤖')){ __assistAgConcluidas.set(k, assistDiaLocal(t.data)); __assistAgConcluidasTitulo.set(String(t.titulo).trim(), assistDiaLocal(t.data)); }
     });
   }catch(e){ console.warn('Agenda do dia (leitura):', e); }
+  try{   // incidentes que já viraram tarefa (qualquer dia dos últimos 60): o assistente não cria outra para o mesmo
+    const hoje2 = agendaHojeISO();
+    const { data } = await sb.from('agenda_diaria_tarefas').select('titulo').like('titulo', '🚨 Incidente%').gte('data', assistSomaDias(hoje2, -60));
+    (data || []).forEach(t => { const m = /incid\. #(\S+)/.exec(String(t.titulo || '')); if (m) __assistAgIncidentes.add(m[1]); });
+  }catch(e){}
 }
 async function assistRenderAgenda(){
   const filtro = document.getElementById('asAgFiltroResp').value;
@@ -23350,6 +23356,20 @@ document.getElementById('btnNovoIncidente').addEventListener('click', ()=>{
 });
 document.getElementById('incModalClose').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
 document.getElementById('incCancelBtn').addEventListener('click', ()=>{ document.getElementById('incModalOverlay').style.display = 'none'; });
+// Incidente novo (e ainda não resolvido) vira tarefa na Agenda do Dia da pessoa responsável.
+// A tarefa leva o número do incidente no texto ("incid. #42"), e o assistente não cria outra para o mesmo incidente.
+async function incCriarTarefaNaAgenda(inc){
+  const m = membroDaCarteira(inc.responsavel), nomeAg = m ? m.nome : assistNomeNaAgenda(assistUsuario());   // responsável que não é pessoa (Equipe CS, Técnica): fica com quem registrou
+  const hoje = agendaHojeISO(), tag = (inc.id !== null && inc.id !== undefined) ? ' · incid. #' + inc.id : '';
+  const base = '🚨 Incidente ' + (inc.gravidade || '') + ': ' + (inc.tipo || 'Incidente') + ' — ' + inc.condominio;
+  const titulo = (base.length > 150 - tag.length ? base.slice(0, 150 - tag.length - 1) + '…' : base) + tag;
+  const ja = await sb.from('agenda_diaria_tarefas').select('id').eq('data', hoje).eq('responsavel', nomeAg).eq('titulo', titulo);
+  if (ja.data && ja.data.length) return;
+  const { error } = await sb.from('agenda_diaria_tarefas').insert({ data: hoje, responsavel: nomeAg, titulo, prioridade: inc.gravidade === 'Alta' ? 'alta' : 'media', ordem: 5 });
+  if (error) throw error;
+  try{ const aba = document.getElementById('tabAgendaDia'); if (aba && aba.style.display !== 'none') loadAgendaDoDia(); }catch(e){}
+  try{ assistToast('📅 <strong>Tarefa criada na Agenda do Dia</strong> de <strong>' + escapeHtml(nomeAg) + '</strong>:<br>' + escapeHtml(titulo.replace('🚨 ', '')), [{ rotulo: 'Ver agenda', acao: () => { const b = document.querySelector('.tab-btn[data-tab="agendaDia"]'); if (b) b.click(); } }]); }catch(e){}
+}
 document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('incError');
   errEl.style.display = 'none';
@@ -23389,12 +23409,21 @@ document.getElementById('incSaveBtn').addEventListener('click', async ()=>{
   if (fimTrat || (incEditingOriginal && incEditingOriginal.tratativa_conclusao)) payload.tratativa_conclusao = fimTrat;
   if (!sb){ errEl.textContent = 'Sem conexão com o servidor.'; errEl.style.display = 'block'; return; }
   try{
-    const { error } = id
-      ? await sb.from('incidentes').update(payload).eq('id', id)
-      : await sb.from('incidentes').insert(payload);
-    if (error) throw error;
+    let idFinal = id;
+    if (id){ const { error } = await sb.from('incidentes').update(payload).eq('id', id); if (error) throw error; }
+    else {
+      const { data, error } = await sb.from('incidentes').insert(payload).select('id'); if (error) throw error;
+      idFinal = data && data[0] ? data[0].id : null;
+      if (idFinal === null || idFinal === undefined){   // se o servidor não devolveu o número, procura o incidente recém-criado
+        const r = await sb.from('incidentes').select('id').eq('condominio', condominio).order('id', { ascending: false }).limit(1); idFinal = r.data && r.data[0] ? r.data[0].id : null;
+      }
+    }
     document.getElementById('incModalOverlay').style.display = 'none';
     logActivity(id ? 'editou' : 'criou', 'incidente', condominio, `${payload.tipo} — ${payload.gravidade}`);
+    if (!id && statusNovo !== 'Resolvido'){
+      try{ await incCriarTarefaNaAgenda(Object.assign({}, payload, { id: idFinal })); }
+      catch(e2){ console.warn('Incidente → agenda:', e2); alert('O incidente foi salvo, mas não consegui criar a tarefa na Agenda do Dia: ' + (e2.message || e2)); }
+    }
     loadIncidentes();
   }catch(e){
     errEl.textContent = 'Erro ao salvar: ' + e.message;
@@ -26612,7 +26641,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v186';
+const APP_BUILD = 'v187';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
