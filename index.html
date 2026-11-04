@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v183 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v184 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -4780,6 +4780,8 @@ CONDOMINIO Y	480	45"></textarea>
     </div>
 
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <span id="agendaAtualizadoEm" style="font-size:11.5px; color:var(--text-faint); align-self:center; margin-right:10px;"></span>
+      <button type="button" class="clearbtn" id="btnAgendaAtualizar" title="Busca de novo o que a equipe marcou como feito">↻ Atualizar</button>
       <button type="button" class="clearbtn" id="btnNovaRaiaAgenda">+ Nova pessoa</button>
       <button type="button" class="clearbtn" id="btnGerenciarTarefasFixas">⚙️ Tarefas Fixas</button>
     </div>
@@ -10087,6 +10089,14 @@ function assistChaveAgenda(nomeMembro, titulo){ return normTxtCarteira(nomeMembr
 function assistCorta(t, n){ t = String(t || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
 
 // ----- agenda de hoje: o assistente monta a lista de cada pessoa a partir das cobranças e das prioridades -----
+// Acompanhamento marcado como Concluído: o alerta continua aparecendo na lista de prioridades (em amarelo), mas não volta a ser tarefa
+// da agenda durante o prazo configurado (padrão 7 dias; 0 = sempre repetir).
+function assistConcluidoRecente(ac){
+  const dias = assistSilencioDias(); if (dias <= 0) return false;
+  const dia = assistDiaLocal(ac.concluido_em || ac.atualizado_em);
+  if (!dia) return true;   // sem data registrada: foi marcado como concluído, então segue como tratado
+  return -assistDiasAte(dia) <= dias;
+}
 function assistMontarProposta(){
   const porResp = new Map();
   const add = (resp, item) => { const k = resp || 'Sem responsável'; if (!porResp.has(k)) porResp.set(k, []); porResp.get(k).push(item); };
@@ -10098,6 +10108,7 @@ function assistMontarProposta(){
   __assistAlertas.forEach(al => {
     const ac = assistAcompDaChave(al.chave);
     if (ac && ac.situacao !== 'Concluído') return;   // já está acompanhado: aparece quando chegar a data da cobrança
+    if (ac && assistConcluidoRecente(ac)) return;     // acompanhamento concluído há pouco: já foi tratado, não vira tarefa de novo
     add(al.responsavel, { ordem: al.prioridade === 'Alta' ? 1 : 2, prio: al.prioridade === 'Alta' ? 'alta' : 'media', origem: assistGrupoRotulo[al.grupo], condominio: al.condominio,
       titulo: assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150) });
     if (al.prioridade === 'Alta' && al.fiscal && al.responsavel !== 'Sem responsável' && normTxtCarteira(al.fiscal) !== normTxtCarteira(al.responsavel)){
@@ -26576,7 +26587,32 @@ async function loadAgendaDoDia(){
   renderAgendaLanes();
   renderAgendaKpis();
   renderAgendaConferencia();
+  agendaMarcarAtualizado();
 }
+
+// A agenda é compartilhada: quando outra pessoa marca uma tarefa como feita, quem está com a aba aberta passa a ver na hora certa.
+function agendaMarcarAtualizado(){
+  const el = document.getElementById('agendaAtualizadoEm'), a = new Date(); if (!el) return;
+  el.textContent = 'atualizado às ' + String(a.getHours()).padStart(2, '0') + ':' + String(a.getMinutes()).padStart(2, '0') + ':' + String(a.getSeconds()).padStart(2, '0');
+}
+async function agendaRecarregarSilencioso(forcar){
+  if (!sb) return;
+  const aba = document.getElementById('tabAgendaDia'); if (!aba || aba.style.display === 'none') return;
+  if (!forcar){
+    if ([...document.querySelectorAll('#agendaTarefaModalOverlay, #agendaConferenciaModalOverlay')].some(m => m.style.display && m.style.display !== 'none')) return;   // não atrapalha quem está editando
+    const ativo = document.activeElement; if (ativo && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName) && ativo.closest('#agendaLanes')) return;
+  }
+  try{
+    const { data, error } = await sb.from('agenda_diaria_tarefas').select('*').eq('data', agendaHojeISO()).order('ordem', { ascending: true });
+    if (error || !data) return;
+    const sig = l => JSON.stringify((l || []).map(t => [t.id, !!t.concluida, t.titulo, t.responsavel, t.meta_atual, t.ordem]));
+    if (forcar || sig(data) !== sig(agendaTarefasData)){ agendaTarefasData = data; renderAgendaLanes(); renderAgendaKpis(); }
+    agendaMarcarAtualizado();
+  }catch(e){}
+}
+setInterval(() => { if (!document.hidden && typeof currentRole !== 'undefined' && currentRole) agendaRecarregarSilencioso(false); }, 45000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && typeof currentRole !== 'undefined' && currentRole) agendaRecarregarSilencioso(false); });
+document.getElementById('btnAgendaAtualizar').addEventListener('click', async ev => { const b = ev.currentTarget; b.disabled = true; await agendaRecarregarSilencioso(true); b.disabled = false; });
 
 function agendaChaveTarefa(t){ return String(t.responsavel || '').trim().toLowerCase() + '|' + String(t.titulo || '').trim().toLowerCase(); }
 async function agendaTransferirPendentesDeOntem(hoje){
