@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v189 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v190 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -9810,12 +9810,23 @@ function assistCobrancaStatus(a){
 function assistCobrancasVencidas(){ return __assistAcomp.filter(a => { const c = assistCobrancaStatus(a); return c && c.dias <= 0; }); }
 
 // ----- resumo (aba, selo e Visão Executiva) -----
+// Alerta com acompanhamento concluído continua ativo nos dados (a nota baixa não muda), mas não precisa de ação: fica numa seção à parte
+// e só volta para a lista principal se piorar (nota menor do que a do dia em que foi concluído, ou prioridade maior).
+function assistNotaDoTexto(t){ const m = /nota\s+([\d.,]+)/.exec(String(t || '')); return m ? parseFloat(m[1].replace(',', '.')) : NaN; }
+function assistPiorou(al, ac){
+  const nA = assistNotaDoTexto(al.titulo), nC = assistNotaDoTexto(ac.titulo);
+  if (!isNaN(nA) && !isNaN(nC) && nA < nC) return true;
+  return al.prioridade === 'Alta' && !!ac.prioridade && ac.prioridade !== 'Alta';
+}
+function assistAlertaTratado(al){ const ac = assistAcompDaChave(al.chave); return !!(ac && ac.situacao === 'Concluído' && !assistPiorou(al, ac)); }
+function assistAlertasEmAberto(){ return __assistAlertas.filter(a => !assistAlertaTratado(a)); }
 function assistAtualizarResumo(){
-  const altas = __assistAlertas.filter(a => a.prioridade === 'Alta').length;
+  const abertos = assistAlertasEmAberto();
+  const altas = abertos.filter(a => a.prioridade === 'Alta').length;
   const cobr = assistCobrancasVencidas().length;
   const selo = document.getElementById('assistenteBadge');
   if (selo){ const n = altas + cobr; selo.textContent = n; selo.style.display = n ? '' : 'none'; }
-  const cp = document.getElementById('asContPrior'); if (cp) cp.textContent = __assistAlertas.length;
+  const cp = document.getElementById('asContPrior'); if (cp) cp.textContent = abertos.length;
   const ca = document.getElementById('asContAcomp'); if (ca) ca.textContent = __assistAcomp.filter(a => a.situacao !== 'Concluído').length;
   let box = document.getElementById('assistenteResumoDash');
   const alvo = document.getElementById('dashViewGeral');
@@ -9825,7 +9836,7 @@ function assistAtualizarResumo(){
     box.addEventListener('click', () => { const b = document.querySelector('.tab-btn[data-tab="assistenteSC"]'); if (b) b.click(); });
     alvo.insertAdjacentElement('afterbegin', box);
   }
-  if (box) box.innerHTML = '<span style="font-weight:700;">🤖 Assistente SC</span> · <strong>' + __assistAlertas.length + '</strong> prioridade(s) identificada(s) hoje, <strong style="color:var(--critico);">' + altas + '</strong> de prioridade alta · <strong style="color:#a78bfa;">' + cobr + '</strong> cobrança(s) de acompanhamento para hoje ou atrasada(s) · <span style="color:#a78bfa; text-decoration:underline;">abrir o assistente</span>';
+  if (box) box.innerHTML = '<span style="font-weight:700;">🤖 Assistente SC</span> · <strong>' + abertos.length + '</strong> prioridade(s) identificada(s) hoje, <strong style="color:var(--critico);">' + altas + '</strong> de prioridade alta · <strong style="color:#a78bfa;">' + cobr + '</strong> cobrança(s) de acompanhamento para hoje ou atrasada(s) · <span style="color:#a78bfa; text-decoration:underline;">abrir o assistente</span>';
 }
 async function assistCarregarBase(){
   if (__assistCarregandoBase) return;
@@ -9856,38 +9867,42 @@ function assistRespOpcoes(sel, comTodos, valor){
   if (valor !== undefined) sel.value = valor;
 }
 function assistTagPrio(p){ const c = p === 'Alta' ? 'alta' : (p === 'Média' ? 'media' : 'baixa'); return '<span class="as-tag as-tag-' + c + '">' + escapeHtml(p || '—') + '</span>'; }
-function assistBlocoAcomp(a){
+function assistBlocoAcomp(a, alerta){
   if (!a) return '';
   const c = assistCobrancaStatus(a), ok = a.situacao === 'Concluído';
   const dtOk = ok && a.concluido_em ? ' em ' + String(a.concluido_em).slice(8, 10) + '/' + String(a.concluido_em).slice(5, 7) : '';
   return '<div class="as-acomp' + (ok ? ' as-acomp-ok' : '') + '"><strong>' + (ok ? '✔ Acompanhamento concluído' + dtOk : 'Acompanhamento:') + '</strong> ' + (ok ? '' : escapeHtml(a.situacao)) + (a.responsavel ? (ok ? '· ' : ' · ') + escapeHtml(a.responsavel) : '') +
     (c ? ' · <span class="as-tag as-tag-cob" style="' + (c.dias <= 0 ? 'background:rgba(239,68,68,.18); color:var(--critico);' : '') + '">' + escapeHtml(c.txt) + '</span>' : '') +
-    (a.providencia ? '<br>Providência: ' + escapeHtml(rcCortar(a.providencia, 160)) : '') + (ok ? '<br><span style="color:var(--atencao, #f59e0b);">⚠ O alerta continua ativo, por isso o condomínio segue na lista.</span>' : '') + '</div>';
+    (a.providencia ? '<br>Providência: ' + escapeHtml(rcCortar(a.providencia, 160)) : '') + (ok ? (alerta && assistPiorou(alerta, a) ? '<br><span style="color:var(--critico);">⚠ A situação piorou depois que você concluiu (' + escapeHtml(String(a.titulo || '').replace('Avaliação baixa: ', '')) + ' → ' + escapeHtml(String(alerta.titulo || '').replace('Avaliação baixa: ', '')) + '). Volte a acompanhar.</span>' : '<br><span style="color:var(--atencao, #f59e0b);">⚠ O alerta continua ativo, por isso o condomínio segue na lista.</span>') : '') + '</div>';
 }
 function assistRenderPrioridades(){
   const resp = document.getElementById('asFiltroResp').value, tipo = document.getElementById('asFiltroTipo').value, ocultar = document.getElementById('asOcultarAcomp').checked;
   const venc = assistCobrancasVencidas().filter(a => !resp || a.responsavel === resp);
   const chavesCob = new Set(venc.map(a => a.chave));   // alertas com cobrança de hoje ou atrasada já aparecem na seção de cobranças
   const candidatas = __assistAlertas.filter(a => (!resp || a.responsavel === resp) && (!tipo || a.grupo === tipo) && (!ocultar || !assistAcompDaChave(a.chave)));
-  const lista = candidatas.filter(a => !chavesCob.has(a.chave)), repetidas = candidatas.length - lista.length;
-  __assistListaAtual = lista;
-  const cont = f => __assistAlertas.filter(f).length;
+  const semCobranca = candidatas.filter(a => !chavesCob.has(a.chave)), repetidas = candidatas.length - semCobranca.length;
+  const lista = semCobranca.filter(a => !assistAlertaTratado(a)), tratados = semCobranca.filter(a => assistAlertaTratado(a));
+  __assistListaAtual = lista.concat(tratados);
+  const emAb = assistAlertasEmAberto(), cont = f => emAb.filter(f).length;
   const chip = (num, lbl, cor) => '<div class="stat-box"><div class="snum" style="color:' + cor + ';">' + num + '</div><div class="slbl">' + lbl + '</div></div>';
-  document.getElementById('asResumo').innerHTML = chip(__assistAlertas.length, 'Prioridades hoje', 'var(--accent)') + chip(cont(a => a.prioridade === 'Alta'), 'Alta prioridade', 'var(--critico)') + chip(cont(a => a.grupo === 'os'), 'O.S. e demandas', '#f59e0b') + chip(cont(a => a.grupo === 'pend'), 'Pendências', '#f59e0b') + chip(cont(a => a.grupo === 'nota'), 'Avaliações baixas', '#f59e0b') + chip(assistCobrancasVencidas().length, 'Cobranças de hoje/atrasadas', '#a78bfa');
+  document.getElementById('asResumo').innerHTML = chip(emAb.length, 'Prioridades hoje', 'var(--accent)') + chip(cont(a => a.prioridade === 'Alta'), 'Alta prioridade', 'var(--critico)') + chip(cont(a => a.grupo === 'os'), 'O.S. e demandas', '#f59e0b') + chip(cont(a => a.grupo === 'pend'), 'Pendências', '#f59e0b') + chip(cont(a => a.grupo === 'nota'), 'Avaliações baixas', '#f59e0b') + chip(assistCobrancasVencidas().length, 'Cobranças de hoje/atrasadas', '#a78bfa');
   document.getElementById('asCobrancas').innerHTML = venc.length
     ? '<p class="chart-title" style="margin:14px 0 8px;">⏰ Cobranças de hoje e atrasadas (' + venc.length + ')</p>' + venc.map(a => assistCartaoAcomp(a)).join('')
     : '';
+  const cartao = (a, i) => {
+    const reg = assistAcompDaChave(a.chave), conc = !!(reg && reg.situacao === 'Concluído');
+    return '<div class="as-card as-' + (a.prioridade === 'Alta' ? 'alta' : (a.prioridade === 'Média' ? 'media' : 'baixa')) + (conc ? ' as-concluida' : '') + '"><div class="as-topo"><div style="min-width:0; flex:1;">' +
+      '<div>' + assistTagPrio(a.prioridade) + '<span class="as-tag" style="background:var(--bg-panel); color:var(--text-faint);">' + escapeHtml(assistGrupoRotulo[a.grupo] || '') + '</span>' + (conc ? '<span class="as-tag as-tag-ok">✔ Concluído</span>' : '') + '</div>' +
+      '<div class="as-tit" style="margin-top:6px;">' + escapeHtml(a.titulo) + '</div>' +
+      '<div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>' + escapeHtml(a.detalhe || '') + '<br><span style="color:#a78bfa;">' + escapeHtml(a.orientacao) + '</span></div>' +
+      assistBlocoAcomp(reg, a) + '</div><div class="as-acoes"><button type="button" class="clearbtn" data-as-abrir="' + i + '">Abrir</button>' +
+      (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button>' : '') + '</div></div></div>';
+  };
   document.getElementById('asLista').innerHTML = (lista.length ? '<p class="chart-title" style="margin:14px 0 8px;">🔔 Prioridades (' + lista.length + ')</p>' : '') +
     (repetidas ? '<p class="rc-nota" style="margin:6px 0 10px;">ℹ️ ' + repetidas + ' prioridade(s) com cobrança de hoje ou atrasada estão na seção acima e não se repetem aqui.</p>' : '') +
-    (lista.length ? lista.map((a, i) => {
-      const reg = assistAcompDaChave(a.chave), conc = !!(reg && reg.situacao === 'Concluído');
-      return '<div class="as-card as-' + (a.prioridade === 'Alta' ? 'alta' : (a.prioridade === 'Média' ? 'media' : 'baixa')) + (conc ? ' as-concluida' : '') + '"><div class="as-topo"><div style="min-width:0; flex:1;">' +
-        '<div>' + assistTagPrio(a.prioridade) + '<span class="as-tag" style="background:var(--bg-panel); color:var(--text-faint);">' + escapeHtml(assistGrupoRotulo[a.grupo] || '') + '</span>' + (conc ? '<span class="as-tag as-tag-ok">✔ Concluído</span>' : '') + '</div>' +
-        '<div class="as-tit" style="margin-top:6px;">' + escapeHtml(a.titulo) + '</div>' +
-        '<div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>' + escapeHtml(a.detalhe || '') + '<br><span style="color:#a78bfa;">' + escapeHtml(a.orientacao) + '</span></div>' +
-        assistBlocoAcomp(reg) + '</div><div class="as-acoes"><button type="button" class="clearbtn" data-as-abrir="' + i + '">Abrir</button>' +
-        (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button>' : '') + '</div></div></div>';
-    }).join('') : (repetidas ? '' : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>'));
+    (lista.length ? lista.map((a, i) => cartao(a, i)).join('') : ((repetidas || tratados.length) ? '' : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>')) +
+    (!lista.length && tratados.length && !repetidas ? '<p class="empty" style="margin-top:18px;">Nenhuma prioridade pendente. ✅ Os concluídos estão logo abaixo.</p>' : '') +
+    (tratados.length ? '<details id="asConcluidosBox" style="margin-top:18px;"' + (window.__asConcluidosAberto ? ' open' : '') + ' ontoggle="window.__asConcluidosAberto = this.open"><summary style="cursor:pointer; font-weight:700; font-size:13px; color:var(--atencao, #f59e0b); padding:8px 2px;">✔ Concluídos com alerta ainda ativo (' + tratados.length + ')</summary><p class="rc-nota" style="margin:2px 0 10px;">O acompanhamento foi concluído, mas a nota continua baixa nos dados. Eles voltam para a lista principal só se a situação piorar.</p>' + tratados.map((a, k) => cartao(a, lista.length + k)).join('') + '</details>' : '');
 }
 function assistCartaoAcomp(a){
   const c = assistCobrancaStatus(a);
@@ -10103,7 +10118,7 @@ function assistTitulosJaTratados(){
   const set = new Set();
   __assistAlertas.forEach(al => {
     const ac = assistAcompDaChave(al.chave);
-    if (!(ac && ac.situacao === 'Concluído' && assistConcluidoRecente(ac))) return;
+    if (!assistAlertaTratado(al)) return;
     set.add(assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150));
     if (al.fiscal && al.responsavel) set.add(assistCorta('🤖 Cobrar ' + al.responsavel + ': ' + al.titulo + ' — ' + al.condominio, 150));
   });
@@ -10129,7 +10144,7 @@ function assistMontarProposta(){
   __assistAlertas.forEach(al => {
     const ac = assistAcompDaChave(al.chave);
     if (ac && ac.situacao !== 'Concluído') return;   // já está acompanhado: aparece quando chegar a data da cobrança
-    if (ac && assistConcluidoRecente(ac)) return;     // acompanhamento concluído há pouco: já foi tratado, não vira tarefa de novo
+    if (ac && ac.situacao === 'Concluído' && !assistPiorou(al, ac)) return;     // acompanhamento concluído e sem piorar: já foi tratado, não vira tarefa de novo
     if (al.grupo === 'inc' && __assistAgIncidentes.has(String(al.chave).replace('inc:', ''))) return;   // esse incidente já virou tarefa quando foi registrado
     add(al.responsavel, { ordem: al.prioridade === 'Alta' ? 1 : 2, prio: al.prioridade === 'Alta' ? 'alta' : 'media', origem: assistGrupoRotulo[al.grupo], condominio: al.condominio,
       titulo: assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150) });
@@ -10252,7 +10267,7 @@ async function assistDadosFimDia(dia, resp){
   }
   tarefasAgenda.filter(t => t.concluida).forEach(t => feitos.push('Tarefa da agenda concluída: ' + t.titulo + ' (' + t.responsavel + ')'));
   tarefasAgenda.filter(t => !t.concluida).forEach(t => pend.push('Tarefa da agenda não concluída: ' + t.titulo + ' (' + t.responsavel + ')'));
-  const alertasAtivos = __assistAlertas.filter(a => aceita(a.responsavel));
+  const alertasAtivos = assistAlertasEmAberto().filter(a => aceita(a.responsavel));
   alertasAtivos.slice(0, 15).forEach(a => pend.push(a.prioridade + ' · ' + a.titulo + ' — ' + a.condominio));
   if (alertasAtivos.length > 15) pend.push('... e mais ' + (alertasAtivos.length - 15) + ' prioridade(s) no Assistente SC.');
   const altas = alertasAtivos.filter(a => a.prioridade === 'Alta').length;
@@ -10335,7 +10350,7 @@ async function assistAvisosTick(){
   if (!__assistIniciado || !__assistBaseCarregada) return;
   const cfg = assistCfgLer(), agora = new Date(), hoje = assistHoje(), diaSemana = agora.getDay();
   if (diaSemana === 0 || diaSemana === 6) return;   // só dias úteis
-  const altas = __assistAlertas.filter(a => a.prioridade === 'Alta'), cobr = assistCobrancasVencidas().length;
+  const abertosHoje = assistAlertasEmAberto(), altas = abertosHoje.filter(a => a.prioridade === 'Alta'), cobr = assistCobrancasVencidas().length;
   let mudou = false;
   if (cfg.agendaAuto !== false && (assistPodeEditar() || souDaEquipe()) && cfg.ultimoAgendaAuto !== hoje){
     cfg.ultimoAgendaAuto = hoje; mudou = true;
@@ -10344,9 +10359,9 @@ async function assistAvisosTick(){
   }
   if (cfg.ultimoBomDia !== hoje){
     cfg.ultimoBomDia = hoje; mudou = true;
-    const corpo = '☀️ <strong>Bom dia!</strong> Hoje o Assistente SC encontrou <strong>' + __assistAlertas.length + '</strong> prioridade(s), <strong style="color:var(--critico);">' + altas.length + '</strong> de alta, e <strong>' + cobr + '</strong> cobrança(s) para hoje ou atrasada(s).';
+    const corpo = '☀️ <strong>Bom dia!</strong> Hoje o Assistente SC encontrou <strong>' + abertosHoje.length + '</strong> prioridade(s), <strong style="color:var(--critico);">' + altas.length + '</strong> de alta, e <strong>' + cobr + '</strong> cobrança(s) para hoje ou atrasada(s).';
     assistToast(corpo, [{ rotulo: 'Ver prioridades', acao: () => assistIrParaAba('prioridades') }, { rotulo: 'Ver agenda de hoje', acao: () => assistIrParaAba('agenda') }]);
-    assistNotificarNavegador('Assistente SC', __assistAlertas.length + ' prioridade(s) hoje, ' + altas.length + ' de alta, ' + cobr + ' cobrança(s).');
+    assistNotificarNavegador('Assistente SC', abertosHoje.length + ' prioridade(s) hoje, ' + altas.length + ' de alta, ' + cobr + ' cobrança(s).');
   }
   const chavesAltas = altas.map(a => a.chave);
   if (cfg.altasVistas === null){ cfg.altasVistas = chavesAltas; mudou = true; }
@@ -10373,7 +10388,7 @@ function assistDadosPopup(){
   const eu = (typeof meuNomeCarteira === 'function') ? meuNomeCarteira() : '';
   const mesma = (a, b) => !!a && !!b && normTxtCarteira(nomeOficialCarteira(a)) === normTxtCarteira(nomeOficialCarteira(b));
   const cobr = assistCobrancasVencidas().slice().sort((a, b) => assistDiasAte(a.proxima_cobranca) - assistDiasAte(b.proxima_cobranca));
-  const semAcompanhamento = al => { const ac = assistAcompDaChave(al.chave); return !(ac && ac.situacao !== 'Concluído'); };
+  const semAcompanhamento = al => { const ac = assistAcompDaChave(al.chave); return !ac || (ac.situacao === 'Concluído' && assistPiorou(al, ac)); };   // concluído e sem piorar: não entra
   const ordem = lista => lista.slice().sort((a, b) => (a.prioridade === 'Alta' ? 0 : 1) - (b.prioridade === 'Alta' ? 0 : 1));
   if (!eu){
     const porPessoa = new Map();
@@ -10381,7 +10396,8 @@ function assistDadosPopup(){
     __assistAlertas.filter(semAcompanhamento).forEach(a => { const e = ent(a.responsavel); e.total++; if (a.prioridade === 'Alta') e.altas++; });
     cobr.forEach(a => { ent(a.responsavel).cobr++; });
     const linhas = [...porPessoa.values()].sort((a, b) => (b.altas + b.cobr) - (a.altas + a.cobr));
-    return { geral: true, eu: '', linhas, totalPend: __assistAlertas.length, altas: __assistAlertas.filter(a => a.prioridade === 'Alta').length, cobrancas: cobr.length, tem: __assistAlertas.length + cobr.length > 0 };
+    const emAb = assistAlertasEmAberto();
+    return { geral: true, eu: '', linhas, totalPend: emAb.length, altas: emAb.filter(a => a.prioridade === 'Alta').length, cobrancas: cobr.length, tem: emAb.length + cobr.length > 0 };
   }
   const minhasCobr = cobr.filter(a => mesma(a.responsavel, eu));
   const minhas = ordem(__assistAlertas.filter(a => mesma(a.responsavel, eu) && semAcompanhamento(a)));
@@ -26662,7 +26678,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v189';
+const APP_BUILD = 'v190';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
@@ -26684,7 +26700,7 @@ async function agendaDiagnostico(){
     if (ac) acTxt = ac.situacao === 'Concluído' ? 'concluído em ' + dm(assistDiaLocal(ac.concluido_em || ac.atualizado_em) || hoje) : ac.situacao + (ac.proxima_cobranca ? ' (cobrança em ' + dm(ac.proxima_cobranca) + ')' : '');
     let veredito;
     if (concl) veredito = 'Já foi concluída em ' + dm(concl.data) + ' e voltou hoje. Só acontece se uma janela com versão antiga a criou ou se o prazo de silêncio estiver em 0.';
-    else if (ac && ac.situacao === 'Concluído' && assistConcluidoRecente(ac)) veredito = 'O acompanhamento foi concluído há pouco: pode remover (botão da faixa amarela).';
+    else if (al ? assistAlertaTratado(al) : (ac && ac.situacao === 'Concluído')) veredito = 'O acompanhamento foi concluído e a situação não piorou: pode remover (botão da faixa amarela).';
     else if (outros.length) veredito = 'Aparece desde ' + dm(outros[outros.length - 1].data) + ' e nunca foi marcada como concluída na agenda.';
     else veredito = 'Tarefa nova de hoje: o alerta continua ativo e não há conclusão recente.';
     const criada = hojeLinhas[0] && hojeLinhas[0].created_at ? new Date(hojeLinhas[0].created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -26708,7 +26724,7 @@ async function agendaVerificarIndevidas(forcar){
   let lista = []; try{ lista = await assistTarefasIndevidasHoje(); }catch(e){ console.warn('Tarefas já tratadas:', e); }
   if (!lista.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
   box.style.display = 'block';
-  box.innerHTML = '⚠ <strong>' + lista.length + ' tarefa(s) automática(s) de hoje já foram tratadas</strong> (o acompanhamento foi concluído, ou a mesma tarefa foi concluída nos últimos ' + assistSilencioDias() + ' dias). Elas não deveriam estar aqui. ' +
+  box.innerHTML = '⚠ <strong>' + lista.length + ' tarefa(s) automática(s) de hoje já foram tratadas</strong> (o acompanhamento foi concluído e a situação não piorou, ou a mesma tarefa foi concluída nos últimos ' + assistSilencioDias() + ' dias). Elas não deveriam estar aqui. ' +
     '<button type="button" class="clearbtn" id="btnRemoverIndevidas" style="margin-left:6px; border-color:#f59e0b; color:#f59e0b;">🧹 Remover da agenda</button>' +
     '<div style="margin-top:6px; color:var(--text-faint);">' + lista.map(t => escapeHtml((t.responsavel || '') + ': ' + String(t.titulo || '').replace('🤖 ', ''))).join('<br>') + '</div>';
   document.getElementById('btnRemoverIndevidas').addEventListener('click', async ev => {
