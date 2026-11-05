@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v190 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v191 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -9819,7 +9819,55 @@ function assistPiorou(al, ac){
   return al.prioridade === 'Alta' && !!ac.prioridade && ac.prioridade !== 'Alta';
 }
 function assistAlertaTratado(al){ const ac = assistAcompDaChave(al.chave); return !!(ac && ac.situacao === 'Concluído' && !assistPiorou(al, ac)); }
-function assistAlertasEmAberto(){ return __assistAlertas.filter(a => !assistAlertaTratado(a)); }
+// ----- Dispensar alerta: sai das prioridades, da agenda e das contagens; só volta se piorar ou quando chegar a pesquisa de outro mês -----
+const ASSIST_DISP_CHAVE = 'assist_alertas_dispensados';
+let __assistDispensados = new Map();
+function assistMesDoAlerta(al){ const m = /^([A-Za-zÀ-ú]{3,}\/\d{4})/.exec(String(al.detalhe || '')); return m ? m[1] : ''; }
+function assistAlertaDispensado(al){
+  const d = __assistDispensados.get(al.chave); if (!d) return false;
+  if (assistPiorou(al, d)) return false;
+  const mes = assistMesDoAlerta(al); return !(d.mes && mes && d.mes !== mes);
+}
+function assistSalvarDispensadosLocal(){ try{ localStorage.setItem('assistDispensados', JSON.stringify([...__assistDispensados.values()])); }catch(e){} }
+async function assistCarregarDispensados(){
+  let lista = null;
+  if (sb){ try{ const r = await sb.from('configuracoes_sistema').select('valor').eq('chave', ASSIST_DISP_CHAVE); if (!r.error) lista = (r.data && r.data[0]) ? JSON.parse(r.data[0].valor || '[]') : []; }catch(e){ console.warn('Alertas dispensados:', e); } }
+  if (lista === null){ try{ lista = JSON.parse(localStorage.getItem('assistDispensados') || '[]'); }catch(e){ lista = []; } }
+  __assistDispensados = new Map(lista.map(x => [x.chave, x])); assistSalvarDispensadosLocal();
+}
+// lê o que está no servidor, aplica a mudança e grava (assim duas pessoas dispensando ao mesmo tempo não apagam uma à outra)
+async function assistGravarDispensados(mutar){
+  let base = null;
+  if (sb){ try{ const r = await sb.from('configuracoes_sistema').select('valor').eq('chave', ASSIST_DISP_CHAVE); if (!r.error) base = new Map(((r.data && r.data[0]) ? JSON.parse(r.data[0].valor || '[]') : []).map(x => [x.chave, x])); }catch(e){} }
+  if (!base) base = new Map(__assistDispensados);
+  mutar(base); __assistDispensados = base; assistSalvarDispensadosLocal();
+  if (!sb) return { ok: false, erro: 'sem conexão com o servidor' };
+  try{
+    const { error } = await sb.from('configuracoes_sistema').upsert({ chave: ASSIST_DISP_CHAVE, valor: JSON.stringify([...base.values()]), atualizado_em: new Date().toISOString() }, { onConflict: 'chave' });
+    return error ? { ok: false, erro: error.message || String(error) } : { ok: true };
+  }catch(e){ return { ok: false, erro: e.message || String(e) }; }
+}
+async function assistDispensarAlerta(al){
+  const motivo = prompt('Dispensar este alerta?\n\n' + al.titulo + ' — ' + al.condominio + '\n\nEle sai das prioridades, da agenda e das contagens. Só volta se piorar ou quando chegar a pesquisa de outro mês. Se houver acompanhamento em aberto, ele é concluído junto.\n\nMotivo (opcional):', '');
+  if (motivo === null) return;
+  const d = { chave: al.chave, titulo: al.titulo, prioridade: al.prioridade, mes: assistMesDoAlerta(al), condominio: al.condominio, filial: al.filial || '', motivo: motivo.trim(), por: assistUsuario(), em: new Date().toISOString() };
+  try{
+    const ac = assistAcompDaChave(al.chave);
+    if (ac && ac.situacao !== 'Concluído'){
+      const agora = new Date().toISOString();
+      await assistSalvarRegistro(Object.assign({}, ac, { situacao: 'Concluído', concluido_em: agora, proxima_cobranca: null, historico: (ac.historico || []).concat([{ em: agora, por: assistUsuario(), situacao: 'Concluído', texto: 'Alerta dispensado' + (d.motivo ? ': ' + d.motivo : '.') }]).slice(-60) }));
+    }
+  }catch(e){ console.warn('Dispensar: não consegui concluir o acompanhamento:', e); }
+  const r = await assistGravarDispensados(m => m.set(d.chave, d));
+  if (!r.ok) alert('Dispensado só neste navegador: não consegui salvar no servidor, então os outros computadores ainda vão ver o alerta.' + (r.erro ? '\n\nMotivo: ' + r.erro : ''));
+  assistAtualizarResumo(); assistRenderPrioridades();
+}
+async function assistRestaurarAlerta(chave){
+  const r = await assistGravarDispensados(m => m.delete(chave));
+  if (!r.ok) alert('Restaurado só neste navegador: não consegui salvar no servidor.' + (r.erro ? '\n\nMotivo: ' + r.erro : ''));
+  assistAtualizarResumo(); assistRenderPrioridades();
+}
+function assistAlertasEmAberto(){ return __assistAlertas.filter(a => !assistAlertaTratado(a) && !assistAlertaDispensado(a)); }
 function assistAtualizarResumo(){
   const abertos = assistAlertasEmAberto();
   const altas = abertos.filter(a => a.prioridade === 'Alta').length;
@@ -9845,7 +9893,7 @@ async function assistCarregarBase(){
     const ps = [];
     if (sb && !demLoaded && typeof loadDemandas === 'function') ps.push(loadDemandas());
     if (sb && !incLoaded && typeof loadIncidentes === 'function') ps.push(loadIncidentes());
-    ps.push(assistCarregarAcomp());
+    ps.push(assistCarregarAcomp()); ps.push(assistCarregarDispensados());
     await Promise.allSettled(ps);
   }finally{ __assistCarregandoBase = false; }
   __assistBaseCarregada = true;
@@ -9879,7 +9927,9 @@ function assistRenderPrioridades(){
   const resp = document.getElementById('asFiltroResp').value, tipo = document.getElementById('asFiltroTipo').value, ocultar = document.getElementById('asOcultarAcomp').checked;
   const venc = assistCobrancasVencidas().filter(a => !resp || a.responsavel === resp);
   const chavesCob = new Set(venc.map(a => a.chave));   // alertas com cobrança de hoje ou atrasada já aparecem na seção de cobranças
-  const candidatas = __assistAlertas.filter(a => (!resp || a.responsavel === resp) && (!tipo || a.grupo === tipo) && (!ocultar || !assistAcompDaChave(a.chave)));
+  const filtrados = __assistAlertas.filter(a => (!resp || a.responsavel === resp) && (!tipo || a.grupo === tipo));
+  const dispensados = filtrados.filter(a => assistAlertaDispensado(a));
+  const candidatas = filtrados.filter(a => !assistAlertaDispensado(a) && (!ocultar || !assistAcompDaChave(a.chave)));
   const semCobranca = candidatas.filter(a => !chavesCob.has(a.chave)), repetidas = candidatas.length - semCobranca.length;
   const lista = semCobranca.filter(a => !assistAlertaTratado(a)), tratados = semCobranca.filter(a => assistAlertaTratado(a));
   __assistListaAtual = lista.concat(tratados);
@@ -9896,13 +9946,15 @@ function assistRenderPrioridades(){
       '<div class="as-tit" style="margin-top:6px;">' + escapeHtml(a.titulo) + '</div>' +
       '<div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>' + escapeHtml(a.detalhe || '') + '<br><span style="color:#a78bfa;">' + escapeHtml(a.orientacao) + '</span></div>' +
       assistBlocoAcomp(reg, a) + '</div><div class="as-acoes"><button type="button" class="clearbtn" data-as-abrir="' + i + '">Abrir</button>' +
-      (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button>' : '') + '</div></div></div>';
+      (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-acomp="' + i + '" style="' + (conc ? 'border-color:var(--atencao, #f59e0b); color:var(--atencao, #f59e0b);' : 'border-color:var(--ok); color:var(--ok);') + '">' + (conc ? '✔ Acompanhamento concluído' : (reg ? 'Atualizar acompanhamento' : 'Acompanhar')) + '</button><button type="button" class="clearbtn" data-as-dispensar="' + i + '" title="Tira o alerta das prioridades, da agenda e das contagens. Só volta se piorar ou na pesquisa de outro mês.">Dispensar</button>' : '') + '</div></div></div>';
   };
   document.getElementById('asLista').innerHTML = (lista.length ? '<p class="chart-title" style="margin:14px 0 8px;">🔔 Prioridades (' + lista.length + ')</p>' : '') +
     (repetidas ? '<p class="rc-nota" style="margin:6px 0 10px;">ℹ️ ' + repetidas + ' prioridade(s) com cobrança de hoje ou atrasada estão na seção acima e não se repetem aqui.</p>' : '') +
     (lista.length ? lista.map((a, i) => cartao(a, i)).join('') : ((repetidas || tratados.length) ? '' : '<p class="empty" style="margin-top:18px;">Nenhuma prioridade com esses filtros. ✅</p>')) +
     (!lista.length && tratados.length && !repetidas ? '<p class="empty" style="margin-top:18px;">Nenhuma prioridade pendente. ✅ Os concluídos estão logo abaixo.</p>' : '') +
-    (tratados.length ? '<details id="asConcluidosBox" style="margin-top:18px;"' + (window.__asConcluidosAberto ? ' open' : '') + ' ontoggle="window.__asConcluidosAberto = this.open"><summary style="cursor:pointer; font-weight:700; font-size:13px; color:var(--atencao, #f59e0b); padding:8px 2px;">✔ Concluídos com alerta ainda ativo (' + tratados.length + ')</summary><p class="rc-nota" style="margin:2px 0 10px;">O acompanhamento foi concluído, mas a nota continua baixa nos dados. Eles voltam para a lista principal só se a situação piorar.</p>' + tratados.map((a, k) => cartao(a, lista.length + k)).join('') + '</details>' : '');
+    (!lista.length && !tratados.length && !repetidas && dispensados.length ? '<p class="empty" style="margin-top:18px;">Nenhuma prioridade pendente. ✅</p>' : '') +
+    (tratados.length ? '<details id="asConcluidosBox" style="margin-top:18px;"' + (window.__asConcluidosAberto ? ' open' : '') + ' ontoggle="window.__asConcluidosAberto = this.open"><summary style="cursor:pointer; font-weight:700; font-size:13px; color:var(--atencao, #f59e0b); padding:8px 2px;">✔ Concluídos com alerta ainda ativo (' + tratados.length + ')</summary><p class="rc-nota" style="margin:2px 0 10px;">O acompanhamento foi concluído, mas a nota continua baixa nos dados. Eles voltam para a lista principal só se a situação piorar.</p>' + tratados.map((a, k) => cartao(a, lista.length + k)).join('') + '</details>' : '') +
+    (dispensados.length ? '<details id="asDispensadosBox" style="margin-top:14px;"' + (window.__asDispensadosAberto ? ' open' : '') + ' ontoggle="window.__asDispensadosAberto = this.open"><summary style="cursor:pointer; font-weight:700; font-size:13px; color:var(--text-faint); padding:8px 2px;">🗂 Dispensados (' + dispensados.length + ')</summary><p class="rc-nota" style="margin:2px 0 10px;">Alertas que você dispensou. Voltam sozinhos se piorarem ou quando chegar a pesquisa de outro mês, ou quando você restaurar.</p>' + dispensados.map(a => { const d = __assistDispensados.get(a.chave) || {}; return '<div class="as-card" style="opacity:.85;"><div class="as-topo"><div style="min-width:0; flex:1;"><div class="as-tit">' + escapeHtml(a.titulo) + '</div><div class="as-sub"><strong>' + escapeHtml(a.condominio || '—') + '</strong>' + (a.filial ? ' · ' + escapeHtml(a.filial) : '') + '<br>Dispensado por ' + escapeHtml(d.por || '—') + (d.em ? ' em ' + String(d.em).slice(8, 10) + '/' + String(d.em).slice(5, 7) : '') + (d.motivo ? ' · ' + escapeHtml(d.motivo) : '') + '</div></div><div class="as-acoes">' + (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-restaurar="' + escapeHtml(a.chave) + '">↩ Restaurar</button>' : '') + '</div></div></div>'; }).join('') + '</details>' : '');
 }
 function assistCartaoAcomp(a){
   const c = assistCobrancaStatus(a);
@@ -9915,7 +9967,7 @@ function assistCartaoAcomp(a){
     (a.detalhe ? '<br>' + escapeHtml(rcCortar(a.detalhe, 140)) : '') + (a.providencia ? '<br><strong>Providência:</strong> ' + escapeHtml(rcCortar(a.providencia, 200)) : '') +
     '<br><span style="color:' + (ativo || String(a.chave).startsWith('man:') ? '#a78bfa' : 'var(--ok)') + ';">' + (String(a.chave).startsWith('man:') ? 'Acompanhamento manual' : (ativo ? 'O alerta original continua ativo' : 'O alerta original não aparece mais: confira e conclua se estiver resolvido')) + '</span></div></div>' +
     '<div class="as-acoes">' + (ativo ? '<button type="button" class="clearbtn" data-as-abrir-chave="' + escapeHtml(a.chave) + '">Abrir</button>' : '') +
-    (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-editar="' + escapeHtml(a.chave) + '" style="border-color:var(--ok); color:var(--ok);">Atualizar</button>' : '<button type="button" class="clearbtn" data-as-editar="' + escapeHtml(a.chave) + '">Ver histórico</button>') + '</div></div></div>';
+    (assistPodeEditar() ? '<button type="button" class="clearbtn" data-as-editar="' + escapeHtml(a.chave) + '" style="border-color:var(--ok); color:var(--ok);">Atualizar</button>' + (ativo ? '<button type="button" class="clearbtn" data-as-dispensar-chave="' + escapeHtml(a.chave) + '" title="Tira o alerta das prioridades, da agenda e das contagens e conclui este acompanhamento.">Dispensar</button>' : '') : '<button type="button" class="clearbtn" data-as-editar="' + escapeHtml(a.chave) + '">Ver histórico</button>') + '</div></div></div>';
 }
 function assistRenderAcompanhamentos(){
   const resp = document.getElementById('asAcFiltroResp').value, sit = document.getElementById('asAcFiltroSit').value;
@@ -10027,6 +10079,7 @@ async function assistSalvarDoModal(concluir){
   const anterior = st.registro || {};
   const mudou = !st.registro || anterior.situacao !== situacao || (anterior.providencia || '') !== providencia || String(anterior.proxima_cobranca || '').slice(0, 10) !== String(proxima || '') || anterior.responsavel !== responsavel;
   Object.assign(reg, { responsavel, situacao, prioridade, providencia, proxima_cobranca: proxima, concluido_em: situacao === 'Concluído' ? (reg.concluido_em || new Date().toISOString()) : null });
+  if (situacao === 'Concluído' && st.alerta && !(st.registro && st.registro.situacao === 'Concluído')){ reg.titulo = st.alerta.titulo; reg.detalhe = st.alerta.detalhe; reg.prioridade = st.alerta.prioridade; }   // base para saber se piorou depois
   if (mudou){
     reg.historico = (reg.historico || []).concat([{ em: new Date().toISOString(), por: assistUsuario(), situacao, texto: (providencia || (concluir ? 'Acompanhamento concluído.' : 'Atualização sem texto.')) + (proxima && situacao !== 'Concluído' ? ' · próxima cobrança em ' + rcFmtData(proxima) : '') }]).slice(-60);
   }
@@ -10118,7 +10171,7 @@ function assistTitulosJaTratados(){
   const set = new Set();
   __assistAlertas.forEach(al => {
     const ac = assistAcompDaChave(al.chave);
-    if (!assistAlertaTratado(al)) return;
+    if (!assistAlertaTratado(al) && !assistAlertaDispensado(al)) return;
     set.add(assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150));
     if (al.fiscal && al.responsavel) set.add(assistCorta('🤖 Cobrar ' + al.responsavel + ': ' + al.titulo + ' — ' + al.condominio, 150));
   });
@@ -10145,6 +10198,7 @@ function assistMontarProposta(){
     const ac = assistAcompDaChave(al.chave);
     if (ac && ac.situacao !== 'Concluído') return;   // já está acompanhado: aparece quando chegar a data da cobrança
     if (ac && ac.situacao === 'Concluído' && !assistPiorou(al, ac)) return;     // acompanhamento concluído e sem piorar: já foi tratado, não vira tarefa de novo
+    if (assistAlertaDispensado(al)) return;                                    // alerta dispensado: não vira tarefa
     if (al.grupo === 'inc' && __assistAgIncidentes.has(String(al.chave).replace('inc:', ''))) return;   // esse incidente já virou tarefa quando foi registrado
     add(al.responsavel, { ordem: al.prioridade === 'Alta' ? 1 : 2, prio: al.prioridade === 'Alta' ? 'alta' : 'media', origem: assistGrupoRotulo[al.grupo], condominio: al.condominio,
       titulo: assistCorta('🤖 ' + al.titulo + ' — ' + al.condominio, 150) });
@@ -10388,7 +10442,7 @@ function assistDadosPopup(){
   const eu = (typeof meuNomeCarteira === 'function') ? meuNomeCarteira() : '';
   const mesma = (a, b) => !!a && !!b && normTxtCarteira(nomeOficialCarteira(a)) === normTxtCarteira(nomeOficialCarteira(b));
   const cobr = assistCobrancasVencidas().slice().sort((a, b) => assistDiasAte(a.proxima_cobranca) - assistDiasAte(b.proxima_cobranca));
-  const semAcompanhamento = al => { const ac = assistAcompDaChave(al.chave); return !ac || (ac.situacao === 'Concluído' && assistPiorou(al, ac)); };   // concluído e sem piorar: não entra
+  const semAcompanhamento = al => { if (assistAlertaDispensado(al)) return false; const ac = assistAcompDaChave(al.chave); return !ac || (ac.situacao === 'Concluído' && assistPiorou(al, ac)); };   // concluído e sem piorar: não entra
   const ordem = lista => lista.slice().sort((a, b) => (a.prioridade === 'Alta' ? 0 : 1) - (b.prioridade === 'Alta' ? 0 : 1));
   if (!eu){
     const porPessoa = new Map();
@@ -10512,6 +10566,12 @@ document.getElementById('asAcConcluir').addEventListener('click', () => assistSa
 document.getElementById('tabAssistenteSC').addEventListener('click', ev => {
   const abrir = ev.target.closest('[data-as-abrir]');
   if (abrir){ assistAbrirAlerta(__assistListaAtual[Number(abrir.getAttribute('data-as-abrir'))]); return; }
+  const disp = ev.target.closest('[data-as-dispensar]');
+  if (disp){ assistDispensarAlerta(__assistListaAtual[Number(disp.getAttribute('data-as-dispensar'))]); return; }
+  const dispC = ev.target.closest('[data-as-dispensar-chave]');
+  if (dispC){ const al = __assistAlertas.find(x => x.chave === dispC.getAttribute('data-as-dispensar-chave')); if (al) assistDispensarAlerta(al); return; }
+  const rest = ev.target.closest('[data-as-restaurar]');
+  if (rest){ assistRestaurarAlerta(rest.getAttribute('data-as-restaurar')); return; }
   const acomp = ev.target.closest('[data-as-acomp]');
   if (acomp){ const a = __assistListaAtual[Number(acomp.getAttribute('data-as-acomp'))]; assistAbrirModal(a, assistAcompDaChave(a.chave)); return; }
   const abrirChave = ev.target.closest('[data-as-abrir-chave]');
@@ -26678,7 +26738,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v190';
+const APP_BUILD = 'v191';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
@@ -26700,7 +26760,7 @@ async function agendaDiagnostico(){
     if (ac) acTxt = ac.situacao === 'Concluído' ? 'concluído em ' + dm(assistDiaLocal(ac.concluido_em || ac.atualizado_em) || hoje) : ac.situacao + (ac.proxima_cobranca ? ' (cobrança em ' + dm(ac.proxima_cobranca) + ')' : '');
     let veredito;
     if (concl) veredito = 'Já foi concluída em ' + dm(concl.data) + ' e voltou hoje. Só acontece se uma janela com versão antiga a criou ou se o prazo de silêncio estiver em 0.';
-    else if (al ? assistAlertaTratado(al) : (ac && ac.situacao === 'Concluído')) veredito = 'O acompanhamento foi concluído e a situação não piorou: pode remover (botão da faixa amarela).';
+    else if (al ? (assistAlertaTratado(al) || assistAlertaDispensado(al)) : (ac && ac.situacao === 'Concluído')) veredito = 'O alerta foi concluído ou dispensado e a situação não piorou: pode remover (botão da faixa amarela).';
     else if (outros.length) veredito = 'Aparece desde ' + dm(outros[outros.length - 1].data) + ' e nunca foi marcada como concluída na agenda.';
     else veredito = 'Tarefa nova de hoje: o alerta continua ativo e não há conclusão recente.';
     const criada = hojeLinhas[0] && hojeLinhas[0].created_at ? new Date(hojeLinhas[0].created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
