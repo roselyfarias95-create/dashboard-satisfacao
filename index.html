@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v194 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v195 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2299,6 +2299,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn" data-renov-subtab="reducao">📉 Redução de Mensalidade</button>
       <button type="button" class="subtab-btn" data-renov-subtab="pendentediretoria" id="btnSubPendDiretoria">🖊️ Pendente Diretoria</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="encerradas">🏁 Renovadas e Não Renovadas</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
       <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
     </div>
@@ -2573,6 +2574,21 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       </tr></thead><tbody id="renovRedBody"></tbody></table></div>
     </div>
 
+    <div id="renovViewEncerradas" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Só as negociações <strong>encerradas</strong>: as que foram <strong>renovadas</strong> (inclui ampliação finalizada) e as que <strong>não renovaram</strong> (inclui rescisão do síndico). A duração vai da data da negociação até a data em que o status mudou.</p>
+      <div class="stats-strip" id="enKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:12px;">
+        <input type="text" class="search" id="enBusca" placeholder="Buscar condomínio (digite parte do nome)" list="enListaBusca">
+        <datalist id="enListaBusca"></datalist>
+        <select class="filter-select" id="enGrupo"><option value="todas">Renovadas e não renovadas</option><option value="renovada">Só renovadas</option><option value="perdida">Só não renovadas</option></select>
+        <select class="filter-select" id="enFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="enResp"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="enOrdem"><option value="recentes">Ordenar: encerradas mais recentes</option><option value="antigas">Ordenar: encerradas há mais tempo</option><option value="duracao">Ordenar: maior duração</option><option value="nome">Ordenar: nome</option></select>
+      </div>
+      <p class="rc-nota" id="enContagem" style="margin:0 0 10px;"></p>
+      <div class="vn-grid" id="enCards"></div>
+    </div>
+
     <div id="renovViewVisaoNeg" style="display:none;">
       <style>
         .vn-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; }
@@ -2590,7 +2606,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="toolbar" style="margin-bottom:12px;">
         <input type="text" class="search" id="vnBusca" placeholder="Buscar condomínio (digite parte do nome)" list="vnListaBusca">
         <datalist id="vnListaBusca"></datalist>
-        <select class="filter-select" id="vnGrupo"><option value="ativas">Em andamento e pendente diretoria</option><option value="andamento">Só em andamento</option><option value="pdir">Só pendente diretoria</option><option value="renovada">Renovadas</option><option value="perdida">Não renovadas</option><option value="todas">Todas</option></select>
+        <select class="filter-select" id="vnGrupo"><option value="todas">Todas (andamento, renovadas e não renovadas)</option><option value="ativas">Em andamento e pendente diretoria</option><option value="andamento">Só em andamento</option><option value="pdir">Só pendente diretoria</option><option value="renovada">Só renovadas</option><option value="perdida">Só não renovadas</option></select>
         <select class="filter-select" id="vnFilial"><option value="">Filial: todas</option></select>
         <select class="filter-select" id="vnResp"><option value="">Responsável: todos</option></select>
         <select class="filter-select" id="vnEtapa"><option value="">Etapa: todas</option></select>
@@ -16551,6 +16567,7 @@ function exportarComissaoCsv(){
 function renderRenovNegociacoes(){
   try{ atualizarContadorPendDiretoria(); }catch(e){}
   try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
+  try{ if (document.getElementById('renovViewEncerradas').style.display !== 'none') renderRenovEncerradas(); }catch(e){}
   const body = document.getElementById('renovNegociacoesBody');
   const filtered = getFilteredRenovNegociacoes();
   const countEl = document.getElementById('renovNegociacoesCount');
@@ -16722,10 +16739,21 @@ function renderRenovVisaoNeg(){
     return true;
   });
   const ord = document.getElementById('vnOrdem').value;
-  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'etapa' ? (b.et.atual - a.et.atual) : ord === 'antiga' ? String(a.n.data_negociacao || '').localeCompare(String(b.n.data_negociacao || '')) : ((b.parada || 0) - (a.parada || 0)));
+  const aberta = x => (x.grupo === 'andamento' || x.grupo === 'pdir') ? 0 : 1;   // as encerradas vêm depois das que ainda estão andando
+  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'antiga' ? String(a.n.data_negociacao || '').localeCompare(String(b.n.data_negociacao || '')) : (aberta(a) - aberta(b)) || (ord === 'etapa' ? (b.et.atual - a.et.atual) : ((b.parada || 0) - (a.parada || 0))));
   negCartaoVisao.__est = null;   // recalcula a média da etapa a cada desenho
   document.getElementById('vnContagem').textContent = lista.length + ' negociação(ões)';
   document.getElementById('vnCards').innerHTML = lista.length ? lista.map(negCartaoVisao).join('') : '<p class="empty">Nenhuma negociação com esses filtros.</p>';
+}
+// Para negociação encerrada (renovada ou não): quando terminou, quanto durou e, se houver registro, onde parou
+function negDataEncerramento(n){ const l = negLinhaDoTempo(n.id), ult = l[l.length - 1]; if (ult && ult.s === n.status && !ult.a) return { ts: ult.em, exata: true }; return { ts: n.updated_at || null, exata: false }; }
+function negEtapaOndeParou(n){ const l = negLinhaDoTempo(n.id); for (let i = l.length - 1; i >= 0; i--){ const e = l[i].e; if (e !== null && e !== undefined && e >= 0 && e < NEG_ETAPAS.length - 1) return e; } return null; }
+function negDuracaoDias(n){ const enc = negDataEncerramento(n); if (!enc.ts || !n.data_negociacao) return null; const d = Math.floor((new Date(enc.ts) - new Date(n.data_negociacao + 'T00:00:00')) / 86400000); return isNaN(d) ? null : Math.max(0, d); }
+function negLinhaEncerramento(x){
+  if (x.grupo !== 'renovada' && x.grupo !== 'perdida') return '';
+  const n = x.n, enc = negDataEncerramento(n), dur = negDuracaoDias(n), par = x.grupo === 'perdida' ? negEtapaOndeParou(n) : null;
+  const cor = x.grupo === 'renovada' ? 'var(--ok)' : 'var(--critico)';
+  return '<div style="font-size:11.5px; color:' + cor + ';">🏁 ' + (x.grupo === 'renovada' ? 'Renovada' : 'Encerrada sem renovar') + (enc.ts ? ' em ' + fmtDataBRRenov(String(enc.ts).slice(0, 10)) : '') + (enc.exata ? '' : ' (data aproximada)') + (dur !== null ? ' · durou ' + dur + ' dia(s)' : '') + (par !== null ? ' · parou na etapa ' + (par + 1) + ': ' + escapeHtml(NEG_ETAPAS[par]) : '') + '</div>';
 }
 function negCartaoVisao(x){
   const n = x.n, et = x.et, [rotulo, cor] = NEG_GRUPO_VISUAL[x.grupo];
@@ -16745,9 +16773,9 @@ function negCartaoVisao(x){
   const chips = [x.filial, n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '', n.nova_data ? 'nova data ' + fmtDataBRRenov(n.nova_data) : '', n.qtd_torres ? n.qtd_torres + ' torre(s)' : '', n.qtd_armarios ? n.qtd_armarios + ' armário(s)' : '', n.qtd_faciais ? n.qtd_faciais + ' facial(is)' : '', n.qtd_baterias ? n.qtd_baterias + ' bateria(s)' : ''].filter(Boolean).map(c => '<span class="vn-chip">' + escapeHtml(c) + '</span>').join('');
   const nota = String(n.tratativa || n.obs || '').trim();
   return '<div class="vn-card"><div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;"><div style="font-weight:800; font-size:13.5px; line-height:1.3;">' + escapeHtml(n.condo_nome || '') + '</div><span class="vn-chip" style="color:' + cor + '; border-color:' + cor + ';">' + rotulo + '</span></div>' +
-    '<div style="font-size:11.5px; color:var(--text-faint); line-height:1.5;">Negociação: ' + (n.data_negociacao ? fmtDataBRRenov(n.data_negociacao) : '—') + (dias !== null ? ' (há ' + dias + ' dia(s))' : '') + ' · etapas ' + pct + '%<br>Resp.: <strong style="color:var(--text);">' + escapeHtml(n.responsavel || '—') + '</strong></div>' +
+    '<div style="font-size:11.5px; color:var(--text-faint); line-height:1.5;">Negociação: ' + (n.data_negociacao ? fmtDataBRRenov(n.data_negociacao) : '—') + (dias !== null ? ' (há ' + dias + ' dia(s))' : '') + (et.perdida ? '' : ' · etapas ' + pct + '%') + '<br>Resp.: <strong style="color:var(--text);">' + escapeHtml(n.responsavel || '—') + '</strong></div>' +
     '<div class="vn-barra">' + seg + '</div>' +
-    '<div style="font-size:12px;"><strong>' + escapeHtml(etapaTxt) + '</strong><br><span style="color:var(--text-faint);">Status: ' + escapeHtml(n.status || '—') + '</span></div>' +
+    '<div style="font-size:12px;"><strong>' + escapeHtml(etapaTxt) + '</strong><br><span style="color:var(--text-faint);">Status: ' + escapeHtml(n.status || '—') + '</span></div>' + negLinhaEncerramento(x) +
     (chips ? '<div style="display:flex; gap:6px; flex-wrap:wrap;">' + chips + '</div>' : '') +
     (par !== null && (x.grupo === 'andamento' || x.grupo === 'pdir') ? '<div style="font-size:11.5px; color:' + corPar + ';">⏱ ' + (par === 0 ? 'Entrou nesta etapa hoje' : 'Nesta etapa há ' + par + ' dia(s)') + (x.tempo.aprox ? ' (aproximado)' : '') + mediaTxt + '</div>' : '') +
     (nota ? '<div style="font-size:11.5px; color:var(--text-faint); border-top:1px solid var(--line); padding-top:6px;">' + escapeHtml(nota.length > 140 ? nota.slice(0, 140) + '…' : nota) + '</div>' : '') +
@@ -16783,6 +16811,7 @@ async function negRegistrarHistorico(reg, anterior){
   try{ const { error } = await sb.from('configuracoes_sistema').upsert({ chave: 'neghist_' + id, valor: JSON.stringify(lista), atualizado_em: agora }, { onConflict: 'chave' }); if (error) throw error; }
   catch(e){ console.warn('Não consegui gravar o histórico da negociação:', e); }
   try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
+  try{ if (document.getElementById('renovViewEncerradas').style.display !== 'none') renderRenovEncerradas(); }catch(e){}
 }
 function negLinhaDoTempo(id){ return (__negHist.get(String(id)) || []).slice().sort((a, b) => String(a.em).localeCompare(String(b.em))); }
 // etapas já encerradas, em dias (ignora as que começaram em data aproximada)
@@ -16822,6 +16851,27 @@ function renderVnTempos(){
     NEG_ETAPAS.slice(0, NEG_ETAPAS.length - 1).map((nome, i) => { const x = est.stats[i]; return '<tr><td style="text-align:left;">' + (i + 1) + '. ' + escapeHtml(nome) + '</td><td><strong>' + (x ? negFmtDias(x.media) : '—') + '</strong></td><td>' + (x ? negFmtDias(x.mediana) : '—') + '</td><td>' + (x ? negFmtDias(x.max) : '—') + '</td><td>' + (x ? x.n : 0) + '</td><td>' + (x ? '<div style="height:8px; border-radius:4px; background:#38bdf8; width:' + Math.max(4, Math.round(x.media / maxMedia * 100)) + '%;"></div>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
     '<p class="rc-nota" style="margin:8px 0 0;">' + (est.totalMedio !== null ? 'Tempo médio do início até a ampliação finalizada: <strong>' + negFmtDias(est.totalMedio) + ' dia(s)</strong> (' + est.totalN + ' negociação(ões) concluída(s) com registro completo). ' : '') + 'Contando desde ' + (est.desde ? fmtDataBRRenov(String(est.desde).slice(0, 10)) : '—') + '. Só entram etapas que começaram e terminaram depois que o registro foi ligado.</p>';
 }
+function renderRenovEncerradas(){
+  if (!__negHistCarregado){ __negHistCarregado = 'carregando'; negCarregarHistorico().then(() => renderRenovEncerradas()); }
+  const { itens } = negItensVisao();
+  const enc = itens.filter(x => x.grupo === 'renovada' || x.grupo === 'perdida');
+  fillSelect('enFilial', Array.from(new Set(enc.map(x => x.filial).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('enResp', Array.from(new Set(enc.map(x => x.n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  document.getElementById('enListaBusca').innerHTML = [...new Set(enc.map(x => x.n.condo_nome).filter(Boolean))].sort().map(nm => '<option value="' + escapeHtml(nm) + '">').join('');
+  const ren = enc.filter(x => x.grupo === 'renovada'), per = enc.filter(x => x.grupo === 'perdida');
+  const durs = ren.map(x => negDuracaoDias(x.n)).filter(d => d !== null), media = durs.length ? durs.reduce((a, b) => a + b, 0) / durs.length : null;
+  const taxa = (ren.length + per.length) ? Math.round(ren.length / (ren.length + per.length) * 100) : null;
+  document.getElementById('enKpis').innerHTML = [['Renovadas', ren.length, 'var(--ok)'], ['Não renovadas', per.length, 'var(--critico)'], ['Taxa de renovação', taxa === null ? '—' : taxa + '%', taxa !== null && taxa >= 70 ? 'var(--ok)' : '#f59e0b'], ['Duração média das renovadas', media === null ? '—' : negFmtDias(media) + ' dia(s)', '#38bdf8']].map(k => '<div class="stat-box"><div class="snum" style="color:' + k[2] + ';">' + k[1] + '</div><div class="slbl">' + k[0] + '</div></div>').join('');
+  const f = { q: (document.getElementById('enBusca').value || '').trim().toLowerCase(), g: document.getElementById('enGrupo').value, fil: document.getElementById('enFilial').value, r: document.getElementById('enResp').value };
+  let lista = enc.filter(x => (f.g === 'todas' || x.grupo === f.g) && (!f.q || String(x.n.condo_nome || '').toLowerCase().includes(f.q)) && (!f.fil || x.filial === f.fil) && (!f.r || x.n.responsavel === f.r));
+  const ord = document.getElementById('enOrdem').value, ts = x => String(negDataEncerramento(x.n).ts || '');
+  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'antigas' ? ts(a).localeCompare(ts(b)) : ord === 'duracao' ? ((negDuracaoDias(b.n) || 0) - (negDuracaoDias(a.n) || 0)) : ts(b).localeCompare(ts(a)));
+  negCartaoVisao.__est = null;
+  document.getElementById('enContagem').textContent = lista.length + ' negociação(ões) encerrada(s)';
+  document.getElementById('enCards').innerHTML = lista.length ? lista.map(negCartaoVisao).join('') : '<p class="empty">Nenhuma negociação encerrada com esses filtros.</p>';
+}
+['enBusca', 'enGrupo', 'enFilial', 'enResp', 'enOrdem'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovEncerradas); el.addEventListener('change', renderRenovEncerradas); });
+document.getElementById('renovViewEncerradas').addEventListener('click', ev => { const e = ev.target.closest('[data-vn-editar]'); if (e) editNegociacao(e.getAttribute('data-vn-editar')); });
 ['vnBusca', 'vnGrupo', 'vnFilial', 'vnResp', 'vnEtapa', 'vnOrdem'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovVisaoNeg); el.addEventListener('change', renderRenovVisaoNeg); });
 document.getElementById('renovViewVisaoNeg').addEventListener('click', ev => {
   const f = ev.target.closest('[data-vn-etapa]'), e = ev.target.closest('[data-vn-editar]'), a = ev.target.closest('[data-vn-assinou]');
@@ -16843,6 +16893,8 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     if (alvo === 'pendentediretoria') renderRenovPendDiretoria();
     document.getElementById('renovViewVisaoNeg').style.display = alvo === 'visaoneg' ? 'block' : 'none';
     if (alvo === 'visaoneg') renderRenovVisaoNeg();
+    document.getElementById('renovViewEncerradas').style.display = alvo === 'encerradas' ? 'block' : 'none';
+    if (alvo === 'encerradas') renderRenovEncerradas();
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
@@ -27154,7 +27206,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v194';
+const APP_BUILD = 'v195';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
