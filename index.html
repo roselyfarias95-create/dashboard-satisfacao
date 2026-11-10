@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v191 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v194 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2293,7 +2293,8 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn active" data-renov-subtab="vencidos">⚠️ Vencidos</button>
       <button type="button" class="subtab-btn" data-renov-subtab="vencendobreve">⏰ Vencendo em Breve</button>
       <button type="button" class="subtab-btn" data-renov-subtab="negociacao">🤝 Em Negociação</button>
-      <button type="button" class="subtab-btn" data-renov-subtab="torresarmarios">🗼 Torres e Armários</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="visaoneg">📊 Visão das Negociações</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="torresarmarios">🗼 Torres, Armários, Faciais e Baterias</button>
       <button type="button" class="subtab-btn" data-renov-subtab="comissao">💰 Comissão</button>
       <button type="button" class="subtab-btn" data-renov-subtab="reducao">📉 Redução de Mensalidade</button>
       <button type="button" class="subtab-btn" data-renov-subtab="pendentediretoria" id="btnSubPendDiretoria">🖊️ Pendente Diretoria</button>
@@ -2466,6 +2467,13 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <option value="Aguardando faturar o boleto">Aguardando faturar o boleto</option>
         <option value="Aguardando cronograma da ampliação">Aguardando cronograma da ampliação</option>
         <option value="Ampliação concluída">Ampliação concluída</option>
+        <option value="Validação de código (almoxarifado)">Validação de código (almoxarifado)</option>
+        <option value="Solicitar aditivo ao comercial">Solicitar aditivo ao comercial</option>
+        <option value="Pedido enviado à técnica">Pedido enviado à técnica</option>
+        <option value="Pedido em compra">Pedido em compra</option>
+        <option value="Aguardando cronograma técnico">Aguardando cronograma técnico</option>
+        <option value="Obra iniciada">Obra iniciada</option>
+        <option value="Ampliação finalizada">Ampliação finalizada</option>
       </select>
       <select class="filter-select" id="renovNegFilterTempoRenovado">
         <option value="">Tempo Renovado: todos</option>
@@ -2478,6 +2486,9 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         <option value="60">60 meses</option>
       </select>
       <button type="button" class="clearbtn" id="btnLimparFiltrosRenovNeg">Limpar filtros</button>
+      <button type="button" class="clearbtn" id="btnNegPlanilhaGerar" style="border-color:var(--ok); color:var(--ok);" title="Baixa uma planilha já preenchida com as negociações desta aba (e com os contratos vencidos sem negociação) para você preencher no Excel ou no Google Planilhas">📋 Planilha para preencher</button>
+      <button type="button" class="clearbtn" id="btnNegPlanilhaImportar" style="border-color:var(--accent); color:var(--accent);" title="Lê a planilha preenchida e atualiza ou cria as negociações">📥 Importar planilha</button>
+      <input type="file" id="negPlanilhaInput" accept=".xlsx,.xls,.csv" style="display:none;">
     </div>
     <div class="checklist-table-wrap">
       <table class="checklist-table" id="renovNegociacoesTable">
@@ -2504,7 +2515,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
     </div>
 
     <div id="renovViewTorresArmarios" style="display:none;">
-      <p class="rc-nota" style="margin:0 0 12px;">Visão geral das <strong>torres</strong> e dos <strong>armários</strong>: o que está <strong>em negociação</strong> e o que já foi <strong>renovado</strong>. A quantidade vem dos campos da negociação; nas negociações antigas, o sistema lê do texto de "Equipamentos da Ampliação" (por exemplo "2 torres", "três armários") e marca como <em>texto</em>. Se só citar, sem número, aparece "citada" para você informar a quantidade em Editar.</p>
+      <p class="rc-nota" style="margin:0 0 12px;">Visão geral das <strong>torres</strong>, <strong>armários</strong>, <strong>faciais</strong> e <strong>baterias</strong>: o que está <strong>em negociação</strong> e o que já foi <strong>renovado</strong>. A quantidade vem dos campos da negociação; nas negociações antigas, o sistema lê do texto de "Equipamentos da Ampliação" (por exemplo "2 torres", "três armários") e marca como <em>texto</em>. Se só citar, sem número, aparece "citada" para você informar a quantidade em Editar.</p>
       <div class="stats-strip" id="renovTAKpis" style="margin-bottom:14px;"></div>
       <div class="toolbar" style="margin-bottom:14px;">
         <input type="text" class="search" id="renovTABusca" placeholder="Buscar por condomínio...">
@@ -2516,7 +2527,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       </div>
       <div id="renovTAFilial" style="margin-bottom:14px;"></div>
       <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
-        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Status</th><th>🗼 Torres</th><th>🗄️ Armários</th><th style="text-align:left;">Equipamentos da ampliação</th><th>Data</th><th>Ações</th>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Status</th><th>🗼 Torres</th><th>🗄️ Armários</th><th>🙂 Faciais</th><th>🔋 Baterias</th><th style="text-align:left;">Equipamentos da ampliação</th><th>Data</th><th>Ações</th>
       </tr></thead><tbody id="renovTABody"></tbody></table></div>
     </div>
 
@@ -2560,6 +2571,33 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
         <th><input type="checkbox" id="renovRedTodas" title="Marcar todas"></th><th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Mensalidade atual</th><th>Tempo de contrato</th><th>Unidades</th><th>Custo dos equipamentos</th><th>Valor sugerido</th><th>Redução</th><th>Prazo sugerido</th><th>Status</th><th>Ações</th>
       </tr></thead><tbody id="renovRedBody"></tbody></table></div>
+    </div>
+
+    <div id="renovViewVisaoNeg" style="display:none;">
+      <style>
+        .vn-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; }
+        .vn-card{ background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; }
+        .vn-barra{ display:flex; gap:3px; } .vn-barra span{ flex:1; height:7px; border-radius:3px; }
+        .vn-chip{ font-size:10.5px; font-weight:700; border-radius:20px; padding:2px 9px; border:1px solid var(--line); white-space:nowrap; color:var(--text-faint); }
+        .vn-funil{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; } .vn-funil button{ font-size:11.5px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer; text-align:left; line-height:1.3; }
+        .vn-funil button.ativo{ border-color:var(--accent); background:rgba(56,189,248,.12); } .vn-funil b{ display:block; font-size:16px; }
+      </style>
+      <p class="rc-nota" style="margin:0 0 12px;">Cada cartão mostra em que etapa está a negociação. As etapas são calculadas a partir do <strong>Status</strong>: ao mudar o status da negociação, a barrinha anda sozinha. Verde = etapa já passou, amarelo = etapa atual, cinza = ainda não chegou.</p>
+      <div class="stats-strip" id="vnKpis" style="margin-bottom:12px;"></div>
+      <div style="font-size:12px; color:var(--text-faint); margin:0 0 6px;">Onde estão as negociações em andamento (clique para filtrar por etapa)</div>
+      <div class="vn-funil" id="vnFunil"></div>
+      <details id="vnTempos" open style="margin:0 0 14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px;"><summary style="cursor:pointer; font-weight:700; font-size:13px;">⏱ Tempo médio em cada etapa</summary><div id="vnTemposCorpo" style="margin-top:8px;"></div></details>
+      <div class="toolbar" style="margin-bottom:12px;">
+        <input type="text" class="search" id="vnBusca" placeholder="Buscar condomínio (digite parte do nome)" list="vnListaBusca">
+        <datalist id="vnListaBusca"></datalist>
+        <select class="filter-select" id="vnGrupo"><option value="ativas">Em andamento e pendente diretoria</option><option value="andamento">Só em andamento</option><option value="pdir">Só pendente diretoria</option><option value="renovada">Renovadas</option><option value="perdida">Não renovadas</option><option value="todas">Todas</option></select>
+        <select class="filter-select" id="vnFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="vnResp"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="vnEtapa"><option value="">Etapa: todas</option></select>
+        <select class="filter-select" id="vnOrdem"><option value="parada">Ordenar: mais paradas primeiro</option><option value="antiga">Ordenar: negociação mais antiga</option><option value="etapa">Ordenar: etapa mais avançada</option><option value="nome">Ordenar: nome</option></select>
+      </div>
+      <p class="rc-nota" id="vnContagem" style="margin:0 0 10px;"></p>
+      <div class="vn-grid" id="vnCards"></div>
     </div>
 
     <div id="renovViewPendDiretoria" style="display:none;">
@@ -2842,6 +2880,12 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
         </label>
         <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🗄️ Armários (quantidade)
           <input type="number" min="0" id="negQtdArmarios" placeholder="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🙂 Faciais (quantidade)
+          <input type="number" min="0" id="negQtdFaciais" placeholder="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
+        </label>
+        <label style="font-size:11px; color:var(--text-faint); font-weight:600;">🔋 Baterias (quantidade)
+          <input type="number" min="0" id="negQtdBaterias" placeholder="0" style="width:100%; margin-top:4px; box-sizing:border-box;">
         </label>
         <label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">Equipamentos da Ampliação
           <textarea id="negAmpliacaoMaterial" rows="2" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit; resize:vertical;" placeholder="Ex: 3 câmeras IP, 1 controlador de acesso, cabeamento..."></textarea>
@@ -16067,6 +16111,13 @@ document.getElementById('btnExportarRenovPDF').addEventListener('click', gerarRe
 function negBadge(status){
   const map = {
     "Em negociação": ["andamento","Em negociação"],
+    "Validação de código (almoxarifado)": ["aguardando-tecnico","Validação de código (almox.)"],
+    "Solicitar aditivo ao comercial": ["aguardando-aditivo","Solicitar aditivo ao comercial"],
+    "Pedido enviado à técnica": ["pendente-erp","Pedido enviado à técnica"],
+    "Pedido em compra": ["pendente-erp","Pedido em compra"],
+    "Aguardando cronograma técnico": ["aguardando-ampliacao","Aguardando cronograma técnico"],
+    "Obra iniciada": ["aguardando-ampliacao","Obra iniciada"],
+    "Ampliação finalizada": ["ampliacao-concluida","Ampliação finalizada"],
     "Síndico analisando a proposta": ["aguardando-tecnico","Síndico analisando a proposta"],
     "Proposta Enviada - Aguardando Retorno do Síndico": ["aguardando-tecnico","Proposta Enviada - Aguard. Síndico"],
     "Aguardando envio do aditivo pelo comercial": ["aguardando-aditivo","Aguardando aditivo (Comercial)"],
@@ -16094,9 +16145,9 @@ function negBadge(status){
 }
 
 // ----- Negociações: torres, armários e aumento de mensalidade (abas "Torres e Armários" e "Comissão") -----
-const NEG_COLUNAS_NOVAS = ['qtd_torres', 'qtd_armarios', 'mensalidade_atual', 'mensalidade_nova', 'comissao_valor', 'comissao_situacao', 'quer_reducao', 'mensalidade_pedida', 'mensalidade_sugerida', 'prazo_sugerido_meses', 'tempo_contrato_meses', 'reducao_justificativa', 'reducao_status'];
-const NEG_SQL = "ALTER TABLE negociacoes_contrato\n  ADD COLUMN IF NOT EXISTS qtd_torres integer,\n  ADD COLUMN IF NOT EXISTS qtd_armarios integer,\n  ADD COLUMN IF NOT EXISTS mensalidade_atual numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_nova numeric,\n  ADD COLUMN IF NOT EXISTS comissao_valor numeric,\n  ADD COLUMN IF NOT EXISTS comissao_situacao text,\n  ADD COLUMN IF NOT EXISTS quer_reducao boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS mensalidade_pedida numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_sugerida numeric,\n  ADD COLUMN IF NOT EXISTS prazo_sugerido_meses integer,\n  ADD COLUMN IF NOT EXISTS tempo_contrato_meses integer,\n  ADD COLUMN IF NOT EXISTS reducao_justificativa text,\n  ADD COLUMN IF NOT EXISTS reducao_status text;";
-function negFaltamColunas(e){ return /qtd_torres|qtd_armarios|mensalidade_|comissao_|quer_reducao|prazo_sugerido|tempo_contrato|reducao_|column/i.test((e && (e.message || e.details)) || ''); }
+const NEG_COLUNAS_NOVAS = ['qtd_torres', 'qtd_armarios', 'qtd_faciais', 'qtd_baterias', 'mensalidade_atual', 'mensalidade_nova', 'comissao_valor', 'comissao_situacao', 'quer_reducao', 'mensalidade_pedida', 'mensalidade_sugerida', 'prazo_sugerido_meses', 'tempo_contrato_meses', 'reducao_justificativa', 'reducao_status'];
+const NEG_SQL = "ALTER TABLE negociacoes_contrato\n  ADD COLUMN IF NOT EXISTS qtd_torres integer,\n  ADD COLUMN IF NOT EXISTS qtd_armarios integer,\n  ADD COLUMN IF NOT EXISTS qtd_faciais integer,\n  ADD COLUMN IF NOT EXISTS qtd_baterias integer,\n  ADD COLUMN IF NOT EXISTS mensalidade_atual numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_nova numeric,\n  ADD COLUMN IF NOT EXISTS comissao_valor numeric,\n  ADD COLUMN IF NOT EXISTS comissao_situacao text,\n  ADD COLUMN IF NOT EXISTS quer_reducao boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS mensalidade_pedida numeric,\n  ADD COLUMN IF NOT EXISTS mensalidade_sugerida numeric,\n  ADD COLUMN IF NOT EXISTS prazo_sugerido_meses integer,\n  ADD COLUMN IF NOT EXISTS tempo_contrato_meses integer,\n  ADD COLUMN IF NOT EXISTS reducao_justificativa text,\n  ADD COLUMN IF NOT EXISTS reducao_status text;";
+function negFaltamColunas(e){ return /qtd_torres|qtd_armarios|qtd_faciais|qtd_baterias|mensalidade_|comissao_|quer_reducao|prazo_sugerido|tempo_contrato|reducao_|column/i.test((e && (e.message || e.details)) || ''); }
 function negAvisarSql(){
   if (window.__negSqlAvisado) return;
   window.__negSqlAvisado = true;
@@ -16123,6 +16174,8 @@ function negContaItem(n, campo, termo, regexCita){
 }
 function negTorres(n){ return negContaItem(n, 'qtd_torres', 'torres?', /\btorres?\b/i); }
 function negArmarios(n){ return negContaItem(n, 'qtd_armarios', 'arm[aá]rios?', /arm[aá]rios?/i); }
+function negFaciais(n){ return negContaItem(n, 'qtd_faciais', '(?:c[aâ]meras?\\s+|leitores?\\s+)?facia(?:l|is)', /\bfacia(?:l|is)\b/i); }
+function negBaterias(n){ return negContaItem(n, 'qtd_baterias', 'baterias?', /\bbaterias?\b/i); }
 function negAumento(n){
   const a = Number(n.mensalidade_atual), b = Number(n.mensalidade_nova);
   if (!(a > 0) || !(b > 0)) return null;
@@ -16415,30 +16468,33 @@ function renderRenovTorresArmarios(){
   if (!kpi || !corpo) return;
   const modo = document.getElementById('renovTAFiltro').value || 'todas';
   const busca = normalizeNomeCondo(document.getElementById('renovTABusca').value || '');
+  const ITENS = [['t', negTorres, '🗼', 'Torres'], ['a', negArmarios, '🗄️', 'Armários'], ['f', negFaciais, '🙂', 'Faciais'], ['b', negBaterias, '🔋', 'Baterias']];
   // visão geral: o que está em negociação + o que já foi renovado (canceladas e "não renovado" ficam de fora)
-  const todas = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehStatusRenovado(n.status)) && (negTorres(n).tem || negArmarios(n).tem));
+  const todas = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehStatusRenovado(n.status)) && ITENS.some(it => it[1](n).tem));
   const em = todas.filter(negociacaoEmAndamento), ren = todas.filter(n => ehStatusRenovado(n.status));
   const soma = (l, f) => l.reduce((s, n) => s + f(n).qtd, 0), com = (l, f) => l.filter(n => f(n).qtd > 0).length;
-  const doTexto = todas.filter(n => negTorres(n).doTexto || negArmarios(n).doTexto).length, semQtd = todas.filter(n => negTorres(n).citado || negArmarios(n).citado).length;
-  const box = (num, lbl, cor, extra) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  const doTexto = todas.filter(n => ITENS.some(it => it[1](n).doTexto)).length, semQtd = todas.filter(n => ITENS.some(it => it[1](n).citado)).length;
+  const box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
   const noCadastro = renovAllCondos.filter(c => c.possui_armario === true || String(c.possui_armario).toLowerCase() === 'sim').length;
-  kpi.innerHTML = box(soma(todas, negTorres), 'Torres no total (' + soma(em, negTorres) + ' em negociação + ' + soma(ren, negTorres) + ' renovadas)', '#38bdf8') + box(soma(todas, negArmarios), 'Armários no total (' + soma(em, negArmarios) + ' em negociação + ' + soma(ren, negArmarios) + ' renovados)', '#a78bfa') +
-    box(soma(em, negTorres) + ' / ' + soma(em, negArmarios), 'Torres / armários em negociação') + box(soma(ren, negTorres) + ' / ' + soma(ren, negArmarios), 'Torres / armários já renovados') +
-    box(com(todas, negTorres) + ' / ' + com(todas, negArmarios), 'Condomínios com torre / com armário') + box(noCadastro, 'Condomínios com armário no cadastro') +
+  const cores = { t: '#38bdf8', a: '#a78bfa', f: '#22c55e', b: '#f59e0b' };
+  kpi.innerHTML = ITENS.map(it => box(soma(todas, it[1]), it[2] + ' ' + it[3] + ' no total (' + soma(em, it[1]) + ' em negociação + ' + soma(ren, it[1]) + ' renovad' + (it[0] === 'a' || it[0] === 'b' || it[0] === 'f' ? 'as' : 'as') + ')', cores[it[0]])).join('') +
+    box(ITENS.map(it => soma(em, it[1])).join(' / '), 'Torres / armários / faciais / baterias em negociação') + box(ITENS.map(it => soma(ren, it[1])).join(' / '), 'Torres / armários / faciais / baterias já renovados') +
+    box(ITENS.map(it => com(todas, it[1])).join(' / '), 'Condomínios com torre / armário / facial / bateria') + box(noCadastro, 'Condomínios com armário no cadastro') +
     (doTexto || semQtd ? box(doTexto + ' / ' + semQtd, 'Lidos do texto / citam sem quantidade', semQtd ? '#f59e0b' : '') : '');
   const filiais = {};
-  todas.forEach(n => { const f = negFilialDe(n); const x = filiais[f] = filiais[f] || { et: 0, ea: 0, rt: 0, ra: 0, n: 0 }; const t = negTorres(n).qtd, a = negArmarios(n).qtd; if (negociacaoEmAndamento(n)){ x.et += t; x.ea += a; } else { x.rt += t; x.ra += a; } x.n++; });
-  const fk = Object.keys(filiais).sort(), tot = fk.reduce((t, f) => ({ et: t.et + filiais[f].et, ea: t.ea + filiais[f].ea, rt: t.rt + filiais[f].rt, ra: t.ra + filiais[f].ra, n: t.n + filiais[f].n }), { et: 0, ea: 0, rt: 0, ra: 0, n: 0 });
-  document.getElementById('renovTAFilial').innerHTML = fk.length ? '<table class="rc-tabela"><thead><tr><th style="text-align:left;">Por filial</th><th>Negociações</th><th>🗼 Em negociação</th><th>🗄️ Em negociação</th><th>🗼 Renovadas</th><th>🗄️ Renovadas</th><th>🗼 Total</th><th>🗄️ Total</th></tr></thead><tbody>' +
-    fk.map(f => { const x = filiais[f]; return '<tr><td style="text-align:left;"><strong>' + escapeHtml(f) + '</strong></td><td>' + x.n + '</td><td>' + x.et + '</td><td>' + x.ea + '</td><td>' + x.rt + '</td><td>' + x.ra + '</td><td><strong>' + (x.et + x.rt) + '</strong></td><td><strong>' + (x.ea + x.ra) + '</strong></td></tr>'; }).join('') +
-    '<tr><td style="text-align:left;"><strong>Total</strong></td><td><strong>' + tot.n + '</strong></td><td><strong>' + tot.et + '</strong></td><td><strong>' + tot.ea + '</strong></td><td><strong>' + tot.rt + '</strong></td><td><strong>' + tot.ra + '</strong></td><td><strong>' + (tot.et + tot.rt) + '</strong></td><td><strong>' + (tot.ea + tot.ra) + '</strong></td></tr></tbody></table>' : '';
+  todas.forEach(n => { const f = negFilialDe(n); const x = filiais[f] = filiais[f] || { n: 0, e: { t: 0, a: 0, f: 0, b: 0 }, r: { t: 0, a: 0, f: 0, b: 0 } }; const alvo = negociacaoEmAndamento(n) ? x.e : x.r; ITENS.forEach(it => { alvo[it[0]] += it[1](n).qtd; }); x.n++; });
+  const fk = Object.keys(filiais).sort(), tot = { n: 0, e: { t: 0, a: 0, f: 0, b: 0 }, r: { t: 0, a: 0, f: 0, b: 0 } };
+  fk.forEach(f => { tot.n += filiais[f].n; ITENS.forEach(it => { tot.e[it[0]] += filiais[f].e[it[0]]; tot.r[it[0]] += filiais[f].r[it[0]]; }); });
+  const linhaF = (nome, x, forte) => { const c = v => forte ? '<strong>' + v + '</strong>' : v; return '<tr><td style="text-align:left;"><strong>' + escapeHtml(nome) + '</strong></td><td>' + c(x.n) + '</td>' + ITENS.map(it => '<td>' + c(x.e[it[0]]) + '</td>').join('') + ITENS.map(it => '<td>' + c(x.r[it[0]]) + '</td>').join('') + ITENS.map(it => '<td><strong>' + (x.e[it[0]] + x.r[it[0]]) + '</strong></td>').join('') + '</tr>'; };
+  document.getElementById('renovTAFilial').innerHTML = fk.length ? '<div style="overflow:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Por filial</th><th>Negociações</th>' + ITENS.map(it => '<th>' + it[2] + ' Em negociação</th>').join('') + ITENS.map(it => '<th>' + it[2] + ' Renovadas</th>').join('') + ITENS.map(it => '<th>' + it[2] + ' Total</th>').join('') + '</tr></thead><tbody>' +
+    fk.map(f => linhaF(f, filiais[f], false)).join('') + linhaF('Total', tot, true) + '</tbody></table></div>' : '';
   let lista = modo === 'andamento' ? em : (modo === 'fechadas' ? ren : todas);
   if (busca) lista = lista.filter(n => normalizeNomeCondo(n.condo_nome).includes(busca));
   lista = lista.slice().sort((a, b) => (negociacaoEmAndamento(b) - negociacaoEmAndamento(a)) || String(b.data_negociacao || '').localeCompare(String(a.data_negociacao || '')));
   const cel = x => x.qtd ? '<strong>' + x.qtd + '</strong>' + (x.doTexto ? ' <span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Quantidade lida do texto da negociação. Para fixar, informe em Editar.">texto</span>' : '') : (x.citado ? '<span class="neg-chip" style="color:#94a3b8; border-color:#94a3b8;" title="Citado no texto sem número: informe a quantidade ao editar.">citada</span>' : '—');
-  corpo.innerHTML = lista.length ? lista.map(n => '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + negBadge(n.status) + '</td><td>' + cel(negTorres(n)) + '</td><td>' + cel(negArmarios(n)) +
-      '</td><td style="text-align:left; max-width:260px; white-space:normal;">' + escapeHtml(n.ampliacao_material || '—') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>').join('')
-    : '<tr><td colspan="9" class="empty">' + (todas.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação inclui torre ou armário ainda. Informe as quantidades ao editar uma negociação.') + '</td></tr>';
+  corpo.innerHTML = lista.length ? lista.map(n => '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(negFilialDe(n)) + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td>' + negBadge(n.status) + '</td>' + ITENS.map(it => '<td>' + cel(it[1](n)) + '</td>').join('') +
+      '<td style="text-align:left; max-width:260px; white-space:normal;">' + escapeHtml(n.ampliacao_material || '—') + '</td><td>' + fmtDataBRRenov(n.data_negociacao) + '</td><td><button type="button" class="renov-action-btn" data-edit-neg="' + n.id + '">Editar</button></td></tr>').join('')
+    : '<tr><td colspan="11" class="empty">' + (todas.length ? 'Nenhuma negociação neste filtro.' : 'Nenhuma negociação inclui torre, armário, facial ou bateria ainda. Informe as quantidades ao editar uma negociação.') + '</td></tr>';
 }
 function renderRenovComissao(){
   const kpi = document.getElementById('renovComKpis'), corpo = document.getElementById('renovComBody');
@@ -16494,6 +16550,7 @@ function exportarComissaoCsv(){
 }
 function renderRenovNegociacoes(){
   try{ atualizarContadorPendDiretoria(); }catch(e){}
+  try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
   const body = document.getElementById('renovNegociacoesBody');
   const filtered = getFilteredRenovNegociacoes();
   const countEl = document.getElementById('renovNegociacoesCount');
@@ -16602,6 +16659,177 @@ document.getElementById('renovPdBody').addEventListener('click', ev => {
   if (a){ editNegociacao(a.getAttribute('data-pd-assinou')); document.getElementById('negStatus').value = 'Renovado'; }
 });
 
+// ---------- Visão das Negociações: um cartão por negociação, com a barra das etapas ----------
+const NEG_ETAPAS = ['Negociação iniciada', 'Proposta enviada', 'Validação de código (almoxarifado)', 'Solicitar aditivo ao comercial', 'Aguardando envio do aditivo pelo comercial', 'Assinatura do síndico', 'Assinatura da diretoria', 'Pedido enviado à técnica', 'Pedido em compra', 'Aguardando cronograma técnico', 'Obra iniciada', 'Ampliação finalizada'];
+// status novos que o formulário sempre oferece (mesmo com a lista personalizada das Configurações)
+const NEG_STATUS_ETAPAS_NOVOS = ['Validação de código (almoxarifado)', 'Solicitar aditivo ao comercial', 'Aguardando envio do aditivo pelo comercial', 'Pedido enviado à técnica', 'Pedido em compra', 'Aguardando cronograma técnico', 'Obra iniciada', 'Ampliação finalizada'];
+function negEtapaDoStatus(status){
+  const t = normTxtCarteira(status || ''), tem = (...ks) => ks.some(k => t.includes(k)), ult = NEG_ETAPAS.length - 1;
+  if (ehRescisao(status) || status === 'Não renovado' || status === 'Cancelado') return { perdida: true, atual: -1 };
+  if (t === 'RENOVADO' || tem('AMPLIACAO FINALIZADA', 'AMPLIACAO CONCLUIDA', 'OBRA FINALIZADA')) return { concluida: true, atual: ult };
+  let i = null;
+  if (tem('OBRA INICIADA')) i = 10;
+  else if (tem('CRONOGRAMA')) i = 9;
+  else if (tem('PEDIDO EM COMPRA')) i = 8;
+  else if (tem('PEDIDO ENVIADO', 'PEDIDO NO ERP', 'FATURAR', 'BOLETO')) i = 7;
+  else if (tem('ASSINATURA DA DIRETORIA', 'ASSINATURA DIRETORIA', 'ASSINATURA SR')) i = 6;
+  else if (tem('ASSINATURA SINDICO')) i = 5;
+  else if (tem('ENVIO DO ADITIVO')) i = 4;
+  else if (tem('ADITIVO')) i = 3;
+  else if (tem('VALIDACAO', 'LEVANTAMENTO')) i = 2;
+  else if (tem('PROPOSTA ENVIADA', 'RETORNO DO SINDICO', 'ANALISANDO')) i = 1;
+  else if (tem('EM NEGOCIACAO')) i = 0;
+  return i === null ? { desconhecida: true, atual: -1 } : { atual: i };
+}
+function negGrupoVisao(n){
+  if (ehPendenteDiretoria(n.status)) return 'pdir';
+  if (ehNaoRenovado(n.status)) return 'perdida';
+  if (ehStatusRenovado(n.status) || n.status === 'Ampliação concluída' || n.status === 'Ampliação finalizada') return 'renovada';
+  return 'andamento';
+}
+const NEG_GRUPO_VISUAL = { andamento: ['EM ANDAMENTO', '#f59e0b'], pdir: ['PENDENTE DIRETORIA', '#a78bfa'], renovada: ['RENOVADO', 'var(--ok)'], perdida: ['NÃO RENOVADO', 'var(--critico)'] };
+function negDiasDesde(iso){ if (!iso) return null; const d = new Date(String(iso).slice(0, 10) + 'T00:00:00'); if (isNaN(d)) return null; const h = new Date(); h.setHours(0, 0, 0, 0); return Math.max(0, Math.round((h - d) / 86400000)); }
+function negItensVisao(){
+  const filtros = { q: (document.getElementById('vnBusca').value || '').trim().toLowerCase(), grupo: document.getElementById('vnGrupo').value, filial: document.getElementById('vnFilial').value, resp: document.getElementById('vnResp').value, etapa: document.getElementById('vnEtapa').value };
+  const itens = renovNegociacoes.map(n => {
+    const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+    const tempo = negTempoNaEtapa(n);
+    return { n, condo, filial: condo ? normalizeFilialCanonica(condo.filial) : '', grupo: negGrupoVisao(n), et: negEtapaDoStatus(n.status), tempo, parada: tempo.dias };
+  }).filter(x => x.condo ? passaCarteiraCondo(x.condo) : passaCarteiraItem(x.n.condo_nome || '', ''));
+  return { itens, filtros };
+}
+function renderRenovVisaoNeg(){
+  if (!__negHistCarregado){ __negHistCarregado = 'carregando'; negCarregarHistorico().then(() => renderRenovVisaoNeg()); }
+  const { itens, filtros } = negItensVisao(), hoje = itens;
+  renderVnTempos();
+  fillSelect('vnFilial', Array.from(new Set(itens.map(x => x.filial).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('vnResp', Array.from(new Set(itens.map(x => x.n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  const selE = document.getElementById('vnEtapa'), eAtual = selE.value;
+  if (selE.options.length <= 1){ NEG_ETAPAS.forEach((nome, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = (i + 1) + '. ' + nome; selE.appendChild(o); }); const ox = document.createElement('option'); ox.value = 'x'; ox.textContent = 'Fora do fluxo padrão'; selE.appendChild(ox); selE.value = eAtual; }
+  document.getElementById('vnListaBusca').innerHTML = [...new Set(itens.map(x => x.n.condo_nome).filter(Boolean))].sort().map(nm => '<option value="' + escapeHtml(nm) + '">').join('');
+  const ativasTodas = itens.filter(x => x.grupo === 'andamento' || x.grupo === 'pdir');
+  const parados = ativasTodas.filter(x => x.parada !== null && x.parada > 15).length;
+  document.getElementById('vnKpis').innerHTML = [['Em andamento', ativasTodas.filter(x => x.grupo === 'andamento').length, '#f59e0b'], ['Pendente diretoria', ativasTodas.filter(x => x.grupo === 'pdir').length, '#a78bfa'], ['Há mais de 15 dias na mesma etapa', parados, parados ? 'var(--critico)' : 'var(--ok)'], ['Renovadas', itens.filter(x => x.grupo === 'renovada').length, 'var(--ok)'], ['Não renovadas', itens.filter(x => x.grupo === 'perdida').length, 'var(--critico)']].map(k => '<div class="stat-box"><div class="snum" style="color:' + k[2] + ';">' + k[1] + '</div><div class="slbl">' + k[0] + '</div></div>').join('');
+  const porEtapa = NEG_ETAPAS.map((_, i) => ativasTodas.filter(x => x.et.atual === i && !x.et.concluida).length), semEtapa = ativasTodas.filter(x => x.et.desconhecida).length;
+  document.getElementById('vnFunil').innerHTML = NEG_ETAPAS.slice(0, NEG_ETAPAS.length - 1).map((nome, i) => '<button type="button" data-vn-etapa="' + i + '" class="' + (filtros.etapa === String(i) ? 'ativo' : '') + '"><b>' + porEtapa[i] + '</b>' + (i + 1) + '. ' + escapeHtml(nome) + '</button>').join('') + (semEtapa ? '<button type="button" data-vn-etapa="x" class="' + (filtros.etapa === 'x' ? 'ativo' : '') + '"><b>' + semEtapa + '</b>Fora do fluxo padrão</button>' : '');
+  let lista = itens.filter(x => {
+    if (filtros.grupo === 'ativas' ? !(x.grupo === 'andamento' || x.grupo === 'pdir') : (filtros.grupo !== 'todas' && x.grupo !== filtros.grupo)) return false;
+    if (filtros.q && !String(x.n.condo_nome || '').toLowerCase().includes(filtros.q)) return false;
+    if (filtros.filial && x.filial !== filtros.filial) return false;
+    if (filtros.resp && x.n.responsavel !== filtros.resp) return false;
+    if (filtros.etapa === 'x') return !!x.et.desconhecida;
+    if (filtros.etapa !== '' && (x.et.atual !== Number(filtros.etapa) || x.et.concluida)) return false;
+    return true;
+  });
+  const ord = document.getElementById('vnOrdem').value;
+  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'etapa' ? (b.et.atual - a.et.atual) : ord === 'antiga' ? String(a.n.data_negociacao || '').localeCompare(String(b.n.data_negociacao || '')) : ((b.parada || 0) - (a.parada || 0)));
+  negCartaoVisao.__est = null;   // recalcula a média da etapa a cada desenho
+  document.getElementById('vnContagem').textContent = lista.length + ' negociação(ões)';
+  document.getElementById('vnCards').innerHTML = lista.length ? lista.map(negCartaoVisao).join('') : '<p class="empty">Nenhuma negociação com esses filtros.</p>';
+}
+function negCartaoVisao(x){
+  const n = x.n, et = x.et, [rotulo, cor] = NEG_GRUPO_VISUAL[x.grupo];
+  const seg = NEG_ETAPAS.map((nome, i) => {
+    let c = 'rgba(148,163,184,.30)', est = 'ainda não chegou';
+    if (et.perdida){ c = 'rgba(239,68,68,.45)'; est = 'negociação encerrada'; }
+    else if (et.concluida || (et.atual >= 0 && i < et.atual)){ c = 'var(--ok)'; est = 'concluída'; }
+    else if (et.atual >= 0 && i === et.atual){ c = '#f59e0b'; est = 'etapa atual'; }
+    return '<span title="' + (i + 1) + '. ' + escapeHtml(nome) + ': ' + est + '" style="background:' + c + ';"></span>';
+  }).join('');
+  const pct = et.concluida ? 100 : (et.atual >= 0 ? Math.round(et.atual / NEG_ETAPAS.length * 100) : 0);
+  const etapaTxt = et.perdida ? 'Negociação encerrada' : et.concluida ? 'Concluído' : et.desconhecida ? 'Status fora do fluxo padrão' : 'Etapa ' + (et.atual + 1) + ' de ' + NEG_ETAPAS.length + ': ' + NEG_ETAPAS[et.atual];
+  const dias = negDiasDesde(n.data_negociacao), par = x.parada;
+  const estG = negCartaoVisao.__est || (negCartaoVisao.__est = negEstatisticasEtapas()), mediaEt = (et.atual >= 0 && !et.concluida && estG.stats[et.atual]) ? estG.stats[et.atual].media : null;
+  const corPar = par === null ? 'var(--text-faint)' : (mediaEt !== null ? (par > mediaEt * 1.5 ? 'var(--critico)' : (par > mediaEt ? '#f59e0b' : 'var(--ok)')) : (par > 30 ? 'var(--critico)' : (par > 15 ? '#f59e0b' : 'var(--ok)')));
+  const mediaTxt = mediaEt !== null ? ' · média da etapa: ' + negFmtDias(mediaEt) + ' dia(s)' : '';
+  const chips = [x.filial, n.tempo_renovado_meses ? n.tempo_renovado_meses + ' meses' : '', n.nova_data ? 'nova data ' + fmtDataBRRenov(n.nova_data) : '', n.qtd_torres ? n.qtd_torres + ' torre(s)' : '', n.qtd_armarios ? n.qtd_armarios + ' armário(s)' : '', n.qtd_faciais ? n.qtd_faciais + ' facial(is)' : '', n.qtd_baterias ? n.qtd_baterias + ' bateria(s)' : ''].filter(Boolean).map(c => '<span class="vn-chip">' + escapeHtml(c) + '</span>').join('');
+  const nota = String(n.tratativa || n.obs || '').trim();
+  return '<div class="vn-card"><div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;"><div style="font-weight:800; font-size:13.5px; line-height:1.3;">' + escapeHtml(n.condo_nome || '') + '</div><span class="vn-chip" style="color:' + cor + '; border-color:' + cor + ';">' + rotulo + '</span></div>' +
+    '<div style="font-size:11.5px; color:var(--text-faint); line-height:1.5;">Negociação: ' + (n.data_negociacao ? fmtDataBRRenov(n.data_negociacao) : '—') + (dias !== null ? ' (há ' + dias + ' dia(s))' : '') + ' · etapas ' + pct + '%<br>Resp.: <strong style="color:var(--text);">' + escapeHtml(n.responsavel || '—') + '</strong></div>' +
+    '<div class="vn-barra">' + seg + '</div>' +
+    '<div style="font-size:12px;"><strong>' + escapeHtml(etapaTxt) + '</strong><br><span style="color:var(--text-faint);">Status: ' + escapeHtml(n.status || '—') + '</span></div>' +
+    (chips ? '<div style="display:flex; gap:6px; flex-wrap:wrap;">' + chips + '</div>' : '') +
+    (par !== null && (x.grupo === 'andamento' || x.grupo === 'pdir') ? '<div style="font-size:11.5px; color:' + corPar + ';">⏱ ' + (par === 0 ? 'Entrou nesta etapa hoje' : 'Nesta etapa há ' + par + ' dia(s)') + (x.tempo.aprox ? ' (aproximado)' : '') + mediaTxt + '</div>' : '') +
+    (nota ? '<div style="font-size:11.5px; color:var(--text-faint); border-top:1px solid var(--line); padding-top:6px;">' + escapeHtml(nota.length > 140 ? nota.slice(0, 140) + '…' : nota) + '</div>' : '') +
+    '<div style="display:flex; gap:8px; margin-top:auto;"><button type="button" class="renov-action-btn" data-vn-editar="' + escapeHtml(String(n.id)) + '">Editar</button>' + (x.grupo === 'pdir' ? '<button type="button" class="renov-action-btn" data-vn-assinou="' + escapeHtml(String(n.id)) + '" style="border-color:var(--ok); color:var(--ok);">✔ Diretoria assinou</button>' : '') + '</div></div>';
+}
+// ---------- Tempo em cada etapa: cada mudança de status fica registrada (uma linha por negociação em configuracoes_sistema) ----------
+let __negHist = new Map(), __negHistCarregado = false;
+async function negCarregarHistorico(){
+  try{
+    if (!sb) return;
+    const { data, error } = await sb.from('configuracoes_sistema').select('chave,valor').like('chave', 'neghist_%');
+    if (error) throw error;
+    const m = new Map();
+    (data || []).forEach(r => { try{ const arr = JSON.parse(r.valor || '[]'); if (Array.isArray(arr)) m.set(String(r.chave).replace('neghist_', ''), arr); }catch(e){} });
+    __negHist = m;
+  }catch(e){ console.warn('Histórico das negociações:', e); }
+  finally{ __negHistCarregado = true; }
+}
+function negEntradaHistorico(status, em, aprox){ const et = negEtapaDoStatus(status); return { s: status, e: et.perdida ? -1 : (et.desconhecida ? null : et.atual), em, a: aprox ? 1 : 0 }; }
+async function negRegistrarHistorico(reg, anterior){
+  if (!sb) return;
+  if (anterior && anterior.status === reg.status) return;
+  const id = String(reg.id), agora = new Date().toISOString();
+  let lista = (__negHist.get(id) || []).slice();
+  if (!anterior){   // negociação nova: a primeira etapa começa na data da negociação
+    const ini = reg.data_negociacao ? reg.data_negociacao + 'T12:00:00' : agora;
+    lista = [negEntradaHistorico(reg.status, ini > agora ? agora : ini, false)];
+  } else {
+    if (!lista.length) lista.push(negEntradaHistorico(anterior.status, anterior.updated_at || (anterior.data_negociacao ? anterior.data_negociacao + 'T12:00:00' : agora), true));   // início aproximado: só se sabia a data da última atualização
+    lista.push(negEntradaHistorico(reg.status, agora, false));
+  }
+  __negHist.set(id, lista);
+  try{ const { error } = await sb.from('configuracoes_sistema').upsert({ chave: 'neghist_' + id, valor: JSON.stringify(lista), atualizado_em: agora }, { onConflict: 'chave' }); if (error) throw error; }
+  catch(e){ console.warn('Não consegui gravar o histórico da negociação:', e); }
+  try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
+}
+function negLinhaDoTempo(id){ return (__negHist.get(String(id)) || []).slice().sort((a, b) => String(a.em).localeCompare(String(b.em))); }
+// etapas já encerradas, em dias (ignora as que começaram em data aproximada)
+function negIntervalos(id){
+  const l = negLinhaDoTempo(id), out = [];
+  for (let i = 0; i < l.length - 1; i++){
+    const a = l[i], b = l[i + 1]; if (a.a || a.e === null || a.e === undefined || a.e < 0) continue;
+    const dias = (new Date(b.em) - new Date(a.em)) / 86400000; if (isNaN(dias) || dias < 0) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.e === a.e && prev.fim === i) { prev.dias += dias; prev.fim = i + 1; } else out.push({ e: a.e, dias, fim: i + 1 });
+  }
+  return out;
+}
+function negEstatisticasEtapas(){
+  const por = NEG_ETAPAS.map(() => []), totais = []; let desde = null;
+  __negHist.forEach((arr, id) => {
+    negIntervalos(id).forEach(x => { if (por[x.e]) por[x.e].push(x.dias); });
+    const l = negLinhaDoTempo(id); l.forEach(e => { if (!e.a && (!desde || e.em < desde)) desde = e.em; });
+    if (l.length >= 2 && !l[0].a && l[l.length - 1].e === NEG_ETAPAS.length - 1){ const d = (new Date(l[l.length - 1].em) - new Date(l[0].em)) / 86400000; if (d >= 0) totais.push(d); }
+  });
+  const stats = por.map(l => { if (!l.length) return null; const o = l.slice().sort((a, b) => a - b); return { n: l.length, media: l.reduce((a, b) => a + b, 0) / l.length, mediana: o.length % 2 ? o[(o.length - 1) / 2] : (o[o.length / 2 - 1] + o[o.length / 2]) / 2, max: o[o.length - 1] }; });
+  return { stats, totalMedio: totais.length ? totais.reduce((a, b) => a + b, 0) / totais.length : null, totalN: totais.length, desde };
+}
+function negDiasDesdeTs(ts){ const d = new Date(ts); return isNaN(d) ? null : Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000)); }
+function negTempoNaEtapa(n){
+  const l = negLinhaDoTempo(n.id), ult = l[l.length - 1];
+  if (ult && ult.s === n.status) return { dias: negDiasDesdeTs(ult.em), aprox: !!ult.a };
+  return { dias: negDiasDesdeTs(n.updated_at || (n.data_negociacao ? n.data_negociacao + 'T12:00:00' : null)), aprox: true };   // sem registro: usa a última atualização
+}
+const negFmtDias = d => d === null || d === undefined ? '—' : (Math.round(d * 10) / 10).toString().replace('.', ',');
+function renderVnTempos(){
+  const box = document.getElementById('vnTemposCorpo'); if (!box) return;
+  const est = negEstatisticasEtapas(), temAlgum = est.stats.some(x => x);
+  if (!temAlgum){ box.innerHTML = '<p class="rc-nota" style="margin:6px 0;">Ainda sem medições. A contagem começou agora: <strong>a cada mudança de status, o dashboard registra o dia</strong> e passa a calcular quanto tempo cada negociação ficou em cada etapa. As médias aparecem aqui conforme as etapas forem sendo concluídas.</p>'; return; }
+  const maxMedia = Math.max(...est.stats.filter(Boolean).map(x => x.media), 1);
+  box.innerHTML = '<div style="overflow:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Etapa</th><th>Média (dias)</th><th>Mediana</th><th>Maior</th><th>Medições</th><th style="text-align:left; width:30%;"></th></tr></thead><tbody>' +
+    NEG_ETAPAS.slice(0, NEG_ETAPAS.length - 1).map((nome, i) => { const x = est.stats[i]; return '<tr><td style="text-align:left;">' + (i + 1) + '. ' + escapeHtml(nome) + '</td><td><strong>' + (x ? negFmtDias(x.media) : '—') + '</strong></td><td>' + (x ? negFmtDias(x.mediana) : '—') + '</td><td>' + (x ? negFmtDias(x.max) : '—') + '</td><td>' + (x ? x.n : 0) + '</td><td>' + (x ? '<div style="height:8px; border-radius:4px; background:#38bdf8; width:' + Math.max(4, Math.round(x.media / maxMedia * 100)) + '%;"></div>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<p class="rc-nota" style="margin:8px 0 0;">' + (est.totalMedio !== null ? 'Tempo médio do início até a ampliação finalizada: <strong>' + negFmtDias(est.totalMedio) + ' dia(s)</strong> (' + est.totalN + ' negociação(ões) concluída(s) com registro completo). ' : '') + 'Contando desde ' + (est.desde ? fmtDataBRRenov(String(est.desde).slice(0, 10)) : '—') + '. Só entram etapas que começaram e terminaram depois que o registro foi ligado.</p>';
+}
+['vnBusca', 'vnGrupo', 'vnFilial', 'vnResp', 'vnEtapa', 'vnOrdem'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovVisaoNeg); el.addEventListener('change', renderRenovVisaoNeg); });
+document.getElementById('renovViewVisaoNeg').addEventListener('click', ev => {
+  const f = ev.target.closest('[data-vn-etapa]'), e = ev.target.closest('[data-vn-editar]'), a = ev.target.closest('[data-vn-assinou]');
+  if (f){ const sel = document.getElementById('vnEtapa'), v = f.getAttribute('data-vn-etapa'); sel.value = (sel.value === v ? '' : v); sel.dispatchEvent(new Event('change')); return; }
+  if (e){ editNegociacao(e.getAttribute('data-vn-editar')); return; }
+  if (a){ editNegociacao(a.getAttribute('data-vn-assinou')); document.getElementById('negStatus').value = 'Renovado'; }
+});
+
 // ---------- Sub-abas da Renovação: Vencidos/Negociações | Renovados | Cronograma Técnico ----------
 document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -16613,6 +16841,8 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     document.getElementById('renovViewRenovados').style.display = alvo === 'renovados' ? 'block' : 'none';
     document.getElementById('renovViewPendDiretoria').style.display = alvo === 'pendentediretoria' ? 'block' : 'none';
     if (alvo === 'pendentediretoria') renderRenovPendDiretoria();
+    document.getElementById('renovViewVisaoNeg').style.display = alvo === 'visaoneg' ? 'block' : 'none';
+    if (alvo === 'visaoneg') renderRenovVisaoNeg();
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
@@ -17310,6 +17540,8 @@ function openNegociacaoModal(condoId){
   document.getElementById('negMensalidadeNova').value = '';
   document.getElementById('negQtdTorres').value = '';
   document.getElementById('negQtdArmarios').value = '';
+  document.getElementById('negQtdFaciais').value = '';
+  document.getElementById('negQtdBaterias').value = '';
   negAjustarBotaoRelatorio();
   document.getElementById('negQuerReducao').checked = false;
   ['negMensalidadePedida', 'negMensalidadeSugerida', 'negPrazoSugerido', 'negTempoContrato', 'negReducaoJustificativa'].forEach(id => { document.getElementById(id).value = ''; });
@@ -17348,6 +17580,8 @@ function editNegociacao(id){
   document.getElementById('negMensalidadeNova').value = formatarMoedaParaInputRenov(n.mensalidade_nova);
   document.getElementById('negQtdTorres').value = n.qtd_torres ? String(n.qtd_torres) : '';
   document.getElementById('negQtdArmarios').value = n.qtd_armarios ? String(n.qtd_armarios) : '';
+  document.getElementById('negQtdFaciais').value = n.qtd_faciais ? String(n.qtd_faciais) : '';
+  document.getElementById('negQtdBaterias').value = n.qtd_baterias ? String(n.qtd_baterias) : '';
   negAjustarBotaoRelatorio();
   document.getElementById('negQuerReducao').checked = !!n.quer_reducao;
   document.getElementById('negMensalidadePedida').value = formatarMoedaParaInputRenov(n.mensalidade_pedida);
@@ -17415,6 +17649,8 @@ async function salvarNegociacao(){
     ampliacao_requisicao: document.getElementById('negAmpliacaoRequisicao').value.trim() || null,
     qtd_torres: parseInt(document.getElementById('negQtdTorres').value, 10) || null,
     qtd_armarios: parseInt(document.getElementById('negQtdArmarios').value, 10) || null,
+    qtd_faciais: parseInt(document.getElementById('negQtdFaciais').value, 10) || null,
+    qtd_baterias: parseInt(document.getElementById('negQtdBaterias').value, 10) || null,
     mensalidade_atual: parseMoedaBRRenov(document.getElementById('negMensalidadeAtual').value),
     mensalidade_nova: parseMoedaBRRenov(document.getElementById('negMensalidadeNova').value),
     quer_reducao: document.getElementById('negQuerReducao').checked,
@@ -17455,6 +17691,7 @@ async function salvarNegociacao(){
       }
     }catch(e){ console.warn('Falha ao salvar negociação:', e); }
     await negAtualizarCadastroDepoisDeSalvar(condo, status, anteriorNeg);
+    try{ await negRegistrarHistorico(registro, anteriorNeg); }catch(e){ console.warn('Histórico:', e); }
   }
 
   // Se a negociação foi concluída como "Renovado" e há uma nova data de
@@ -17493,6 +17730,184 @@ async function negAtualizarCadastroDepoisDeSalvar(condo, status, anterior){
     }catch(e){ alert('Não consegui reativar o condomínio no Cadastro: ' + (e.message || e)); }
   }
 }
+// ---------- Planilha de negociações: baixar já preenchida, completar no Excel/Google Planilhas e importar de volta ----------
+const NEG_PLAN_FILL = ['Data da negociação', 'Status', 'Tempo renovado (meses)', 'Nova data de vencimento', 'Mensalidade atual (R$)', 'Mensalidade nova (R$)', 'Valor do custo dos equipamentos (R$)', 'Qtd. torres', 'Qtd. armários', 'Qtd. faciais', 'Qtd. baterias', 'Quer reduzir a mensalidade? (Sim/Não)', 'Tratativa', 'Observação'];
+function negStatusPermitidos(){ try{ negGarantirOpcoesStatus(); }catch(e){} return [...document.querySelectorAll('#negStatus option')].map(o => o.value).filter(Boolean); }
+function negNumeroOuVazio(v){ return v === null || v === undefined ? '' : v; }
+function negGerarPlanilha(){
+  if (!['admin', 'editor'].includes(currentRole)){ alert('Só administradores e editores geram a planilha de negociações.'); return; }
+  const condoDe = n => renovAllCondos.find(c => String(c.item_id) === String(n.condo_id));
+  const ativas = renovNegociacoes.filter(negociacaoEmAndamento).slice().sort((a, b) => String(a.condo_nome).localeCompare(String(b.condo_nome), 'pt-BR'));
+  const linhasNeg = ativas.map(n => { const c = condoDe(n); return {
+    'ID (não mexer)': n.id, 'Condomínio': n.condo_nome || '', 'Filial': c ? c.filial : '', 'Responsável': n.responsavel || '',
+    'Data da negociação': n.data_negociacao ? fmtDataBRRenov(n.data_negociacao) : '', 'Status': n.status || '', 'Tempo renovado (meses)': negNumeroOuVazio(n.tempo_renovado_meses),
+    'Nova data de vencimento': n.nova_data ? fmtDataBRRenov(n.nova_data) : '', 'Mensalidade atual (R$)': negNumeroOuVazio(n.mensalidade_atual), 'Mensalidade nova (R$)': negNumeroOuVazio(n.mensalidade_nova),
+    'Valor do custo dos equipamentos (R$)': negNumeroOuVazio(n.valor_custo), 'Qtd. torres': negNumeroOuVazio(n.qtd_torres), 'Qtd. armários': negNumeroOuVazio(n.qtd_armarios), 'Qtd. faciais': negNumeroOuVazio(n.qtd_faciais), 'Qtd. baterias': negNumeroOuVazio(n.qtd_baterias),
+    'Quer reduzir a mensalidade? (Sim/Não)': n.quer_reducao ? 'Sim' : 'Não', 'Tratativa': n.tratativa || '', 'Observação': n.obs || '' }; });
+  // contratos vencidos ou vencendo em breve que ainda não têm negociação: linhas para começar uma negociação nova
+  const comNeg = new Set(renovNegociacoes.filter(n => negociacaoEmAndamento(n) || ehPendenteDiretoria(n.status)).map(n => String(n.condo_id)));
+  const vistos = new Set(), novas = [];
+  [...renovVencidos, ...renovVencendoBreve].forEach(c => {
+    if (!c || comNeg.has(String(c.item_id)) || vistos.has(String(c.item_id)) || (c.status || 'Ativo') === 'Inativo') return;
+    vistos.add(String(c.item_id));
+    const dias = c.contrato_fim ? diasParaVencer(c.contrato_fim) : null;
+    const linha = { 'Condomínio': c.nome, 'Filial': c.filial || '', 'Fim do contrato atual': c.contrato_fim ? fmtDataBRRenov(c.contrato_fim) : '', 'Situação do contrato': dias === null ? '' : (dias < 0 ? 'Vencido há ' + Math.abs(dias) + ' dia(s)' : 'Vence em ' + dias + ' dia(s)'), 'Responsável': (dadosCarteiraDoNome(c.nome).resp || '') };
+    NEG_PLAN_FILL.forEach(k => { linha[k] = ''; });
+    novas.push(linha);
+  });
+  novas.sort((a, b) => String(a['Condomínio']).localeCompare(String(b['Condomínio']), 'pt-BR'));
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet(linhasNeg.length ? linhasNeg : [{ 'ID (não mexer)': '', 'Condomínio': '' }]);
+  ws1['!cols'] = [{ wch: 18 }, { wch: 38 }, { wch: 12 }, { wch: 22 }, { wch: 16 }, { wch: 44 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 40 }, { wch: 50 }];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Negociações em andamento');
+  const ws2 = XLSX.utils.json_to_sheet(novas.length ? novas : [{ 'Condomínio': '' }]);
+  ws2['!cols'] = [{ wch: 38 }, { wch: 12 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 44 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 18 }, { wch: 40 }, { wch: 50 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Novas negociações');
+  const status = negStatusPermitidos(), pessoas = (typeof listaPessoasParaEscolher === 'function' ? listaPessoasParaEscolher() : []), tempos = [6, 12, 18, 24, 36, 48, 60];
+  const nL = Math.max(status.length, pessoas.length, tempos.length, 2), listas = [];
+  for (let i = 0; i < nL; i++) listas.push({ 'Status válidos': status[i] || '', 'Responsáveis': pessoas[i] || '', 'Tempo renovado (meses)': tempos[i] || '', 'Quer reduzir?': ['Sim', 'Não'][i] || '' });
+  const ws3 = XLSX.utils.json_to_sheet(listas); ws3['!cols'] = [{ wch: 50 }, { wch: 26 }, { wch: 22 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Listas');
+  const instr = [['COMO PREENCHER'], [''],
+    ['1. Aba "Negociações em andamento": são as negociações que estão hoje na aba Em Negociação do dashboard. Corrija ou complete as colunas e importe de volta.'],
+    ['2. Aba "Novas negociações": contratos vencidos ou vencendo em breve que ainda não têm negociação. Para abrir uma negociação nova, preencha pelo menos a coluna Status. Linhas sem Status são ignoradas.'],
+    ['3. Não mude a coluna "ID (não mexer)" nem o nome do condomínio das negociações que já existem.'],
+    ['4. Status: use exatamente um dos textos da aba "Listas". Status diferente é ignorado e aparece como aviso na importação.'],
+    ['5. Datas no formato dd/mm/aaaa. Valores em reais, por exemplo 2680,00.'],
+    ['6. Célula vazia NÃO apaga o que já está no dashboard. Para limpar um campo, faça isso direto no dashboard.'],
+    ['7. No Google Planilhas: envie este arquivo para o Google Drive, abra com o Google Planilhas e preencha. Para trazer de volta: Arquivo > Fazer download > Microsoft Excel (.xlsx) e use o botão Importar planilha.'],
+    ['8. Quando uma linha passa para Renovado e tem Nova data de vencimento, a importação atualiza o Fim do Contrato no Cadastro. "Síndico rescindiu o contrato" deixa o condomínio Inativo no Cadastro.']];
+  const ws4 = XLSX.utils.aoa_to_sheet(instr); ws4['!cols'] = [{ wch: 150 }];
+  XLSX.utils.book_append_sheet(wb, ws4, 'Como preencher');
+  XLSX.writeFile(wb, 'negociacoes_para_preencher_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  logActivity('exportou', 'negociacoes', null, linhasNeg.length + ' negociação(ões) e ' + novas.length + ' contrato(s) sem negociação');
+}
+function negParseDataPlanilha(v){
+  if (v === null || v === undefined || String(v).trim() === '') return null;
+  if (typeof v === 'number' && v > 20000) return new Date(Math.round((v - 25569) * 86400000)).toISOString().slice(0, 10);
+  const t = String(v).trim();
+  let m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(t);
+  if (m){ const a = m[3].length === 2 ? '20' + m[3] : m[3]; return a + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0'); }
+  m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t); if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  return undefined;   // não entendi a data
+}
+function negParseNumeroPlanilha(v){ if (v === null || v === undefined || String(v).trim() === '') return null; if (typeof v === 'number') return v; const n = parseMoedaBRRenov(String(v).replace(/[^\d.,-]/g, '')); return n === null ? undefined : n; }
+function negPlanilhaInterpretar(wb){
+  const H = x => normTxtCarteira(String(x || ''));
+  const permitidos = negStatusPermitidos(), achaStatus = t => permitidos.find(o => H(o) === H(t));
+  const plano = { atualizar: [], criar: [], iguais: 0, semPreencher: 0, problemas: [], abas: 0 }, hoje = new Date().toISOString().slice(0, 10);
+  const reservadas = new Set(['LISTAS', 'COMO PREENCHER']);
+  let seq = 0;
+  wb.SheetNames.filter(n => !reservadas.has(H(n))).forEach(nomeAba => {
+    const linhas = XLSX.utils.sheet_to_json(wb.Sheets[nomeAba], { header: 1, raw: true, defval: '' });
+    let idxCab = linhas.findIndex((r, i) => i < 12 && r.some(c => H(c) === 'CONDOMINIO'));
+    if (idxCab === -1) return;
+    plano.abas++;
+    const cab = linhas[idxCab].map(H), col = pref => cab.findIndex(c => c === pref || c.startsWith(pref));
+    const C = { id: col('ID'), cond: col('CONDOMINIO'), resp: col('RESPONSAVEL'), data: col('DATA DA NEGOCIACAO'), status: col('STATUS'), tempo: col('TEMPO RENOVADO'), nova: col('NOVA DATA'), mAtual: col('MENSALIDADE ATUAL'), mNova: col('MENSALIDADE NOVA'), custo: col('VALOR DO CUSTO'), torres: col('QTD TORRES'), armarios: col('QTD ARMARIOS'), faciais: col('QTD FACIAIS'), baterias: col('QTD BATERIAS'), reduzir: col('QUER REDUZIR'), trat: col('TRATATIVA'), obs: col('OBSERVACAO') };
+    const cel = (r, i) => i === -1 ? '' : r[i];
+    linhas.slice(idxCab + 1).forEach((r, k) => {
+      const nome = String(cel(r, C.cond) || '').trim(); if (!nome) return;
+      const rotulo = nome + ' (aba "' + nomeAba + '", linha ' + (idxCab + k + 2) + ')';
+      const idTxt = String(cel(r, C.id) || '').trim();
+      const existente = idTxt ? renovNegociacoes.find(n => String(n.id) === idTxt) : null;
+      if (idTxt && !existente){ plano.problemas.push(rotulo + ': o ID não existe mais no dashboard (negociação excluída?). Linha ignorada.'); return; }
+      const novo = {}; let erro = '';
+      const stTxt = String(cel(r, C.status) || '').trim();
+      if (stTxt){ const ok = achaStatus(stTxt); if (!ok) erro = 'status "' + stTxt + '" não está na lista da aba Listas'; else novo.status = ok; }
+      const respTxt = String(cel(r, C.resp) || '').trim(); if (respTxt) novo.responsavel = respTxt;
+      const dData = negParseDataPlanilha(cel(r, C.data)); if (dData === undefined) erro = erro || 'data da negociação inválida'; else if (dData) novo.data_negociacao = dData;
+      const dNova = negParseDataPlanilha(cel(r, C.nova)); if (dNova === undefined) erro = erro || 'nova data de vencimento inválida'; else if (dNova) novo.nova_data = dNova;
+      [['tempo', 'tempo_renovado_meses', true], ['torres', 'qtd_torres', true], ['armarios', 'qtd_armarios', true], ['faciais', 'qtd_faciais', true], ['baterias', 'qtd_baterias', true], ['mAtual', 'mensalidade_atual', false], ['mNova', 'mensalidade_nova', false], ['custo', 'valor_custo', false]].forEach(([c, campo, inteiro]) => {
+        const v = negParseNumeroPlanilha(cel(r, C[c])); if (v === undefined) erro = erro || 'valor inválido em ' + campo; else if (v !== null) novo[campo] = inteiro ? Math.round(v) : v;
+      });
+      const red = H(cel(r, C.reduzir)); if (red === 'SIM') novo.quer_reducao = true; else if (red === 'NAO') novo.quer_reducao = false;
+      const trat = String(cel(r, C.trat) || '').trim(); if (trat) novo.tratativa = trat;
+      const obs = String(cel(r, C.obs) || '').trim(); if (obs) novo.obs = obs;
+      if (erro){ plano.problemas.push(rotulo + ': ' + erro + '. Linha ignorada.'); return; }
+      if (existente){
+        const mudancas = Object.keys(novo).filter(k2 => k2 === 'quer_reducao' ? !!existente[k2] !== !!novo[k2] : String(existente[k2] === null || existente[k2] === undefined ? '' : existente[k2]) !== String(novo[k2]));
+        if (!mudancas.length){ plano.iguais++; return; }
+        plano.atualizar.push({ nome: existente.condo_nome, anterior: existente, campos: mudancas.reduce((o, k2) => { o[k2] = novo[k2]; return o; }, {}), registro: Object.assign({}, existente, mudancas.reduce((o, k2) => { o[k2] = novo[k2]; return o; }, {}), { updated_at: new Date().toISOString() }) });
+        return;
+      }
+      // sem ID: negociação nova (precisa de status preenchido)
+      if (!novo.status){ plano.semPreencher++; return; }
+      const alvo = normalizeNomeCondo(nome);
+      let candidatos = renovAllCondos.filter(c => (c.status || 'Ativo') !== 'Inativo' && normalizeNomeCondo(c.nome) === alvo);
+      if (!candidatos.length) candidatos = renovAllCondos.filter(c => (c.status || 'Ativo') !== 'Inativo' && pqMesmoConjuntoTokens(c.nome, nome));
+      if (candidatos.length !== 1){ plano.problemas.push(rotulo + ': ' + (candidatos.length ? 'mais de um condomínio com esse nome (use a coluna Filial para conferir)' : 'condomínio não encontrado no Cadastro') + '. Linha ignorada.'); return; }
+      const condo = candidatos[0];
+      const jaTem = renovNegociacoes.find(n => String(n.condo_id) === String(condo.item_id) && (negociacaoEmAndamento(n) || ehPendenteDiretoria(n.status)));
+      if (jaTem){ plano.problemas.push(rotulo + ': já existe uma negociação em andamento para esse condomínio. Edite a linha dela na aba "Negociações em andamento". Linha ignorada.'); return; }
+      const registro = Object.assign({ id: 'neg_' + Date.now() + '_' + (++seq), condo_id: condo.item_id, condo_nome: condo.nome, responsavel: '', data_negociacao: hoje, nova_data: null, tempo_renovado_meses: null, valor_custo: null, tratativa: '', obs: '', quer_reducao: false, updated_at: new Date().toISOString() }, novo);
+      plano.criar.push({ nome: condo.nome, registro, campos: novo });
+    });
+  });
+  return plano;
+}
+const NEG_ROTULOS = { status: 'Status', responsavel: 'Responsável', data_negociacao: 'Data', nova_data: 'Nova data', tempo_renovado_meses: 'Tempo (meses)', mensalidade_atual: 'Mensalidade atual', mensalidade_nova: 'Mensalidade nova', valor_custo: 'Custo', qtd_torres: 'Torres', qtd_armarios: 'Armários', qtd_faciais: 'Faciais', qtd_baterias: 'Baterias', quer_reducao: 'Quer reduzir', tratativa: 'Tratativa', obs: 'Observação' };
+function negFmtCampo(k, v){ if (v === null || v === undefined || v === '') return '—'; if (k === 'data_negociacao' || k === 'nova_data') return fmtDataBRRenov(v); if (k === 'quer_reducao') return v ? 'Sim' : 'Não'; return String(v).length > 40 ? String(v).slice(0, 40) + '…' : String(v); }
+function negPlanilhaPrevia(plano, nomeArquivo){
+  let el = document.getElementById('negPlanModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'negPlanModal'; el.style.cssText = 'position:fixed; inset:0; z-index:9700; background:rgba(3,6,14,.78); display:flex; align-items:center; justify-content:center; padding:18px;';
+  const mudar = plano.atualizar.slice(0, 25).map(x => '<li><strong>' + escapeHtml(x.nome) + '</strong>: ' + Object.keys(x.campos).map(k => escapeHtml(NEG_ROTULOS[k] || k) + ' ' + escapeHtml(negFmtCampo(k, x.anterior[k])) + ' → <strong>' + escapeHtml(negFmtCampo(k, x.campos[k])) + '</strong>').join('; ') + '</li>').join('');
+  const novas = plano.criar.slice(0, 25).map(x => '<li><strong>' + escapeHtml(x.nome) + '</strong>: ' + escapeHtml(x.registro.status) + (x.registro.responsavel ? ' · ' + escapeHtml(x.registro.responsavel) : '') + '</li>').join('');
+  const prob = plano.problemas.slice(0, 40).map(t => '<li>' + escapeHtml(t) + '</li>').join('');
+  const nada = !plano.atualizar.length && !plano.criar.length;
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:900px; max-height:90vh; overflow:auto; padding:18px 22px;">' +
+    '<div style="display:flex; justify-content:space-between; gap:10px;"><div><div style="font-size:17px; font-weight:800;">📥 Importar planilha de negociações</div><div style="font-size:12px; color:var(--text-faint); margin-top:2px;">' + escapeHtml(nomeArquivo) + ' · nada foi gravado ainda</div></div><button type="button" class="modal-close" id="negPlanFechar" style="position:static;">×</button></div>' +
+    '<div style="display:flex; gap:10px; flex-wrap:wrap; margin:14px 0;"><div class="stat-box"><div class="snum" style="color:var(--accent);">' + plano.atualizar.length + '</div><div class="slbl">a atualizar</div></div><div class="stat-box"><div class="snum" style="color:var(--ok);">' + plano.criar.length + '</div><div class="slbl">novas</div></div><div class="stat-box"><div class="snum">' + plano.iguais + '</div><div class="slbl">sem mudança</div></div><div class="stat-box"><div class="snum">' + plano.semPreencher + '</div><div class="slbl">sem status (ignoradas)</div></div><div class="stat-box"><div class="snum" style="color:' + (plano.problemas.length ? 'var(--critico)' : 'var(--ok)') + ';">' + plano.problemas.length + '</div><div class="slbl">com problema</div></div></div>' +
+    (plano.atualizar.length ? '<div style="font-weight:700; font-size:13px; margin:6px 0;">Vão ser atualizadas' + (plano.atualizar.length > 25 ? ' (primeiras 25)' : '') + '</div><ul style="font-size:12.5px; line-height:1.5; margin:0 0 10px 18px;">' + mudar + '</ul>' : '') +
+    (plano.criar.length ? '<div style="font-weight:700; font-size:13px; margin:6px 0;">Vão ser criadas' + (plano.criar.length > 25 ? ' (primeiras 25)' : '') + '</div><ul style="font-size:12.5px; line-height:1.5; margin:0 0 10px 18px;">' + novas + '</ul>' : '') +
+    (plano.problemas.length ? '<div style="font-weight:700; font-size:13px; margin:6px 0; color:var(--critico);">Problemas (essas linhas não entram)</div><ul style="font-size:12.5px; line-height:1.5; margin:0 0 10px 18px; color:var(--critico);">' + prob + '</ul>' : '') +
+    (nada ? '<p style="margin:10px 0;">Não há nada para atualizar ou criar nessa planilha.</p>' : '') +
+    '<div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;"><button type="button" class="clearbtn" id="negPlanCancelar">Cancelar</button>' + (nada ? '' : '<button type="button" class="login-btn" id="negPlanAplicar" style="width:auto; margin-top:0; padding:9px 18px;">Aplicar ' + (plano.atualizar.length + plano.criar.length) + ' mudança(s)</button>') + '</div></div>';
+  document.body.appendChild(el);
+  const fechar = () => el.remove();
+  document.getElementById('negPlanFechar').addEventListener('click', fechar); document.getElementById('negPlanCancelar').addEventListener('click', fechar);
+  const ap = document.getElementById('negPlanAplicar');
+  if (ap) ap.addEventListener('click', async () => { ap.disabled = true; ap.textContent = 'Gravando...'; try{ const r = await negPlanilhaAplicar(plano); fechar(); alert(r); }catch(e){ ap.disabled = false; ap.textContent = 'Tentar de novo'; alert('Não consegui gravar: ' + (e.message || e)); } });
+}
+async function negPlanilhaAplicar(plano){
+  const itens = [...plano.atualizar, ...plano.criar], registros = itens.map(x => x.registro);
+  for (let i = 0; i < registros.length; i += 100){
+    const lote = registros.slice(i, i + 100);
+    let { error } = await sb.from('negociacoes_contrato').upsert(lote);
+    if (error && negFaltamColunas(error)){ const base = lote.map(r => { const c = Object.assign({}, r); NEG_COLUNAS_NOVAS.forEach(k => delete c[k]); return c; }); const r2 = await sb.from('negociacoes_contrato').upsert(base); error = r2.error; if (!error) negAvisarSql(); }
+    if (error) throw error;
+  }
+  registros.forEach(reg => { const idx = renovNegociacoes.findIndex(n => String(n.id) === String(reg.id)); if (idx > -1) renovNegociacoes[idx] = reg; else renovNegociacoes.unshift(reg); });
+  // efeitos no Cadastro (os mesmos de salvar uma negociação): Renovado com nova data atualiza o Fim do Contrato; rescisão deixa o condomínio Inativo
+  let contratos = 0, inativados = 0, falhas = 0;
+  for (const x of itens){
+    const reg = x.registro, ant = x.anterior, condo = renovAllCondos.find(c => String(c.item_id) === String(reg.condo_id)); if (!condo) continue;
+    const mudouStatus = !ant || ant.status !== reg.status, mudouData = !ant || ant.nova_data !== reg.nova_data;
+    try{
+      if (ehStatusRenovado(reg.status) && !ehPendenteDiretoria(reg.status) && reg.nova_data && (mudouStatus || mudouData)){ const { error } = await sb.from('cadastro_condominios').update({ contrato_fim: reg.nova_data }).eq('item_id', condo.item_id); if (error) throw error; contratos++; }
+      if (ehRescisao(reg.status) && mudouStatus && condo.status !== 'Inativo'){ const { error } = await sb.from('cadastro_condominios').update({ status: 'Inativo', data_cancelamento: new Date().toISOString().slice(0, 10), motivo_cancelamento: NEG_RESCISAO_TXT }).eq('item_id', condo.item_id); if (error) throw error; inativados++; }
+    }catch(e){ falhas++; console.warn('Planilha de negociações → Cadastro:', e); }
+  }
+  for (const x of itens){ try{ await negRegistrarHistorico(x.registro, x.anterior); }catch(e){} }
+  try{ renderRenovNegociacoes(); }catch(e){}
+  try{ await loadRenovacaoData(); }catch(e){}
+  logActivity('importou', 'negociacoes', null, plano.atualizar.length + ' atualizada(s), ' + plano.criar.length + ' nova(s)');
+  return '✔ Planilha importada: ' + plano.atualizar.length + ' negociação(ões) atualizada(s) e ' + plano.criar.length + ' nova(s).' + (contratos ? '\n• ' + contratos + ' Fim(ns) de Contrato atualizado(s) no Cadastro.' : '') + (inativados ? '\n• ' + inativados + ' condomínio(s) marcado(s) como Inativo no Cadastro (rescisão).' : '') + (falhas ? '\n• ATENÇÃO: ' + falhas + ' atualização(ões) do Cadastro falharam; confira na aba Cadastro de Condomínios.' : '');
+}
+document.getElementById('btnNegPlanilhaGerar').addEventListener('click', negGerarPlanilha);
+document.getElementById('btnNegPlanilhaImportar').addEventListener('click', () => {
+  if (!['admin', 'editor'].includes(currentRole)){ alert('Só administradores e editores importam a planilha de negociações.'); return; }
+  document.getElementById('negPlanilhaInput').click();
+});
+document.getElementById('negPlanilhaInput').addEventListener('change', async ev => {
+  const arq = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!arq) return;
+  try{
+    const wb = XLSX.read(new Uint8Array(await arq.arrayBuffer()), { type: 'array' });
+    const plano = negPlanilhaInterpretar(wb);
+    if (!plano.abas){ alert('Não achei a coluna "Condomínio" nessa planilha. Use a planilha gerada pelo botão "Planilha para preencher".'); return; }
+    negPlanilhaPrevia(plano, arq.name);
+  }catch(e){ alert('Não consegui ler a planilha: ' + (e.message || e)); }
+});
 async function excluirNegociacao(id){
   renovNegociacoes = renovNegociacoes.filter(n => n.id !== id);
   renderRenovNegociacoes();
@@ -26383,6 +26798,7 @@ function negGarantirOpcoesStatus(extra){
   const tem = v => [...sel.options].some(o => o.value === v);
   const criar = v => { const o = document.createElement('option'); o.value = v; o.textContent = v; return o; };
   if (!tem(NEG_STATUS_PDIR)){ const ref = [...sel.options].find(o => o.value === 'Renovado'); sel.insertBefore(criar(NEG_STATUS_PDIR), ref || null); }
+  NEG_STATUS_ETAPAS_NOVOS.forEach(v => { if (!tem(v)){ const ref = [...sel.options].find(o => o.value === 'Renovado - Pendente Assinatura da diretoria') || [...sel.options].find(o => o.value === 'Renovado'); sel.insertBefore(criar(v), ref || null); } });
   if (![...sel.options].some(o => ehRescisao(o.value))){ const ref = [...sel.options].find(o => o.value === 'Não renovado'); sel.insertBefore(criar('Síndico Rescindiu o Contrato'), ref || null); }
   if (extra && !tem(extra)) sel.appendChild(criar(extra));
 }
@@ -26738,7 +27154,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v191';
+const APP_BUILD = 'v194';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
