@@ -1767,7 +1767,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v195 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v197 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2300,6 +2300,8 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <button type="button" class="subtab-btn" data-renov-subtab="pendentediretoria" id="btnSubPendDiretoria">🖊️ Pendente Diretoria</button>
       <button type="button" class="subtab-btn" data-renov-subtab="renovados">✅ Renovados</button>
       <button type="button" class="subtab-btn" data-renov-subtab="encerradas">🏁 Renovadas e Não Renovadas</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="andamentomel">🚧 Andamento das Melhorias</button>
+      <button type="button" class="subtab-btn" data-renov-subtab="revisao">🔁 Revisão das Melhorias</button>
       <button type="button" class="subtab-btn" data-renov-subtab="cronograma">🛠️ Cronograma Técnico</button>
       <button type="button" class="subtab-btn" data-renov-subtab="minidash">📊 Mini Dashboard</button>
     </div>
@@ -2525,6 +2527,11 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
           <option value="andamento">Mostrar: só em negociação</option>
           <option value="fechadas">Mostrar: só já renovadas</option>
         </select>
+        <select class="filter-select" id="renovTAFiltroFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="renovTAFiltroResp"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="renovTAFiltroItem"><option value="">Melhoria: todas</option><option value="t">🗼 Torres</option><option value="a">🗄️ Armários</option><option value="f">🙂 Faciais</option><option value="b">🔋 Baterias</option></select>
+        <select class="filter-select" id="renovTAFiltroStatus"><option value="">Status: todos</option></select>
+        <button type="button" class="clearbtn" id="renovTALimpar">Limpar filtros</button>
       </div>
       <div id="renovTAFilial" style="margin-bottom:14px;"></div>
       <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
@@ -2572,6 +2579,45 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
         <th><input type="checkbox" id="renovRedTodas" title="Marcar todas"></th><th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th>Mensalidade atual</th><th>Tempo de contrato</th><th>Unidades</th><th>Custo dos equipamentos</th><th>Valor sugerido</th><th>Redução</th><th>Prazo sugerido</th><th>Status</th><th>Ações</th>
       </tr></thead><tbody id="renovRedBody"></tbody></table></div>
+    </div>
+
+    <div id="renovViewAndamentoMel" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">O que ainda <strong>não foi entregue</strong>: melhorias prometidas nas negociações, em que fase estão e o que está parado. A etapa e o tempo vêm do <strong>Status</strong> da negociação. <strong>Parada</strong> = há mais de 1,5 vez a média daquela etapa na mesma etapa (ou mais de 30 dias, quando ainda não há média).</p>
+      <div class="stats-strip" id="amKpis" style="margin-bottom:14px;"></div>
+      <div id="amFases" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:12px;">
+        <input type="text" class="search" id="amBusca" placeholder="Buscar condomínio (digite parte do nome)" list="amListaBusca">
+        <datalist id="amListaBusca"></datalist>
+        <select class="filter-select" id="amFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="amResp"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="amFase"><option value="">Fase: todas</option><option value="0">Negociação</option><option value="1">Documentação e aditivo</option><option value="2">Pedido e compra</option><option value="3">Cronograma e obra</option><option value="x">Fora do fluxo padrão</option></select>
+        <select class="filter-select" id="amItem"><option value="">Melhoria: todas</option><option value="t">🗼 Torres</option><option value="a">🗄️ Armários</option><option value="f">🙂 Faciais</option><option value="b">🔋 Baterias</option></select>
+        <select class="filter-select" id="amOrdem"><option value="parada">Ordenar: paradas primeiro</option><option value="fase">Ordenar: fase mais avançada</option><option value="antiga">Ordenar: negociação mais antiga</option><option value="nome">Ordenar: nome</option></select>
+        <button type="button" class="clearbtn" id="amPdf" style="border-color:var(--ok); color:var(--ok);">📄 Relatório para a diretoria (PDF)</button>
+      </div>
+      <p class="rc-nota" id="amContagem" style="margin:0 0 8px;"></p>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th style="text-align:left;">Melhorias</th><th>Fase</th><th style="text-align:left;">Etapa atual</th><th>Nesta etapa há</th><th>Pedido / O.S.</th><th>Negociação desde</th><th style="text-align:left;">Observação</th><th>Ações</th>
+      </tr></thead><tbody id="amBody"></tbody></table></div>
+    </div>
+
+    <div id="renovViewRevisao" style="display:none;">
+      <p class="rc-nota" style="margin:0 0 12px;">Resultado das <strong>melhorias já entregues</strong> (negociações com status <em>Ampliação finalizada</em>, <em>Ampliação concluída</em> ou <em>Renovado - Obra Finalizada</em>): o que foi entregue, quanto tempo levou e como ficou a <strong>nota da pesquisa de satisfação antes e depois</strong>. <strong>Nota antes</strong> = última pesquisa de um mês anterior ao da entrega. <strong>Nota depois</strong> = primeira pesquisa de um mês posterior ao da entrega.</p>
+      <div class="stats-strip" id="rvKpis" style="margin-bottom:14px;"></div>
+      <div class="toolbar" style="margin-bottom:12px;">
+        <input type="text" class="search" id="rvBusca" placeholder="Buscar condomínio (digite parte do nome)" list="rvListaBusca">
+        <datalist id="rvListaBusca"></datalist>
+        <select class="filter-select" id="rvFilial"><option value="">Filial: todas</option></select>
+        <select class="filter-select" id="rvResp"><option value="">Responsável: todos</option></select>
+        <select class="filter-select" id="rvItem"><option value="">Melhoria: todas</option><option value="t">🗼 Torres</option><option value="a">🗄️ Armários</option><option value="f">🙂 Faciais</option><option value="b">🔋 Baterias</option></select>
+        <select class="filter-select" id="rvOrdem"><option value="recentes">Ordenar: entregues mais recentes</option><option value="melhor">Ordenar: maior melhora da nota</option><option value="pior">Ordenar: maior queda da nota</option><option value="tempo">Ordenar: mais demoradas</option><option value="nome">Ordenar: nome</option></select>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-faint);" title="Quantos dias depois da entrega o dashboard cobra o contato com o síndico">Contato após <input type="number" id="rvDias" min="1" max="180" style="width:64px;"> dias</label>
+        <button type="button" class="clearbtn" id="rvPdf" style="border-color:var(--ok); color:var(--ok);">📄 Relatório para a diretoria (PDF)</button>
+      </div>
+      <p class="rc-nota" id="rvContagem" style="margin:0 0 8px;"></p>
+      <div class="checklist-table-wrap"><table class="checklist-table"><thead><tr>
+        <th style="text-align:left;">Condomínio</th><th>Filial</th><th>Responsável</th><th style="text-align:left;">Melhorias entregues</th><th>Entregue em</th><th>Do início à entrega</th><th>Do pedido à entrega</th><th>Nota antes</th><th>Nota depois</th><th>Variação</th><th>Contrato</th><th>Contato pós-obra</th><th>Ações</th>
+      </tr></thead><tbody id="rvBody"></tbody></table></div>
     </div>
 
     <div id="renovViewEncerradas" style="display:none;">
@@ -3234,7 +3280,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div class="rc-controles">
         <label>Responsável <select id="asFiltroResp" class="filter-select"></select></label>
         <label>Tipo <select id="asFiltroTipo" class="filter-select">
-          <option value="">Todos</option><option value="os">O.S. e demandas</option><option value="pend">Pendências</option><option value="nota">Avaliações baixas</option><option value="inc">Incidentes</option>
+          <option value="">Todos</option><option value="os">O.S. e demandas</option><option value="pend">Pendências</option><option value="nota">Avaliações baixas</option><option value="inc">Incidentes</option><option value="pos">Contato pós-obra</option>
         </select></label>
         <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="asOcultarAcomp"> Esconder os que já têm acompanhamento</label>
         <button type="button" class="clearbtn" id="asRecarregar">↻ Atualizar</button>
@@ -9747,7 +9793,7 @@ function assistEhOS(d){
   return d.tipo === 'Técnica' || /\bO\.\s?S\.?(?!\w)/i.test(t) || /\bOS\b/.test(t) || /ordem(?:ns)? de servi[cç]o/i.test(t);
 }
 const assistPrioOrdem = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
-const assistGrupoRotulo = { os: 'O.S. / demanda', pend: 'Pendência', inc: 'Incidente', nota: 'Avaliação baixa', man: 'Manual' };
+const assistGrupoRotulo = { os: 'O.S. / demanda', pend: 'Pendência', inc: 'Incidente', nota: 'Avaliação baixa', pos: 'Contato pós-obra', man: 'Manual' };
 
 function assistGerarAlertas(){
   const out = [];
@@ -9796,6 +9842,15 @@ function assistGerarAlertas(){
     grupo: 'inc', chave: 'inc:' + i.id, tipo: 'incidente', prioridade: 'Alta', titulo: 'Incidente de alta gravidade aberto',
     detalhe: (i.tipo || 'Incidente') + ' · ' + rcFmtData(i.data_hora, true) + (String(i.tratativa || '').trim() ? '' : ' · sem tratativa registrada'),
     condominio: i.condominio, filial: i.filial, acao: { tipo: 'incidente', id: i.id }, peso: 5 }));
+  // 3b) contato pós-obra: melhoria entregue cujo contato com o síndico venceu e ainda não foi registrado
+  try{
+    if (__negPosCarregado === true && typeof renovNegociacoes !== 'undefined') renovNegociacoes.filter(negEntregue).forEach(n => {
+      const st = negPosStatus(n); if (!(st.estado === 'atrasado' || (st.estado === 'aguardando' && st.dif <= 0))) return;
+      const c = renovAllCondos.find(x => String(x.item_id) === String(n.condo_id));
+      add({ grupo: 'pos', chave: 'pos:' + n.id, tipo: 'pos_obra', prioridade: st.dif < -15 ? 'Alta' : 'Média', titulo: st.pendencia ? 'Retorno ao síndico pendente (pós-obra)' : 'Contato pós-obra pendente',
+        detalhe: 'Melhorias entregues em ' + fmtDataBRRenov(st.entrega) + ' · ' + (st.dif < 0 ? 'atrasado há ' + Math.abs(st.dif) + ' dia(s)' : 'prazo hoje'), condominio: n.condo_nome, filial: c ? c.filial : '', acao: { tipo: 'posobra', id: n.id }, peso: 2 });
+    });
+  }catch(e){ console.warn('Alertas pós-obra:', e); }
   // 4) clientes com as últimas avaliações baixas (3 meses mais recentes), sem repetir quem já tem pendência
   const porCondo = new Map();
   mesesDados.slice(0, 3).forEach(m => itensDoMesDeduplicados(m).forEach(d => {
@@ -9953,7 +10008,8 @@ async function assistCarregarBase(){
     const ps = [];
     if (sb && !demLoaded && typeof loadDemandas === 'function') ps.push(loadDemandas());
     if (sb && !incLoaded && typeof loadIncidentes === 'function') ps.push(loadIncidentes());
-    ps.push(assistCarregarAcomp()); ps.push(assistCarregarDispensados());
+    if (sb && !renovLoaded && typeof loadRenovacaoData === 'function') ps.push(loadRenovacaoData());
+    ps.push(assistCarregarAcomp()); ps.push(assistCarregarDispensados()); ps.push(negPosCarregar()); ps.push(negCarregarHistorico());
     await Promise.allSettled(ps);
   }finally{ __assistCarregandoBase = false; }
   __assistBaseCarregada = true;
@@ -10082,6 +10138,9 @@ function assistAbrirAlerta(a){
   } else if (a.acao.tipo === 'incidente'){
     irPara('incidentes');
     setTimeout(() => { const i = arrRC.inc().find(x => String(x.id) === String(a.acao.id)); if (i) abrirIncidenteModal(i); }, 350);
+  } else if (a.acao.tipo === 'posobra'){
+    irPara('renovacao');
+    setTimeout(() => { const b = document.querySelector('[data-renov-subtab="revisao"]'); if (b) b.click(); setTimeout(() => { const n = renovNegociacoes.find(x => String(x.id) === String(a.acao.id)); if (n) negPosAbrirModal(n); }, 350); }, 350);
   } else if (a.acao.tipo === 'pesquisa'){
     irPara('pesquisa');
     setTimeout(() => { const it = DATA.find(x => x.n === a.acao.n); if (it) openPesquisaModal(it); }, 350);
@@ -16486,7 +16545,15 @@ function renderRenovTorresArmarios(){
   const busca = normalizeNomeCondo(document.getElementById('renovTABusca').value || '');
   const ITENS = [['t', negTorres, '🗼', 'Torres'], ['a', negArmarios, '🗄️', 'Armários'], ['f', negFaciais, '🙂', 'Faciais'], ['b', negBaterias, '🔋', 'Baterias']];
   // visão geral: o que está em negociação + o que já foi renovado (canceladas e "não renovado" ficam de fora)
-  const todas = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehStatusRenovado(n.status)) && ITENS.some(it => it[1](n).tem));
+  const base = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehStatusRenovado(n.status)) && ITENS.some(it => it[1](n).tem));
+  const filialDe = n => normalizeFilialCanonica(negFilialDe(n));
+  fillSelect('renovTAFiltroFilial', Array.from(new Set(base.map(filialDe).filter(f => f && f !== '—' && f !== normalizeFilialCanonica('—')))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('renovTAFiltroResp', Array.from(new Set(base.map(n => n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('renovTAFiltroStatus', Array.from(new Set(base.map(n => n.status).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  const fF = document.getElementById('renovTAFiltroFilial').value, fR = document.getElementById('renovTAFiltroResp').value, fI = document.getElementById('renovTAFiltroItem').value, fS = document.getElementById('renovTAFiltroStatus').value;
+  const itemSel = fI ? ITENS.find(it => it[0] === fI) : null;
+  // os filtros valem para os cartões do topo, o quadro por filial e a lista
+  const todas = base.filter(n => (!fF || filialDe(n) === fF) && (!fR || n.responsavel === fR) && (!fS || n.status === fS) && (!itemSel || itemSel[1](n).tem));
   const em = todas.filter(negociacaoEmAndamento), ren = todas.filter(n => ehStatusRenovado(n.status));
   const soma = (l, f) => l.reduce((s, n) => s + f(n).qtd, 0), com = (l, f) => l.filter(n => f(n).qtd > 0).length;
   const doTexto = todas.filter(n => ITENS.some(it => it[1](n).doTexto)).length, semQtd = todas.filter(n => ITENS.some(it => it[1](n).citado)).length;
@@ -16568,6 +16635,8 @@ function renderRenovNegociacoes(){
   try{ atualizarContadorPendDiretoria(); }catch(e){}
   try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
   try{ if (document.getElementById('renovViewEncerradas').style.display !== 'none') renderRenovEncerradas(); }catch(e){}
+  try{ if (document.getElementById('renovViewRevisao').style.display !== 'none') renderRenovRevisao(); }catch(e){}
+  try{ if (document.getElementById('renovViewAndamentoMel').style.display !== 'none') renderRenovAndamentoMel(); }catch(e){}
   const body = document.getElementById('renovNegociacoesBody');
   const filtered = getFilteredRenovNegociacoes();
   const countEl = document.getElementById('renovNegociacoesCount');
@@ -16812,6 +16881,8 @@ async function negRegistrarHistorico(reg, anterior){
   catch(e){ console.warn('Não consegui gravar o histórico da negociação:', e); }
   try{ if (document.getElementById('renovViewVisaoNeg').style.display !== 'none') renderRenovVisaoNeg(); }catch(e){}
   try{ if (document.getElementById('renovViewEncerradas').style.display !== 'none') renderRenovEncerradas(); }catch(e){}
+  try{ if (document.getElementById('renovViewRevisao').style.display !== 'none') renderRenovRevisao(); }catch(e){}
+  try{ if (document.getElementById('renovViewAndamentoMel').style.display !== 'none') renderRenovAndamentoMel(); }catch(e){}
 }
 function negLinhaDoTempo(id){ return (__negHist.get(String(id)) || []).slice().sort((a, b) => String(a.em).localeCompare(String(b.em))); }
 // etapas já encerradas, em dias (ignora as que começaram em data aproximada)
@@ -16851,6 +16922,252 @@ function renderVnTempos(){
     NEG_ETAPAS.slice(0, NEG_ETAPAS.length - 1).map((nome, i) => { const x = est.stats[i]; return '<tr><td style="text-align:left;">' + (i + 1) + '. ' + escapeHtml(nome) + '</td><td><strong>' + (x ? negFmtDias(x.media) : '—') + '</strong></td><td>' + (x ? negFmtDias(x.mediana) : '—') + '</td><td>' + (x ? negFmtDias(x.max) : '—') + '</td><td>' + (x ? x.n : 0) + '</td><td>' + (x ? '<div style="height:8px; border-radius:4px; background:#38bdf8; width:' + Math.max(4, Math.round(x.media / maxMedia * 100)) + '%;"></div>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
     '<p class="rc-nota" style="margin:8px 0 0;">' + (est.totalMedio !== null ? 'Tempo médio do início até a ampliação finalizada: <strong>' + negFmtDias(est.totalMedio) + ' dia(s)</strong> (' + est.totalN + ' negociação(ões) concluída(s) com registro completo). ' : '') + 'Contando desde ' + (est.desde ? fmtDataBRRenov(String(est.desde).slice(0, 10)) : '—') + '. Só entram etapas que começaram e terminaram depois que o registro foi ligado.</p>';
 }
+// ---------- Revisão das Melhorias: o que foi entregue, quanto levou e a nota da pesquisa antes e depois ----------
+const NEG_STATUS_ENTREGUE = ['Ampliação finalizada', 'Ampliação concluída', 'Renovado - Obra Finalizada'];
+function negEntregue(n){ return NEG_STATUS_ENTREGUE.includes(n.status); }
+const RV_ITENS = [['t', '🗼', 'torre(s)', negTorres], ['a', '🗄️', 'armário(s)', negArmarios], ['f', '🙂', 'facial(is)', negFaciais], ['b', '🔋', 'bateria(s)', negBaterias]];
+function negMesDoTs(ts){ const d = new Date(ts); return isNaN(d) ? null : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+// notas da pesquisa de satisfação do condomínio, uma por mês
+function negSerieNotas(n, filial){
+  const alvo = normalizeNomeCondo(n.condo_nome || '');
+  let linhas = DATA.filter(d => normalizeNomeCondo(d.nome || '') === alvo);
+  const daFilial = linhas.filter(d => filial && normalizeFilialCanonica(d.filial) === filial); if (daFilial.length) linhas = daFilial;   // nomes iguais em filiais diferentes
+  const porMes = new Map();
+  linhas.forEach(d => { const nota = parseFloat(String(d.nota == null ? '' : d.nota).replace(',', '.')); if (isNaN(nota)) return; porMes.set(getMes(d), nota); });
+  return [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([mes, nota]) => ({ mes, nota }));
+}
+function negRevisaoLinha(n){
+  const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)), filial = condo ? normalizeFilialCanonica(condo.filial) : '';
+  const enc = negDataEncerramento(n), mesE = enc.ts ? negMesDoTs(enc.ts) : null, serie = negSerieNotas(n, filial);
+  const antesL = mesE ? serie.filter(x => x.mes < mesE).slice(-1)[0] : null, depoisL = mesE ? serie.find(x => x.mes > mesE) : null, recente = mesE ? serie.filter(x => x.mes > mesE).slice(-1)[0] : null;
+  const l = negLinhaDoTempo(n.id), ped = l.find(e => !e.a && e.e === 7), tPedido = ped && enc.exata ? Math.max(0, Math.floor((new Date(enc.ts) - new Date(ped.em)) / 86400000)) : null;
+  return { n, condo, filial, enc, mesE, antes: antesL ? antesL.nota : null, antesMes: antesL ? antesL.mes : null, depois: depoisL ? depoisL.nota : null, depoisMes: depoisL ? depoisL.mes : null, recente: recente ? recente.nota : null,
+    variacao: (antesL && depoisL) ? Math.round((depoisL.nota - antesL.nota) * 10) / 10 : null, tInicio: negDuracaoDias(n), tPedido,
+    itens: RV_ITENS.map(it => ({ k: it[0], ico: it[1], rot: it[2], r: it[3](n) })).filter(x => x.r.qtd > 0 || x.r.citado) };
+}
+function negFmtNota(v){ return v === null || v === undefined ? '—' : String(Math.round(v * 10) / 10).replace('.', ','); }
+function negFmtVar(v){ return v === null ? '<span style="color:var(--text-faint);" title="Ainda falta a pesquisa depois da entrega (ou antes dela).">aguardando pesquisa</span>' : '<strong style="color:' + (v > 0 ? 'var(--ok)' : (v < 0 ? 'var(--critico)' : 'var(--text-faint)')) + ';">' + (v > 0 ? '▲ +' : (v < 0 ? '▼ ' : '= ')) + String(v).replace('.', ',') + '</strong>'; }
+function negRevisaoItens(){
+  const f = { q: (document.getElementById('rvBusca').value || '').trim().toLowerCase(), fil: document.getElementById('rvFilial').value, r: document.getElementById('rvResp').value, it: document.getElementById('rvItem').value };
+  const todas = renovNegociacoes.filter(negEntregue).map(negRevisaoLinha).filter(x => x.condo ? passaCarteiraCondo(x.condo) : passaCarteiraItem(x.n.condo_nome || '', ''));
+  let lista = todas.filter(x => (!f.q || String(x.n.condo_nome || '').toLowerCase().includes(f.q)) && (!f.fil || x.filial === f.fil) && (!f.r || x.n.responsavel === f.r) && (!f.it || x.itens.some(i => i.k === f.it && i.r.qtd > 0)));
+  const ord = document.getElementById('rvOrdem').value, ts = x => String(x.enc.ts || '');
+  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'melhor' ? ((b.variacao === null ? -99 : b.variacao) - (a.variacao === null ? -99 : a.variacao)) : ord === 'pior' ? ((a.variacao === null ? 99 : a.variacao) - (b.variacao === null ? 99 : b.variacao)) : ord === 'tempo' ? ((b.tInicio || 0) - (a.tInicio || 0)) : ts(b).localeCompare(ts(a)));
+  return { todas, lista };
+}
+function negPosResumo(lista){
+  const sts = lista.map(x => negPosStatus(x.n)), ult = st => (st.rec && st.rec.contatos && st.rec.contatos.length) ? st.rec.contatos[st.rec.contatos.length - 1].resultado : null;
+  return { feitos: sts.filter(st => st.estado === 'concluido').length, atrasados: sts.filter(st => st.estado === 'atrasado').length,
+    ok: sts.filter(st => ult(st) === 'Tudo funcionando').length, pend: sts.filter(st => ult(st) === 'Com pendência').length, insat: sts.filter(st => ult(st) === 'Síndico insatisfeito').length };
+}
+function negPosCelula(n){
+  const st = negPosStatus(n), pode = negPodeEditar(), btn = (rot, cor) => '<div style="margin-top:4px;"><button type="button" class="renov-action-btn" data-rv-pos="' + escapeHtml(String(n.id)) + '"' + (cor ? ' style="border-color:' + cor + '; color:' + cor + ';"' : '') + '>' + rot + '</button></div>';
+  if (st.estado === 'concluido'){ const c = st.rec.contatos[st.rec.contatos.length - 1] || {}; return '<span style="color:' + (c.resultado === 'Tudo funcionando' ? 'var(--ok)' : '#f59e0b') + ';">✔ ' + escapeHtml(c.resultado || 'Concluído') + '</span><div style="font-size:10.5px; color:var(--text-faint);">' + (c.em ? fmtDataBRRenov(c.em) : '') + '</div>' + btn('Ver', ''); }
+  if (st.estado === 'atrasado') return '<span style="color:var(--critico);">' + (st.pendencia ? 'Retorno atrasado' : 'Atrasado') + ' há ' + Math.abs(st.dif) + ' dia(s)</span>' + (pode ? btn('Registrar contato', 'var(--critico)') : '');
+  if (st.estado === 'aguardando') return (st.pendencia ? '⚠ Retorno em ' : 'Em ') + fmtDataBRRenov(st.venc) + '<div style="font-size:10.5px; color:var(--text-faint);">' + (st.dif === 0 ? 'é hoje' : 'faltam ' + st.dif + ' dia(s)') + '</div>' + (pode ? btn('Registrar contato', '') : '');
+  if (st.estado === 'anterior') return '<span style="color:var(--text-faint);">Anterior ao controle</span>' + (pode ? btn('Registrar contato', '') : '');
+  return '—';
+}
+function negRevisaoResumo(lista){
+  const media = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null, comAmbas = lista.filter(x => x.variacao !== null);
+  const soma = k => lista.reduce((t, x) => t + (x.itens.find(i => i.k === k) ? x.itens.find(i => i.k === k).r.qtd : 0), 0);
+  return { n: lista.length, comDepois: comAmbas.length, antes: media(comAmbas.map(x => x.antes)), depois: media(comAmbas.map(x => x.depois)),
+    melhor: comAmbas.filter(x => x.variacao > 0).length, igual: comAmbas.filter(x => x.variacao === 0).length, pior: comAmbas.filter(x => x.variacao < 0).length,
+    tInicio: media(lista.map(x => x.tInicio).filter(v => v !== null)), tPedido: media(lista.map(x => x.tPedido).filter(v => v !== null)), nPedido: lista.filter(x => x.tPedido !== null).length,
+    pos: negPosResumo(lista), qt: { t: soma('t'), a: soma('a'), f: soma('f'), b: soma('b') }, renovados: lista.filter(x => ehStatusRenovado(x.n.status) || x.n.tempo_renovado_meses).length, aprox: lista.filter(x => !x.enc.exata).length };
+}
+// ---------- Andamento das Melhorias: o que ainda não foi entregue, em que fase está e o que está parado ----------
+const AM_FASES = [['Negociação', [0, 1]], ['Documentação e aditivo', [2, 3, 4, 5, 6]], ['Pedido e compra', [7, 8]], ['Cronograma e obra', [9, 10]]];
+function amFaseDe(et){ if (et.atual < 0) return 'x'; const i = AM_FASES.findIndex(f => f[1].includes(et.atual)); return i === -1 ? 'x' : i; }
+function amLinha(n){
+  const condo = renovAllCondos.find(c => String(c.item_id) === String(n.condo_id)), et = negEtapaDoStatus(n.status), tempo = negTempoNaEtapa(n);
+  const itens = RV_ITENS.map(it => ({ k: it[0], ico: it[1], rot: it[2], r: it[3](n) })).filter(x => x.r.qtd > 0 || x.r.citado);
+  const est = negEstatisticasEtapas(), media = (et.atual >= 0 && est.stats[et.atual]) ? est.stats[et.atual].media : null;
+  const parada = tempo.dias !== null && (media !== null ? tempo.dias > media * 1.5 : tempo.dias > 30);
+  return { n, condo, filial: condo ? normalizeFilialCanonica(condo.filial) : '', et, fase: amFaseDe(et), tempo, itens, media, parada };
+}
+function amItens(){
+  const f = { q: (document.getElementById('amBusca').value || '').trim().toLowerCase(), fil: document.getElementById('amFilial').value, r: document.getElementById('amResp').value, fase: document.getElementById('amFase').value, it: document.getElementById('amItem').value };
+  const todas = renovNegociacoes.filter(n => (negociacaoEmAndamento(n) || ehPendenteDiretoria(n.status)) && !negEntregue(n) && !ehNaoRenovado(n.status)).map(amLinha)
+    .filter(x => (x.itens.length || x.et.atual >= 2 || String(x.n.ampliacao_material || '').trim()) && (x.condo ? passaCarteiraCondo(x.condo) : passaCarteiraItem(x.n.condo_nome || '', '')));
+  let lista = todas.filter(x => (!f.q || String(x.n.condo_nome || '').toLowerCase().includes(f.q)) && (!f.fil || x.filial === f.fil) && (!f.r || x.n.responsavel === f.r) && (f.fase === '' || String(x.fase) === f.fase) && (!f.it || x.itens.some(i => i.k === f.it && (i.r.qtd > 0 || i.r.citado))));
+  const ord = document.getElementById('amOrdem').value;
+  lista.sort((a, b) => ord === 'nome' ? String(a.n.condo_nome).localeCompare(String(b.n.condo_nome), 'pt-BR') : ord === 'fase' ? (b.et.atual - a.et.atual) : ord === 'antiga' ? String(a.n.data_negociacao || '').localeCompare(String(b.n.data_negociacao || '')) : ((b.parada - a.parada) || ((b.tempo.dias || 0) - (a.tempo.dias || 0))));
+  return { todas, lista };
+}
+function amResumo(lista){
+  const porFase = AM_FASES.map(() => ({ n: 0, parada: 0, q: { t: 0, a: 0, f: 0, b: 0 } })), fora = { n: 0, parada: 0, q: { t: 0, a: 0, f: 0, b: 0 } };
+  lista.forEach(x => { const alvo = x.fase === 'x' ? fora : porFase[x.fase]; alvo.n++; if (x.parada) alvo.parada++; x.itens.forEach(i => { alvo.q[i.k] += i.r.qtd; }); });
+  const q = { t: 0, a: 0, f: 0, b: 0 }; lista.forEach(x => x.itens.forEach(i => { q[i.k] += i.r.qtd; }));
+  return { n: lista.length, paradas: lista.filter(x => x.parada).length, porFase, fora, q };
+}
+function amTxtEtapa(x){ return x.et.desconhecida ? 'Status fora do fluxo padrão' : (x.et.atual + 1) + '/' + NEG_ETAPAS.length + ': ' + NEG_ETAPAS[x.et.atual]; }
+function amTxtTempo(x){ return x.tempo.dias === null ? '—' : x.tempo.dias + ' dia(s)' + (x.tempo.aprox ? ' (aprox.)' : '') + (x.media !== null ? ' · média ' + negFmtDias(x.media) : ''); }
+function renderRenovAndamentoMel(){
+  if (!__negHistCarregado){ __negHistCarregado = 'carregando'; negCarregarHistorico().then(() => renderRenovAndamentoMel()); }
+  const { todas, lista } = amItens();
+  fillSelect('amFilial', Array.from(new Set(todas.map(x => x.filial).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('amResp', Array.from(new Set(todas.map(x => x.n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  document.getElementById('amListaBusca').innerHTML = [...new Set(todas.map(x => x.n.condo_nome).filter(Boolean))].sort().map(nm => '<option value="' + escapeHtml(nm) + '">').join('');
+  const r = amResumo(lista), box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  document.getElementById('amKpis').innerHTML = box(r.n, 'Melhorias em andamento', '#f59e0b') + box(r.paradas, 'Paradas', r.paradas ? 'var(--critico)' : 'var(--ok)') + box(r.q.t + ' / ' + r.q.a + ' / ' + r.q.f + ' / ' + r.q.b, 'Torres / armários / faciais / baterias a entregar', '#38bdf8');
+  document.getElementById('amFases').innerHTML = '<div style="overflow:auto;"><table class="rc-tabela"><thead><tr><th style="text-align:left;">Fase</th><th>Melhorias</th><th>Paradas</th><th>🗼 Torres</th><th>🗄️ Armários</th><th>🙂 Faciais</th><th>🔋 Baterias</th></tr></thead><tbody>' +
+    AM_FASES.map((f, i) => { const x = r.porFase[i]; return '<tr><td style="text-align:left;"><strong>' + (i + 1) + '. ' + f[0] + '</strong></td><td>' + x.n + '</td><td style="color:' + (x.parada ? 'var(--critico)' : 'inherit') + ';">' + x.parada + '</td><td>' + x.q.t + '</td><td>' + x.q.a + '</td><td>' + x.q.f + '</td><td>' + x.q.b + '</td></tr>'; }).join('') +
+    (r.fora.n ? '<tr><td style="text-align:left;"><strong>Fora do fluxo padrão</strong></td><td>' + r.fora.n + '</td><td>' + r.fora.parada + '</td><td>' + r.fora.q.t + '</td><td>' + r.fora.q.a + '</td><td>' + r.fora.q.f + '</td><td>' + r.fora.q.b + '</td></tr>' : '') + '</tbody></table></div>';
+  document.getElementById('amContagem').textContent = lista.length + ' melhoria(s) em andamento';
+  document.getElementById('amBody').innerHTML = lista.length ? lista.map(x => {
+    const n = x.n, it = x.itens.map(i => '<span class="neg-chip" style="margin-right:4px;">' + i.ico + ' ' + (i.r.qtd || 'citada') + '</span>').join('') || '—', pedido = [n.ampliacao_pedido ? 'Pedido ' + n.ampliacao_pedido : '', n.ampliacao_os ? 'O.S. ' + n.ampliacao_os : '', n.ampliacao_requisicao ? 'Req. ' + n.ampliacao_requisicao : ''].filter(Boolean).join('<br>') || '—';
+    const nota = String(n.tratativa || n.obs || '').trim();
+    return '<tr' + (x.parada ? ' style="background:rgba(239,68,68,.07);"' : '') + '><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(x.filial || '—') + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td style="text-align:left; white-space:normal;">' + it + '</td><td>' + (x.fase === 'x' ? '—' : (x.fase + 1) + '. ' + AM_FASES[x.fase][0]) + '</td><td style="text-align:left; white-space:normal;">' + escapeHtml(amTxtEtapa(x)) + '</td>' +
+      '<td style="color:' + (x.parada ? 'var(--critico)' : 'inherit') + '; font-weight:' + (x.parada ? '700' : '400') + ';">' + (x.parada ? '⚠ ' : '') + escapeHtml(amTxtTempo(x)) + '</td><td>' + pedido + '</td><td>' + (n.data_negociacao ? fmtDataBRRenov(n.data_negociacao) : '—') + '</td><td style="text-align:left; max-width:220px; white-space:normal; font-size:11.5px; color:var(--text-faint);">' + escapeHtml(nota.length > 110 ? nota.slice(0, 110) + '…' : nota) + '</td><td><button type="button" class="renov-action-btn" data-am-editar="' + escapeHtml(String(n.id)) + '">Editar</button></td></tr>';
+  }).join('') : '<tr><td colspan="11" class="empty">' + (todas.length ? 'Nenhuma melhoria com esses filtros.' : 'Nenhuma melhoria em andamento. Elas aparecem aqui quando uma negociação inclui torres, armários, faciais, baterias ou chega em Validação de código ou além.') + '</td></tr>';
+}
+function amRelatorioPDF(){
+  const { lista } = amItens(); if (!lista.length){ alert('Não há melhorias em andamento com esses filtros para o relatório.'); return; }
+  const r = amResumo(lista), emitido = new Date().toLocaleString('pt-BR'), quem = assistUsuario();
+  const fases = AM_FASES.map((f, i) => '<tr><td>' + (i + 1) + '. ' + f[0] + '</td><td>' + r.porFase[i].n + '</td><td>' + r.porFase[i].parada + '</td><td>' + r.porFase[i].q.t + '</td><td>' + r.porFase[i].q.a + '</td><td>' + r.porFase[i].q.f + '</td><td>' + r.porFase[i].q.b + '</td></tr>').join('') + (r.fora.n ? '<tr><td>Fora do fluxo padrão</td><td>' + r.fora.n + '</td><td>' + r.fora.parada + '</td><td>' + r.fora.q.t + '</td><td>' + r.fora.q.a + '</td><td>' + r.fora.q.f + '</td><td>' + r.fora.q.b + '</td></tr>' : '');
+  const linhas = lista.map(x => '<tr' + (x.parada ? ' class="par"' : '') + '><td>' + escapeHtml(x.n.condo_nome || '') + '</td><td>' + escapeHtml(x.filial || '—') + '</td><td>' + escapeHtml(x.n.responsavel || '') + '</td><td>' + (x.itens.map(i => i.ico + ' ' + (i.r.qtd || 'citada') + ' ' + i.rot).join('<br>') || '—') + '</td><td>' + escapeHtml(amTxtEtapa(x)) + '</td><td>' + (x.parada ? '<b>⚠ ' : '') + escapeHtml(amTxtTempo(x)) + (x.parada ? '</b>' : '') + '</td><td>' + ([x.n.ampliacao_pedido ? 'Pedido ' + escapeHtml(x.n.ampliacao_pedido) : '', x.n.ampliacao_os ? 'O.S. ' + escapeHtml(x.n.ampliacao_os) : ''].filter(Boolean).join('<br>') || '—') + '</td></tr>').join('');
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Andamento das melhorias</title><style>@page{ size: A4 landscape; margin: 12mm; } *{ box-sizing:border-box; } body{ font-family:Arial,Helvetica,sans-serif; color:#1a2333; font-size:11px; } .topo-logo{ width:200px; display:block; margin-bottom:10px; } h1{ font-size:17px; margin:0 0 2px; color:#222f59; } h2{ font-size:13px; color:#222f59; margin:14px 0 6px; } .sub{ font-size:11px; color:#6b7280; margin:0 0 12px; }' +
+    '.kpis{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; } .kpi{ border:1px solid #d6d9e0; border-radius:8px; padding:7px 12px; min-width:140px; } .kpi b{ display:block; font-size:16px; color:#222f59; } .kpi span{ font-size:9.5px; color:#6b7280; }' +
+    'table.rel{ width:100%; border-collapse:collapse; font-size:9.5px; margin-bottom:6px; } table.rel th{ background:#222f59; color:#fff; text-align:left; padding:5px 6px; font-size:8.5px; text-transform:uppercase; } table.rel td{ padding:5px 6px; border-bottom:1px solid #e5e7eb; vertical-align:top; } tr.par td{ background:#fdecec; } thead{ display:table-header-group; } tr{ page-break-inside:avoid; } .nota{ font-size:9.5px; color:#6b7280; margin-top:10px; line-height:1.5; }</style></head><body>' +
+    '<img class="topo-logo" src="' + TIMBRADO_TOPO_SERVIS + '"><h1>Andamento das melhorias</h1><p class="sub">Sucesso do Cliente · Servis Eletrônica &nbsp;·&nbsp; Emitido em ' + emitido + (quem ? ' por ' + escapeHtml(quem) : '') + '</p>' +
+    '<div class="kpis"><div class="kpi"><b>' + r.n + '</b><span>melhorias em andamento</span></div><div class="kpi"><b style="color:' + (r.paradas ? '#b91c1c' : '#15803d') + ';">' + r.paradas + '</b><span>paradas</span></div><div class="kpi"><b>' + r.q.t + ' / ' + r.q.a + ' / ' + r.q.f + ' / ' + r.q.b + '</b><span>torres / armários / faciais / baterias a entregar</span></div></div>' +
+    '<h2>Por fase</h2><table class="rel"><thead><tr><th>Fase</th><th>Melhorias</th><th>Paradas</th><th>Torres</th><th>Armários</th><th>Faciais</th><th>Baterias</th></tr></thead><tbody>' + fases + '</tbody></table>' +
+    '<h2>Por condomínio</h2><table class="rel"><thead><tr><th>Condomínio</th><th>Filial</th><th>Responsável</th><th>Melhorias</th><th>Etapa atual</th><th>Nesta etapa há</th><th>Pedido / O.S.</th></tr></thead><tbody>' + linhas + '</tbody></table>' +
+    '<p class="nota">Linhas em vermelho = paradas: há mais de 1,5 vez a média daquela etapa na mesma etapa, ou mais de 30 dias quando ainda não há média. "(aprox.)" = o dashboard não tinha o registro da mudança de status e usou a data da última atualização. A etapa vem do status da negociação.</p>' +
+    '<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script></body></html>';
+  const w = window.open('', '_blank'); if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return; }
+  w.document.write(html); w.document.close();
+}
+['amBusca', 'amFilial', 'amResp', 'amFase', 'amItem', 'amOrdem'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovAndamentoMel); el.addEventListener('change', renderRenovAndamentoMel); });
+document.getElementById('amPdf').addEventListener('click', amRelatorioPDF);
+document.getElementById('renovViewAndamentoMel').addEventListener('click', ev => { const e = ev.target.closest('[data-am-editar]'); if (e) editNegociacao(e.getAttribute('data-am-editar')); });
+// ---------- Contato pós-obra: ligar para o síndico um tempo depois da melhoria entregue e registrar o resultado ----------
+let __negPos = new Map(), __negPosCfg = { dias: 30, desde: null }, __negPosCarregado = false;
+async function negPosCarregar(){
+  try{
+    if (!sb) return;
+    const { data, error } = await sb.from('configuracoes_sistema').select('chave,valor').like('chave', 'negpos_%');
+    if (error) throw error;
+    const m = new Map(); let cfg = null;
+    (data || []).forEach(r => { try{ const v = JSON.parse(r.valor || '{}'); if (r.chave === 'negpos_cfg') cfg = v; else m.set(String(r.chave).replace('negpos_', ''), v); }catch(e){} });
+    __negPos = m;
+    if (cfg) __negPosCfg = Object.assign({ dias: 30, desde: null }, cfg);
+    else if (['admin', 'editor'].includes(currentRole)){ __negPosCfg = { dias: 30, desde: agendaHojeISO() }; await negPosGravarCfg(); }   // o controle vale a partir de hoje: entregas antigas não geram cobrança
+  }catch(e){ console.warn('Contato pós-obra:', e); }
+  finally{ __negPosCarregado = true; }
+}
+async function negPosGravarCfg(){ try{ await sb.from('configuracoes_sistema').upsert({ chave: 'negpos_cfg', valor: JSON.stringify(__negPosCfg), atualizado_em: new Date().toISOString() }, { onConflict: 'chave' }); }catch(e){ console.warn('Prazo do contato pós-obra:', e); } }
+async function negPosGravar(id, rec){
+  const { error } = await sb.from('configuracoes_sistema').upsert({ chave: 'negpos_' + id, valor: JSON.stringify(rec), atualizado_em: new Date().toISOString() }, { onConflict: 'chave' });
+  if (error) throw error;
+  __negPos.set(String(id), rec);
+}
+function negPosStatus(n){
+  const enc = negDataEncerramento(n); if (!enc.ts) return { estado: 'semdata' };
+  const entrega = String(enc.ts).slice(0, 10), rec = __negPos.get(String(n.id)) || null;
+  if (rec && rec.concluido) return { estado: 'concluido', rec, entrega };
+  const venc = rec && rec.proximo ? rec.proximo : assistSomaDias(entrega, __negPosCfg.dias), dif = assistDiasAte(venc);   // dif negativo = atrasado
+  const anterior = !rec && (!enc.exata || (!!__negPosCfg.desde && entrega < __negPosCfg.desde));   // sem a data exata da entrega (aproximada) ou entregue antes do controle: não cobra sozinho
+  return { estado: anterior ? 'anterior' : (dif < 0 ? 'atrasado' : 'aguardando'), venc, dif, rec, entrega, pendencia: !!(rec && !rec.concluido) };
+}
+const NEG_POS_RESULTADOS = ['Tudo funcionando', 'Com pendência', 'Síndico insatisfeito'];
+function negPosAbrirModal(n){
+  const st = negPosStatus(n), rec = st.rec || { contatos: [] }, pode = negPodeEditar();
+  let el = document.getElementById('negPosModal'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'negPosModal'; el.style.cssText = 'position:fixed; inset:0; z-index:9700; background:rgba(3,6,14,.78); display:flex; align-items:center; justify-content:center; padding:18px;';
+  const hist = (rec.contatos || []).slice().reverse().map(c => '<div style="padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;"><strong>' + fmtDataBRRenov(c.em) + '</strong> · ' + escapeHtml(c.por || '') + ' · <em>' + escapeHtml(c.resultado || '') + '</em>' + (c.obs ? '<div style="margin-top:2px; white-space:pre-wrap;">' + escapeHtml(c.obs) + '</div>' : '') + '</div>').join('') || '<p style="margin:6px 0; color:var(--text-faint); font-size:12.5px;">Nenhum contato registrado ainda.</p>';
+  const prazoTxt = st.estado === 'concluido' ? 'Contato concluído.' : (st.venc ? 'Prazo do contato: <strong>' + fmtDataBRRenov(st.venc) + '</strong>' + (st.dif < 0 ? ' · <span style="color:var(--critico);">atrasado há ' + Math.abs(st.dif) + ' dia(s)</span>' : (st.dif === 0 ? ' · é hoje' : ' · faltam ' + st.dif + ' dia(s)')) : '');
+  el.innerHTML = '<div style="background:var(--bg-panel); border:1px solid var(--accent); border-radius:14px; width:100%; max-width:640px; max-height:92vh; overflow:auto; padding:20px 22px;">' +
+    '<div style="display:flex; justify-content:space-between; gap:10px;"><div><div style="font-size:17px; font-weight:800;">📞 Contato pós-obra</div><div style="font-size:12.5px; color:var(--text-faint); margin-top:2px;">' + escapeHtml(n.condo_nome || '') + ' · melhorias entregues em ' + (st.entrega ? fmtDataBRRenov(st.entrega) : '—') + '<br>' + prazoTxt + '</div></div><button type="button" class="modal-close" id="negPosFechar" style="position:static;">×</button></div>' +
+    '<p class="rc-nota" style="margin:12px 0 4px;">Ligue ou fale com o síndico para saber se as melhorias estão funcionando e se ele está satisfeito. Registre aqui o que ele disse.</p>' +
+    (pode ? '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;"><label style="font-size:11px; color:var(--text-faint); font-weight:600;">Data do contato<input type="date" id="negPosData" value="' + agendaHojeISO() + '" style="width:100%; margin-top:4px; box-sizing:border-box;"></label>' +
+      '<label style="font-size:11px; color:var(--text-faint); font-weight:600;">Resultado<select id="negPosResultado" style="width:100%; margin-top:4px;">' + NEG_POS_RESULTADOS.map(r => '<option>' + r + '</option>').join('') + '</select></label>' +
+      '<label style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600;">O que o síndico disse<textarea id="negPosObs" rows="3" style="width:100%; margin-top:4px; box-sizing:border-box; font-family:inherit;" placeholder="Ex.: tudo funcionando, achou as câmeras ótimas / reclamou do cadastro das faciais..."></textarea></label>' +
+      '<label style="grid-column:1 / -1; display:flex; align-items:center; gap:8px; font-size:12.5px;"><input type="checkbox" id="negPosConcluido" checked> Contato concluído (não precisa de novo retorno)</label>' +
+      '<label id="negPosProxLbl" style="grid-column:1 / -1; font-size:11px; color:var(--text-faint); font-weight:600; display:none;">Próximo retorno em<input type="date" id="negPosProx" value="' + assistSomaDias(agendaHojeISO(), 7) + '" style="width:100%; margin-top:4px; box-sizing:border-box;"></label></div>' +
+      '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;"><button type="button" class="login-btn" id="negPosSalvar" style="width:auto; margin-top:0; padding:9px 18px;">Salvar contato</button></div>' : '') +
+    '<div style="font-weight:700; font-size:13px; margin:14px 0 2px;">Histórico dos contatos</div>' + hist + '</div>';
+  document.body.appendChild(el);
+  document.getElementById('negPosFechar').addEventListener('click', () => el.remove());
+  if (!pode) return;
+  const chk = document.getElementById('negPosConcluido'), lbl = document.getElementById('negPosProxLbl'), res = document.getElementById('negPosResultado');
+  const ajustar = () => { lbl.style.display = chk.checked ? 'none' : 'block'; };
+  chk.addEventListener('change', ajustar);
+  res.addEventListener('change', () => { chk.checked = res.value === 'Tudo funcionando'; ajustar(); });
+  document.getElementById('negPosSalvar').addEventListener('click', async ev => {
+    const b = ev.currentTarget, data = document.getElementById('negPosData').value || agendaHojeISO(), resultado = res.value, obs = document.getElementById('negPosObs').value.trim(), concluido = chk.checked, prox = document.getElementById('negPosProx').value || assistSomaDias(agendaHojeISO(), 7);
+    if (!concluido && !obs){ alert('Escreva o que ficou pendente ou o que o síndico disse, para o retorno saber do que se trata.'); return; }
+    b.disabled = true; b.textContent = 'Salvando...';
+    try{
+      await negPosGravar(n.id, { contatos: (rec.contatos || []).concat([{ em: data, por: assistUsuario(), resultado, obs }]), concluido, proximo: concluido ? null : prox, resultado });
+      el.remove();
+      logActivity('contato pós-obra', 'negociacao', n.condo_nome, resultado);
+      try{ assistRecalcular(); }catch(e){}
+      try{ if (document.getElementById('renovViewRevisao').style.display !== 'none') renderRenovRevisao(); }catch(e){}
+    }catch(e){ b.disabled = false; b.textContent = 'Salvar contato'; alert('Não consegui salvar o contato: ' + (e.message || e)); }
+  });
+}
+function renderRenovRevisao(){
+  if (!__negHistCarregado){ __negHistCarregado = 'carregando'; negCarregarHistorico().then(() => renderRenovRevisao()); }
+  if (!__negPosCarregado){ __negPosCarregado = 'carregando'; negPosCarregar().then(() => renderRenovRevisao()); }
+  const campoDias = document.getElementById('rvDias'); if (campoDias && document.activeElement !== campoDias) campoDias.value = __negPosCfg.dias;
+  const { todas, lista } = negRevisaoItens();
+  fillSelect('rvFilial', Array.from(new Set(todas.map(x => x.filial).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  fillSelect('rvResp', Array.from(new Set(todas.map(x => x.n.responsavel).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  document.getElementById('rvListaBusca').innerHTML = [...new Set(todas.map(x => x.n.condo_nome).filter(Boolean))].sort().map(nm => '<option value="' + escapeHtml(nm) + '">').join('');
+  const r = negRevisaoResumo(lista), box = (num, lbl, cor) => '<div class="stat-box"><div class="snum"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + num + '</div><div class="slbl">' + lbl + '</div></div>';
+  const dif = (r.antes !== null && r.depois !== null) ? Math.round((r.depois - r.antes) * 10) / 10 : null;
+  document.getElementById('rvKpis').innerHTML = box(r.n, 'Melhorias entregues', '#38bdf8') + box(r.comDepois + ' de ' + r.n, 'Já têm pesquisa depois da entrega', r.comDepois ? 'var(--ok)' : '#f59e0b') +
+    box(dif === null ? '—' : negFmtNota(r.antes) + ' → ' + negFmtNota(r.depois), 'Nota média antes → depois' + (dif === null ? '' : ' (' + (dif > 0 ? '+' : '') + String(dif).replace('.', ',') + ')'), dif === null ? '' : (dif > 0 ? 'var(--ok)' : (dif < 0 ? 'var(--critico)' : ''))) +
+    box(r.melhor + ' / ' + r.igual + ' / ' + r.pior, 'Nota subiu / ficou igual / caiu') + box(r.tInicio === null ? '—' : negFmtDias(r.tInicio) + ' dia(s)', 'Tempo médio do início à entrega') + box(r.tPedido === null ? '—' : negFmtDias(r.tPedido) + ' dia(s)', 'Tempo médio do pedido à entrega' + (r.nPedido ? ' (' + r.nPedido + ' com registro)' : ' (sem registro ainda)')) +
+    box(r.qt.t + ' / ' + r.qt.a + ' / ' + r.qt.f + ' / ' + r.qt.b, 'Torres / armários / faciais / baterias entregues') +
+    box(r.pos.feitos + ' de ' + r.n, 'Contato pós-obra feito' + (r.pos.atrasados ? ' · ' + r.pos.atrasados + ' atrasado(s)' : ''), r.pos.atrasados ? 'var(--critico)' : (r.pos.feitos ? 'var(--ok)' : '#f59e0b')) + box(r.pos.ok + ' / ' + r.pos.pend + ' / ' + r.pos.insat, 'Contatos: tudo funcionando / com pendência / insatisfeito');
+  document.getElementById('rvContagem').textContent = lista.length + ' melhoria(s) entregue(s)' + (r.aprox ? ' · ' + r.aprox + ' com data de entrega aproximada (sem registro da mudança de status)' : '');
+  document.getElementById('rvBody').innerHTML = lista.length ? lista.map(x => {
+    const n = x.n, it = x.itens.map(i => '<span class="neg-chip" style="margin-right:4px;">' + i.ico + ' ' + (i.r.qtd || 'citada') + '</span>').join('') || '—';
+    const contrato = (ehStatusRenovado(n.status) ? 'Renovado' : '') + (n.tempo_renovado_meses ? (ehStatusRenovado(n.status) ? ' · ' : '') + n.tempo_renovado_meses + ' meses' : '') + (n.nova_data ? ' · até ' + fmtDataBRRenov(n.nova_data) : '');
+    return '<tr><td class="ck-name">' + escapeHtml(n.condo_nome || '') + '</td><td>' + escapeHtml(x.filial || '—') + '</td><td>' + escapeHtml(n.responsavel || '') + '</td><td style="text-align:left; white-space:normal;">' + it + (n.ampliacao_material ? '<div style="font-size:11px; color:var(--text-faint); margin-top:3px;">' + escapeHtml(String(n.ampliacao_material).slice(0, 90)) + '</div>' : '') + '</td>' +
+      '<td>' + (x.enc.ts ? fmtDataBRRenov(String(x.enc.ts).slice(0, 10)) + (x.enc.exata ? '' : ' <span style="color:#f59e0b;" title="Sem registro da mudança de status: data da última atualização.">(aprox.)</span>') : '—') + '</td><td>' + (x.tInicio !== null ? x.tInicio + ' dia(s)' : '—') + '</td><td>' + (x.tPedido !== null ? x.tPedido + ' dia(s)' : '—') + '</td>' +
+      '<td>' + negFmtNota(x.antes) + (x.antesMes ? '<div style="font-size:10.5px; color:var(--text-faint);">' + mesLabelBR(x.antesMes) + '</div>' : '') + '</td><td>' + negFmtNota(x.depois) + (x.depoisMes ? '<div style="font-size:10.5px; color:var(--text-faint);">' + mesLabelBR(x.depoisMes) + '</div>' : '') + '</td><td>' + negFmtVar(x.variacao) + '</td><td>' + escapeHtml(contrato || '—') + '</td><td>' + negPosCelula(n) + '</td>' +
+      '<td><button type="button" class="renov-action-btn" data-rv-editar="' + escapeHtml(String(n.id)) + '">Editar</button></td></tr>';
+  }).join('') : '<tr><td colspan="13" class="empty">' + (todas.length ? 'Nenhuma melhoria com esses filtros.' : 'Ainda não há melhorias entregues. Quando uma negociação ficar com o status "Ampliação finalizada", ela aparece aqui.') + '</td></tr>';
+}
+function negPosTxtPdf(n){
+  const st = negPosStatus(n);
+  if (st.estado === 'concluido'){ const c = st.rec.contatos[st.rec.contatos.length - 1] || {}; return escapeHtml(c.resultado || 'Concluído') + (c.em ? '<br><small>' + fmtDataBRRenov(c.em) + '</small>' : ''); }
+  if (st.estado === 'atrasado') return '<b style="color:#b91c1c;">atrasado há ' + Math.abs(st.dif) + ' d</b>';
+  if (st.estado === 'aguardando') return 'em ' + fmtDataBRRenov(st.venc);
+  return st.estado === 'anterior' ? 'anterior ao controle' : '—';
+}
+function negRevisaoPDF(){
+  const { lista } = negRevisaoItens(); if (!lista.length){ alert('Não há melhorias entregues com esses filtros para o relatório.'); return; }
+  const r = negRevisaoResumo(lista), nt = negFmtNota, emitido = new Date().toLocaleString('pt-BR'), quem = assistUsuario();
+  const dif = (r.antes !== null && r.depois !== null) ? Math.round((r.depois - r.antes) * 10) / 10 : null;
+  const linhas = lista.map(x => '<tr><td>' + escapeHtml(x.n.condo_nome || '') + '</td><td>' + escapeHtml(x.filial || '—') + '</td><td>' + (x.itens.map(i => i.ico + ' ' + (i.r.qtd || 'citada') + ' ' + i.rot).join('<br>') || '—') + '</td><td>' + (x.enc.ts ? fmtDataBRRenov(String(x.enc.ts).slice(0, 10)) + (x.enc.exata ? '' : ' (aprox.)') : '—') + '</td><td>' + (x.tInicio !== null ? x.tInicio + ' d' : '—') + '</td><td>' + (x.tPedido !== null ? x.tPedido + ' d' : '—') + '</td><td>' + nt(x.antes) + (x.antesMes ? '<br><small>' + mesLabelBR(x.antesMes) + '</small>' : '') + '</td><td>' + nt(x.depois) + (x.depoisMes ? '<br><small>' + mesLabelBR(x.depoisMes) + '</small>' : '') + '</td><td><b style="color:' + (x.variacao === null ? '#6b7280' : (x.variacao > 0 ? '#15803d' : (x.variacao < 0 ? '#b91c1c' : '#6b7280'))) + ';">' + (x.variacao === null ? 'aguardando pesquisa' : (x.variacao > 0 ? '+' : '') + String(x.variacao).replace('.', ',')) + '</b></td><td>' + negPosTxtPdf(x.n) + '</td></tr>').join('');
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Revisão das melhorias entregues</title><style>@page{ size: A4 landscape; margin: 12mm; } *{ box-sizing:border-box; } body{ font-family:Arial,Helvetica,sans-serif; color:#1a2333; font-size:11px; } .topo-logo{ width:200px; display:block; margin-bottom:10px; } h1{ font-size:17px; margin:0 0 2px; color:#222f59; } .sub{ font-size:11px; color:#6b7280; margin:0 0 12px; }' +
+    '.kpis{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; } .kpi{ border:1px solid #d6d9e0; border-radius:8px; padding:7px 12px; min-width:130px; } .kpi b{ display:block; font-size:16px; color:#222f59; } .kpi span{ font-size:9.5px; color:#6b7280; }' +
+    'table.rel{ width:100%; border-collapse:collapse; font-size:9.5px; } table.rel th{ background:#222f59; color:#fff; text-align:left; padding:5px 6px; font-size:8.5px; text-transform:uppercase; } table.rel td{ padding:5px 6px; border-bottom:1px solid #e5e7eb; vertical-align:top; } thead{ display:table-header-group; } tr{ page-break-inside:avoid; } .nota{ font-size:9.5px; color:#6b7280; margin-top:10px; line-height:1.5; }</style></head><body>' +
+    '<img class="topo-logo" src="' + TIMBRADO_TOPO_SERVIS + '"><h1>Revisão das melhorias entregues</h1><p class="sub">Sucesso do Cliente · Servis Eletrônica &nbsp;·&nbsp; Emitido em ' + emitido + (quem ? ' por ' + escapeHtml(quem) : '') + '</p>' +
+    '<div class="kpis"><div class="kpi"><b>' + r.n + '</b><span>melhorias entregues</span></div><div class="kpi"><b>' + r.comDepois + ' de ' + r.n + '</b><span>já têm pesquisa depois da entrega</span></div><div class="kpi"><b>' + (dif === null ? '—' : nt(r.antes) + ' → ' + nt(r.depois)) + '</b><span>nota média antes → depois' + (dif === null ? '' : ' (' + (dif > 0 ? '+' : '') + String(dif).replace('.', ',') + ')') + '</span></div><div class="kpi"><b>' + r.melhor + ' / ' + r.igual + ' / ' + r.pior + '</b><span>nota subiu / igual / caiu</span></div><div class="kpi"><b>' + (r.tInicio === null ? '—' : negFmtDias(r.tInicio) + ' dias') + '</b><span>tempo médio do início à entrega</span></div><div class="kpi"><b>' + (r.tPedido === null ? '—' : negFmtDias(r.tPedido) + ' dias') + '</b><span>tempo médio do pedido à entrega</span></div><div class="kpi"><b>' + r.qt.t + ' / ' + r.qt.a + ' / ' + r.qt.f + ' / ' + r.qt.b + '</b><span>torres / armários / faciais / baterias</span></div><div class="kpi"><b>' + r.pos.feitos + ' de ' + r.n + '</b><span>contatos pós-obra feitos</span></div><div class="kpi"><b>' + r.pos.ok + ' / ' + r.pos.pend + ' / ' + r.pos.insat + '</b><span>tudo funcionando / com pendência / insatisfeito</span></div></div>' +
+    '<table class="rel"><thead><tr><th>Condomínio</th><th>Filial</th><th>Melhorias entregues</th><th>Entregue em</th><th>Início → entrega</th><th>Pedido → entrega</th><th>Nota antes</th><th>Nota depois</th><th>Variação</th><th>Contato pós-obra</th></tr></thead><tbody>' + linhas + '</tbody></table>' +
+    '<p class="nota">Nota antes = última pesquisa de satisfação de um mês anterior ao da entrega. Nota depois = primeira pesquisa de um mês posterior ao da entrega. A nota média considera só os condomínios que têm as duas. "Início → entrega" conta da data da negociação até a entrega; "Pedido → entrega", da data em que o pedido foi enviado à técnica, quando há registro. ' + (r.aprox ? r.aprox + ' entrega(s) com data aproximada (sem registro da mudança de status). ' : '') + 'A melhoria isolada nem sempre explica a variação da nota.</p>' +
+    '<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 300); };<\/script></body></html>';
+  const w = window.open('', '_blank'); if (!w){ alert('O navegador bloqueou a janela de impressão. Libere pop-ups para este endereço e tente de novo.'); return; }
+  w.document.write(html); w.document.close();
+}
+['rvBusca', 'rvFilial', 'rvResp', 'rvItem', 'rvOrdem'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', renderRenovRevisao); el.addEventListener('change', renderRenovRevisao); });
+document.getElementById('rvPdf').addEventListener('click', negRevisaoPDF);
+document.getElementById('renovViewRevisao').addEventListener('click', ev => {
+  const e = ev.target.closest('[data-rv-editar]'), p = ev.target.closest('[data-rv-pos]');
+  if (e) editNegociacao(e.getAttribute('data-rv-editar'));
+  if (p){ const n = renovNegociacoes.find(x => String(x.id) === p.getAttribute('data-rv-pos')); if (n) negPosAbrirModal(n); }
+});
+document.getElementById('rvDias').addEventListener('change', async ev => {
+  const v = parseInt(ev.target.value, 10); if (isNaN(v) || v < 1 || v > 180){ ev.target.value = __negPosCfg.dias; return; }
+  if (!['admin', 'editor'].includes(currentRole)){ ev.target.value = __negPosCfg.dias; alert('Só administradores e editores mudam o prazo.'); return; }
+  __negPosCfg.dias = v; await negPosGravarCfg(); renderRenovRevisao(); try{ assistRecalcular(); }catch(e){}
+});
 function renderRenovEncerradas(){
   if (!__negHistCarregado){ __negHistCarregado = 'carregando'; negCarregarHistorico().then(() => renderRenovEncerradas()); }
   const { itens } = negItensVisao();
@@ -16895,6 +17212,10 @@ document.querySelectorAll('[data-renov-subtab]').forEach(btn=>{
     if (alvo === 'visaoneg') renderRenovVisaoNeg();
     document.getElementById('renovViewEncerradas').style.display = alvo === 'encerradas' ? 'block' : 'none';
     if (alvo === 'encerradas') renderRenovEncerradas();
+    document.getElementById('renovViewRevisao').style.display = alvo === 'revisao' ? 'block' : 'none';
+    if (alvo === 'revisao') renderRenovRevisao();
+    document.getElementById('renovViewAndamentoMel').style.display = alvo === 'andamentomel' ? 'block' : 'none';
+    if (alvo === 'andamentomel') renderRenovAndamentoMel();
     document.getElementById('renovViewCronograma').style.display = alvo === 'cronograma' ? 'block' : 'none';
     document.getElementById('renovViewMiniDash').style.display = alvo === 'minidash' ? 'block' : 'none';
     document.getElementById('renovViewTorresArmarios').style.display = alvo === 'torresarmarios' ? 'block' : 'none';
@@ -17988,7 +18309,8 @@ function initRenovacaoUI(){
     const t = ev.target.closest('[data-registrar]');
     if (t) openNegociacaoModal(t.dataset.registrar);
   });
-  ['renovTABusca', 'renovTAFiltro'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovTorresArmarios); el.addEventListener('change', renderRenovTorresArmarios); } });
+  ['renovTABusca', 'renovTAFiltro', 'renovTAFiltroFilial', 'renovTAFiltroResp', 'renovTAFiltroItem', 'renovTAFiltroStatus'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovTorresArmarios); el.addEventListener('change', renderRenovTorresArmarios); } });
+  document.getElementById('renovTALimpar').addEventListener('click', () => { ['renovTABusca', 'renovTAFiltro', 'renovTAFiltroFilial', 'renovTAFiltroResp', 'renovTAFiltroItem', 'renovTAFiltroStatus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = id === 'renovTAFiltro' ? 'todas' : ''; }); renderRenovTorresArmarios(); });
   ['renovComBusca', 'renovComFiltroNeg', 'renovComFiltroSit'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovComissao); el.addEventListener('change', renderRenovComissao); } });
   document.getElementById('renovComCsv').addEventListener('click', exportarComissaoCsv);
   ['renovRedBusca', 'renovRedStatus'].forEach(id => { const el = document.getElementById(id); if (el){ el.addEventListener('input', renderRenovReducao); el.addEventListener('change', renderRenovReducao); } });
@@ -27206,7 +27528,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v195';
+const APP_BUILD = 'v197';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
