@@ -1246,6 +1246,20 @@
   .chip-carteira-btn{ cursor:pointer; margin-left:0; font-family:inherit; }
   .carteira-linha{ display:grid; grid-template-columns:1.5fr 80px 150px 140px 140px; gap:10px; align-items:center; padding:7px 10px; border-bottom:1px solid var(--border); font-size:12.5px; }
 </style>
+<script>
+// Em janelas de pré-visualização o navegador nega o acesso ao armazenamento local (SecurityError). Nesse caso o dashboard usa uma memória temporária,
+// para abrir e funcionar do mesmo jeito (o que for guardado ali não passa de uma visita).
+(function(){
+  ['localStorage', 'sessionStorage'].forEach(function(nome){
+    try{ void window[nome]; window[nome].getItem('__teste'); }
+    catch(e){
+      var m = {}, mem = { getItem: function(k){ return Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null; }, setItem: function(k, v){ m[k] = String(v); }, removeItem: function(k){ delete m[k]; }, clear: function(){ m = {}; }, key: function(i){ return Object.keys(m)[i] || null; } };
+      Object.defineProperty(mem, 'length', { get: function(){ return Object.keys(m).length; } });
+      try{ Object.defineProperty(window, nome, { value: mem, configurable: true }); }catch(_){}
+    }
+  });
+})();
+</script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 <script>
@@ -1768,7 +1782,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v204 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v208 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2280,6 +2294,13 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
   </div>
 
   <div id="tabCadastro" class="tab-panel" style="display:none;">
+    <div class="toolbar" id="cadSindBarra" style="margin-bottom:10px; align-items:center;">
+      <span style="font-size:12.5px; color:var(--text-faint); font-weight:600;">📇 Lista de síndicos</span>
+      <select class="filter-select" id="cadSindFilial"><option value="">Filial: todas</option><option value="CEARÁ">Ceará</option><option value="MARANHÃO">Maranhão</option><option value="MANAUS">Manaus</option><option value="SECOPI">SECOPI</option></select>
+      <select class="filter-select" id="cadSindStatus"><option value="">Situação: todas</option><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select>
+      <select class="filter-select" id="cadSindTipo"><option value="">Tipo de síndico: todos</option><option value="Profissional">Profissional</option><option value="Morador">Morador</option><option value="ND">Não definido</option></select>
+      <button type="button" class="clearbtn" id="btnPlanilhaSindicos" style="border-color:var(--ok); color:var(--ok);" title="Planilha com o nome do síndico, o telefone de contato, o nome e o endereço do condomínio, lida do Cadastro de Condomínios">📊 Baixar planilha: síndico, telefone, condomínio e endereço</button>
+    </div>
     <iframe id="cadastroFrame" title="Cadastro de Condomínios"></iframe>
   </div>
 
@@ -7493,8 +7514,19 @@ const SUPABASE_URL = 'https://nnfwmkkcctnwcrjmspij.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Ua2Ua9PYKoeHjN87dDP2_g_TM5ctjRw';
 let sb = null;
 let syncStatus = 'connecting'; // connecting | online | offline
+// Dentro de pré-visualizações (janela "about:srcdoc") o fetch do navegador é interceptado e não consegue copiar objetos Headers
+// ("DataCloneError: Headers object could not be cloned"). Por isso os cabeçalhos viram um objeto simples antes de cada chamada ao Supabase.
+function fetchDoSupabase(entrada, opcoes){
+  try{
+    if (opcoes && opcoes.headers && typeof opcoes.headers.forEach === 'function' && !Array.isArray(opcoes.headers)){
+      const h = {}; opcoes.headers.forEach((v, k) => { h[k] = v; });
+      opcoes = Object.assign({}, opcoes, { headers: h });
+    }
+  }catch(e){}
+  return fetch(entrada, opcoes);
+}
 try{
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { global: { fetch: fetchDoSupabase } });
 }catch(e){ syncStatus = 'offline'; }
 
 // ============================================================================
@@ -7503,6 +7535,29 @@ try{
 // que dependem deles (Assistente SC, Vida do Condomínio, selos do menu...). Antes, cada tela só atualizava a si mesma, e as outras
 // mostravam a cópia antiga até a página ser recarregada.
 // ============================================================================
+// Pré-visualização (janela "about:srcdoc", como a prévia do arquivo no chat): ali a conexão com o banco é bloqueada e nada é salvo.
+window.EM_PREVIA = /^about:/.test(location.protocol);
+if (window.EM_PREVIA){
+  syncStatus = 'offline';
+  const faixa = document.createElement('div'); faixa.id = 'faixaPrevia';
+  faixa.style.cssText = 'position:sticky; top:0; z-index:99999; background:#7c2d12; color:#fff; padding:10px 16px; font-size:13px; line-height:1.5; display:flex; gap:12px; align-items:center; flex-wrap:wrap;';
+  faixa.innerHTML = '<span>⚠️ <strong>Você está numa pré-visualização.</strong> Aqui o dashboard não consegue falar com o banco de dados (por isso aparecem erros de "Failed to fetch") e nada do que você fizer é salvo. Para usar de verdade, abra o <a href="https://roselyfarias95-create.github.io/dashboard-satisfacao/" target="_blank" rel="noopener" style="color:#fed7aa; font-weight:700;">site publicado</a> ou abra o arquivo baixado direto no navegador.</span><button type="button" id="fecharFaixaPrevia" style="background:transparent; border:1px solid #fed7aa; color:#fed7aa; border-radius:6px; padding:4px 10px; cursor:pointer;">Entendi</button>';
+  (document.body || document.documentElement).prepend(faixa);
+  document.getElementById('fecharFaixaPrevia').addEventListener('click', () => faixa.remove());
+}
+// Texto legível de um erro do Supabase (objeto com message, code, details e hint)
+function errTxt(e){
+  if (e === null || e === undefined) return '';
+  if (typeof e === 'string') return e;
+  const p = [e.message, e.code ? '(código ' + e.code + ')' : '', (e.details && e.details !== e.message) ? e.details : '', e.hint].filter(Boolean);
+  if (p.length) return p.join(' · ');
+  try{ return JSON.stringify(e); }catch(_){ return String(e); }
+}
+// Os avisos do console passam a mostrar o motivo do erro (antes saía "[object Object]")
+(function(){
+  const legivel = a => (a && typeof a === 'object' && !(a instanceof Error) && !Array.isArray(a) && !(typeof Node !== 'undefined' && a instanceof Node) && (a.message || a.code || a.details || a.hint)) ? errTxt(a) : a;
+  ['warn', 'error'].forEach(n => { const o = console[n].bind(console); console[n] = (...args) => o(...args.map(legivel)); });
+})();
 const SYNC_TABELAS = { demandas: 'demandas', incidentes: 'incidentes', lembretes: 'lembretes', cadastro_condominios: 'cadastro', negociacoes_contrato: 'renov', agenda_diaria_tarefas: 'agenda', assistente_acompanhamentos: 'assist' };
 let __syncSujos = new Set(), __syncTimer = null, __syncRodando = false;
 function syncMarcar(tabela){
@@ -12017,7 +12072,7 @@ async function verificarCicloConcluido(mesRef){
     if (error) throw error;
     _cicloConcluidoCache[label] = !!(data && data.length);
   }catch(e){
-    console.warn('Falha ao verificar se o ciclo já foi concluído:', e);
+    console.warn('Falha ao verificar se o ciclo já foi concluído:', errTxt(e));
     _cicloConcluidoCache[label] = false;
   }
   return _cicloConcluidoCache[label];
@@ -15899,7 +15954,7 @@ class MultiVal extends Array {}
 function msEq(a, f){ return (f instanceof MultiVal) ? f.includes(String(a)) : a === f; }
 function msArr(f){ return Array.isArray(f) ? f.map(String) : ((f === '' || f === null || f === undefined) ? [] : [String(f)]); }   // aceita MultiVal e listas comuns
 function msToggle(sel, v){ const c = new Set(msArr(sel.value)); if (c.has(v)) c.delete(v); else c.add(v); sel.value = [...c]; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
-const MS_FILTROS = ["renovFilterFilial", "renovFilterResponsavel", "renovBreveFilterFilial", "renovBreveFilterResponsavel", "renovBreveFilterFaixa", "renovNegFilterFilial", "renovNegFilterResponsavel", "renovNegFilterStatus", "renovNegFilterTempoRenovado", "renovTAFiltroFilial", "renovTAFiltroResp", "renovTAFiltroItem", "renovTAFiltroStatus", "renovComFiltroSit", "renovRedStatus", "renovMDFilterFilial", "renovMDFilterResponsavel", "cronogramaFilterStatus", "cronogramaFilterFilial", "vnFilial", "vnResp", "vnEtapa", "rvFilial", "rvResp", "rvItem", "amFilial", "amResp", "amFase", "amItem", "enFilial", "enResp", "renovPdFilial", "renovPdResp", "renovRenovadosFilterFilial", "renovRenovadosFilterResponsavel", "renovRenovadosFilterStatus", "renovRenovadosFilterTempoRenovado", "asFiltroResp", "asFiltroTipo", "asAcFiltroResp", "asAcFiltroSit", "asAgFiltroResp", "lembreteFilterStatus", "lembreteFilterFilial", "demFilterFilial", "demFilterResponsavel", "demFilterStatus", "demFilterPrioridade", "incFilterGravidade", "incFilterStatus", "incFilterFilial", "faFilterFilial", "faFilterStatus", "adFilterFilial", "adFilterStatus", "veFilterFilial", "veFilterStatus", "veFilterSetor", "veFilterRealizada", "veFilterResponsavel", "ffFilterTipo", "vidaKanbanFilterFilial", "vidaKanbanFilterRisco", "vidaTimelineStatus", "fqrFiltroFilial", "fqrFiltroTrat", "carteirasFiltroFilial", "carteirasFiltroResp"];
+const MS_FILTROS = ["cadSindFilial", "cadSindStatus", "cadSindTipo", "renovFilterFilial", "renovFilterResponsavel", "renovBreveFilterFilial", "renovBreveFilterResponsavel", "renovBreveFilterFaixa", "renovNegFilterFilial", "renovNegFilterResponsavel", "renovNegFilterStatus", "renovNegFilterTempoRenovado", "renovTAFiltroFilial", "renovTAFiltroResp", "renovTAFiltroItem", "renovTAFiltroStatus", "renovComFiltroSit", "renovRedStatus", "renovMDFilterFilial", "renovMDFilterResponsavel", "cronogramaFilterStatus", "cronogramaFilterFilial", "vnFilial", "vnResp", "vnEtapa", "rvFilial", "rvResp", "rvItem", "amFilial", "amResp", "amFase", "amItem", "enFilial", "enResp", "renovPdFilial", "renovPdResp", "renovRenovadosFilterFilial", "renovRenovadosFilterResponsavel", "renovRenovadosFilterStatus", "renovRenovadosFilterTempoRenovado", "asFiltroResp", "asFiltroTipo", "asAcFiltroResp", "asAcFiltroSit", "asAgFiltroResp", "lembreteFilterStatus", "lembreteFilterFilial", "demFilterFilial", "demFilterResponsavel", "demFilterStatus", "demFilterPrioridade", "incFilterGravidade", "incFilterStatus", "incFilterFilial", "faFilterFilial", "faFilterStatus", "adFilterFilial", "adFilterStatus", "veFilterFilial", "veFilterStatus", "veFilterSetor", "veFilterRealizada", "veFilterResponsavel", "ffFilterTipo", "vidaKanbanFilterFilial", "vidaKanbanFilterRisco", "vidaTimelineStatus", "fqrFiltroFilial", "fqrFiltroTrat", "carteirasFiltroFilial", "carteirasFiltroResp"];
 function msOpcoes(sel){ return [...sel.options].filter(o => o.value !== '').map(o => ({ v: o.value, t: o.textContent.trim() })); }
 function msPrefixo(sel){
   const o0 = sel.options[0]; let t = o0 && o0.value === '' ? o0.textContent.trim() : '';
@@ -16205,6 +16260,37 @@ document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()
   renderRenovNegociacoes();
 });
 
+// ---------- Planilha: nome do síndico, telefone de contato, nome e endereço do condomínio (lida do Cadastro de Condomínios) ----------
+async function exportarPlanilhaSindicos(){
+  if (!sb){ alert('Sem conexão com o servidor.'); return; }
+  if (typeof XLSX === 'undefined'){ alert('A biblioteca de planilhas não carregou. Confira a internet e tente de novo.'); return; }
+  const b = document.getElementById('btnPlanilhaSindicos'), rotulo = b.textContent; b.disabled = true; b.textContent = 'Gerando...';
+  try{
+    const r = await paginar(() => sb.from('cadastro_condominios').select('nome,filial,status,sindico,nome_sindico,telefone,endereco').order('nome'));
+    if (r.error) throw r.error;
+    const fF = msArr(document.getElementById('cadSindFilial').value).map(v => normalizeFilialCanonica(v)), fS = msArr(document.getElementById('cadSindStatus').value), fT = msArr(document.getElementById('cadSindTipo').value);
+    const filialDe = c => normalizeFilialCanonica(c.filial) || '';
+    const tipoDe = c => c.sindico === 'Profissional' ? 'Profissional' : (c.sindico === 'Morador' ? 'Morador' : 'Não definido');
+    const lista = (r.data || []).filter(c => (!fF.length || fF.includes(filialDe(c))) && (!fS.length || fS.includes(c.status || 'Ativo')) && (!fT.length || fT.includes(c.sindico === 'Profissional' || c.sindico === 'Morador' ? c.sindico : 'ND')))
+      .sort((a, c) => filialDe(a).localeCompare(filialDe(c), 'pt-BR') || String(a.nome).localeCompare(String(c.nome), 'pt-BR'));
+    if (!lista.length){ alert('Nenhum condomínio com esses filtros.'); return; }
+    const t = v => (v === null || v === undefined) ? '' : String(v).trim();
+    const aba1 = [['Nome do síndico', 'Tipo de síndico', 'Telefone de contato', 'Condomínio', 'Endereço', 'Filial', 'Situação']].concat(lista.map(c => [t(c.nome_sindico), tipoDe(c), t(c.telefone), t(c.nome), t(c.endereco), filialDe(c), c.status || 'Ativo']));
+    const falta = lista.map(c => ({ c, f: [!t(c.nome_sindico) && 'síndico', tipoDe(c) === 'Não definido' && 'tipo do síndico', !t(c.telefone) && 'telefone', !t(c.endereco) && 'endereço'].filter(Boolean) })).filter(x => x.f.length);
+    const aba2 = [['Condomínio', 'Filial', 'O que falta preencher']].concat(falta.map(x => [t(x.c.nome), filialDe(x.c), x.f.join(', ')]));
+    const wb = XLSX.utils.book_new(), w1 = XLSX.utils.aoa_to_sheet(aba1), w2 = XLSX.utils.aoa_to_sheet(aba2);
+    w1['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 40 }, { wch: 55 }, { wch: 12 }, { wch: 10 }]; w2['!cols'] = [{ wch: 40 }, { wch: 12 }, { wch: 40 }];
+    w1['!autofilter'] = { ref: 'A1:G' + aba1.length };
+    XLSX.utils.book_append_sheet(wb, w1, 'Síndicos e endereços'); if (falta.length) XLSX.utils.book_append_sheet(wb, w2, 'Falta preencher');
+    XLSX.writeFile(wb, 'sindicos_e_enderecos_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    const sem = k => lista.filter(c => !t(c[k])).length;
+    const nProf = lista.filter(c => tipoDe(c) === 'Profissional').length, nMor = lista.filter(c => tipoDe(c) === 'Morador').length;
+    alert('Planilha gerada com ' + lista.length + ' condomínio(s): ' + nProf + ' com síndico profissional, ' + nMor + ' com síndico morador e ' + (lista.length - nProf - nMor) + ' sem o tipo definido.' + (falta.length ? '\n\nAinda faltam dados no Cadastro: ' + sem('nome_sindico') + ' sem nome do síndico, ' + sem('telefone') + ' sem telefone, ' + sem('endereco') + ' sem endereço. Eles estão na aba "Falta preencher" da planilha.' : '\n\nTodos têm síndico, telefone e endereço.'));
+  }catch(e){ alert('Não consegui gerar a planilha: ' + (e.message || e)); }
+  finally{ b.disabled = false; b.textContent = rotulo; }
+}
+document.getElementById('btnPlanilhaSindicos').addEventListener('click', exportarPlanilhaSindicos);
+setTimeout(() => { const st = document.getElementById('cadSindStatus'); if (st && st.__ms) st.value = 'Ativo'; }, 80);   // por padrão, só os ativos
 function exportarRenovBreveExcel(){
   const lista = getFilteredRenovBreve();
   if (!lista.length){ alert('Nenhum dado para exportar com esses filtros.'); return; }
@@ -22191,7 +22277,7 @@ async function carregarEquipeMembros(){
     equipeMembrosData = data || [];
     sincronizarResponsaveisComEquipe();
   }catch(e){
-    console.warn('Falha ao carregar equipe_membros (a tabela pode não existir ainda no Supabase):', e);
+    console.warn('Falha ao carregar equipe_membros (a tabela pode não existir ainda no Supabase):', errTxt(e));
     equipeMembrosData = [];
   }
 }
@@ -26814,17 +26900,17 @@ async function fazerBackupDiario(forcarHoje){
       if (erroSalvar) throw erroSalvar;
       resultados.push({ tabela, ok:true, quantidade: (data||[]).length });
     }catch(e){
-      console.error(`Falha no backup de ${tabela}:`, e);
-      resultados.push({ tabela, ok:false, erro: e.message });
+      console.error(`Falha no backup de ${tabela}:`, errTxt(e));
+      resultados.push({ tabela, ok:false, erro: errTxt(e) });
     }
   }
-  localStorage.setItem('ultimoBackupDiario', hoje);
+  if (resultados.some(x => x.ok)) localStorage.setItem('ultimoBackupDiario', hoje);   // só marca o dia como feito se algo foi salvo (senão tenta de novo na próxima abertura)
   return { ok:true, resultados };
 }
 
 // Roda automaticamente, em segundo plano, uns segundos depois de abrir o app
 // (sem travar o carregamento inicial, e sem incomodar com alerta).
-setTimeout(()=>{ fazerBackupDiario(false).catch(e=>console.error('Backup automático falhou:', e)); }, 8000);
+setTimeout(()=>{ if (window.EM_PREVIA) return; fazerBackupDiario(false).catch(e=>console.error('Backup automático falhou:', e)); }, 8000);
 
 </script>
 
@@ -27683,7 +27769,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v204';
+const APP_BUILD = 'v208';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
