@@ -1782,7 +1782,7 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <div><b>Referência</b> <span id="refMes">Julho / 2026</span></div>
       <div id="totalCondos">265 condomínios monitorados</div>
       <div id="lastUpdateInfo">Atualizado em <span id="lastUpdateTime"></span></div>
-      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v208 (2026-10-18) — QR code embutido, sem depender de internet</div>
+      <div id="buildVersionTag" style="font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace;">Build: v209 (2026-10-18) — QR code embutido, sem depender de internet</div>
       <div class="session-info">
         <div id="perfilFotoWrap" style="position:relative; display:inline-flex; align-items:center; gap:8px; cursor:pointer;" title="Clique pra trocar sua foto">
           <img id="perfilFotoImg" src="" alt="" style="display:none; width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
@@ -2299,6 +2299,8 @@ CONDOMINIO Y	5	9	Concluído"></textarea>
       <select class="filter-select" id="cadSindFilial"><option value="">Filial: todas</option><option value="CEARÁ">Ceará</option><option value="MARANHÃO">Maranhão</option><option value="MANAUS">Manaus</option><option value="SECOPI">SECOPI</option></select>
       <select class="filter-select" id="cadSindStatus"><option value="">Situação: todas</option><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select>
       <select class="filter-select" id="cadSindTipo"><option value="">Tipo de síndico: todos</option><option value="Profissional">Profissional</option><option value="Morador">Morador</option><option value="ND">Não definido</option></select>
+      <select class="filter-select" id="cadSindCondo"><option value="">Condomínio: todos</option></select>
+      <select class="filter-select" id="cadSindColunas" title="Marque as colunas que devem sair na planilha"><option value="">Colunas: padrão</option></select>
       <button type="button" class="clearbtn" id="btnPlanilhaSindicos" style="border-color:var(--ok); color:var(--ok);" title="Planilha com o nome do síndico, o telefone de contato, o nome e o endereço do condomínio, lida do Cadastro de Condomínios">📊 Baixar planilha: síndico, telefone, condomínio e endereço</button>
     </div>
     <iframe id="cadastroFrame" title="Cadastro de Condomínios"></iframe>
@@ -15954,7 +15956,7 @@ class MultiVal extends Array {}
 function msEq(a, f){ return (f instanceof MultiVal) ? f.includes(String(a)) : a === f; }
 function msArr(f){ return Array.isArray(f) ? f.map(String) : ((f === '' || f === null || f === undefined) ? [] : [String(f)]); }   // aceita MultiVal e listas comuns
 function msToggle(sel, v){ const c = new Set(msArr(sel.value)); if (c.has(v)) c.delete(v); else c.add(v); sel.value = [...c]; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
-const MS_FILTROS = ["cadSindFilial", "cadSindStatus", "cadSindTipo", "renovFilterFilial", "renovFilterResponsavel", "renovBreveFilterFilial", "renovBreveFilterResponsavel", "renovBreveFilterFaixa", "renovNegFilterFilial", "renovNegFilterResponsavel", "renovNegFilterStatus", "renovNegFilterTempoRenovado", "renovTAFiltroFilial", "renovTAFiltroResp", "renovTAFiltroItem", "renovTAFiltroStatus", "renovComFiltroSit", "renovRedStatus", "renovMDFilterFilial", "renovMDFilterResponsavel", "cronogramaFilterStatus", "cronogramaFilterFilial", "vnFilial", "vnResp", "vnEtapa", "rvFilial", "rvResp", "rvItem", "amFilial", "amResp", "amFase", "amItem", "enFilial", "enResp", "renovPdFilial", "renovPdResp", "renovRenovadosFilterFilial", "renovRenovadosFilterResponsavel", "renovRenovadosFilterStatus", "renovRenovadosFilterTempoRenovado", "asFiltroResp", "asFiltroTipo", "asAcFiltroResp", "asAcFiltroSit", "asAgFiltroResp", "lembreteFilterStatus", "lembreteFilterFilial", "demFilterFilial", "demFilterResponsavel", "demFilterStatus", "demFilterPrioridade", "incFilterGravidade", "incFilterStatus", "incFilterFilial", "faFilterFilial", "faFilterStatus", "adFilterFilial", "adFilterStatus", "veFilterFilial", "veFilterStatus", "veFilterSetor", "veFilterRealizada", "veFilterResponsavel", "ffFilterTipo", "vidaKanbanFilterFilial", "vidaKanbanFilterRisco", "vidaTimelineStatus", "fqrFiltroFilial", "fqrFiltroTrat", "carteirasFiltroFilial", "carteirasFiltroResp"];
+const MS_FILTROS = ["cadSindFilial", "cadSindStatus", "cadSindTipo", "cadSindCondo", "cadSindColunas", "renovFilterFilial", "renovFilterResponsavel", "renovBreveFilterFilial", "renovBreveFilterResponsavel", "renovBreveFilterFaixa", "renovNegFilterFilial", "renovNegFilterResponsavel", "renovNegFilterStatus", "renovNegFilterTempoRenovado", "renovTAFiltroFilial", "renovTAFiltroResp", "renovTAFiltroItem", "renovTAFiltroStatus", "renovComFiltroSit", "renovRedStatus", "renovMDFilterFilial", "renovMDFilterResponsavel", "cronogramaFilterStatus", "cronogramaFilterFilial", "vnFilial", "vnResp", "vnEtapa", "rvFilial", "rvResp", "rvItem", "amFilial", "amResp", "amFase", "amItem", "enFilial", "enResp", "renovPdFilial", "renovPdResp", "renovRenovadosFilterFilial", "renovRenovadosFilterResponsavel", "renovRenovadosFilterStatus", "renovRenovadosFilterTempoRenovado", "asFiltroResp", "asFiltroTipo", "asAcFiltroResp", "asAcFiltroSit", "asAgFiltroResp", "lembreteFilterStatus", "lembreteFilterFilial", "demFilterFilial", "demFilterResponsavel", "demFilterStatus", "demFilterPrioridade", "incFilterGravidade", "incFilterStatus", "incFilterFilial", "faFilterFilial", "faFilterStatus", "adFilterFilial", "adFilterStatus", "veFilterFilial", "veFilterStatus", "veFilterSetor", "veFilterRealizada", "veFilterResponsavel", "ffFilterTipo", "vidaKanbanFilterFilial", "vidaKanbanFilterRisco", "vidaTimelineStatus", "fqrFiltroFilial", "fqrFiltroTrat", "carteirasFiltroFilial", "carteirasFiltroResp"];
 function msOpcoes(sel){ return [...sel.options].filter(o => o.value !== '').map(o => ({ v: o.value, t: o.textContent.trim() })); }
 function msPrefixo(sel){
   const o0 = sel.options[0]; let t = o0 && o0.value === '' ? o0.textContent.trim() : '';
@@ -16261,36 +16263,67 @@ document.getElementById('btnLimparFiltrosRenovNeg').addEventListener('click', ()
 });
 
 // ---------- Planilha: nome do síndico, telefone de contato, nome e endereço do condomínio (lida do Cadastro de Condomínios) ----------
+const COLUNAS_SIND = [
+  { k: 'nome_sindico', rot: 'Nome do síndico', w: 30, padrao: true }, { k: 'tipo', rot: 'Tipo de síndico', w: 15, padrao: true }, { k: 'telefone', rot: 'Telefone de contato', w: 20, padrao: true },
+  { k: 'nome', rot: 'Condomínio', w: 40, padrao: true }, { k: 'endereco', rot: 'Endereço', w: 55, padrao: true }, { k: 'filial', rot: 'Filial', w: 12, padrao: true }, { k: 'status', rot: 'Situação', w: 10, padrao: true },
+  { k: 'responsavel', rot: 'Responsável (Sucesso do Cliente)', w: 24 }, { k: 'modalidade', rot: 'Modalidade', w: 16 }, { k: 'contrato_inicio', rot: 'Início do contrato', w: 15, data: true }, { k: 'contrato_fim', rot: 'Fim do contrato', w: 15, data: true },
+  { k: 'mensalidade', rot: 'Mensalidade', w: 14, num: true }, { k: 'qtd_unidades', rot: 'Unidades', w: 10, num: true }, { k: 'possui_armario', rot: 'Possui armário', w: 14 }, { k: 'possui_gphone', rot: 'Possui GPhone', w: 14 }, { k: 'possui_facial', rot: 'Possui facial', w: 14 },
+  { k: 'acesso_veicular', rot: 'Acesso veicular', w: 16 }, { k: 'sistema_guarita', rot: 'Sistema da guarita', w: 18 }, { k: 'area', rot: 'Área', w: 14 }, { k: 'tecnico_responsavel', rot: 'Técnico responsável', w: 20 }, { k: 'obs', rot: 'Observações', w: 40 },
+];
+const COLUNAS_SIND_PADRAO = COLUNAS_SIND.filter(c => c.padrao).map(c => c.k);
+function cadSindMontarSeletores(){
+  const sel = document.getElementById('cadSindColunas'); if (!sel) return;
+  sel.innerHTML = '<option value="">Colunas: padrão</option>' + COLUNAS_SIND.map(c => '<option value="' + c.k + '">' + escapeHtml(c.rot) + '</option>').join('');
+  let salvas = null; try{ salvas = JSON.parse(localStorage.getItem('cadSindColunas') || 'null'); }catch(e){}
+  sel.value = Array.isArray(salvas) && salvas.length ? salvas.filter(k => COLUNAS_SIND.some(c => c.k === k)) : COLUNAS_SIND_PADRAO;   // lembra a última escolha
+  sel.addEventListener('change', () => { try{ localStorage.setItem('cadSindColunas', JSON.stringify(msArr(sel.value))); }catch(e){} });
+}
+async function cadSindCarregarCondos(){
+  const sel = document.getElementById('cadSindCondo'); if (!sel || !sb) return;
+  try{
+    const r = await paginar(() => sb.from('cadastro_condominios').select('nome').order('nome')); if (r.error) throw r.error;
+    fillSelect('cadSindCondo', [...new Set((r.data || []).map(c => String(c.nome || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  }catch(e){ console.warn('Lista de condomínios da planilha de síndicos:', errTxt(e)); }
+}
 async function exportarPlanilhaSindicos(){
   if (!sb){ alert('Sem conexão com o servidor.'); return; }
   if (typeof XLSX === 'undefined'){ alert('A biblioteca de planilhas não carregou. Confira a internet e tente de novo.'); return; }
   const b = document.getElementById('btnPlanilhaSindicos'), rotulo = b.textContent; b.disabled = true; b.textContent = 'Gerando...';
   try{
-    const r = await paginar(() => sb.from('cadastro_condominios').select('nome,filial,status,sindico,nome_sindico,telefone,endereco').order('nome'));
+    const r = await paginar(() => sb.from('cadastro_condominios').select('*').order('nome'));
     if (r.error) throw r.error;
-    const fF = msArr(document.getElementById('cadSindFilial').value).map(v => normalizeFilialCanonica(v)), fS = msArr(document.getElementById('cadSindStatus').value), fT = msArr(document.getElementById('cadSindTipo').value);
+    const fF = msArr(document.getElementById('cadSindFilial').value).map(v => normalizeFilialCanonica(v)), fS = msArr(document.getElementById('cadSindStatus').value), fT = msArr(document.getElementById('cadSindTipo').value), fC = msArr(document.getElementById('cadSindCondo').value);
     const filialDe = c => normalizeFilialCanonica(c.filial) || '';
     const tipoDe = c => c.sindico === 'Profissional' ? 'Profissional' : (c.sindico === 'Morador' ? 'Morador' : 'Não definido');
-    const lista = (r.data || []).filter(c => (!fF.length || fF.includes(filialDe(c))) && (!fS.length || fS.includes(c.status || 'Ativo')) && (!fT.length || fT.includes(c.sindico === 'Profissional' || c.sindico === 'Morador' ? c.sindico : 'ND')))
+    const lista = (r.data || []).filter(c => (!fF.length || fF.includes(filialDe(c))) && (!fS.length || fS.includes(c.status || 'Ativo')) && (!fT.length || fT.includes(c.sindico === 'Profissional' || c.sindico === 'Morador' ? c.sindico : 'ND')) && (!fC.length || fC.includes(String(c.nome || '').trim())))
       .sort((a, c) => filialDe(a).localeCompare(filialDe(c), 'pt-BR') || String(a.nome).localeCompare(String(c.nome), 'pt-BR'));
     if (!lista.length){ alert('Nenhum condomínio com esses filtros.'); return; }
+    const escolhidas = msArr(document.getElementById('cadSindColunas').value), chaves = escolhidas.length ? escolhidas : COLUNAS_SIND_PADRAO;
+    const cols = COLUNAS_SIND.filter(c => chaves.includes(c.k));   // sempre na ordem padrão da planilha
     const t = v => (v === null || v === undefined) ? '' : String(v).trim();
-    const aba1 = [['Nome do síndico', 'Tipo de síndico', 'Telefone de contato', 'Condomínio', 'Endereço', 'Filial', 'Situação']].concat(lista.map(c => [t(c.nome_sindico), tipoDe(c), t(c.telefone), t(c.nome), t(c.endereco), filialDe(c), c.status || 'Ativo']));
-    const falta = lista.map(c => ({ c, f: [!t(c.nome_sindico) && 'síndico', tipoDe(c) === 'Não definido' && 'tipo do síndico', !t(c.telefone) && 'telefone', !t(c.endereco) && 'endereço'].filter(Boolean) })).filter(x => x.f.length);
+    const valor = (c, col) => {
+      if (col.k === 'tipo') return tipoDe(c); if (col.k === 'filial') return filialDe(c); if (col.k === 'status') return c.status || 'Ativo';
+      const v = c[col.k]; if (col.data) return v ? fmtDataBRRenov(String(v).slice(0, 10)) : '';
+      if (col.num){ const n = Number(String(v).replace(/[^\d.,-]/g, '').replace(',', '.')); return (v === null || v === undefined || v === '' || isNaN(n)) ? '' : n; }
+      return t(v);
+    };
+    const aba1 = [cols.map(c => c.rot)].concat(lista.map(c => cols.map(col => valor(c, col))));
+    // "Falta preencher": só olha os campos que estão na planilha
+    const exigidos = [['nome_sindico', 'nome do síndico', c => !t(c.nome_sindico)], ['tipo', 'tipo do síndico', c => tipoDe(c) === 'Não definido'], ['telefone', 'telefone', c => !t(c.telefone)], ['endereco', 'endereço', c => !t(c.endereco)]].filter(x => cols.some(col => col.k === x[0]));
+    const falta = exigidos.length ? lista.map(c => ({ c, f: exigidos.filter(x => x[2](c)).map(x => x[1]) })).filter(x => x.f.length) : [];
     const aba2 = [['Condomínio', 'Filial', 'O que falta preencher']].concat(falta.map(x => [t(x.c.nome), filialDe(x.c), x.f.join(', ')]));
     const wb = XLSX.utils.book_new(), w1 = XLSX.utils.aoa_to_sheet(aba1), w2 = XLSX.utils.aoa_to_sheet(aba2);
-    w1['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 40 }, { wch: 55 }, { wch: 12 }, { wch: 10 }]; w2['!cols'] = [{ wch: 40 }, { wch: 12 }, { wch: 40 }];
-    w1['!autofilter'] = { ref: 'A1:G' + aba1.length };
+    w1['!cols'] = cols.map(c => ({ wch: c.w })); w2['!cols'] = [{ wch: 40 }, { wch: 12 }, { wch: 40 }];
+    w1['!autofilter'] = { ref: 'A1:' + XLSX.utils.encode_col(cols.length - 1) + aba1.length };
     XLSX.utils.book_append_sheet(wb, w1, 'Síndicos e endereços'); if (falta.length) XLSX.utils.book_append_sheet(wb, w2, 'Falta preencher');
     XLSX.writeFile(wb, 'sindicos_e_enderecos_' + new Date().toISOString().slice(0, 10) + '.xlsx');
-    const sem = k => lista.filter(c => !t(c[k])).length;
-    const nProf = lista.filter(c => tipoDe(c) === 'Profissional').length, nMor = lista.filter(c => tipoDe(c) === 'Morador').length;
-    alert('Planilha gerada com ' + lista.length + ' condomínio(s): ' + nProf + ' com síndico profissional, ' + nMor + ' com síndico morador e ' + (lista.length - nProf - nMor) + ' sem o tipo definido.' + (falta.length ? '\n\nAinda faltam dados no Cadastro: ' + sem('nome_sindico') + ' sem nome do síndico, ' + sem('telefone') + ' sem telefone, ' + sem('endereco') + ' sem endereço. Eles estão na aba "Falta preencher" da planilha.' : '\n\nTodos têm síndico, telefone e endereço.'));
-  }catch(e){ alert('Não consegui gerar a planilha: ' + (e.message || e)); }
+    const nProf = lista.filter(c => tipoDe(c) === 'Profissional').length, nMor = lista.filter(c => tipoDe(c) === 'Morador').length, sem = k => lista.filter(c => !t(c[k])).length;
+    alert('Planilha gerada com ' + lista.length + ' condomínio(s) e ' + cols.length + ' coluna(s).' + (cols.some(c => c.k === 'tipo') ? '\n' + nProf + ' com síndico profissional, ' + nMor + ' com síndico morador e ' + (lista.length - nProf - nMor) + ' sem o tipo definido.' : '') + (falta.length ? '\n\nAinda faltam dados no Cadastro (aba "Falta preencher" da planilha): ' + falta.length + ' condomínio(s).' : ''));
+  }catch(e){ alert('Não consegui gerar a planilha: ' + errTxt(e)); }
   finally{ b.disabled = false; b.textContent = rotulo; }
 }
 document.getElementById('btnPlanilhaSindicos').addEventListener('click', exportarPlanilhaSindicos);
-setTimeout(() => { const st = document.getElementById('cadSindStatus'); if (st && st.__ms) st.value = 'Ativo'; }, 80);   // por padrão, só os ativos
+setTimeout(() => { const st = document.getElementById('cadSindStatus'); if (st && st.__ms) st.value = 'Ativo'; cadSindMontarSeletores(); }, 80);   // por padrão, só os ativos
 function exportarRenovBreveExcel(){
   const lista = getFilteredRenovBreve();
   if (!lista.length){ alert('Nenhum dado para exportar com esses filtros.'); return; }
@@ -18636,6 +18669,7 @@ function initTabs(){
       try{ atualizarAvisoCarteira(); }catch(e){}
       if (window.__abaAnterior === 'cadastro' && tab !== 'cadastro'){ try{ syncMarcar('cadastro_condominios'); }catch(e){} }
       window.__abaAnterior = tab;
+      if (tab === 'cadastro'){ try{ cadSindCarregarCondos(); }catch(e){} }
       if (tab === 'cadastro' && !cadastroLoaded){
         frame.srcdoc = CADASTRO_HTML;
         cadastroLoaded = true;
@@ -27769,7 +27803,7 @@ async function loadAgendaDoDia(){
   agendaMarcarAtualizado();
   agendaVerificarIndevidas(true);
 }
-const APP_BUILD = 'v208';
+const APP_BUILD = 'v209';
 // Diagnóstico: para cada tarefa automática (🤖) aberta hoje, mostra os dias em que ela apareceu e se foi concluída, e o estado do acompanhamento.
 async function agendaDiagnostico(){
   const hoje = agendaHojeISO(), desde = assistSomaDias(hoje, -14), dias = assistSilencioDias();
